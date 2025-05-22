@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block title %}Mis Permisos{% endblock %}
+{% block content %}
+<h1 class="mb-3">Mis Permisos</h1>
+<a href="{% url 'permisos:crear_permiso' %}" class="btn btn-primary mb-3">Solicitar Permiso</a>
+<table class="table table-striped">
+  <thead>
+    <tr><th>Tipo</th><th>Inicio</th><th>Fin</th><th>Estado</th><th>Acciones</th></tr>
+  </thead>
+  <tbody>
+    {% for p in permisos %}
+      <tr>
+        <td>{{ p.tipo_permiso }}</td>
+        <td>{{ p.fecha_inicio }}</td>
+        <td>{{ p.fecha_fin }}</td>
+        <td>{{ p.estado }}</td>
+        <td>
+          {% if p.estado == 'Pendiente' %}
+            <a href="{% url 'permisos:editar_permiso' p.pk %}" class="btn btn-sm btn-warning">Editar</a>
+            <a href="{% url 'permisos:eliminar_permiso' p.pk %}" class="btn btn-sm btn-danger">Eliminar</a>
+          {% endif %}
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="5" class="text-center">No tienes permisos solicitados.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

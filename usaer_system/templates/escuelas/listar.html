@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}Escuelas{% endblock %}
+{% block content %}
+<h1 class="mb-3">Escuelas</h1>
+<a href="{% url 'escuelas:crear_escuela' %}" class="btn btn-primary mb-3">Nueva Escuela</a>
+<table class="table table-striped">
+  <thead>
+    <tr><th>Nombre</th><th>Clave</th><th>Zona</th><th>Acciones</th></tr>
+  </thead>
+  <tbody>
+    {% for e in escuelas %}
+      <tr>
+        <td>{{ e.nombre }}</td>
+        <td>{{ e.clave }}</td>
+        <td>{{ e.zona }}</td>
+        <td>
+          <a href="{% url 'escuelas:editar_escuela' e.pk %}" class="btn btn-sm btn-warning">Editar</a>
+          <a href="{% url 'escuelas:eliminar_escuela' e.pk %}" class="btn btn-sm btn-danger">Eliminar</a>
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="4" class="text-center">No hay escuelas.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

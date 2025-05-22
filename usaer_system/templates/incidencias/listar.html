@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block title %}Mis Incidencias{% endblock %}
+{% block content %}
+<h1 class="mb-3">Mis Incidencias</h1>
+<a href="{% url 'incidencias:crear_incidencia' %}" class="btn btn-primary mb-3">Reportar Incidencia</a>
+<table class="table table-striped">
+  <thead>
+    <tr><th>Descripción</th><th>Fecha</th><th>Respuesta</th><th>Acciones</th></tr>
+  </thead>
+  <tbody>
+    {% for i in incidencias %}
+      <tr>
+        <td>{{ i.descripcion }}</td>
+        <td>{{ i.fecha|date:"Y-m-d H:i" }}</td>
+        <td>{{ i.respuesta_admin|default:"–" }}</td>
+        <td>
+          {% if not i.respuesta_admin %}
+            <a href="{% url 'incidencias:editar_incidencia' i.pk %}" class="btn btn-sm btn-warning">Responder</a>
+            <a href="{% url 'incidencias:eliminar_incidencia' i.pk %}" class="btn btn-sm btn-danger">Eliminar</a>
+          {% endif %}
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="4" class="text-center">No has reportado incidencias.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

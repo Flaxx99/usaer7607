@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block title %}Revisar Incidencias{% endblock %}
+{% block content %}
+<h1 class="mb-3">Revisar Incidencias</h1>
+<table class="table table-hover">
+  <thead class="table-light">
+    <tr>
+      <th>Profesor</th><th>Descripción</th><th>Fecha</th><th>Respuesta</th><th>Acciones</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for i in incidencias %}
+      <tr>
+        <td>{{ i.profesor }}</td>
+        <td>{{ i.descripcion|truncatechars:50 }}</td>
+        <td>{{ i.fecha|date:"Y-m-d H:i" }}</td>
+        <td>{{ i.respuesta_admin|default:"–" }}</td>
+        <td>
+          <a href="{% url 'incidencias:editar_incidencia' i.pk %}" class="btn btn-sm btn-primary">Responder</a>
+          <a href="{% url 'incidencias:eliminar_incidencia' i.pk %}" class="btn btn-sm btn-danger">Eliminar</a>
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="5" class="text-center">No hay incidencias para revisar.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

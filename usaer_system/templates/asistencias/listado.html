@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}Asistencias de {{ fecha }}{% endblock %}
+{% block content %}
+<h2 class="mb-4">Asistencias del {{ fecha }}</h2>
+<table class="table table-striped table-hover">
+  <thead class="table-light">
+    <tr>
+      <th>Profesor</th><th>Escuela</th><th>Entrada</th><th>Salida</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for a in asistencias %}
+      <tr>
+        <td>{{ a.profesor }}</td>
+        <td>{{ a.escuela }}</td>
+        <td>{{ a.hora_entrada|time:"H:i" }}</td>
+        <td>
+          {% if a.hora_salida %}{{ a.hora_salida|time:"H:i" }}{% else %}<span class="text-muted">–</span>{% endif %}
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="4" class="text-center">No hay asistencias registradas.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

@@ -16,11 +16,26 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from asistencias.views import registrar_entrada
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('asistencias/', include('asistencias.urls')),
-    path('escuelas/', include('escuelas.urls', namespace='escuelas')),
+    
+    path('', registrar_entrada, name='index'),
+    
+    path('asistencias/', include('asistencias.urls', namespace='asistencias')),
+    path('permisos/',    include('permisos.urls',    namespace='permisos')),       # ← aquí
+    path('escuelas/',    include('escuelas.urls',    namespace='escuelas')),
+    path('usuarios/',    include('usuarios.urls',    namespace='usuarios')),
+    path('incidencias/', include('incidencias.urls', namespace='incidencias')),
+    path('accounts/',    include('django.contrib.auth.urls')),
+    
+    # Autenticación (login, logout, password reset)
+    path('accounts/',    include('django.contrib.auth.urls')),
+
+    # (Opcional) Página de inicio o dashboard
+    # path('', include('home.urls', namespace='home')),
 
 
 ]

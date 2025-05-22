@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block title %}Profesores{% endblock %}
+{% block content %}
+<h1 class="mb-3">Profesores</h1>
+<a href="{% url 'usuarios:crear_profesor' %}" class="btn btn-primary mb-3">Nuevo Profesor</a>
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>Apellido</th><th>Nombre</th><th>No. Empleado</th><th>Acciones</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for p in profesores %}
+      <tr>
+        <td>{{ p.apellido_paterno }} {{ p.apellido_materno }}</td>
+        <td>{{ p.nombre }}</td>
+        <td>{{ p.numero_empleado }}</td>
+        <td>
+          <a href="{% url 'usuarios:detalle_profesor' p.pk %}" class="btn btn-sm btn-info">Ver</a>
+          <a href="{% url 'usuarios:editar_profesor' p.pk %}" class="btn btn-sm btn-warning">Editar</a>
+          <a href="{% url 'usuarios:eliminar_profesor' p.pk %}" class="btn btn-sm btn-danger">Eliminar</a>
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="4" class="text-center">No hay profesores.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

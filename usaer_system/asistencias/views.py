@@ -1,80 +1,87 @@
-from django.shortcuts import render
-from django.contrib.admin.views.decorators import staff_member_required
-from asistencias.models import Asistencia
-
-# Create your views here.
-import datetime
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.contrib.admin.views.decorators import staff_member_required
+from django.utils import timezone
+
 from usuarios.models import Profesor
-from asistencias.models import Asistencia
-from asistencias.forms import AsistenciaEntradaForm
+from .models import Asistencia
+from .forms import AsistenciaEntradaForm, AsistenciaSalidaForm
 
 def registrar_entrada(request):
-    profesor = None
-
+    """
+    Registra la entrada del día para un profesor sin necesidad de login.
+    Si ya tenía una entrada, informa; si no, crea la asistencia con hora_entrada.
+    """
+    form = None
     if request.method == 'POST':
         numero = request.POST.get('numero_empleado')
+        profesor = get_object_or_404(Profesor, numero_empleado=numero)
 
-        try:
-            profesor = Profesor.objects.get(numero_empleado=numero)
-        except Profesor.DoesNotExist:
-            messages.error(request, "Número de empleado no encontrado.")
-            form = AsistenciaEntradaForm(request.POST)
-        else:
-            form = AsistenciaEntradaForm(request.POST, profesor=profesor)
-
-        if form.is_valid() and profesor:
+        form = AsistenciaEntradaForm(request.POST, profesor=profesor)
+        if form.is_valid():
             escuela = form.cleaned_data['escuela']
-            fecha_hoy = datetime.date.today()
+            hoy = timezone.localdate()
+            ahora = timezone.localtime().time()
 
             asistencia, created = Asistencia.objects.get_or_create(
                 profesor=profesor,
-                fecha=fecha_hoy,
+                fecha=hoy,
                 defaults={
                     'escuela': escuela,
                     'presente': True,
-                    'hora_entrada': datetime.datetime.now().time()
+                    'hora_entrada': ahora,
                 }
             )
 
-            if not created:
-                messages.info(request, "Ya habías registrado tu entrada hoy.")
-            else:
+            if created:
                 messages.success(request, "Entrada registrada correctamente.")
-            return redirect('registrar_entrada')
+            else:
+                messages.info(request, "Ya habías registrado tu entrada hoy.")
 
-    else:
+            return redirect('asistencias:registrar_entrada')
+
+    if form is None:
         form = AsistenciaEntradaForm()
 
     return render(request, 'asistencias/entrada.html', {'form': form})
 
-from asistencias.forms import AsistenciaSalidaForm
 
 def registrar_salida(request):
-    if request.method == 'POST':
-        form = AsistenciaSalidaForm(request.POST)
-        if form.is_valid():
-            numero = form.cleaned_data['numero_empleado']
-            try:
-                profesor = Profesor.objects.get(numero_empleado=numero)
-                asistencia = Asistencia.objects.get(profesor=profesor, fecha=datetime.date.today())
-                asistencia.hora_salida = datetime.datetime.now().time()
-                asistencia.save()
+    """
+    Registra la salida del día para un profesor sin necesidad de login.
+    Si no había entrada, avisa; si ya tenía salida, informa; si no, guarda hora_salida.
+    """
+    form = AsistenciaSalidaForm(request.POST or None)
+
+    if request.method == 'POST' and form.is_valid():
+        numero = form.cleaned_data['numero_empleado']
+        profesor = get_object_or_404(Profesor, numero_empleado=numero)
+
+        hoy = timezone.localdate()
+        ahora = timezone.localtime().time()
+
+        try:
+            asistencia = Asistencia.objects.get(profesor=profesor, fecha=hoy)
+            if asistencia.hora_salida is None:
+                asistencia.hora_salida = ahora
+                asistencia.save(update_fields=['hora_salida'])
                 messages.success(request, "Salida registrada correctamente.")
-            except Profesor.DoesNotExist:
-                messages.error(request, "Número de empleado no encontrado.")
-            except Asistencia.DoesNotExist:
-                messages.error(request, "Primero debes registrar tu entrada.")
-            return redirect('registrar_salida')
-    else:
-        form = AsistenciaSalidaForm()
+            else:
+                messages.info(request, "Ya registraste tu salida hoy.")
+        except Asistencia.DoesNotExist:
+            messages.error(request, "Primero debes registrar tu entrada.")
+
+        return redirect('asistencias:registrar_salida')
 
     return render(request, 'asistencias/salida.html', {'form': form})
 
+
 @staff_member_required
 def listar_asistencias(request):
-    hoy = datetime.date.today()
+    """
+    Lista todas las asistencias del día, accesible solo para usuarios staff.
+    """
+    hoy = timezone.localdate()
     asistencias = Asistencia.objects.filter(fecha=hoy).order_by('hora_entrada')
     return render(request, 'asistencias/listado.html', {
         'asistencias': asistencias,
