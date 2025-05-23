@@ -1,4 +1,4 @@
-{% load static crispy_forms_tags %}
+{% load static crispy_forms_tags group_filters %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -26,17 +26,60 @@
       </button>
       <div class="collapse navbar-collapse" id="navbarMain">
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-          <li class="nav-item"><a class="nav-link" href="{% url 'asistencias:registrar_entrada' %}">Asistencia</a></li>
-          <li class="nav-item"><a class="nav-link" href="{% url 'permisos:crear_permiso' %}">Permisos</a></li>
-          <li class="nav-item"><a class="nav-link" href="{% url 'escuelas:listar_escuelas' %}">Escuelas</a></li>
-          <li class="nav-item"><a class="nav-link" href="{% url 'incidencias:listar_incidencias' %}">Incidencias</a></li>
+
+          {# Enlace público al checador #}
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'index' %}">Checador</a>
+          </li>
+
+          {% if user.is_authenticated %}
+            {# Profesores: solicitar permisos e incidencias #}
+            {% if user|has_group:"Profesor" %}
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'permisos:crear_permiso' %}">Solicitar Permiso</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'incidencias:crear_incidencia' %}">Reportar Incidencia</a>
+              </li>
+            {% endif %}
+
+            {# Directora: revisar permisos e incidencias #}
+            {% if user|has_group:"Directora" %}
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'permisos:revisar_permisos' %}">Revisar Permisos</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'incidencias:revisar_incidencias' %}">Revisar Incidencias</a>
+              </li>
+            {% endif %}
+
+            {# Administrador (staff): catálogo completo #}
+            {% if user.is_staff %}
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'escuelas:listar_escuelas' %}">Escuelas</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'usuarios:listar_profesores' %}">Profesores</a>
+              </li>
+              <li class="nav-item">
+               <!-- <a class="nav-link" href="{% url 'documentos:listar_documentos' %}">Documentos</a>-->
+              </li>
+            {% endif %}
+          {% endif %}
+
         </ul>
         <ul class="navbar-nav ms-auto">
           {% if user.is_authenticated %}
-            <li class="nav-item"><span class="navbar-text">Hola, {{ user.get_username }}</span></li>
-            <li class="nav-item"><a class="nav-link" href="{% url 'logout' %}">Cerrar sesión</a></li>
+            <li class="nav-item">
+              <span class="navbar-text">Hola, {{ user.get_username }}</span>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'logout' %}">Cerrar sesión</a>
+            </li>
           {% else %}
-            <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Iniciar sesión</a></li>
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'login' %}">Iniciar sesión</a>
+            </li>
           {% endif %}
         </ul>
       </div>

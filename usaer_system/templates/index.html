@@ -1,19 +1,30 @@
 {% extends 'base.html' %}
-{% load crispy_forms_tags %}
 {% block title %}Inicio – Checador{% endblock %}
 
 {% block content %}
   <div class="row justify-content-center">
-    <div class="col-md-6">
-      <h2 class="mb-4 text-center">Marca tu asistencia</h2>
-      <form method="post" action="{% url 'asistencias:registrar_entrada' %}" novalidate>
-        {% csrf_token %}
-        {{ form|crispy }}
-        <button class="btn btn-primary w-100 mt-3">Enviar</button>
-      </form>
+    <div class="col-md-6 text-center">
+      <h2 class="mb-4">Checador de Asistencia</h2>
+
+      <div class="d-grid gap-3">
+        <!-- Botón para la vista de registrar entrada -->
+        <a href="{% url 'asistencias:registrar_entrada' %}"
+           class="btn btn-success btn-lg">
+          Checar Entrada
+        </a>
+
+        <!-- Botón para la vista de registrar salida -->
+        <a href="{% url 'asistencias:registrar_salida' %}"
+           class="btn btn-danger btn-lg">
+          Checar Salida
+        </a>
+      </div>
+
       {% if not user.is_authenticated %}
-        <div class="text-center mt-3">
-          <a href="{% url 'login' %}" class="btn btn-outline-secondary">Iniciar sesión</a>
+        <div class="mt-4">
+          <a href="{% url 'login' %}" class="btn btn-outline-secondary">
+            Iniciar sesión
+          </a>
         </div>
       {% endif %}
     </div>
