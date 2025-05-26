@@ -31,6 +31,8 @@ urlpatterns = [
     path('incidencias/', include('incidencias.urls', namespace='incidencias')),
     path('accounts/',    include('django.contrib.auth.urls')),
     
+    path('documentos/', include('documentos.urls')),
+
     # Autenticación (login, logout, password reset)
     path('accounts/',    include('django.contrib.auth.urls')),
 
