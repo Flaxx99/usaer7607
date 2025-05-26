@@ -1,3 +1,5 @@
+# usuarios/views.py
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth import get_user_model
@@ -14,6 +16,12 @@ def es_director(user):
 @login_required
 @user_passes_test(es_director)
 def listar_profesores(request):
+<<<<<<< HEAD
+=======
+    """
+    El Director ve todos los usuarios con role='Profesor'.
+    """
+>>>>>>> 6dcfed68be085d912db309c92c84c71fabfd3e1a
     profesores = User.objects.filter(role='Profesor', activo=True)
     return render(request, 'usuarios/listar_profesores.html', {
         'profesores': profesores
@@ -23,10 +31,20 @@ def listar_profesores(request):
 @login_required
 @user_passes_test(es_director)
 def crear_profesor(request):
+<<<<<<< HEAD
     if request.method == 'POST':
         form = ProfesorCreationForm(request.POST)
         if form.is_valid():
             form.save()
+=======
+    """
+    El Director da de alta a un nuevo Profesor (incluye password).
+    """
+    if request.method == 'POST':
+        form = ProfesorCreationForm(request.POST)
+        if form.is_valid():
+            form.save()  # El form ya fija role='Profesor' y encripta el password
+>>>>>>> 6dcfed68be085d912db309c92c84c71fabfd3e1a
             messages.success(request, "Profesor creado exitosamente.")
             return redirect('usuarios:listar_profesores')
     else:
@@ -41,6 +59,12 @@ def crear_profesor(request):
 @login_required
 @user_passes_test(es_director)
 def editar_profesor(request, pk):
+<<<<<<< HEAD
+=======
+    """
+    El Director actualiza datos del Profesor (no password).
+    """
+>>>>>>> 6dcfed68be085d912db309c92c84c71fabfd3e1a
     profesor = get_object_or_404(User, pk=pk, role='Profesor')
     if request.method == 'POST':
         form = ProfesorChangeForm(request.POST, instance=profesor)
@@ -60,11 +84,21 @@ def editar_profesor(request, pk):
 @login_required
 @user_passes_test(es_director)
 def eliminar_profesor(request, pk):
+<<<<<<< HEAD
+=======
+    """
+    El Director elimina un Profesor.
+    """
+>>>>>>> 6dcfed68be085d912db309c92c84c71fabfd3e1a
     profesor = get_object_or_404(User, pk=pk, role='Profesor')
     if request.method == 'POST':
         profesor.delete()
         messages.success(request, "Profesor eliminado.")
         return redirect('usuarios:listar_profesores')
+<<<<<<< HEAD
+=======
+
+>>>>>>> 6dcfed68be085d912db309c92c84c71fabfd3e1a
     return render(request, 'usuarios/confirmar_eliminar_profesor.html', {
         'profesor': profesor
     })

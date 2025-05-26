@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+<<<<<<< HEAD
 
 {% block title %}Confirmar eliminación{% endblock %}
 
@@ -9,5 +10,14 @@
     {% csrf_token %}
     <button type="submit" class="btn btn-danger">Sí, eliminar</button>
     <a href="{% url 'usuarios:listar_profesores' %}" class="btn btn-secondary ms-2">Cancelar</a>
+=======
+{% block content %}
+  <h2>Eliminar Profesor</h2>
+  <p>¿Seguro que deseas eliminar a {{ profesor.get_full_name }}?</p>
+  <form method="post">
+    {% csrf_token %}
+    <button class="btn btn-danger">Sí, eliminar</button>
+    <a href="{% url 'usuarios:listar_profesores' %}" class="btn btn-secondary">Cancelar</a>
+>>>>>>> 6dcfed68be085d912db309c92c84c71fabfd3e1a
   </form>
 {% endblock %}

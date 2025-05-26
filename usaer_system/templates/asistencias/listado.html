@@ -1,8 +1,10 @@
+{# templates/asistencias/listado.html #}
 {% extends 'base.html' %}
 {% load tz %}
 
 {% block title %}Listado de Asistencias – {{ fecha|date:"l, d/m/Y" }}{% endblock %}
 
+<<<<<<< HEAD
 {% block content %}
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Asistencias de {{ fecha|date:"l, d/m/Y" }}</h2>
@@ -73,4 +75,54 @@
       </tbody>
     </table>
   </div>
+=======
+{% block title %}Listado de Asistencias – {{ fecha }}{% endblock %}
+
+{% block content %}
+  <h2 class="mb-4">Asistencias de {{ fecha }}</h2>
+
+  <form method="get" class="mb-3">
+    <div class="input-group">
+      <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Buscar por código o nombre...">
+      <button class="btn btn-outline-secondary">Buscar</button>
+    </div>
+  </form>
+
+  <div class="mb-3">
+    <span class="me-3">Total: {{ total }}</span>
+    <span class="me-3 text-success">Completas: {{ completas }}</span>
+    <span class="text-warning">Pendientes: {{ pendientes }}</span>
+  </div>
+
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Empleado</th>
+        <th>Escuela</th>
+        <th>Entrada</th>
+        <th>Salida</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for a in asistencias %}
+      <tr>
+        <td>{{ a.profesor.get_full_name }} ({{ a.profesor.numero_empleado }})</td>
+        <td>{{ a.escuela.nombre }}</td>
+        <td>{{ a.hora_entrada|time:"H:i" }}</td>
+        <td>
+          {% if a.hora_salida %}
+            {{ a.hora_salida|time:"H:i" }}
+          {% else %}
+            <span class="text-muted">Pendiente</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="4" class="text-center">No hay registros para hoy.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+>>>>>>> 6dcfed68be085d912db309c92c84c71fabfd3e1a
 {% endblock %}
