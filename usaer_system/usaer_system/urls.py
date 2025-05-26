@@ -16,16 +16,16 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from asistencias.views import registrar_entrada
+from asistencias.views import checar_asistencia
 
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     
-    path('', registrar_entrada, name='index'),
+    path('', checar_asistencia, name='index'),
     
     path('asistencias/', include('asistencias.urls', namespace='asistencias')),
-    path('permisos/',    include('permisos.urls',    namespace='permisos')),       # ← aquí
+    path('permisos/',    include('permisos.urls',    namespace='permisos')),
     path('escuelas/',    include('escuelas.urls',    namespace='escuelas')),
     path('usuarios/',    include('usuarios.urls',    namespace='usuarios')),
     path('incidencias/', include('incidencias.urls', namespace='incidencias')),

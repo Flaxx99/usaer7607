@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+  <h2 class="mb-4">{{ titulo }}</h2>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {{ form|crispy }}
+    <a href="{% url 'usuarios:listar_profesores' %}" class="btn btn-link mt-3">Cancelar</a>
+  </form>
+{% endblock %}

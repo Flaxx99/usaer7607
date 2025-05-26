@@ -1,89 +1,147 @@
+# asistencias/views.py
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.contrib.admin.views.decorators import staff_member_required
 from django.utils import timezone
+from usuarios.models import User
 
-from usuarios.models import Profesor
 from .models import Asistencia
-from .forms import AsistenciaEntradaForm, AsistenciaSalidaForm
+from .forms import AsistenciaCheckForm
 
-def registrar_entrada(request):
+User = User()
+
+def checar_asistencia(request):
     """
-    Registra la entrada del día para un profesor sin necesidad de login.
-    Si ya tenía una entrada, informa; si no, crea la asistencia con hora_entrada.
+    Con un solo campo (número o CURP) marca:
+      - ENTRADA si no hay registro hoy
+      - SALIDA si ya hay entrada pero no salida
+      - informa si ya está completa la asistencia del día
     """
-    form = None
+    status    = None
+    timestamp = None
+
     if request.method == 'POST':
-        numero = request.POST.get('numero_empleado')
-        profesor = get_object_or_404(Profesor, numero_empleado=numero)
-
-        form = AsistenciaEntradaForm(request.POST, profesor=profesor)
+        form = AsistenciaCheckForm(request.POST)
         if form.is_valid():
-            escuela = form.cleaned_data['escuela']
-            hoy = timezone.localdate()
-            ahora = timezone.localtime().time()
+            codigo = form.cleaned_data['numero_empleado'].strip()
+            hoy    = timezone.localdate()
+            ahora  = timezone.localtime()
 
-            asistencia, created = Asistencia.objects.get_or_create(
+            # 1) Buscar al profesor por número o CURP
+            try:
+                profesor = User.objects.get(
+                    numero_empleado=codigo,
+                    role='Profesor',
+                    is_active=True
+                )
+            except User.DoesNotExist:
+                try:
+                    profesor = User.objects.get(
+                        curp=codigo,
+                        role='Profesor',
+                        is_active=True
+                    )
+                except User.DoesNotExist:
+                    messages.error(request, "Código o CURP no encontrado.")
+                    return redirect('asistencias:checar_asistencia')
+
+            # 2) Determinar si graba Entrada o Salida
+            asi, created = Asistencia.objects.get_or_create(
                 profesor=profesor,
                 fecha=hoy,
                 defaults={
-                    'escuela': escuela,
+                    'escuela': profesor.escuela,
                     'presente': True,
-                    'hora_entrada': ahora,
+                    'hora_entrada': ahora.time(),
                 }
             )
 
             if created:
-                messages.success(request, "Entrada registrada correctamente.")
+                status    = 'ENTRADA'
+                timestamp = asi.hora_entrada
+                messages.success(
+                    request,
+                    f"Entrada registrada a las {timestamp.strftime('%H:%M')} en {profesor.escuela.nombre}"
+                )
             else:
-                messages.info(request, "Ya habías registrado tu entrada hoy.")
+                if asi.hora_salida:
+                    status = 'COMPLETO'
+                    messages.info(request, "Ya registraste entrada y salida hoy.")
+                else:
+                    # grabar la salida
+                    asi.hora_salida = ahora.time()
+                    asi.save(update_fields=['hora_salida'])
+                    status    = 'SALIDA'
+                    timestamp = asi.hora_salida
 
-            return redirect('asistencias:registrar_entrada')
+                    # opcional: calcular duración
+                    delta = (timezone.datetime.combine(hoy, asi.hora_salida) -
+                             timezone.datetime.combine(hoy, asi.hora_entrada))
+                    horas = delta.seconds // 3600
+                    mins  = (delta.seconds % 3600) // 60
 
-    if form is None:
-        form = AsistenciaEntradaForm()
+                    messages.success(
+                        request,
+                        f"Salida registrada a las {timestamp.strftime('%H:%M')} "
+                        f"| Horas trabajadas: {horas}h {mins}m"
+                    )
 
-    return render(request, 'asistencias/entrada.html', {'form': form})
+            return redirect('asistencias:checar_asistencia')
+    else:
+        form = AsistenciaCheckForm()
 
+    return render(request, 'asistencias/checar.html', {
+        'form': form,
+    })
+    
 
-def registrar_salida(request):
-    """
-    Registra la salida del día para un profesor sin necesidad de login.
-    Si no había entrada, avisa; si ya tenía salida, informa; si no, guarda hora_salida.
-    """
-    form = AsistenciaSalidaForm(request.POST or None)
+# asistencias/views.py
 
-    if request.method == 'POST' and form.is_valid():
-        numero = form.cleaned_data['numero_empleado']
-        profesor = get_object_or_404(Profesor, numero_empleado=numero)
+from django.shortcuts import render
+from django.contrib.admin.views.decorators import staff_member_required
+from django.utils import timezone
+from django.db.models import Q
 
-        hoy = timezone.localdate()
-        ahora = timezone.localtime().time()
-
-        try:
-            asistencia = Asistencia.objects.get(profesor=profesor, fecha=hoy)
-            if asistencia.hora_salida is None:
-                asistencia.hora_salida = ahora
-                asistencia.save(update_fields=['hora_salida'])
-                messages.success(request, "Salida registrada correctamente.")
-            else:
-                messages.info(request, "Ya registraste tu salida hoy.")
-        except Asistencia.DoesNotExist:
-            messages.error(request, "Primero debes registrar tu entrada.")
-
-        return redirect('asistencias:registrar_salida')
-
-    return render(request, 'asistencias/salida.html', {'form': form})
-
+from .models import Asistencia
 
 @staff_member_required
 def listar_asistencias(request):
     """
-    Lista todas las asistencias del día, accesible solo para usuarios staff.
+    Lista todas las asistencias del día para el personal staff.
+    Permite buscar por número de empleado o nombre.
+    Muestra además totales, completadas y pendientes.
     """
+    # Fecha actual
     hoy = timezone.localdate()
-    asistencias = Asistencia.objects.filter(fecha=hoy).order_by('hora_entrada')
+
+    # Base queryset: todas las asistencias de hoy
+    asistencias = Asistencia.objects.filter(
+        fecha=hoy
+    ).select_related(
+        'profesor', 'escuela'
+    ).order_by('hora_entrada')
+
+    # Estadísticas
+    total     = asistencias.count()
+    completas = asistencias.exclude(hora_salida__isnull=True).count()
+    pendientes= total - completas
+
+    # Filtro de búsqueda
+    query = request.GET.get('q', '').strip()
+    if query:
+        asistencias = asistencias.filter(
+            Q(profesor__numero_empleado__icontains=query) |
+            Q(profesor__nombre__icontains=query) |
+            Q(profesor__apellido_paterno__icontains=query) |
+            Q(profesor__apellido_materno__icontains=query)
+        )
+
     return render(request, 'asistencias/listado.html', {
         'asistencias': asistencias,
-        'fecha': hoy
+        'fecha':        hoy,
+        'total':        total,
+        'completas':    completas,
+        'pendientes':   pendientes,
+        'query':        query,
     })
+

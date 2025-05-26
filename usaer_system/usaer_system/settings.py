@@ -39,20 +39,24 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     
     # mis apps
-    'usuarios',
+    'usuarios.apps.UsuariosConfig',
     'escuelas',
     'asistencias',
     'permisos',
     'incidencias',
     'documentos',
+    'alumnos',
+    
     
     #dependencias
-    "crispy_forms",
-    "crispy_bootstrap5",
+    'crispy_forms',
+    'crispy_bootstrap5',
 ]
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
+
+AUTH_USER_MODEL = 'usuarios.User'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

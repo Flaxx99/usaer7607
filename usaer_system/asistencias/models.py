@@ -1,9 +1,9 @@
 from django.db import models
-from usuarios.models import Profesor
+from django.conf import settings
 from escuelas.models import Escuela
 
 class Asistencia(models.Model):
-    profesor = models.ForeignKey(Profesor, on_delete=models.CASCADE, verbose_name="Profesor")
+    profesor = models.ForeignKey(settings.AUTH_USER_MODEL, limit_choices_to={'role': 'Profesor'}, on_delete=models.SET_NULL, null=True, verbose_name="Profesor")
     escuela = models.ForeignKey(Escuela, on_delete=models.CASCADE, verbose_name="Escuela")
     fecha = models.DateField("Fecha")
     presente = models.BooleanField("Presente")
