@@ -1,36 +1,36 @@
+# asistencias/forms.py
+
 from django import forms
-from escuelas.models import Escuela
+from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Layout, Field, Submit
 
 class AsistenciaEntradaForm(forms.Form):
     numero_empleado = forms.CharField(
-        label="Número de empleado",
+        label="Código de empleado",
         max_length=20,
-        widget=forms.TextInput(attrs={
-            'placeholder': 'Ingresa tu número de empleado',
-            'class': 'form-control'
-        })
-    )
-
-    escuela = forms.ModelChoiceField(
-        queryset=Escuela.objects.none(),
-        label="Escuela actual",
-        empty_label="Seleccione una escuela",
-        widget=forms.Select(attrs={'class': 'form-control'})
     )
 
     def __init__(self, *args, **kwargs):
-        profesor = kwargs.pop('profesor', None)
         super().__init__(*args, **kwargs)
-        if profesor:
-            self.fields['escuela'].queryset = profesor.escuelas.all()
+        self.helper = FormHelper()
+        self.helper.form_method = 'post'
+        self.helper.layout = Layout(
+            Field('numero_empleado', placeholder="Ingresa tu código..."),
+            Submit('submit', 'Registrar Entrada', css_class='btn btn-primary w-100 mt-3')
+        )
 
 
 class AsistenciaSalidaForm(forms.Form):
     numero_empleado = forms.CharField(
-        label="Número de empleado",
+        label="Código de empleado",
         max_length=20,
-        widget=forms.TextInput(attrs={
-            'placeholder': 'Ingresa tu número de empleado',
-            'class': 'form-control'
-        })
     )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_method = 'post'
+        self.helper.layout = Layout(
+            Field('numero_empleado', placeholder="Ingresa tu código..."),
+            Submit('submit', 'Registrar Salida', css_class='btn btn-primary w-100 mt-3')
+        )

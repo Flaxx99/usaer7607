@@ -1,19 +1,22 @@
+{# templates/asistencias/entrada.html #}
 {% extends 'base.html' %}
-{% load crispy_forms_tags %}
+{% load static crispy_forms_tags %}
 
-{% block title %}Registrar Entrada{% endblock %}
+
+{% block title %}Checador – Registrar Entrada{% endblock %}
+
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-md-6">
-    <h2 class="mb-4">Registrar Entrada</h2>
-    <form method="post" novalidate>
-      {% csrf_token %}
-      {{ form|crispy }}
-      <div class="d-flex justify-content-between mt-3">
-        <button type="submit" class="btn btn-success">Marcar Entrada</button>
-        <a href="{% url 'asistencias:registrar_salida' %}" class="btn btn-outline-primary">Ir a Salida</a>
-      </div>
-    </form>
+  <div class="row justify-content-center mt-5">
+    <div class="col-md-6">
+
+      <h2 class="mb-3 text-center">Registrar Entrada</h2>
+      <p class="text-center text-muted">{{ hoy }}</p>
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {{ form|crispy }}
+      </form>
+
+    </div>
   </div>
-</div>
 {% endblock %}
