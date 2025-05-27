@@ -1,29 +1,108 @@
 {% extends 'base.html' %}
+{% load crispy_forms_tags %}
 
-{% block title %}Revisar Incidencias{% endblock %}
 {% block content %}
-<h1 class="mb-3">Revisar Incidencias</h1>
-<table class="table table-hover">
-  <thead class="table-light">
-    <tr>
-      <th>Profesor</th><th>Descripción</th><th>Fecha</th><th>Respuesta</th><th>Acciones</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for i in incidencias %}
-      <tr>
-        <td>{{ i.profesor }}</td>
-        <td>{{ i.descripcion|truncatechars:50 }}</td>
-        <td>{{ i.fecha|date:"Y-m-d H:i" }}</td>
-        <td>{{ i.respuesta_admin|default:"–" }}</td>
-        <td>
-          <a href="{% url 'incidencias:editar_incidencia' i.pk %}" class="btn btn-sm btn-primary">Responder</a>
-          <a href="{% url 'incidencias:eliminar_incidencia' i.pk %}" class="btn btn-sm btn-danger">Eliminar</a>
-        </td>
-      </tr>
-    {% empty %}
-      <tr><td colspan="5" class="text-center">No hay incidencias para revisar.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-clipboard-check me-2"></i>Gestión de Incidencias</h1>
+        <a href="{% url 'incidencias:crear_incidencia' %}" class="btn btn-success">
+            <i class="fas fa-plus-circle me-1"></i> Nueva Incidencia
+        </a>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-light">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <form class="row g-2">
+                        <div class="col-md-4">
+                            <select name="estado" class="form-select" onchange="this.form.submit()">
+                                <option value="">Todos los estados</option>
+                                {% for value, label in incidencias.first.get_estado_choices %}
+                                    <option value="{{ value }}" {% if filtros.estado == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <select name="profesor" class="form-select" onchange="this.form.submit()">
+                                <option value="">Todos los profesores</option>
+                                {% for profesor in profesores %}
+                                    <option value="{{ profesor.id }}" {% if filtros.profesor == profesor.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ profesor.get_full_name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="input-group">
+                                <input type="search" name="q" class="form-control" value="{{ filtros.query }}" placeholder="Buscar...">
+                                <button class="btn btn-primary" type="submit">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="col-md-6 text-end">
+                    <span class="badge bg-primary rounded-pill">Total: {{ total_incidencias }}</span>
+                    <span class="badge bg-warning text-dark rounded-pill ms-2">Pendientes: {{ pendientes }}</span>
+                    <span class="badge bg-success rounded-pill ms-2">Resueltas: {{ resueltas }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if incidencias %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Título</th>
+                            <th>Profesor</th>
+                            <th>Estado</th>
+                            <th>Fecha</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for incidencia in incidencias %}
+                        <tr>
+                            <td>{{ incidencia.titulo|truncatechars:30 }}</td>
+                            <td>{{ incidencia.profesor.get_full_name|default:"Sin asignar" }}</td>
+                            <td>
+                                <span class="badge bg-{% if incidencia.estado == 'PENDIENTE' %}warning text-dark{% elif incidencia.estado == 'RESUELTA' %}success{% else %}info{% endif %}">
+                                    {{ incidencia.get_estado_display }}
+                                </span>
+                            </td>
+                            <td>{{ incidencia.fecha_reporte|date:"d/m/Y" }}</td>
+                            <td class="text-end">
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'incidencias:editar_incidencia' incidencia.pk %}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% if incidencia.estado != 'RESUELTA' %}
+                                    <a href="{% url 'incidencias:resolver_incidencia' incidencia.pk %}" 
+                                       class="btn btn-sm btn-outline-success">
+                                        <i class="fas fa-check-circle"></i>
+                                    </a>
+                                    {% endif %}
+                                    <a href="{% url 'incidencias:eliminar_incidencia' incidencia.pk %}" 
+                                       class="btn btn-sm btn-outline-danger">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info mb-0">
+                <i class="fas fa-info-circle me-2"></i>No se encontraron incidencias
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
 {% endblock %}

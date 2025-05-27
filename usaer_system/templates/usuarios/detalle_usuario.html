@@ -1,0 +1,101 @@
+{% extends "usuarios/base_usuarios.html" %}
+{% load i18n %}
+
+{% block title %}{% trans 'Detalles del Usuario' %}{% endblock %}
+
+{% block breadcrumb_items %}
+› {% trans 'Detalles del Usuario' %}
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">{{ usuario.get_full_name }}</h3>
+        <div class="card-tools">
+            <span class="badge badge-{% if usuario.activo %}success{% else %}danger{% endif %}">
+                {% if usuario.activo %}{% trans 'Activo' %}{% else %}{% trans 'Inactivo' %}{% endif %}
+            </span>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h4>{% trans 'Información Personal' %}</h4>
+                <dl class="row">
+                    <dt class="col-sm-4">{% trans 'Rol' %}:</dt>
+                    <dd class="col-sm-8">{{ usuario.get_role_display }}</dd>
+
+                    <dt class="col-sm-4">{% trans 'Escuela' %}:</dt>
+                    <dd class="col-sm-8">{{ usuario.escuela.nombre|default:"-" }}</dd>
+
+                    <dt class="col-sm-4">{% trans 'CURP' %}:</dt>
+                    <dd class="col-sm-8">{{ usuario.curp|default:"-" }}</dd>
+
+                    <dt class="col-sm-4">{% trans 'RFC' %}:</dt>
+                    <dd class="col-sm-8">{{ usuario.rfc|default:"-" }}</dd>
+
+                    <dt class="col-sm-4">{% trans 'Número de empleado' %}:</dt>
+                    <dd class="col-sm-8">{{ usuario.numero_empleado|default:"-" }}</dd>
+                </dl>
+            </div>
+            <div class="col-md-6">
+                <h4>{% trans 'Información Laboral' %}</h4>
+                <dl class="row">
+                    <dt class="col-sm-4">{% trans 'Puesto' %}:</dt>
+                    <dd class="col-sm-8">{{ usuario.get_puesto_display|default:"-" }}</dd>
+
+                    <dt class="col-sm-4">{% trans 'Situación' %}:</dt>
+                    <dd class="col-sm-8">{{ usuario.get_situacion_display|default:"-" }}</dd>
+
+                    <dt class="col-sm-4">{% trans 'Nivel educativo' %}:</dt>
+                    <dd class="col-sm-8">{{ usuario.get_nivel_display|default:"-" }}</dd>
+
+                    <dt class="col-sm-4">{% trans 'Grado(s)' %}:</dt>
+                    <dd class="col-sm-8">{{ usuario.grado|default:"-" }}</dd>
+
+                    <dt class="col-sm-4">{% trans 'Fecha de ingreso' %}:</dt>
+                    <dd class="col-sm-8">{{ usuario.fecha_ingreso|date:"d/m/Y"|default:"-" }}</dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <h4>{% trans 'Información de Contacto' %}</h4>
+                <dl class="row">
+                    <dt class="col-sm-2">{% trans 'Domicilio' %}:</dt>
+                    <dd class="col-sm-10">{{ usuario.domicilio|default:"-" }}</dd>
+
+                    <dt class="col-sm-2">{% trans 'Teléfono' %}:</dt>
+                    <dd class="col-sm-10">{{ usuario.telefono|default:"-" }}</dd>
+
+                    <dt class="col-sm-2">{% trans 'Celular' %}:</dt>
+                    <dd class="col-sm-10">{{ usuario.celular|default:"-" }}</dd>
+
+                    <dt class="col-sm-2">{% trans 'Correo alterno' %}:</dt>
+                    <dd class="col-sm-10">{{ usuario.correo|default:"-" }}</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+    <div class="card-footer">
+        <div class="d-flex justify-content-between">
+            <a href="{% url 'usuarios:list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> {% trans 'Regresar' %}
+            </a>
+            <div class="btn-group">
+                {% if perms.usuarios.change_user %}
+                <a href="{% url 'usuarios:update' usuario.pk %}" class="btn btn-primary">
+                    <i class="fas fa-edit"></i> {% trans 'Editar' %}
+                </a>
+                {% endif %}
+                {% if perms.usuarios.delete_user %}
+                <a href="{% url 'usuarios:delete' usuario.pk %}" class="btn btn-danger">
+                    <i class="fas fa-trash"></i> {% trans 'Eliminar' %}
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
