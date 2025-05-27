@@ -1,10 +1,4 @@
-<<<<<<< HEAD
-{% load static %}
-{% load crispy_forms_tags %}
-{% load group_filters %}
-=======
-{% load static crispy_forms_tags %}
->>>>>>> 6dcfed68be085d912db309c92c84c71fabfd3e1a
+{% load static crispy_forms_tags group_filters %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -12,17 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Gestor Escolar USAER 7607{% endblock %}</title>
 
-<<<<<<< HEAD
-  <!-- Bootstrap 5 CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"
-    integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
-  
-  <!-- Font Awesome (opcional) -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-  <!-- Estilos personalizados -->
-  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
-=======
   <!-- Bootstrap 5 CSS (CDN) -->
   <link
     href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
@@ -31,9 +14,13 @@
     crossorigin="anonymous"
   >
   <!-- Font Awesome para íconos -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    rel="stylesheet"
+    integrity="sha384-pQw5xr3HqL+oS6DGm+PplV+1B2hL5zYcY4GvYQ0sZW6r+8DlYx2NQJ5FP4HyDa+X"
+    crossorigin="anonymous"
+  >
   {% block extra_css %}{% endblock %}
->>>>>>> 6dcfed68be085d912db309c92c84c71fabfd3e1a
 </head>
 <body class="bg-light">
 
@@ -50,51 +37,67 @@
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
           <!-- Checador público -->
           <li class="nav-item">
-<<<<<<< HEAD
-            <a class="nav-link" href="{% url 'index' %}">Asistencia</a>
-=======
             <a class="nav-link" href="{% url 'index' %}">
               <i class="fas fa-clipboard-check me-1"></i>Checador
             </a>
->>>>>>> 6dcfed68be085d912db309c92c84c71fabfd3e1a
           </li>
 
           {% if user.is_authenticated %}
             {# Menú para Profesores #}
-            {% if user.role == 'Profesor' %}
-              <li class="nav-item"><a class="nav-link" href="{% url 'permisos:crear_permiso' %}"><i class="fas fa-file-signature me-1"></i>Permisos</a></li>
-              <li class="nav-item"><a class="nav-link" href="{% url 'incidencias:listar_incidencias' %}"><i class="fas fa-exclamation-circle me-1"></i>Incidencias</a></li>
-              <li class="nav-item"><a class="nav-link" href="{% url 'alumnos:listar_alumnos' %}"><i class="fas fa-users me-1"></i>Alumnos</a></li>
-              <li class="nav-item"><a class="nav-link" href="{% url 'alumnos:exportar_rac' %}"><i class="fas fa-file-export me-1"></i>Exportar RAC</a></li>
-              <li class="nav-item"><a class="nav-link" href="{% url 'documentos:listar_rae' %}"><i class="fas fa-book me-1"></i>R.A.E.</a></li>
+            {% if user.role == 'PROFESOR' %}
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'permisos:solicitar' %}">
+                  <i class="fas fa-file-signature me-1"></i>Solicitar Permiso
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'incidencias:listar_incidencias' %}">
+                  <i class="fas fa-exclamation-circle me-1"></i>Incidencias
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'alumnos:listar_alumnos' %}">
+                  <i class="fas fa-users me-1"></i>Alumnos
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'alumnos:exportar_rac' %}">
+                  <i class="fas fa-file-export me-1"></i>Exportar RAC
+                </a>
+              </li>
             {% endif %}
 
             {# Menú para Directores #}
-            {% if user.role == 'Director' %}
-              <li class="nav-item"><a class="nav-link" href="{% url 'usuarios:listar_profesores' %}"><i class="fas fa-chalkboard-teacher me-1"></i>Profesores</a></li>
-              <li class="nav-item"><a class="nav-link" href="{% url 'permisos:revisar_permisos' %}"><i class="fas fa-clipboard-list me-1"></i>Revisar Permisos</a></li>
-              <li class="nav-item"><a class="nav-link" href="{% url 'incidencias:revisar_incidencias' %}"><i class="fas fa-tasks me-1"></i>Revisar Incidencias</a></li>
-              <li class="nav-item"><a class="nav-link" href="{% url 'documentos:revisar_rae' %}"><i class="fas fa-book-open me-1"></i>Revisar R.A.E.</a></li>
-              <li class="nav-item"><a class="nav-link" href="{% url 'documentos:revisar_rac' %}"><i class="fas fa-file-alt me-1"></i>Revisar R.A.C.</a></li>
+            {% if user.role == 'DIRECTOR' %}
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'permisos:gestionar' %}">
+                  <i class="fas fa-clipboard-list me-1"></i>Gestionar Permisos
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'incidencias:revisar_incidencias' %}">
+                  <i class="fas fa-tasks me-1"></i>Revisar Incidencias
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'usuarios:listar_usuarios' %}">
+                  <i class="fas fa-chalkboard-teacher me-1"></i>Profesores
+                </a>
+              </li>
             {% endif %}
 
-<<<<<<< HEAD
-            {# Administrador (staff): catálogo completo #}
-            {% if user.is_staff %}
-              <li class="nav-item">
-                <a class="nav-link" href="{% url 'escuelas:listar_escuelas' %}">Escuelas</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="{% url 'usuarios:listar_profesores' %}">Profesores</a>
-              </li>
-=======
             {# Menú para Secretarios #}
-            {% if user.role == 'Secretario' %}
-              <li class="nav-item"><a class="nav-link" href="{% url 'escuelas:listar_escuelas' %}"><i class="fas fa-university me-1"></i>Escuelas</a></li>
-              <li class="nav-item"><a class="nav-link" href="{% url 'alumnos:listar_alumnos' %}"><i class="fas fa-users me-1"></i>Alumnos</a></li>
-              <li class="nav-item"><a class="nav-link" href="{% url 'permisos:listar_permisos' %}"><i class="fas fa-clipboard-list me-1"></i>Permisos</a></li>
-              <li class="nav-item"><a class="nav-link" href="{% url 'incidencias:listar_incidencias' %}"><i class="fas fa-exclamation-triangle me-1"></i>Incidencias</a></li>
->>>>>>> 6dcfed68be085d912db309c92c84c71fabfd3e1a
+            {% if user.role == 'SECRETARIO' %}
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'escuelas:listar_escuelas' %}">
+                  <i class="fas fa-university me-1"></i>Escuelas
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'permisos:mis_permisos' %}">
+                  <i class="fas fa-clipboard-list me-1"></i>Mis Permisos
+                </a>
+              </li>
             {% endif %}
           {% endif %}
         </ul>
@@ -102,15 +105,9 @@
         <ul class="navbar-nav ms-auto">
           {% if user.is_authenticated %}
             <li class="nav-item">
-<<<<<<< HEAD
-              <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true">
-                Hola, {{ user.username }}
-              </a>
-=======
               <span class="navbar-text me-3">
                 <i class="fas fa-user-circle me-1"></i>Hola, {{ user.get_full_name }}
               </span>
->>>>>>> 6dcfed68be085d912db309c92c84c71fabfd3e1a
             </li>
             <li class="nav-item">
               <form method="post" action="{% url 'logout' %}" class="d-inline">
@@ -120,7 +117,6 @@
                 </button>
               </form>
             </li>
-
           {% else %}
             <li class="nav-item">
               <a class="nav-link" href="{% url 'login' %}">
@@ -141,7 +137,7 @@
           {% if message.tags == 'success' %}fa-check-circle
           {% elif message.tags == 'error' %}fa-times-circle
           {% elif message.tags == 'warning' %}fa-exclamation-triangle
-          {% else %}fa-info-circle{% endif %} 
+          {% else %}fa-info-circle{% endif %}
           me-2"></i>
         {{ message }}
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
@@ -150,32 +146,22 @@
   </div>
 
   <!-- Contenido principal -->
-  <main class="container py-4 mb-4">
+  <main class="container py-4">
     {% block content %}{% endblock %}
   </main>
 
-<<<<<<< HEAD
-  <!-- Bootstrap 5 JS Bundle with Popper -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
-    integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz"
-    crossorigin="anonymous"></script>
-
-  <!-- Scripts personalizados -->
-  <script src="{% static 'js/main.js' %}"></script>
-=======
-  <!-- jQuery (requerido para Bootstrap y Crispy Forms) -->
-  <script src="https://code.jquery.com/jquery-3.7.1.min.js" 
-          integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" 
-          crossorigin="anonymous"></script>
-  
+  <!-- jQuery (opcional) -->
+  <script
+    src="https://code.jquery.com/jquery-3.7.1.min.js"
+    integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+    crossorigin="anonymous"
+  ></script>
   <!-- Bootstrap 5 JS Bundle con Popper -->
   <script
     src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
     integrity="sha384-qQ2cv+AO+UzEbQeTSmdPQOS1PcXum6JN7eXVf1C68ydv5v3RdbfVbFJL3n6gBrGe"
     crossorigin="anonymous"
   ></script>
-  
   {% block extra_js %}{% endblock %}
->>>>>>> 6dcfed68be085d912db309c92c84c71fabfd3e1a
 </body>
 </html>

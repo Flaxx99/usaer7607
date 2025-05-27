@@ -1,13 +1,14 @@
 from django.contrib import admin
 from django.urls import path, include
-from asistencias.views import checar_asistencia
+from . import views as core_views
+
 
 urlpatterns = [
     # Panel de administración de Django
     path('admin/', admin.site.urls),
 
     # Checador público (entrada/salida) sin login
-    path('', checar_asistencia, name='index'),
+    path('', core_views.index, name='index'),
 
     # Autenticación (login, logout, password reset…)
     path('accounts/', include('django.contrib.auth.urls')),
