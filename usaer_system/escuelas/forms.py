@@ -9,7 +9,7 @@ class EscuelaForm(forms.ModelForm):
         fields = [
             'clave_estatal', 'clave_federal', 'nombre', 'nivel',
             'domicilio', 'colonia', 'telefono_escuela', 'zona',
-            'directora', 'cel_directora', 'correo_directora',
+            'director', 'cel_director', 'correo_director',
             'inspector', 'tel_inspector', 'correo_inspector',
             'situacion',
         ]
@@ -22,12 +22,12 @@ class EscuelaForm(forms.ModelForm):
             'colonia':          "Colonia",
             'telefono_escuela': "Teléfono escuela",
             'zona':             "Zona",
-            'directora':        "Directora",
-            'cel_directora':    "Cel. Directora",
-            'correo_directora': "Correo Directora",
-            'inspector':        "Inspector",
-            'tel_inspector':    "Tel. Inspector",
-            'correo_inspector': "Correo Inspector",
+            'director/a':        "Director/a",
+            'cel_director/a':    "Cel. Director/a",
+            'correo_director/a': "Correo Director/a",
+            'inspector/a':        "Inspector/a",
+            'tel_inspector/a':    "Tel. Inspector/a",
+            'correo_inspector/a': "Correo Inspector/a",
             'situacion':        "Situación",
         }
 
@@ -56,18 +56,18 @@ class EscuelaForm(forms.ModelForm):
                 Div(Field('situacion'),        css_class='col-md-6'),
                 css_class='row mb-3'
             ),
-            # Bloque Directora
+            # Bloque Director
             Div(
-                Div(Field('directora'),        css_class='col-md-4'),
-                Div(Field('cel_directora'),    css_class='col-md-4'),
-                Div(Field('correo_directora'), css_class='col-md-4'),
+                Div(Field('director/a'),        css_class='col-md-4'),
+                Div(Field('cel_director/a'),    css_class='col-md-4'),
+                Div(Field('correo_director/a'), css_class='col-md-4'),
                 css_class='row mb-3'
             ),
             # Bloque Inspector
             Div(
-                Div(Field('inspector'),        css_class='col-md-4'),
-                Div(Field('tel_inspector'),    css_class='col-md-4'),
-                Div(Field('correo_inspector'), css_class='col-md-4'),
+                Div(Field('inspector/a'),        css_class='col-md-4'),
+                Div(Field('tel_inspector/a'),    css_class='col-md-4'),
+                Div(Field('correo_inspector/a'), css_class='col-md-4'),
                 css_class='row mb-4'
             ),
             Submit('submit', 'Guardar Escuela', css_class='btn btn-primary')

@@ -1,5 +1,7 @@
-{% extends "usuarios/base_usuarios.html" %}
-{% load static i18n %}
+{% extends 'base.html' %}
+{% load crispy_forms_tags %} 
+{% load group_filters %}
+{% load i18n %}
 
 {% block title %}{% trans 'Gestión de Usuarios' %}{% endblock %}
 

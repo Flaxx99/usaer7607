@@ -16,15 +16,15 @@ class Escuela(models.Model):
     telefono_escuela = models.CharField("Teléfono escuela", max_length=20)
     zona = models.CharField("Zona", max_length=10)
 
-    # Datos de la Directora (principal)
-    directora = models.CharField("Directora", max_length=100, blank=True)
-    cel_directora = models.CharField("Cel. Directora", max_length=20, blank=True)
-    correo_directora = models.EmailField("Correo Directora", blank=True)
+    # Datos del Director
+    director = models.CharField("Director/a", max_length=100, blank=True)
+    cel_director = models.CharField("Cel. Director/a", max_length=20, blank=True)
+    correo_director = models.EmailField("Correo Director/a", blank=True)
 
     # Datos del Inspector
-    inspector = models.CharField("Inspector", max_length=100, blank=True)
-    tel_inspector = models.CharField("Tel. Inspector", max_length=20, blank=True)
-    correo_inspector = models.EmailField("Correo Inspector", blank=True)
+    inspector = models.CharField("Inspector/a", max_length=100, blank=True)
+    tel_inspector = models.CharField("Tel. Inspector/a", max_length=20, blank=True)
+    correo_inspector = models.EmailField("Correo Inspector/a", blank=True)
 
     # Información adicional
     situacion = models.CharField("Situación", max_length=50, blank=True)
