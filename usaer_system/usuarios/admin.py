@@ -1,59 +1,45 @@
 from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.contrib.auth.admin import UserAdmin
 from django.utils.translation import gettext_lazy as _
-<<<<<<< HEAD
 from .models import User
+from .forms import UsuarioCreationForm, UsuarioChangeForm
 
-@admin.register(User)
-class UserAdmin(BaseUserAdmin):
-    list_display  = ('username', 'get_full_name', 'role', 'numero_empleado', 'is_active', 'is_staff')
-    list_filter   = ('role', 'is_active', 'is_staff', 'is_superuser')
-    search_fields = ('username','numero_empleado','curp','first_name','last_name','email')
-    ordering      = ('username',)
-
-    fieldsets = (
-        (None, {
-            'fields': ('username','password')
-        }),
-        (_('Información personal'), {
-            'fields': (
-                'nombre','apellido_paterno','apellido_materno',
-                'email','telefono','celular','domicilio'
-            )
-        }),
-        (_('Identificación'), {
-            'fields': (
-                'curp','rfc','clave_presupuestal',
-                'numero_empleado','numero_pensiones'
-            )
-        }),
-        (_('Asignación y rol'), {
-            'fields': (
-                'role','escuela','nivel','grado',
-                'puesto','situacion','escolaridad',
-                'fecha_ingreso','activo'
-=======
-
-from .models import User
-
-@admin.register(User)
-class UserAdmin(BaseUserAdmin):
-    # Columns to display in the changelist
+class UserAdminConfig(UserAdmin):
+    form = UsuarioChangeForm
+    add_form = UsuarioCreationForm
+    
+    # Campos a mostrar en la lista de usuarios
     list_display = (
-        'username',
-        'get_full_name',   # heredado de AbstractUser
+        'username', 
+        'get_full_name',
         'role',
-        'numero_empleado',
-        'is_staff',
+        'escuela',
+        'puesto',
+        'activo'
     )
+    
     list_filter = (
         'role',
-        'is_staff',
-        'is_superuser',
-        'is_active',
+        'escuela',
+        'puesto',
+        'activo',
+        'nivel',
+        'situacion'
     )
-
-    # Organiza los campos en pestañas/fieldsets dentro del form de edición
+    
+    search_fields = (
+        'username',
+        'nombre',
+        'apellido_paterno',
+        'apellido_materno',
+        'numero_empleado',
+        'curp',
+        'rfc'
+    )
+    
+    ordering = ('apellido_paterno', 'apellido_materno', 'nombre')
+    
+    # Campos para la vista de edición
     fieldsets = (
         (None, {'fields': ('username', 'password')}),
         (_('Información personal'), {
@@ -61,74 +47,77 @@ class UserAdmin(BaseUserAdmin):
                 'nombre',
                 'apellido_paterno',
                 'apellido_materno',
-                'curp',
-                'rfc',
-                'clave_presupuestal',
-                'numero_empleado',
-                'numero_pensiones',
-                'correo',
+                ('curp', 'rfc'),
+                'numero_empleado'
             )
         }),
-        (_('Asignación'), {
+        (_('Información de contacto'), {
+            'fields': (
+                'domicilio',
+                ('telefono', 'celular'),
+                'correo'
+            )
+        }),
+        (_('Información académica'), {
+            'fields': (
+                ('nivel', 'grado'),
+                'escolaridad'
+            )
+        }),
+        (_('Información laboral'), {
             'fields': (
                 'role',
                 'escuela',
-                'nivel',
-                'grado',
-                'puesto',
-                'situacion',
-                'escolaridad',
+                ('puesto', 'situacion'),
                 'fecha_ingreso',
-                'activo',
->>>>>>> 6dcfed68be085d912db309c92c84c71fabfd3e1a
+                'clave_presupuestal',
+                'numero_pensiones',
+                'activo'
             )
         }),
         (_('Permisos'), {
             'fields': (
-<<<<<<< HEAD
-                'is_active','is_staff','is_superuser',
-                'groups','user_permissions'
-            )
-        }),
-        (_('Fechas importantes'), {
-            'fields': ('last_login','date_joined')
-        }),
-    )
-
-=======
                 'is_active',
                 'is_staff',
                 'is_superuser',
-                #'groups',
-                'user_permissions',
+                'groups',
+                'user_permissions'
+            ),
+        }),
+        (_('Fechas importantes'), {
+            'fields': (
+                'last_login',
+                'date_joined'
             )
         }),
-        (_('Fechas importantes'), {'fields': ('last_login', 'date_joined')}),
     )
-
-    # Cuando creas un usuario nuevo
->>>>>>> 6dcfed68be085d912db309c92c84c71fabfd3e1a
+    
+    # Campos para la vista de creación
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
             'fields': (
-<<<<<<< HEAD
-                'username','password1','password2',
-                'role','numero_empleado','escuela'
-            ),
-        }),
-    )
-=======
                 'username',
                 'password1',
                 'password2',
                 'role',
-                'escuela',
-                'numero_empleado',
+                'escuela'
             ),
         }),
+        (_('Información personal'), {
+            'fields': (
+                'nombre',
+                'apellido_paterno',
+                'apellido_materno',
+                ('curp', 'rfc'),
+                'numero_empleado'
+            )
+        }),
     )
+    
+    # Método para mostrar nombre completo en admin
+    def get_full_name(self, obj):
+        return obj.get_full_name()
+    get_full_name.short_description = _('Nombre completo')
 
-    search_fields = ('username', 'numero_empleado', 'curp', 'nombre', 'apellido_paterno')
-    ordering = ('username',)
->>>>>>> 6dcfed68be085d912db309c92c84c71fabfd3e1a
+admin.site.register(User, UserAdminConfig)

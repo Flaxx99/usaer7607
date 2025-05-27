@@ -1,14 +1,22 @@
 {% extends 'base.html' %}
+{% load static %}
+
 {% block title %}Mis Alumnos{% endblock %}
 
 {% block content %}
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Mis Alumnos</h2>
-    <a href="{% url 'alumnos:crear_alumno' %}" class="btn btn-primary">
-      + Nuevo Alumno
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2>Mis Alumnos</h2>
+  <div>
+    <a href="{% url 'alumnos:crear_alumno' %}" class="btn btn-primary me-2">
+      <i class="fas fa-plus"></i> Nuevo Alumno
+    </a>
+    <a href="{% url 'alumnos:exportar_rac' %}" class="btn btn-outline-success">
+      <i class="fas fa-file-excel"></i> Exportar RAC
     </a>
   </div>
+</div>
 
+{% if alumnos %}
   <div class="table-responsive">
     <table class="table table-striped align-middle">
       <thead class="table-light">
@@ -18,9 +26,8 @@
           <th>CURP</th>
           <th>Sexo</th>
           <th>Edad</th>
-          <th>Grado / Grupo</th>
-          <th>Clasificación</th>
-          <th></th>
+          <th>Grado</th>
+          <th class="text-end">Acciones</th>
         </tr>
       </thead>
       <tbody>
@@ -31,24 +38,23 @@
             <td>{{ a.curp }}</td>
             <td>{{ a.get_sexo_display }}</td>
             <td>{{ a.edad }}</td>
-            <td>{{ a.grado }}{% if a.grupo %} / {{ a.grupo }}{% endif %}</td>
-            <td>
-              {{ a.get_clasificacion_display }}
-              {% if a.clasificacion == 'OTRO' and a.clasificacion_otro %}
-                ({{ a.clasificacion_otro }})
-              {% endif %}
-            </td>
+            <td>{{ a.grado }}</td>
             <td class="text-end">
-              <a href="{% url 'alumnos:editar_alumno' a.pk %}" class="btn btn-sm btn-outline-secondary">✏️</a>
-              <a href="{% url 'alumnos:eliminar_alumno' a.pk %}" class="btn btn-sm btn-outline-danger">🗑️</a>
+              <a href="{% url 'alumnos:editar_alumno' a.pk %}" class="btn btn-sm btn-outline-secondary me-1">
+                <i class="fas fa-edit"></i>
+              </a>
+              <a href="{% url 'alumnos:eliminar_alumno' a.pk %}" class="btn btn-sm btn-outline-danger">
+                <i class="fas fa-trash-alt"></i>
+              </a>
             </td>
-          </tr>
-        {% empty %}
-          <tr>
-            <td colspan="8" class="text-center py-4">No tienes alumnos registrados.</td>
           </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
+{% else %}
+  <div class="alert alert-info">
+    No tienes alumnos registrados. <a href="{% url 'alumnos:crear_alumno' %}">Agrega uno aquí</a>.
+  </div>
+{% endif %}
 {% endblock %}

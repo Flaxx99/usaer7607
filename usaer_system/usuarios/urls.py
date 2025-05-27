@@ -2,16 +2,14 @@ from django.urls import path
 from . import views
 
 app_name = 'usuarios'
+
 urlpatterns = [
-<<<<<<< HEAD
-    path('profesores/',               views.listar_profesores, name='listar_profesores'),
-    path('profesores/nuevo/',         views.crear_profesor,    name='crear_profesor'),
-    path('profesores/<int:pk>/edit/', views.editar_profesor,   name='editar_profesor'),
-    path('profesores/<int:pk>/delete/',views.eliminar_profesor, name='eliminar_profesor'),
-=======
-    path('profesores/',         views.listar_profesores,  name='listar_profesores'),
-    path('profesores/nuevo/',   views.crear_profesor,     name='crear_profesor'),
-    path('profesores/<int:pk>/edit/',   views.editar_profesor,   name='editar_profesor'),
-    path('profesores/<int:pk>/delete/', views.eliminar_profesor, name='eliminar_profesor'),
->>>>>>> 6dcfed68be085d912db309c92c84c71fabfd3e1a
+    path('', views.UserListView.as_view(), name='list'),
+    path('nuevo/', views.UserCreateView.as_view(), name='create'),
+    path('<int:pk>/', views.UserDetailView.as_view(), name='detail'),
+    path('<int:pk>/editar/', views.UserUpdateView.as_view(), name='update'),
+    path('<int:pk>/eliminar/', views.UserDeleteView.as_view(), name='delete'),
+    path('<int:pk>/toggle-active/', views.toggle_user_active, name='toggle_active'),
+    path('perfil/', views.profile, name='profile'),
+    path('cambiar-contrasena/', views.change_password, name='change_password'),
 ]

@@ -1,17 +1,21 @@
 {% extends 'base.html' %}
 
-{% block title %}Confirmar eliminación{% endblock %}
+{% block title %}{{ titulo }}{% endblock %}
 
 {% block content %}
-  <h2 class="mb-4">¿Eliminar alumno?</h2>
+  <h2 class="mb-4">{{ titulo }}</h2>
   <p>
-    Confirma que deseas eliminar a
-    <strong>{{ alumno.apellido_paterno }} {{ alumno.apellido_materno }}, {{ alumno.nombres }}</strong>.
+    ¿Estás seguro de que deseas eliminar al alumno
+    <strong>{{ alumno.apellido_paterno }} {{ alumno.apellido_materno }}, {{ alumno.nombres }}</strong>?
     Esta acción no se puede deshacer.
   </p>
   <form method="post">
     {% csrf_token %}
-    <button type="submit" class="btn btn-danger">Sí, eliminar</button>
-    <a href="{% url 'alumnos:listar_alumnos' %}" class="btn btn-secondary ms-2">Cancelar</a>
+    <button type="submit" class="btn btn-danger">
+      <i class="fas fa-trash-alt"></i> Sí, eliminar
+    </button>
+    <a href="{% url 'alumnos:listar_alumnos' %}" class="btn btn-secondary ms-2">
+      <i class="fas fa-ban"></i> Cancelar
+    </a>
   </form>
 {% endblock %}

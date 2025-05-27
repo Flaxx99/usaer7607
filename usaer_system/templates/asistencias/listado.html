@@ -1,128 +1,107 @@
-{# templates/asistencias/listado.html #}
 {% extends 'base.html' %}
-{% load tz %}
-
-{% block title %}Listado de Asistencias – {{ fecha|date:"l, d/m/Y" }}{% endblock %}
-
-<<<<<<< HEAD
-{% block content %}
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Asistencias de {{ fecha|date:"l, d/m/Y" }}</h2>
-    <form method="get" class="d-flex" style="max-width: 300px;">
-      <input
-        type="text"
-        name="q"
-        value="{{ query }}"
-        class="form-control me-2"
-        placeholder="Buscar código o nombre…"
-      >
-      <button class="btn btn-outline-secondary">Buscar</button>
-    </form>
-  </div>
-
-  <div class="row mb-3">
-    <div class="col">
-      <div class="alert alert-primary">
-        <strong>Total:</strong> {{ total }}
-      </div>
-    </div>
-    <div class="col">
-      <div class="alert alert-success">
-        <strong>Completas:</strong> {{ completas }}
-      </div>
-    </div>
-    <div class="col">
-      <div class="alert alert-warning mb-0">
-        <strong>Pendientes:</strong> {{ pendientes }}
-      </div>
-    </div>
-  </div>
-
-  <div class="table-responsive">
-    <table class="table table-striped align-middle">
-      <thead class="table-light">
-        <tr>
-          <th scope="col">Empleado</th>
-          <th scope="col">Escuela</th>
-          <th scope="col">Entrada</th>
-          <th scope="col">Salida</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for a in asistencias %}
-          <tr>
-            <td>
-              {{ a.profesor.get_full_name }}<br>
-              <small class="text-muted">#{{ a.profesor.numero_empleado }}</small>
-            </td>
-            <td>{{ a.escuela.nombre }}</td>
-            <td>{{ a.hora_entrada|time:"H:i" }}</td>
-            <td>
-              {% if a.hora_salida %}
-                {{ a.hora_salida|time:"H:i" }}
-              {% else %}
-                <span class="text-muted">Pendiente</span>
-              {% endif %}
-            </td>
-          </tr>
-        {% empty %}
-          <tr>
-            <td colspan="4" class="text-center py-4">
-              No se han registrado asistencias para esta fecha.
-            </td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-=======
-{% block title %}Listado de Asistencias – {{ fecha }}{% endblock %}
 
 {% block content %}
-  <h2 class="mb-4">Asistencias de {{ fecha }}</h2>
-
-  <form method="get" class="mb-3">
-    <div class="input-group">
-      <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Buscar por código o nombre...">
-      <button class="btn btn-outline-secondary">Buscar</button>
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>
+            <i class="fas fa-clipboard-list me-2"></i>Control de Asistencias
+        </h1>
+        <div class="d-flex">
+            <form class="d-flex" method="get">
+                <input class="form-control me-2" type="search" name="q" 
+                       value="{{ query }}" placeholder="Buscar...">
+                <button class="btn btn-outline-primary" type="submit">
+                    <i class="fas fa-search"></i>
+                </button>
+            </form>
+        </div>
     </div>
-  </form>
 
-  <div class="mb-3">
-    <span class="me-3">Total: {{ total }}</span>
-    <span class="me-3 text-success">Completas: {{ completas }}</span>
-    <span class="text-warning">Pendientes: {{ pendientes }}</span>
-  </div>
-
-  <table class="table table-striped">
-    <thead>
-      <tr>
-        <th>Empleado</th>
-        <th>Escuela</th>
-        <th>Entrada</th>
-        <th>Salida</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for a in asistencias %}
-      <tr>
-        <td>{{ a.profesor.get_full_name }} ({{ a.profesor.numero_empleado }})</td>
-        <td>{{ a.escuela.nombre }}</td>
-        <td>{{ a.hora_entrada|time:"H:i" }}</td>
-        <td>
-          {% if a.hora_salida %}
-            {{ a.hora_salida|time:"H:i" }}
-          {% else %}
-            <span class="text-muted">Pendiente</span>
-          {% endif %}
-        </td>
-      </tr>
-      {% empty %}
-      <tr>
-        <td colspan="4" class="text-center">No hay registros para hoy.</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
->>>>>>> 6dcfed68be085d912db309c92c84c71fabfd3e1a
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-light">
+            <div class="row">
+                <div class="col">
+                    <h5 class="mb-0">Fecha: {{ fecha|date:"l, d F Y" }}</h5>
+                </div>
+                <div class="col-auto">
+                    <span class="badge bg-primary rounded-pill">
+                        Total: {{ total }}
+                    </span>
+                    <span class="badge bg-success rounded-pill ms-2">
+                        Completas: {{ completas }}
+                    </span>
+                    <span class="badge bg-warning text-dark rounded-pill ms-2">
+                        Pendientes: {{ pendientes }}
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if asistencias %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Profesor</th>
+                            <th>Escuela</th>
+                            <th class="text-center">Entrada</th>
+                            <th class="text-center">Salida</th>
+                            <th class="text-center">Horas</th>
+                            <th class="text-center">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for asistencia in asistencias %}
+                        <tr>
+                            <td>
+                                {{ asistencia.profesor.get_full_name }}
+                                <br>
+                                <small class="text-muted">{{ asistencia.profesor.numero_empleado }}</small>
+                            </td>
+                            <td>{{ asistencia.escuela.nombre }}</td>
+                            <td class="text-center">
+                                {% if asistencia.hora_entrada %}
+                                    {{ asistencia.hora_entrada|time:"H:i" }}
+                                {% else %}
+                                    <span class="text-danger">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if asistencia.hora_salida %}
+                                    {{ asistencia.hora_salida|time:"H:i" }}
+                                {% else %}
+                                    <span class="text-danger">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if asistencia.hora_entrada and asistencia.hora_salida %}
+                                    {% with delta=asistencia.duracion %}
+                                        {{ delta.hours }}h {{ delta.minutes }}m
+                                    {% endwith %}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if asistencia.hora_entrada and asistencia.hora_salida %}
+                                    <span class="badge bg-success">Completa</span>
+                                {% elif asistencia.hora_entrada %}
+                                    <span class="badge bg-warning text-dark">Pendiente</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Sin registro</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info mb-0">
+                <i class="fas fa-info-circle me-2"></i>No se encontraron registros de asistencia
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
 {% endblock %}

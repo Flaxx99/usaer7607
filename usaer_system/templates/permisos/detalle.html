@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-4"><i class="fas fa-info-circle me-2"></i>{{ titulo }}</h2>
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <dl class="row">
+        <dt class="col-sm-3">Profesor</dt>
+        <dd class="col-sm-9">{{ permiso.profesor.get_full_name }}</dd>
+
+        <dt class="col-sm-3">Escuela</dt>
+        <dd class="col-sm-9">{{ permiso.escuela.nombre }}</dd>
+
+        <dt class="col-sm-3">Tipo</dt>
+        <dd class="col-sm-9">{{ permiso.get_tipo_display }}</dd>
+
+        <dt class="col-sm-3">Motivo</dt>
+        <dd class="col-sm-9">{{ permiso.motivo }}</dd>
+
+        <dt class="col-sm-3">Fecha inicio</dt>
+        <dd class="col-sm-9">{{ permiso.fecha_inicio|date:"d/m/Y" }}</dd>
+
+        <dt class="col-sm-3">Fecha fin</dt>
+        <dd class="col-sm-9">{{ permiso.fecha_fin|date:"d/m/Y" }}</dd>
+
+        <dt class="col-sm-3">Estado</dt>
+        <dd class="col-sm-9">
+          {% if permiso.estado=='Pendiente' %}
+            <span class="badge bg-warning text-dark">Pendiente</span>
+          {% elif permiso.estado=='Aprobado' %}
+            <span class="badge bg-success">Aprobado</span>
+          {% else %}
+            <span class="badge bg-danger">Rechazado</span>
+          {% endif %}
+        </dd>
+
+        {% if permiso.respuesta_admin %}
+        <dt class="col-sm-3">Respuesta Admin</dt>
+        <dd class="col-sm-9">{{ permiso.respuesta_admin }}</dd>
+        {% endif %}
+      </dl>
+
+      <div class="mt-4">
+        <a href="{% url 'permisos:mis_permisos' %}" class="btn btn-secondary me-2">
+          <i class="fas fa-arrow-left me-1"></i> Volver
+        </a>
+        {% if es_administrador %}
+          <a href="{% url 'permisos:responder' permiso.pk %}" class="btn btn-primary">
+            <i class="fas fa-edit me-1"></i> Gestionar
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

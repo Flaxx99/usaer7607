@@ -3,24 +3,16 @@ from django.urls import path, include
 from asistencias.views import checar_asistencia
 
 urlpatterns = [
+    # Panel de administración de Django
     path('admin/', admin.site.urls),
-<<<<<<< HEAD
-    
+
+    # Checador público (entrada/salida) sin login
     path('', checar_asistencia, name='index'),
-    
-    path('asistencias/', include('asistencias.urls', namespace='asistencias')),
-    path('permisos/',    include('permisos.urls',    namespace='permisos')),
-    path('escuelas/',    include('escuelas.urls',    namespace='escuelas')),
-=======
 
-    # Checador público (entrada)
-    path('', registrar_entrada, name='index'),
-
-    # Auth (login, logout, password reset…)
+    # Autenticación (login, logout, password reset…)
     path('accounts/', include('django.contrib.auth.urls')),
 
-    # Apps internas
->>>>>>> 6dcfed68be085d912db309c92c84c71fabfd3e1a
+    # Módulos de la aplicación
     path('usuarios/',    include('usuarios.urls',    namespace='usuarios')),
     path('alumnos/',     include('alumnos.urls',     namespace='alumnos')),
     path('documentos/',  include('documentos.urls',  namespace='documentos')),

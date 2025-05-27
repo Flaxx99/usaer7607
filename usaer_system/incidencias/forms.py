@@ -31,3 +31,12 @@ class IncidenciaForm(forms.ModelForm):
             Field('respuesta_admin'),
             Submit('submit', 'Guardar', css_class='btn btn-primary mt-3')
         )
+
+class IncidenciaForm(forms.ModelForm):
+    def __init__(self, *args, escuela=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if escuela:
+            self.fields['profesor'].queryset = User.objects.filter(
+                escuela=escuela, 
+                role='Profesor'
+            )
