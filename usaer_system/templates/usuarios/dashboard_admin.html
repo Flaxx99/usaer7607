@@ -10,17 +10,20 @@
     <a href="{% url 'escuelas:listar_escuelas' %}" class="list-group-item list-group-item-action">
       🏫 Gestión de Escuelas
     </a>
-    <a href="{% url 'rae:reportes' %}" class="list-group-item list-group-item-action">
-      📄 Reportes Generales RAE/RAC
+    <a href="{% url 'alumnos:exportar_rac' %}" class="list-group-item list-group-item-action">
+      📄 Exportar RAC
     </a>
-    <a href="{% url 'documentos:subir' %}" class="list-group-item list-group-item-action">
-      📁 Control de Documentos y Plantillas
+    <a href="{% url 'documentos:subir_expediente' %}" class="list-group-item list-group-item-action">
+      📁 Control de Documentos
+    </a>
+    <a href="{% url 'incidencias:listar_incidencias' %}" class="list-group-item list-group-item-action">
+      🔄 Revisar Incidencias
+    </a>
+    <a href="{% url 'permisos:gestionar' %}" class="list-group-item list-group-item-action">
+      ✅ Gestionar Permisos
     </a>
     <a href="/admin/" class="list-group-item list-group-item-action">
-      🔒 Panel de Administración Django
-    </a>
-    <a href="{% url 'calendario:institucional' %}" class="list-group-item list-group-item-action">
-      📅 Calendario Institucional
+      🔒 Panel Django Admin
     </a>
   </div>
 </div>

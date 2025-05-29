@@ -10,7 +10,7 @@
     <div class="col-md-2">
       <select name="estado" class="form-select">
         {% for val,label in estados %}
-          <option value="{{ val }}" {% if estado_actual==val %}selected{% endif %}>{{ label }}</option>
+          <option value="{{ val }}" {% if estado_actual == val %}selected{% endif %}>{{ label }}</option>
         {% endfor %}
       </select>
     </div>
@@ -18,7 +18,7 @@
       <select name="escuela" class="form-select">
         <option value="">Todas las escuelas</option>
         {% for id,nombre in escuelas %}
-          <option value="{{ id }}" {% if escuela_actual==id|stringformat:"s" %}selected{% endif %}>
+          <option value="{{ id }}" {% if escuela_actual == id|stringformat:"s" %}selected{% endif %}>
             {{ nombre }}
           </option>
         {% endfor %}
@@ -28,7 +28,7 @@
       <select name="profesor" class="form-select">
         <option value="">Todos los profesores</option>
         {% for id,fn,ln in profesores %}
-          <option value="{{ id }}" {% if profesor_actual==id|stringformat:"s" %}selected{% endif %}>
+          <option value="{{ id }}" {% if profesor_actual == id|stringformat:"s" %}selected{% endif %}>
             {{ fn }} {{ ln }}
           </option>
         {% endfor %}
@@ -80,9 +80,9 @@
               <td>{{ p.get_tipo_display }}</td>
               <td>{{ p.created_at|date:"d/m/Y" }}</td>
               <td>
-                {% if p.estado=='Pendiente' %}
+                {% if p.estado == 'Pendiente' %}
                   <span class="badge bg-warning text-dark">Pendiente</span>
-                {% elif p.estado=='Aprobado' %}
+                {% elif p.estado == 'Aprobado' %}
                   <span class="badge bg-success">Aprobado</span>
                 {% else %}
                   <span class="badge bg-danger">Rechazado</span>

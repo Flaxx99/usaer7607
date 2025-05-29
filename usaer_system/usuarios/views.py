@@ -7,14 +7,13 @@ from django.urls import reverse_lazy
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import ListView, UpdateView, DeleteView, CreateView, DetailView
 from django.utils.decorators import method_decorator
-
 from .models import User
 from .forms import UsuarioCreationForm, UsuarioChangeForm
 from .decoradores import roles_permitidos
 from django.contrib.auth.forms import PasswordChangeForm
 from escuelas.models import Escuela
 
-@method_decorator(roles_permitidos(['ADMINISTRADOR']), name='dispatch')
+@method_decorator(roles_permitidos(['ADMIN']), name='dispatch')
 class UserListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     model = User
     template_name = 'usuarios/lista_usuarios.html'
@@ -43,7 +42,7 @@ class UserListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
         context['escuelas'] = Escuela.objects.all()
         return context
 
-@method_decorator(roles_permitidos(['ADMINISTRADOR']), name='dispatch')
+@method_decorator(roles_permitidos(['ADMIN']), name='dispatch')
 class UserCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
     model = User
     form_class = UsuarioCreationForm
@@ -65,7 +64,7 @@ class UserCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
         context['titulo'] = _('Crear nuevo usuario')
         return context
 
-@method_decorator(roles_permitidos(['ADMINISTRADOR']), name='dispatch')
+@method_decorator(roles_permitidos(['ADMIN']), name='dispatch')
 class UserUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     model = User
     form_class = UsuarioChangeForm
@@ -87,14 +86,14 @@ class UserUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
         context['titulo'] = _('Editar usuario')
         return context
 
-@method_decorator(roles_permitidos(['ADMINISTRADOR']), name='dispatch')
+@method_decorator(roles_permitidos(['ADMIN']), name='dispatch')
 class UserDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
     model = User
     template_name = 'usuarios/detalle_usuario.html'
     permission_required = 'usuarios.view_user'
     context_object_name = 'usuario'
 
-@method_decorator(roles_permitidos(['ADMINISTRADOR']), name='dispatch')
+@method_decorator(roles_permitidos(['ADMIN']), name='dispatch')
 class UserDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
     model = User
     template_name = 'usuarios/confirmar_eliminar_usuario.html'
@@ -106,7 +105,7 @@ class UserDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
         return super().delete(request, *args, **kwargs)
 
 @login_required
-@roles_permitidos(['ADMINISTRADOR'])
+@roles_permitidos(['ADMIN'])
 def toggle_user_active(request, pk):
     user = get_object_or_404(User, pk=pk)
     user.activo = not user.activo
@@ -148,10 +147,6 @@ def change_password(request):
         'form': form
     })
 
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import redirect
-from .models import User
-
 @login_required
 def redireccion_post_login(request):
     role = request.user.role
@@ -177,12 +172,6 @@ def redireccion_post_login(request):
     return redirect('usuarios:profile')
 
 
-
-
-
-from django.contrib.auth.decorators import login_required
-from .decoradores import roles_permitidos
-
 # Dashboard del DOCENTE
 @login_required
 @roles_permitidos(['DOCENTE'])
@@ -203,7 +192,7 @@ def dashboard_director(request):
 
 # Dashboard del ADMINISTRADOR
 @login_required
-@roles_permitidos(['ADMINISTRADOR'])
+@roles_permitidos(['ADMIN'])
 def dashboard_admin(request):
     return render(request, 'usuarios/dashboard_admin.html')
 

@@ -1,21 +1,20 @@
-# incidencias/urls.py
-
 from django.urls import path
 from . import views
+from usuarios.decoradores import roles_permitidos
 
 app_name = 'incidencias'
 
 urlpatterns = [
-    # Para que un Profesor vea sus propias incidencias
-    path('', views.listar_incidencias, name='listar_incidencias'),
-    # Para que el Director cree/acuse nuevas incidencias
-    path('crear/', views.crear_incidencia, name='crear_incidencia'),
-    # Panel del Director para revisar todas las incidencias de su escuela
-    path('revisar/', views.revisar_incidencias, name='revisar_incidencias'),
-    # Edición/actualización de una incidencia existente
-    path('<int:pk>/editar/', views.editar_incidencia, name='editar_incidencia'),
-    # Vista dedicada para marcar una incidencia como resuelta
-    path('<int:pk>/resolver/', views.resolver_incidencia, name='resolver_incidencia'),
-    # Eliminación de una incidencia (sólo Director/Staff)
-    path('<int:pk>/eliminar/', views.eliminar_incidencia, name='eliminar_incidencia'),
+    # Listado de incidencias: Profesores de campo, maestras de apoyo y Admin
+    path('', roles_permitidos(['DOCENTE', 'MAESTRO_APOYO', 'ADMIN'])(views.listar_incidencias), name='listar_incidencias'),
+    # Crear incidencia: Director y Admin
+    path('crear/', roles_permitidos(['DIRECTOR', 'ADMIN'])(views.crear_incidencia), name='crear_incidencia'),
+    # Revisar todas las incidencias: Director y Admin
+    path('revisar/', roles_permitidos(['DIRECTOR', 'ADMIN'])(views.revisar_incidencias), name='revisar_incidencias'),
+    # Editar una incidencia existente: Director y Admin
+    path('<int:pk>/editar/', roles_permitidos(['DIRECTOR', 'ADMIN'])(views.editar_incidencia), name='editar_incidencia'),
+    # Marcar incidencia como resuelta: Director y Admin
+    path('<int:pk>/resolver/', roles_permitidos(['DIRECTOR', 'ADMIN'])(views.resolver_incidencia), name='resolver_incidencia'),
+    # Eliminar incidencia: Director y Admin
+    path('<int:pk>/eliminar/', roles_permitidos(['DIRECTOR', 'ADMIN'])(views.eliminar_incidencia), name='eliminar_incidencia'),
 ]

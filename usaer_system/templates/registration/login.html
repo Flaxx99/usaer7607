@@ -9,20 +9,24 @@
   <div class="col-md-4">
     <h2 class="mb-4 text-center">Iniciar sesión</h2>
 
-    {# Muestra errores no asociados a ningún campo #}
+    {# Mostrar errores no asociados a campos concretos #}
     {% if form.non_field_errors %}
       <div class="alert alert-danger">
         {{ form.non_field_errors }}
       </div>
     {% endif %}
 
-    <form method="post" novalidate>
+    <form
+      method="post"
+      action="{% url 'login' %}{% if next %}?next={{ next|urlencode }}{% endif %}"
+      novalidate
+    >
       {% csrf_token %}
-      {# Usuario y contraseña #}
+      {# Campos de usuario y contraseña #}
       {{ form.username|as_crispy_field }}
       {{ form.password|as_crispy_field }}
 
-      {# Campo next si lo hay #}
+      {# Campo hidden para respetar el parámetro next #}
       {% if next %}
         <input type="hidden" name="next" value="{{ next }}">
       {% endif %}

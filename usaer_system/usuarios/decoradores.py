@@ -1,19 +1,18 @@
+# usuarios/decoradores.py
 from functools import wraps
 from django.core.exceptions import PermissionDenied
-from django.contrib.auth.views import redirect_to_login
+from django.contrib.auth.decorators import login_required
+from .models import User
 
 def roles_permitidos(roles):
     """
-    Decorador para vistas: solo usuarios con request.user.role en la lista roles.
+    Decorador para vistas: exige login y que request.user.role esté en la lista roles.
     """
     def decorator(view_func):
         @wraps(view_func)
+        @login_required  # maneja el 'next' y la redirección al LOGIN_URL automáticamente
         def _wrapped(request, *args, **kwargs):
-            if not request.user.is_authenticated:
-                # redirigir a login si no está autenticado
-                return redirect_to_login(request.get_full_path())
             if request.user.role not in roles:
-                # denegar si su role no está autorizado
                 raise PermissionDenied
             return view_func(request, *args, **kwargs)
         return _wrapped
@@ -21,11 +20,13 @@ def roles_permitidos(roles):
 
 def solo_admin(view_func):
     """
-    Decorador para vistas: solo Personal Administrativo (ADMIN) puede entrar.
+    Decorador para vistas: sólo Personal Administrativo (role == 'ADMIN') puede entrar.
     """
     @wraps(view_func)
+    @login_required
     def _wrapped(request, *args, **kwargs):
-        if not request.user.is_authenticated or request.user.role != request.user.Role.ADMINISTRATIVO:
+        # comparamos contra el .value correcto del enum
+        if request.user.role != User.Role.ADMIN.value:
             raise PermissionDenied
         return view_func(request, *args, **kwargs)
     return _wrapped

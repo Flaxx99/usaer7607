@@ -1,6 +1,7 @@
 from usuarios.admin import admin_site
 from django.urls import path, include
 from . import views as core_views
+from django.contrib.auth import views as auth_views
 
 
 urlpatterns = [
@@ -9,6 +10,8 @@ urlpatterns = [
 
     # Checador público (entrada/salida) sin login
     path('', core_views.index, name='index'),
+    
+    path('accounts/login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
 
     # Autenticación (login, logout, password reset…)
     path('accounts/', include('django.contrib.auth.urls')),
