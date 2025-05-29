@@ -43,6 +43,33 @@
           </li>
 
           {% if user.is_authenticated %}
+            {# Enlace al panel específico por rol #}
+            {% if user.role == 'DOCENTE' %}
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'usuarios:dashboard_docente' %}">
+                  <i class="fas fa-chalkboard me-1"></i>Panel Docente
+                </a>
+              </li>
+            {% elif user.role == 'SECRETARIO' %}
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'usuarios:dashboard_secretario' %}">
+                  <i class="fas fa-folder-open me-1"></i>Panel Secretario
+                </a>
+              </li>
+            {% elif user.role == 'DIRECTOR' %}
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'usuarios:dashboard_director' %}">
+                  <i class="fas fa-user-tie me-1"></i>Panel Director
+                </a>
+              </li>
+            {% elif user.role == 'ADMINISTRATIVO' %}
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'usuarios:dashboard_admin' %}">
+                  <i class="fas fa-tools me-1"></i>Panel Admin
+                </a>
+              </li>
+            {% endif %}
+
             {# Menú para Profesores #}
             {% if user.role == 'PROFESOR' %}
               <li class="nav-item">
@@ -80,7 +107,7 @@
                 </a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="{% url 'usuarios:listar_usuarios' %}">
+                <a class="nav-link" href="{% url 'usuarios:list' %}">
                   <i class="fas fa-chalkboard-teacher me-1"></i>Profesores
                 </a>
               </li>
@@ -130,20 +157,20 @@
   </nav>
 
   <!-- Mensajes flash -->
-<div class="container mt-3">
+  <div class="container mt-3">
     {% for message in messages %}
-        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-            <i class="fas 
-                {% if message.tags == 'success' %}fa-check-circle
-                {% elif message.tags == 'error' %}fa-times-circle
-                {% elif message.tags == 'warning' %}fa-exclamation-triangle
-                {% else %}fa-info-circle{% endif %}
-                me-2"></i>
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        <i class="fas 
+          {% if message.tags == 'success' %}fa-check-circle
+          {% elif message.tags == 'error' %}fa-times-circle
+          {% elif message.tags == 'warning' %}fa-exclamation-triangle
+          {% else %}fa-info-circle{% endif %}
+          me-2"></i>
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
     {% endfor %}
-</div>
+  </div>
 
   <!-- Contenido principal -->
   <main class="container py-4">

@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Panel Administrador{% endblock %}
+{% block content %}
+<div class="container">
+  <h2 class="mb-4">🧑‍💼 Panel del Administrador</h2>
+  <div class="list-group">
+    <a href="{% url 'usuarios:list' %}" class="list-group-item list-group-item-action">
+      👥 Gestión de Usuarios
+    </a>
+    <a href="{% url 'escuelas:listar_escuelas' %}" class="list-group-item list-group-item-action">
+      🏫 Gestión de Escuelas
+    </a>
+    <a href="{% url 'rae:reportes' %}" class="list-group-item list-group-item-action">
+      📄 Reportes Generales RAE/RAC
+    </a>
+    <a href="{% url 'documentos:subir' %}" class="list-group-item list-group-item-action">
+      📁 Control de Documentos y Plantillas
+    </a>
+    <a href="/admin/" class="list-group-item list-group-item-action">
+      🔒 Panel de Administración Django
+    </a>
+    <a href="{% url 'calendario:institucional' %}" class="list-group-item list-group-item-action">
+      📅 Calendario Institucional
+    </a>
+  </div>
+</div>
+{% endblock %}

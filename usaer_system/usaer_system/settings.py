@@ -41,7 +41,7 @@ INSTALLED_APPS = [
     
     # mis apps
     'usuarios.apps.UsuariosConfig',
-    'escuelas',
+    'escuelas.apps.EscuelasConfig',
     'asistencias',
     'permisos',
     'incidencias',
@@ -142,7 +142,7 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-LOGIN_REDIRECT_URL = 'index'
+LOGIN_REDIRECT_URL = '/usuarios/redireccion/'
 LOGOUT_REDIRECT_URL = 'index'
 LOGIN_URL = 'login'
 

@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <div class="container mt-4">
+    <h2>¡Expediente subido correctamente!</h2>
+    <a href="{% url 'subir_expediente' %}" class="btn btn-success">Subir otro expediente</a>
+  </div>
+{% endblock %}
