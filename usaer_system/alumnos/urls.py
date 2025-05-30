@@ -1,11 +1,13 @@
 from django.urls import path
 from . import views
+from usuarios.decoradores import roles_permitidos
 
 app_name = 'alumnos'
+
 urlpatterns = [
-    path('',               views.listar_alumnos, name='listar_alumnos'),
-    path('nuevo/',         views.crear_alumno,   name='crear_alumno'),
-    path('<int:pk>/edit/', views.editar_alumno, name='editar_alumno'),
-    path('<int:pk>/delete/', views.eliminar_alumno, name='eliminar_alumno'),
-    path('exportar/',      views.exportar_rac,   name='exportar_rac'),
+    path('',roles_permitidos(['DOCENTE', 'MAESTRO_APOYO', 'ADMIN'])(views.listar_alumnos),name='listar_alumnos'),
+    path('nuevo/',roles_permitidos(['DOCENTE', 'MAESTRO_APOYO'])(views.crear_alumno),name='crear_alumno'),
+    path('<int:pk>/edit/',roles_permitidos(['DOCENTE', 'MAESTRO_APOYO'])(views.editar_alumno),name='editar_alumno'),
+    path('<int:pk>/delete/',roles_permitidos(['DOCENTE', 'MAESTRO_APOYO'])(views.eliminar_alumno),name='eliminar_alumno'),
+    path('exportar/',roles_permitidos(['DOCENTE', 'MAESTRO_APOYO', 'ADMIN'])(views.exportar_rac),name='exportar_rac'),
 ]

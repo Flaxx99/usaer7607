@@ -234,9 +234,21 @@ class User(AbstractUser):
         verbose_name_plural = _('Usuarios')
         ordering = ['apellido_paterno', 'apellido_materno', 'nombre']
         constraints = [
-            models.UniqueConstraint(fields=['numero_empleado'], name='unique_numero_empleado', condition=models.Q(numero_empleado__isnull=False)),
-            models.UniqueConstraint(fields=['curp'], name='unique_curp', condition=models.Q(curp__isnull=False)),
-            models.UniqueConstraint(fields=['rfc'], name='unique_rfc', condition=models.Q(rfc__isnull=False)),
+            models.UniqueConstraint(
+                fields=['numero_empleado'], 
+                name='unique_numero_empleado', 
+                condition=models.Q(numero_empleado__isnull=False)
+            ),
+            models.UniqueConstraint(
+                fields=['curp'], 
+                name='unique_curp', 
+                condition=models.Q(curp__isnull=False)
+            ),
+            models.UniqueConstraint(
+                fields=['rfc'], 
+                name='unique_rfc', 
+                condition=models.Q(rfc__isnull=False)
+            ),
         ]
         indexes = [
             models.Index(fields=['role']),
@@ -255,16 +267,21 @@ class User(AbstractUser):
         return name
 
     def save(self, *args, **kwargs):
+        # Si es superusuario, forzamos rol Administrador y guardamos inmediatamente
+        if self.is_superuser:
+            self.role = self.Role.ADMINISTRADOR
+            return super().save(*args, **kwargs)
+
         # Autoasignar rol Director si corresponde
-        if not self.is_superuser and self.escuela and hasattr(self.escuela, 'director') and self.escuela.director == self:
+        if self.escuela and hasattr(self.escuela, 'director') and self.escuela.director == self:
             self.role = self.Role.DIRECTOR
-            
-        # Validar nombre según rol (excepto para superusuarios)
-        if not self.is_superuser and self.role in [self.Role.DIRECTOR, self.Role.DOCENTE]:
+
+        # Validar nombre según rol
+        if self.role in [self.Role.DIRECTOR, self.Role.DOCENTE]:
             if not self.nombre or not self.apellido_paterno:
                 raise ValueError(_("Nombre y apellido paterno son obligatorios para este rol"))
-        
-        super().save(*args, **kwargs)  # <-- Esta línea debe estar al mismo nivel que el def save()
+
+        super().save(*args, **kwargs)
 
     @property
     def nombre_completo(self):

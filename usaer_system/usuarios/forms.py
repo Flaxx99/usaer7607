@@ -74,16 +74,30 @@ class UsuarioCreationForm(UserCreationForm):
         )
 
     def clean_curp(self):
-        return self.cleaned_data.get('curp', '').upper()
+        curp = self.cleaned_data.get('curp')
+        if curp:
+            return curp.upper()
+        return curp
 
     def clean_rfc(self):
-        return self.cleaned_data.get('rfc', '').upper()
+        rfc = self.cleaned_data.get('rfc')
+        if rfc:
+            return rfc.upper()
+        return rfc
 
     def clean_telefono(self):
-        return re.sub(r'\D+', '', self.cleaned_data.get('telefono', ''))
+        cel = self.cleaned_data.get('telefono')
+        if cel:
+            import re
+            return re.sub(r'\D+', '', tel)
+        return cel
 
     def clean_celular(self):
-        return re.sub(r'\D+', '', self.cleaned_data.get('celular', ''))
+        cel = self.cleaned_data.get('celular')
+        if cel:
+            import re
+            return re.sub(r'\D+', '', cel)
+        return cel
 
     def clean(self):
         cleaned = super().clean()
@@ -147,10 +161,16 @@ class UsuarioChangeForm(UserChangeForm):
         )
 
     def clean_curp(self):
-        return self.cleaned_data.get('curp', '').upper()
+        curp = self.cleaned_data.get('curp')
+        if curp:
+            return curp.upper()
+        return curp
 
     def clean_rfc(self):
-        return self.cleaned_data.get('rfc', '').upper()
+        rfc = self.cleaned_data.get('rfc')
+        if rfc:
+            return rfc.upper()
+        return rfc
 
     def clean_telefono(self):
         return re.sub(r'\D+', '', self.cleaned_data.get('telefono', ''))

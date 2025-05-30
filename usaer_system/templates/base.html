@@ -93,12 +93,20 @@
                   <i class="fas fa-user-tie me-1"></i>Panel Director
                 </a>
               </li>
-            {% elif user.role == 'ADMIN' %}
+            {% elif user.role == 'ADMIN' or user.is_staff or user.is_superuser %}
               <li class="nav-item">
                 <a class="nav-link" href="{% url 'usuarios:dashboard_admin' %}">
                   <i class="fas fa-tools me-1"></i>Panel Admin
                 </a>
               </li>
+              <!-- Enlace al Admin de Django (solo para staff/superuser) -->
+              {% if user.is_staff or user.is_superuser %}
+                <li class="nav-item">
+                  <a class="nav-link" href="{% url 'admin:index' %}">
+                    <i class="fas fa-cog me-1"></i>Admin Django
+                  </a>
+                </li>
+              {% endif %}
             {% endif %}
 
             {# —————— Menús específicos por rol —————— #}
@@ -109,7 +117,7 @@
                 </a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="{% url 'rac:capturar' %}">
+                <a class="nav-link" href="{% url 'documentos:subir_expediente' %}">
                   <i class="fas fa-file-export me-1"></i>Capturar RAC
                 </a>
               </li>
@@ -128,6 +136,7 @@
                   <i class="fas fa-calendar-check me-1"></i>Asistencias
                 </a>
               </li>
+              
             {% endif %}
 
             {% if user.role == 'SECRETARIO' %}
@@ -139,6 +148,11 @@
               <li class="nav-item">
                 <a class="nav-link" href="{% url 'permisos:gestionar' %}">
                   <i class="fas fa-clipboard-list me-1"></i>Mis Permisos
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'incidencias:listar_incidencias' %}">
+                  <i class="fas fa-exclamation-circle me-1"></i>Incidencias
                 </a>
               </li>
             {% endif %}
@@ -156,6 +170,13 @@
               </li>
             {% endif %}
 
+            {% if user.role == 'ADMIN' or user.is_staff or user.is_superuser %}
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'incidencias:revisar_incidencias' %}">
+                  <i class="fas fa-exclamation-circle me-1"></i>Incidencias
+                </a>
+              </li>
+            {% endif %}
           {% endif %}
         </ul>
 
