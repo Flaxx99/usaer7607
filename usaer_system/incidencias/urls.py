@@ -6,7 +6,7 @@ app_name = 'incidencias'
 
 urlpatterns = [
     path('',roles_permitidos(['DOCENTE', 'MAESTRO_APOYO', 'ADMIN'])(views.listar_incidencias),name='listar_incidencias'),
-    path('crear/',roles_permitidos(['DIRECTOR', 'ADMIN'])(views.crear_incidencia),name='crear_incidencia'),
+    path('crear/',roles_permitidos(['DOCENTE', 'TRAB_SOCIAL','SECRETARIO', 'PSICOLOGO', 'PSICOMOTRICIDAD', 'COMUNICACION', 'TRAB_MANUAL'])(views.crear_incidencia),name='crear_incidencia'),
     path('revisar/',roles_permitidos(['DIRECTOR', 'ADMIN'])(views.revisar_incidencias),name='revisar_incidencias'),
     path('<int:pk>/editar/',roles_permitidos(['DIRECTOR', 'ADMIN'])(views.editar_incidencia),name='editar_incidencia'),
     path('<int:pk>/resolver/',roles_permitidos(['DIRECTOR', 'ADMIN'])(views.resolver_incidencia),name='resolver_incidencia'),
