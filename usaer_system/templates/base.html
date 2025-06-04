@@ -4,27 +4,19 @@
 
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Gestor USAER 7607{% endblock %}</title>
-
-  <!-- Bootstrap 5 CSS (CDN) -->
-  <link
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-    rel="stylesheet"
-    crossorigin="anonymous"
-  >
-  <!-- Font Awesome para íconos -->
-  <link
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    rel="stylesheet"
-    crossorigin="anonymous"
-  >
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"
+    crossorigin="anonymous">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"
+    crossorigin="anonymous">
 </head>
+
 <body class="bg-light">
 
-  <!-- Navbar -->
   <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
     <div class="container">
       <a class="navbar-brand" href="{% url 'index' %}">
@@ -33,204 +25,124 @@
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
         <span class="navbar-toggler-icon"></span>
       </button>
+
       <div class="collapse navbar-collapse" id="navbarMain">
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-
-          <!-- Checador público -->
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'index' %}">
-              <i class="fas fa-clipboard-check me-1"></i>Checador
-            </a>
+            <a class="nav-link" href="{% url 'index' %}"><i class="fas fa-clipboard-check me-1"></i>Checador</a>
           </li>
 
           {% if user.is_authenticated %}
-            {# —————— Enlace al Panel según rol —————— #}
-            {% if user.role == 'DOCENTE' %}
-              <li class="nav-item">
-                <a class="nav-link" href="{% url 'usuarios:dashboard_docente' %}">
-                  <i class="fas fa-chalkboard me-1"></i>Panel Docente
-                </a>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="menuUsuario" role="button" data-bs-toggle="dropdown">
+              <i class="fas fa-bars me-1"></i>Menú
+            </a>
+            <ul class="dropdown-menu" aria-labelledby="menuUsuario">
+
+              {% if user.role == 'DOCENTE' %}
+              <li><a class="dropdown-item" href="{% url 'usuarios:dashboard_docente' %}"><i
+                    class="fas fa-chalkboard me-1"></i>Panel Docente</a></li>
+              <li>
+                <hr class="dropdown-divider">
               </li>
-            {% elif user.role == 'MAESTRO_APOYO' %}
-              <li class="nav-item">
-                <a class="nav-link" href="{% url 'usuarios:panel_maestro_apoyo' %}">
-                  <i class="fas fa-chalkboard-teacher me-1"></i>Panel Apoyo
-                </a>
+              <li><a class="dropdown-item" href="{% url 'documentos:subir_expediente' %}"><i
+                    class="fas fa-file-signature me-1"></i>Capturar RAE</a></li>
+              <li><a class="dropdown-item" href="{% url 'documentos:subir_expediente' %}"><i
+                    class="fas fa-file-export me-1"></i>Capturar RAC</a></li>
+              <li><a class="dropdown-item" href="{% url 'alumnos:listar_alumnos' %}"><i
+                    class="fas fa-users me-1"></i>Alumnos</a></li>
+              <li><a class="dropdown-item" href="{% url 'permisos:solicitar' %}"><i
+                    class="fas fa-clipboard-list me-1"></i>Permisos</a></li>
+              <li><a class="dropdown-item" href="{% url 'asistencias:listar_asistencias' %}"><i
+                    class="fas fa-calendar-check me-1"></i>Asistencias</a></li>
+
+              {% elif user.role == 'SECRETARIO' %}
+              <li><a class="dropdown-item" href="{% url 'usuarios:dashboard_secretario' %}"><i
+                    class="fas fa-folder-open me-1"></i>Panel Secretario</a></li>
+              <li>
+                <hr class="dropdown-divider">
               </li>
-            {% elif user.role == 'TRAB_SOCIAL' %}
-              <li class="nav-item">
-                <a class="nav-link" href="{% url 'usuarios:panel_trabajador_social' %}">
-                  <i class="fas fa-hands-helping me-1"></i>Panel Social
-                </a>
+              <li><a class="dropdown-item" href="{% url 'escuelas:listar_escuelas' %}"><i
+                    class="fas fa-university me-1"></i>Escuelas</a></li>
+              <li><a class="dropdown-item" href="{% url 'permisos:gestionar' %}"><i
+                    class="fas fa-clipboard-list me-1"></i>Mis Permisos</a></li>
+              <li><a class="dropdown-item" href="{% url 'incidencias:listar_incidencias' %}"><i
+                    class="fas fa-exclamation-circle me-1"></i>Incidencias</a></li>
+
+              {% elif user.role == 'DIRECTOR' %}
+              <li><a class="dropdown-item" href="{% url 'usuarios:dashboard_director' %}"><i
+                    class="fas fa-user-tie me-1"></i>Panel Director</a></li>
+              <li>
+                <hr class="dropdown-divider">
               </li>
-            {% elif user.role == 'PSICOLOGO' %}
-              <li class="nav-item">
-                <a class="nav-link" href="{% url 'usuarios:panel_psicologo' %}">
-                  <i class="fas fa-brain me-1"></i>Panel Psicólogo
-                </a>
+              <li><a class="dropdown-item" href="{% url 'usuarios:list' %}"><i
+                    class="fas fa-chalkboard-teacher me-1"></i>Profesores</a></li>
+              <li><a class="dropdown-item" href="{% url 'incidencias:revisar_incidencias' %}"><i
+                    class="fas fa-tasks me-1"></i>Incidencias</a></li>
+
+              {% elif user.role == 'ADMIN' or user.is_staff or user.is_superuser %}
+              <li><a class="dropdown-item" href="{% url 'usuarios:dashboard_admin' %}"><i
+                    class="fas fa-tools me-1"></i>Panel Admin</a></li>
+              <li>
+                <hr class="dropdown-divider">
               </li>
-            {% elif user.role == 'PSICOMOTRICIDAD' %}
-              <li class="nav-item">
-                <a class="nav-link" href="{% url 'usuarios:panel_psicomotricidad' %}">
-                  <i class="fas fa-running me-1"></i>Panel Psicomotricidad
-                </a>
-              </li>
-            {% elif user.role == 'COMUNICACION' %}
-              <li class="nav-item">
-                <a class="nav-link" href="{% url 'usuarios:panel_comunicacion' %}">
-                  <i class="fas fa-comments me-1"></i>Panel Comunicación
-                </a>
-              </li>
-            {% elif user.role == 'SECRETARIO' %}
-              <li class="nav-item">
-                <a class="nav-link" href="{% url 'usuarios:dashboard_secretario' %}">
-                  <i class="fas fa-folder-open me-1"></i>Panel Secretario
-                </a>
-              </li>
-            {% elif user.role == 'DIRECTOR' %}
-              <li class="nav-item">
-                <a class="nav-link" href="{% url 'usuarios:dashboard_director' %}">
-                  <i class="fas fa-user-tie me-1"></i>Panel Director
-                </a>
-              </li>
-            {% elif user.role == 'ADMIN' or user.is_staff or user.is_superuser %}
-              <li class="nav-item">
-                <a class="nav-link" href="{% url 'usuarios:dashboard_admin' %}">
-                  <i class="fas fa-tools me-1"></i>Panel Admin
-                </a>
-              </li>
-              <!-- Enlace al Admin de Django (solo para staff/superuser) -->
-              {% if user.is_staff or user.is_superuser %}
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'admin:index' %}">
-                    <i class="fas fa-cog me-1"></i>Admin Django
-                  </a>
-                </li>
+              <li><a class="dropdown-item" href="{% url 'incidencias:revisar_incidencias' %}"><i
+                    class="fas fa-exclamation-circle me-1"></i>Incidencias</a></li>
+              <li><a class="dropdown-item" href="{% url 'admin:index' %}"><i class="fas fa-cog me-1"></i>Admin
+                  Django</a></li>
+
+              {% else %}
+              <li><a class="dropdown-item disabled">Sin panel asignado</a></li>
               {% endif %}
-            {% endif %}
-
-            {# —————— Menús específicos por rol —————— #}
-            {% if user.role == 'DOCENTE' %}
-              <li class="nav-item">
-                <a class="nav-link" href="{% url 'documentos:subir_expediente' %}">
-                  <i class="fas fa-file-signature me-1"></i>Capturar RAE
-                </a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="{% url 'documentos:subir_expediente' %}">
-                  <i class="fas fa-file-export me-1"></i>Capturar RAC
-                </a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="{% url 'alumnos:listar_alumnos' %}">
-                  <i class="fas fa-users me-1"></i>Alumnos
-                </a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="{% url 'permisos:solicitar' %}">
-                  <i class="fas fa-clipboard-list me-1"></i>Solicitar Permiso
-                </a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="{% url 'asistencias:listar_asistencias' %}">
-                  <i class="fas fa-calendar-check me-1"></i>Asistencias
-                </a>
-              </li>
-              
-            {% endif %}
-
-            {% if user.role == 'SECRETARIO' %}
-              <li class="nav-item">
-                <a class="nav-link" href="{% url 'escuelas:listar_escuelas' %}">
-                  <i class="fas fa-university me-1"></i>Escuelas
-                </a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="{% url 'permisos:gestionar' %}">
-                  <i class="fas fa-clipboard-list me-1"></i>Mis Permisos
-                </a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="{% url 'incidencias:listar_incidencias' %}">
-                  <i class="fas fa-exclamation-circle me-1"></i>Incidencias
-                </a>
-              </li>
-            {% endif %}
-
-            {% if user.role == 'DIRECTOR' %}
-              <li class="nav-item">
-                <a class="nav-link" href="{% url 'incidencias:revisar_incidencias' %}">
-                  <i class="fas fa-tasks me-1"></i>Incidencias
-                </a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="{% url 'usuarios:list' %}">
-                  <i class="fas fa-chalkboard-teacher me-1"></i>Profesores
-                </a>
-              </li>
-            {% endif %}
-
-            {% if user.role == 'ADMIN' or user.is_staff or user.is_superuser %}
-              <li class="nav-item">
-                <a class="nav-link" href="{% url 'incidencias:revisar_incidencias' %}">
-                  <i class="fas fa-exclamation-circle me-1"></i>Incidencias
-                </a>
-              </li>
-            {% endif %}
+            </ul>
+          </li>
           {% endif %}
         </ul>
 
         <ul class="navbar-nav ms-auto">
           {% if user.is_authenticated %}
-            <li class="nav-item">
-              <span class="navbar-text me-3">
-                <i class="fas fa-user-circle me-1"></i>
-                Hola, {{ user.nombre|default:user.username }}
-              </span>
-            </li>
-            <li class="nav-item">
-              <form method="post" action="{% url 'logout' %}" class="d-inline">
-                {% csrf_token %}
-                <button type="submit" class="nav-link btn btn-link p-0">
-                  <i class="fas fa-sign-out-alt me-1"></i>Cerrar sesión
-                </button>
-              </form>
-            </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="cuentaDropdown" role="button"
+              data-bs-toggle="dropdown">
+              <i class="fas fa-user-circle me-2"></i>{{ user.nombre|default:user.username }}
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="cuentaDropdown">
+              <li>
+                <a class="dropdown-item" href="{% url 'usuarios:change_password' %}">
+                  <i class="fas fa-key me-2"></i>Cambiar contraseña
+                </a>
+              </li>
+              <li>
+                <form method="post" action="{% url 'logout' %}" class="d-inline">
+                  {% csrf_token %}
+                  <button type="submit" class="dropdown-item">
+                    <i class="fas fa-sign-out-alt me-2"></i>Cerrar sesión
+                  </button>
+                </form>
+              </li>
+            </ul>
+          </li>
           {% else %}
-            <li class="nav-item">
-              <a class="nav-link" href="{% url 'login' %}">
-                <i class="fas fa-sign-in-alt me-1"></i>Iniciar sesión
-              </a>
-            </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'login' %}">
+              <i class="fas fa-sign-in-alt me-1"></i>Iniciar sesión
+            </a>
+          </li>
           {% endif %}
         </ul>
+
       </div>
     </div>
   </nav>
 
-  <!-- Mensajes flash -->
-  <div class="container mt-3">
-    {% for message in messages %}
-      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-        <i class="fas
-          {% if message.tags == 'success' %}fa-check-circle
-          {% elif message.tags == 'error'   %}fa-times-circle
-          {% elif message.tags == 'warning' %}fa-exclamation-triangle
-          {% else %}fa-info-circle{% endif %}
-          me-2"></i>
-        {{ message }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-      </div>
-    {% endfor %}
-  </div>
-
-  <!-- Contenido principal -->
   <main class="container py-4">
     {% block content %}{% endblock %}
   </main>
 
-  <!-- Scripts -->
   <script src="https://code.jquery.com/jquery-3.7.1.min.js" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+    crossorigin="anonymous"></script>
+
 </body>
+
 </html>

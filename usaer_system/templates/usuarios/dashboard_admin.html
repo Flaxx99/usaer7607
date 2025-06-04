@@ -1,30 +1,101 @@
 {% extends 'base.html' %}
 {% block title %}Panel Administrador{% endblock %}
+
 {% block content %}
-<div class="container">
-  <h2 class="mb-4">🧑‍💼 Panel del Administrador</h2>
-  <div class="list-group">
-    <a href="{% url 'usuarios:list' %}" class="list-group-item list-group-item-action">
-      👥 Gestión de Usuarios
-    </a>
-    <a href="{% url 'escuelas:listar_escuelas' %}" class="list-group-item list-group-item-action">
-      🏫 Gestión de Escuelas
-    </a>
-    <a href="{% url 'alumnos:exportar_rac' %}" class="list-group-item list-group-item-action">
-      📄 Exportar RAC
-    </a>
-    <a href="{% url 'documentos:subir_expediente' %}" class="list-group-item list-group-item-action">
-      📁 Control de Documentos
-    </a>
-    <a href="{% url 'incidencias:listar_incidencias' %}" class="list-group-item list-group-item-action">
-      🔄 Revisar Incidencias
-    </a>
-    <a href="{% url 'permisos:gestionar' %}" class="list-group-item list-group-item-action">
-      ✅ Gestionar Permisos
-    </a>
-    <a href="/admin/" class="list-group-item list-group-item-action">
-      🔒 Panel Django Admin
-    </a>
+<div class="container py-4">
+  <div class="text-center mb-4">
+    <h2 class="fw-bold">
+      <i class="fas fa-user-shield me-2"></i>Panel del Administrador
+    </h2>
+    <p class="text-muted">Desde aquí puedes gestionar todos los módulos principales del sistema.</p>
+  </div>
+
+  <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+
+    <div class="col">
+      <div class="card shadow-sm h-100">
+        <div class="card-body d-flex align-items-center">
+          <i class="fas fa-users fa-2x text-primary me-3"></i>
+          <div>
+            <h5 class="card-title mb-1">Gestión de Usuarios</h5>
+            <a href="{% url 'usuarios:list' %}" class="stretched-link"></a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="card shadow-sm h-100">
+        <div class="card-body d-flex align-items-center">
+          <i class="fas fa-school fa-2x text-success me-3"></i>
+          <div>
+            <h5 class="card-title mb-1">Gestión de Escuelas</h5>
+            <a href="{% url 'escuelas:listar_escuelas' %}" class="stretched-link"></a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="card shadow-sm h-100">
+        <div class="card-body d-flex align-items-center">
+          <i class="fas fa-file-export fa-2x text-warning me-3"></i>
+          <div>
+            <h5 class="card-title mb-1">Exportar RAC</h5>
+            <a href="{% url 'alumnos:exportar_rac' %}" class="stretched-link"></a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="card shadow-sm h-100">
+        <div class="card-body d-flex align-items-center">
+          <i class="fas fa-folder-open fa-2x text-info me-3"></i>
+          <div>
+            <h5 class="card-title mb-1">Control de Documentos</h5>
+            <a href="{% url 'documentos:subir_expediente' %}" class="stretched-link"></a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="card shadow-sm h-100">
+        <div class="card-body d-flex align-items-center">
+          <i class="fas fa-exclamation-triangle fa-2x text-danger me-3"></i>
+          <div>
+            <h5 class="card-title mb-1">Revisar Incidencias</h5>
+            <a href="{% url 'incidencias:listar_incidencias' %}" class="stretched-link"></a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="card shadow-sm h-100">
+        <div class="card-body d-flex align-items-center">
+          <i class="fas fa-check-circle fa-2x text-success me-3"></i>
+          <div>
+            <h5 class="card-title mb-1">Gestionar Permisos</h5>
+            <a href="{% url 'permisos:gestionar' %}" class="stretched-link"></a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="card shadow-sm h-100">
+        <div class="card-body d-flex align-items-center">
+          <i class="fas fa-lock fa-2x text-secondary me-3"></i>
+          <div>
+            <h5 class="card-title mb-1">Panel Django Admin</h5>
+            <a href="/admin/" class="stretched-link"></a>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 {% endblock %}
