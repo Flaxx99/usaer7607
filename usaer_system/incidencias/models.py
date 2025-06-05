@@ -23,7 +23,7 @@ class Incidencia(models.Model):
         limit_choices_to={'role': 'Profesor'},
         on_delete=models.SET_NULL,
         null=True,
-        verbose_name="Profesor que reporta",
+        verbose_name="Profesor reportado",
         related_name='incidencias_reportadas'
     )
     titulo = models.CharField(

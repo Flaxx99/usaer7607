@@ -9,24 +9,40 @@
   <div class="col-md-4">
     <h2 class="mb-4 text-center">Iniciar sesión</h2>
 
-    {# Mostrar errores no asociados a campos concretos #}
     {% if form.non_field_errors %}
       <div class="alert alert-danger">
         {{ form.non_field_errors }}
       </div>
     {% endif %}
 
-    <form
-      method="post"
-      action="{% url 'login' %}{% if next %}?next={{ next|urlencode }}{% endif %}"
-      novalidate
-    >
+    <form method="post" action="{% url 'login' %}{% if next %}?next={{ next|urlencode }}{% endif %}" novalidate>
       {% csrf_token %}
-      {# Campos de usuario y contraseña #}
-      {{ form.username|as_crispy_field }}
-      {{ form.password|as_crispy_field }}
 
-      {# Campo hidden para respetar el parámetro next #}
+      <div class="mb-3">
+        <label for="id_username" class="form-label">Correo o número de empleado</label>
+        <input
+          type="text"
+          name="username"
+          autofocus
+          required
+          class="form-control"
+          placeholder="ejemplo@mail.com o 123456"
+          id="id_username"
+        >
+      </div>
+
+      <div class="mb-3">
+        <label for="id_password" class="form-label">Contraseña</label>
+        <input
+          type="password"
+          name="password"
+          required
+          class="form-control"
+          placeholder="Ingresa tu contraseña"
+          id="id_password"
+        >
+      </div>
+
       {% if next %}
         <input type="hidden" name="next" value="{{ next }}">
       {% endif %}

@@ -3,7 +3,6 @@ from django.contrib.auth.admin import UserAdmin
 from django.utils.translation import gettext_lazy as _
 from .models import User
 from .forms import UsuarioCreationForm, UsuarioChangeForm
-# Panel de administración personalizado
 from django.contrib.admin import AdminSite
 
 
@@ -15,7 +14,7 @@ class CustomAdminSite(AdminSite):
     def has_permission(self, request):
         return request.user.is_active and request.user.is_staff and getattr(request.user, 'role', None) == 'ADMIN'
 
-# Instancia personalizada del sitio admin
+
 admin_site = CustomAdminSite(name='custom_admin')
 
 
@@ -24,7 +23,8 @@ class UserAdminConfig(UserAdmin):
     add_form = UsuarioCreationForm
 
     list_display = (
-        'username', 
+        'email',
+        'numero_empleado',
         'get_full_name',
         'role',
         'escuela',
@@ -42,11 +42,11 @@ class UserAdminConfig(UserAdmin):
     )
 
     search_fields = (
-        'username',
+        'email',
+        'numero_empleado',
         'nombre',
         'apellido_paterno',
         'apellido_materno',
-        'numero_empleado',
         'curp',
         'rfc'
     )
@@ -54,14 +54,15 @@ class UserAdminConfig(UserAdmin):
     ordering = ('apellido_paterno', 'apellido_materno', 'nombre')
 
     fieldsets = (
-        (None, {'fields': ('username', 'password')}),
+        (_('Credenciales'), {
+            'fields': ('email', 'numero_empleado', 'password')
+        }),
         (_('Información personal'), {
             'fields': (
                 'nombre',
                 'apellido_paterno',
                 'apellido_materno',
-                ('curp', 'rfc'),
-                'numero_empleado'
+                ('curp', 'rfc')
             )
         }),
         (_('Información de contacto'), {
@@ -109,7 +110,8 @@ class UserAdminConfig(UserAdmin):
         (None, {
             'classes': ('wide',),
             'fields': (
-                'username',
+                'email',
+                'numero_empleado',
                 'password1',
                 'password2',
                 'role',
@@ -121,8 +123,7 @@ class UserAdminConfig(UserAdmin):
                 'nombre',
                 'apellido_paterno',
                 'apellido_materno',
-                ('curp', 'rfc'),
-                'numero_empleado'
+                ('curp', 'rfc')
             )
         }),
     )
@@ -131,5 +132,5 @@ class UserAdminConfig(UserAdmin):
         return obj.get_full_name()
     get_full_name.short_description = _('Nombre completo')
 
-# Registrar con el sitio admin personalizado
+
 admin_site.register(User, UserAdminConfig)

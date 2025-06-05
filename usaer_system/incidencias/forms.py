@@ -2,7 +2,6 @@ from django import forms
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Div, Field, Submit
 from django.contrib.auth import get_user_model
-
 from .models import Incidencia
 
 User = get_user_model()
@@ -12,11 +11,16 @@ class IncidenciaForm(forms.ModelForm):
         model = Incidencia
         fields = ['escuela', 'profesor', 'descripcion', 'respuesta_admin']
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, escuela=None, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Solo profesores en el desplegable
-        self.fields['profesor'].queryset = User.objects.filter(role='Profesor')
+        # Filtro dinámico si se pasa escuela
+        if escuela:
+            self.fields['profesor'].queryset = User.objects.filter(
+                escuela=escuela, role='Profesor'
+            )
+        else:
+            self.fields['profesor'].queryset = User.objects.filter(role='Profesor')
 
         # Configuración de Crispy
         self.helper = FormHelper()
@@ -31,12 +35,3 @@ class IncidenciaForm(forms.ModelForm):
             Field('respuesta_admin'),
             Submit('submit', 'Guardar', css_class='btn btn-primary mt-3')
         )
-
-class IncidenciaForm(forms.ModelForm):
-    def __init__(self, *args, escuela=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        if escuela:
-            self.fields['profesor'].queryset = User.objects.filter(
-                escuela=escuela, 
-                role='Profesor'
-            )

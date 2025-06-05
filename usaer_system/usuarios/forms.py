@@ -1,5 +1,5 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm, UserChangeForm
+from django.contrib.auth.forms import UserCreationForm, UserChangeForm, AuthenticationForm
 from django.utils.translation import gettext_lazy as _
 from .models import User
 from crispy_forms.helper import FormHelper
@@ -9,38 +9,22 @@ import re
 
 class UsuarioCreationForm(UserCreationForm):
     """
-    Formulario para crear nuevos usuarios con todos los campos relevantes.
+    Formulario para crear nuevos usuarios sin campo username.
     """
     class Meta:
         model = User
         fields = [
-            "username", "email", "role", "escuela",
+            "email", "numero_empleado", "role", "escuela",
             "nombre", "apellido_paterno", "apellido_materno",
-            "curp", "rfc", "numero_empleado", "clave_presupuestal", "numero_pensiones",
+            "curp", "rfc", "clave_presupuestal", "numero_pensiones",
             "puesto", "situacion",
             "nivel", "grado",
             "domicilio", "telefono", "celular", "correo",
             "password1", "password2",
         ]
         widgets = {
-            'username': forms.TextInput(attrs={'placeholder': _('Nombre de usuario'), 'required': True}),
             'email': forms.EmailInput(attrs={'placeholder': _('Correo institucional'), 'required': True}),
-            'curp': forms.TextInput(attrs={'placeholder': _('Ej: ABCD010203HMCLNS09'), 'maxlength': 18}),
-            'rfc': forms.TextInput(attrs={'placeholder': _('Ej: ABCD650909ABC'), 'maxlength': 13}),
             'numero_empleado': forms.TextInput(attrs={'placeholder': _('Número de empleado'), 'maxlength': 20}),
-            'clave_presupuestal': forms.TextInput(attrs={'placeholder': _('Clave presupuestal')}),
-            'numero_pensiones': forms.TextInput(attrs={'placeholder': _('Número de pensiones')}),
-        }
-        labels = {
-            'username': _('Usuario'),
-            'email': _('Correo institucional'),
-            'role': _('Rol'),
-            'escuela': _('Escuela asignada'),
-            'curp': _('C.U.R.P.'),
-            'rfc': _('R.F.C.'),
-            'numero_empleado': _('Número de empleado'),
-            'clave_presupuestal': _('Clave presupuestal'),
-            'numero_pensiones': _('Número de pensiones'),
         }
 
     def __init__(self, *args, **kwargs):
@@ -51,13 +35,13 @@ class UsuarioCreationForm(UserCreationForm):
         self.helper.form_method = 'post'
         self.helper.form_show_labels = True
         self.helper.layout = Layout(
-            Fieldset(_('Datos de cuenta'), 'username', 'email', 'password1', 'password2', 'role', 'escuela'),
+            Fieldset(_('Datos de cuenta'), 'email', 'numero_empleado', 'password1', 'password2', 'role', 'escuela'),
             Fieldset(_('Datos personales'),
                 Div(Field('nombre', css_class='me-2'), Field('apellido_paterno', css_class='me-2'), Field('apellido_materno'), css_class='d-flex')
             ),
             Fieldset(_('Identificación oficial'),
-                Div(Field('curp', css_class='me-2'), Field('rfc', css_class='me-2'), Field('numero_empleado'), css_class='d-flex'),
-                Div(Field('clave_presupuestal', css_class='me-2'), Field('numero_pensiones'), css_class='d-flex')
+                Div(Field('curp', css_class='me-2'), Field('rfc', css_class='me-2'), Field('clave_presupuestal'), css_class='d-flex'),
+                Field('numero_pensiones')
             ),
             Fieldset(_('Datos laborales'),
                 Div(Field('puesto', css_class='me-2'), Field('situacion'), css_class='d-flex')
@@ -75,29 +59,19 @@ class UsuarioCreationForm(UserCreationForm):
 
     def clean_curp(self):
         curp = self.cleaned_data.get('curp')
-        if curp:
-            return curp.upper()
-        return curp
+        return curp.upper() if curp else curp
 
     def clean_rfc(self):
         rfc = self.cleaned_data.get('rfc')
-        if rfc:
-            return rfc.upper()
-        return rfc
+        return rfc.upper() if rfc else rfc
 
     def clean_telefono(self):
-        cel = self.cleaned_data.get('telefono')
-        if cel:
-            import re
-            return re.sub(r'\D+', '', tel)
-        return cel
+        tel = self.cleaned_data.get('telefono')
+        return re.sub(r'\D+', '', tel) if tel else tel
 
     def clean_celular(self):
         cel = self.cleaned_data.get('celular')
-        if cel:
-            import re
-            return re.sub(r'\D+', '', cel)
-        return cel
+        return re.sub(r'\D+', '', cel) if cel else cel
 
     def clean(self):
         cleaned = super().clean()
@@ -114,24 +88,12 @@ class UsuarioChangeForm(UserChangeForm):
     class Meta:
         model = User
         fields = [
-            'username', 'email', 'role', 'escuela', 'activo',
+            'email', 'numero_empleado', 'role', 'escuela', 'activo',
             'nombre', 'apellido_paterno', 'apellido_materno',
-            'curp', 'rfc', 'numero_empleado', 'clave_presupuestal', 'numero_pensiones',
+            'curp', 'rfc', 'clave_presupuestal', 'numero_pensiones',
             'domicilio', 'telefono', 'celular', 'correo',
             'nivel', 'grado', 'puesto', 'situacion', 'escolaridad', 'fecha_ingreso',
         ]
-        labels = {
-            'username': _('Usuario'),
-            'email': _('Correo institucional'),
-            'role': _('Rol'),
-            'escuela': _('Escuela asignada'),
-            'curp': _('C.U.R.P.'),
-            'rfc': _('R.F.C.'),
-            'numero_empleado': _('Número de empleado'),
-            'clave_presupuestal': _('Clave presupuestal'),
-            'numero_pensiones': _('Número de pensiones'),
-            'activo': _('¿Activo?'),
-        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -139,11 +101,11 @@ class UsuarioChangeForm(UserChangeForm):
         self.helper.form_method = 'post'
         self.helper.form_show_labels = True
         self.helper.layout = Layout(
-            Fieldset(_('Cuenta y rol'), 'username', 'email', 'role', 'escuela', 'activo'),
+            Fieldset(_('Cuenta y rol'), 'email', 'numero_empleado', 'role', 'escuela', 'activo'),
             Fieldset(_('Identificación oficial'),
                 Div(Field('nombre', css_class='me-2'), Field('apellido_paterno', css_class='me-2'), Field('apellido_materno'), css_class='d-flex'),
-                Div(Field('curp', css_class='me-2'), Field('rfc', css_class='me-2'), Field('numero_empleado'), css_class='d-flex'),
-                Div(Field('clave_presupuestal', css_class='me-2'), Field('numero_pensiones'), css_class='d-flex')
+                Div(Field('curp', css_class='me-2'), Field('rfc', css_class='me-2'), Field('clave_presupuestal'), css_class='d-flex'),
+                Field('numero_pensiones')
             ),
             Fieldset(_('Contacto'),
                 'domicilio',
@@ -162,15 +124,11 @@ class UsuarioChangeForm(UserChangeForm):
 
     def clean_curp(self):
         curp = self.cleaned_data.get('curp')
-        if curp:
-            return curp.upper()
-        return curp
+        return curp.upper() if curp else curp
 
     def clean_rfc(self):
         rfc = self.cleaned_data.get('rfc')
-        if rfc:
-            return rfc.upper()
-        return rfc
+        return rfc.upper() if rfc else rfc
 
     def clean_telefono(self):
         return re.sub(r'\D+', '', self.cleaned_data.get('telefono', ''))
@@ -185,3 +143,22 @@ class UsuarioChangeForm(UserChangeForm):
             if not cleaned.get('nombre') or not cleaned.get('apellido_paterno'):
                 raise forms.ValidationError(_('Nombre y apellido paterno son obligatorios para este rol.'))
         return cleaned
+
+
+class CustomLoginForm(AuthenticationForm):
+    username = forms.CharField(
+        label=_("Correo institucional o número de empleado"),
+        widget=forms.TextInput(attrs={
+            'autofocus': True,
+            'placeholder': 'correo@mail.com o número de empleado',
+            'class': 'form-control',
+        }),
+    )
+    password = forms.CharField(
+        label=_("Contraseña"),
+        strip=False,
+        widget=forms.PasswordInput(attrs={
+            'placeholder': '••••••••',
+            'class': 'form-control',
+        }),
+    )
