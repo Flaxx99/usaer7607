@@ -1,0 +1,16 @@
+# Establece LF como fin de línea para archivos de código y texto
+*.sh text eol=lf
+*.py text eol=lf
+*.js text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+
+# Archivos binarios no deben ser modificados
+*.png binary
+*.jpg binary
+*.jar binary
+
+# Configuración de JetBrains (IDEA) debe mantener LF
+.idea/* text eol=lf
