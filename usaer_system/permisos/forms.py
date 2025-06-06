@@ -3,6 +3,7 @@ from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from .models import Permiso
+from usaer_system.forms_utils import convertir_mayusculas
 
 class SolicitudPermisoForm(forms.ModelForm):
     class Meta:
@@ -97,3 +98,7 @@ class GestionPermisoForm(forms.ModelForm):
             instance.save()
         
         return instance
+    
+    def clean(self):
+        cleaned = super().clean()
+        return convertir_mayusculas(cleaned)
