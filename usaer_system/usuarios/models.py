@@ -6,16 +6,14 @@ from escuelas.models import Escuela
 
 class User(AbstractUser):
     class Role(models.TextChoices):
-        DIRECTOR = 'DIRECTOR', _('Director(a) de Escuela')
-        DOCENTE = 'DOCENTE', _('Docente')
-        MAESTRO_APOYO = 'MAESTRO_APOYO', _('Maestro(a) de Apoyo')
-        TRABAJADOR_SOCIAL = 'TRAB_SOCIAL', _('Trabajador(a) Social')
-        PSICOLOGO = 'PSICOLOGO', _('Psicólogo(a)')
-        PSICOMOTRICIDAD = 'PSICOMOTRICIDAD', _('Maestro(a) de Psicomotricidad')
-        COMUNICACION = 'COMUNICACION', _('Maestro(a) de Comunicación')
-        TRABAJADOR_MANUAL = 'TRAB_MANUAL', _('Trabajador(a) Manual')
-        SECRETARIO = 'SECRETARIO', _('Secretario(a)')
-        ADMINISTRADOR = 'ADMIN', _('Administrador(a)')
+        APOYO = 'APOYO', _('Maestro(a) de Apoyo')
+        PSICOLOGO = 'PSIC', _('Psicólogo(a)')
+        PSICOMOTRICIDAD = 'PSICO', _('Maestro(a) de Psicomotricidad')
+        TRABAJADOR_SOCIAL = 'TRAB', _('Trabajador(a) Social')
+        DIRECTOR = 'DIR', _('Director(a)')
+        ADMINISTRATIVO = 'ADMIN', _('Personal Administrativo')
+        DOCENTE_EDFISICA = 'EDFIS', _('Maestro(a) Educación Física')
+        TRABAJADOR_MANUAL = 'MAN', _('Trabajador(a) Manual')
 
     # Validadores mejorados
     phone_regex = RegexValidator(
@@ -36,7 +34,7 @@ class User(AbstractUser):
         _("Rol"),
         max_length=30,
         choices=Role.choices,
-        default=Role.DOCENTE,
+        default=Role.APOYO,
         db_index=True
     )
 
@@ -138,10 +136,9 @@ class User(AbstractUser):
     class NivelEducativo(models.TextChoices):
         PRIMARIA = 'PRIM', _('Primaria')
         SECUNDARIA = 'SEC', _('Secundaria')
-        PREESCOLAR = 'PRE', _('Preescolar')
         ESPECIAL = 'ESP', _('Educación Especial')
         FISICA = 'FIS', _('Educación Física')
-        INICIAL = 'INI', _('Inicial')
+
 
     nivel = models.CharField(
         _("Nivel educativo"),
@@ -159,16 +156,14 @@ class User(AbstractUser):
 
     # Datos laborales
     class Puesto(models.TextChoices):
-        MAESTRO = 'MAESTRO', _('Maestro de Grupo')
-        APOYO = 'APOYO', _('Maestro de Apoyo')
-        PSICOLOGO = 'PSIC', _('Psicólogo')
-        PSICOMOTRICISTA = 'PSICO', _('Psicomotricista')
-        TRABAJADOR_SOCIAL = 'TRAB', _('Trabajador Social')
-        DIRECTOR = 'DIR', _('Director')
-        SUBDIRECTOR = 'SUBDIR', _('Subdirector')
+        APOYO = 'APOYO', _('Maestro(a) de Apoyo')
+        PSICOLOGO = 'PSIC', _('Psicólogo(a)')
+        PSICOMOTRICIDAD = 'PSICO', _('Maestro(a) de Psicomotricidad')
+        TRABAJADOR_SOCIAL = 'TRAB', _('Trabajador(a) Social')
+        DIRECTOR = 'DIR', _('Director(a)')
         ADMINISTRATIVO = 'ADMIN', _('Personal Administrativo')
-        INTENDENTE = 'INT', _('Intendente')
-        DOCENTE_EDFISICA = 'EDFIS', _('Docente Educación Física')
+        DOCENTE_EDFISICA = 'EDFIS', _('Maestro(a) Educación Física')
+        TRABAJADOR_MANUAL = 'MAN', _('Trabajador(a) Manual')
 
     puesto = models.CharField(
         _("Puesto"),
@@ -182,9 +177,6 @@ class User(AbstractUser):
         BASE = 'BASE', _('Base')
         HORAS = 'HORAS', _('Por Horas')
         INTERINO = 'INTER', _('Interino')
-        CONTRATO = 'CONT', _('Por Contrato')
-        SUPLENTE = 'SUPL', _('Suplente')
-        COMISIONADO = 'COM', _('Comisionado')
 
     situacion = models.CharField(
         _("Situación laboral"),
@@ -269,7 +261,7 @@ class User(AbstractUser):
     def save(self, *args, **kwargs):
         # Si es superusuario, forzamos rol Administrador y guardamos inmediatamente
         if self.is_superuser:
-            self.role = self.Role.ADMINISTRADOR
+            self.role = self.Role.ADMINISTRATIVO
             return super().save(*args, **kwargs)
 
         # Autoasignar rol Director si corresponde
@@ -277,7 +269,7 @@ class User(AbstractUser):
             self.role = self.Role.DIRECTOR
 
         # Validar nombre según rol
-        if self.role in [self.Role.DIRECTOR, self.Role.DOCENTE]:
+        if self.role in [self.Role.DIRECTOR]:
             if not self.nombre or not self.apellido_paterno:
                 raise ValueError(_("Nombre y apellido paterno son obligatorios para este rol"))
 
@@ -292,16 +284,12 @@ class User(AbstractUser):
         return self.role == self.Role.DIRECTOR
 
     @property
-    def es_docente(self):
-        return self.role == self.Role.DOCENTE
-
-    @property
     def es_secretario(self):
         return self.role == self.Role.SECRETARIO
 
     @property
     def es_administrador(self):
-        return self.role == self.Role.ADMINISTRADOR
+        return self.role == self.Role.ADMINISTRATIVO
 
     @property
     def antiguedad(self):

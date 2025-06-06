@@ -1,60 +1,61 @@
 {% extends "base.html" %}
-{% load crispy_forms_tags %}
-{% load group_filters %}
+{% load i18n %}
+
+{% block title %}Gestión de Escuelas{% endblock %}
+
+{% block breadcrumb_items %}
+› Escuelas
+{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1><i class="fas fa-school me-2"></i>Gestión de Escuelas</h1>
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h3 class="card-title"><i class="fas fa-school me-2"></i>Escuelas Registradas</h3>
         <a href="{% url 'escuelas:crear_escuela' %}" class="btn btn-success">
             <i class="fas fa-plus-circle me-1"></i> Nueva Escuela
         </a>
     </div>
 
-    <div class="card shadow-sm">
-        <div class="card-body">
-            {% if escuelas %}
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Nombre</th>
-                            <th>Clave</th>
-                            <th>Dirección</th>
-                            <th>Teléfono</th>
-                            <th class="text-end">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for escuela in escuelas %}
-                        <tr>
-                            <td>{{ escuela.nombre }}</td>
-                            <td>{{ escuela.clave|default:"-" }}</td>
-                            <td>{{ escuela.direccion|truncatechars:30|default:"-" }}</td>
-                            <td>{{ escuela.telefono|default:"-" }}</td>
-                            <td class="text-end">
-                                <div class="btn-group" role="group">
-                                    <a href="{% url 'escuelas:editar_escuela' escuela.pk %}" 
-                                       class="btn btn-sm btn-outline-primary">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    <a href="{% url 'escuelas:eliminar_escuela' escuela.pk %}" 
-                                       class="btn btn-sm btn-outline-danger">
-                                        <i class="fas fa-trash-alt"></i>
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-            <div class="alert alert-info mb-0">
-                <i class="fas fa-info-circle me-2"></i>No hay escuelas registradas
-            </div>
-            {% endif %}
+    <div class="card-body">
+        {% if escuelas %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>{% trans 'Nombre' %}</th>
+                        <th>{% trans 'Clave Estatal' %}</th>
+                        <th>{% trans 'Dirección' %}</th>
+                        <th>{% trans 'Teléfono' %}</th>
+                        <th class="text-end">{% trans 'Acciones' %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for escuela in escuelas %}
+                    <tr>
+                        <td>{{ escuela.nombre }}</td>
+                        <td>{{ escuela.clave_estatal|default:"-" }}</td>
+                        <td>{{ escuela.domicilio|truncatechars:35|default:"-" }}</td>
+                        <td>{{ escuela.telefono_escuela|default:"-" }}</td>
+                        <td class="text-end">
+                            <div class="btn-group">
+                                <a href="{% url 'escuelas:editar_escuela' escuela.pk %}" class="btn btn-sm btn-primary" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'escuelas:eliminar_escuela' escuela.pk %}" class="btn btn-sm btn-danger" title="Eliminar">
+                                    <i class="fas fa-trash-alt"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
+        {% else %}
+        <div class="alert alert-info text-center mb-0">
+            <i class="fas fa-info-circle me-2"></i>{% trans 'No hay escuelas registradas.' %}
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
