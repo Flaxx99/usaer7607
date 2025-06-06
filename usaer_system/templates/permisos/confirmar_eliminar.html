@@ -1,16 +1,38 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% load group_filters %}
 
-{% block title %}Eliminar Permiso{% endblock %}
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-md-6">
-    <h2 class="mb-4">Eliminar Permiso</h2>
-    <p>¿Seguro que deseas eliminar el permiso de <strong>{{ permiso.profesor }}</strong>?</p>
-    <form method="post">
-      {% csrf_token %}
-      <button type="submit" class="btn btn-danger">Eliminar</button>
-      <a href="{% url 'permisos:revisar_permisos' %}" class="btn btn-secondary">Cancelar</a>
-    </form>
+<div class="container mt-4">
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <div class="card shadow">
+        <div class="card-header bg-danger text-white">
+          <h3 class="card-title mb-0">
+            <i class="fas fa-exclamation-triangle me-2"></i>{{ titulo }}
+          </h3>
+        </div>
+        <div class="card-body">
+          <p>¿Seguro que deseas eliminar la solicitud N° <strong>{{ permiso.id }}</strong>?</p>
+          <div class="alert alert-warning">
+            <p class="mb-1"><strong>Tipo:</strong> {{ permiso.get_tipo_display }}</p>
+            <p class="mb-0"><strong>Motivo:</strong> {{ permiso.motivo|truncatechars:50 }}</p>
+          </div>
+          <p class="text-muted">Esta acción es irreversible.</p>
+          <form method="post">
+            {% csrf_token %}
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+              <a href="{% url 'permisos:gestionar' %}" class="btn btn-secondary me-md-2">
+                <i class="fas fa-times-circle me-1"></i> Cancelar
+              </a>
+              <button type="submit" class="btn btn-danger">
+                <i class="fas fa-trash-alt me-1"></i> Confirmar eliminación
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 {% endblock %}

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% load group_filters %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-check-circle me-2"></i>
+                        Resolver Incidencia #{{ incidencia.id }}
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h5>{{ incidencia.titulo }}</h5>
+                        <p class="text-muted">Reportada por: {{ incidencia.profesor.get_full_name }}</p>
+                        <p>{{ incidencia.descripcion }}</p>
+                        <p class="text-muted">Fecha: {{ incidencia.fecha_reporte|date:"d/m/Y H:i" }}</p>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Comentarios de resolución</label>
+                            <textarea name="respuesta_admin" class="form-control" rows="4" required></textarea>
+                        </div>
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'incidencias:revisar_incidencias' %}" class="btn btn-secondary me-md-2">
+                                <i class="fas fa-times-circle me-1"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-check-circle me-1"></i> Marcar como Resuelta
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

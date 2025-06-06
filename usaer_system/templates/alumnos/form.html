@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% load group_filters %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+  <h2 class="mb-4">{{ titulo }}</h2>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {{ form|crispy }}
+    <div class="mt-3">
+      <button type="submit" class="btn btn-primary">
+        <i class="fas fa-save"></i> Guardar
+      </button>
+      <a href="{% url 'alumnos:listar_alumnos' %}" class="btn btn-secondary ms-2">
+        <i class="fas fa-arrow-left"></i> Cancelar
+      </a>
+    </div>
+  </form>
+{% endblock %}

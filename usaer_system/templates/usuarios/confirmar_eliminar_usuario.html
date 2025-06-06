@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load crispy_forms_tags %} 
+{% load group_filters %}
+
+{% block title %}{% trans 'Eliminar Usuario' %}{% endblock %}
+
+{% block breadcrumb_items %}
+› <a href="{% url 'usuarios:detail' object.pk %}">{{ object.get_full_name }}</a>
+› {% trans 'Eliminar' %}
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title text-danger">{% trans 'Confirmar Eliminación' %}</h3>
+    </div>
+    <form method="post">
+        {% csrf_token %}
+        <div class="card-body">
+            <p>{% trans '¿Estás seguro de que deseas eliminar al usuario?' %}</p>
+            <div class="alert alert-danger">
+                <strong>{{ object.get_full_name }}</strong> ({{ object.get_role_display }})
+                {% if object.escuela %}
+                - {{ object.escuela.nombre }}
+                {% endif %}
+            </div>
+            <p class="text-muted">{% trans 'Esta acción no puede deshacerse.' %}</p>
+        </div>
+        <div class="card-footer">
+            <div class="d-flex justify-content-between">
+                <a href="{% url 'usuarios:detail' object.pk %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> {% trans 'Cancelar' %}
+                </a>
+                <button type="submit" class="btn btn-danger">
+                    <i class="fas fa-trash"></i> {% trans 'Confirmar Eliminación' %}
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

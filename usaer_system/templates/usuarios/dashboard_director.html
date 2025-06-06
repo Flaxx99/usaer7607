@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block title %}Panel Director{% endblock %}
+{% block content %}
+<div class="container">
+  <h2 class="mb-4">🧑‍🏫 Panel del Director</h2>
+  <div class="list-group">
+    <a href="{% url 'incidencias:revisar_incidencias' %}" class="list-group-item list-group-item-action">
+      🔄 Revisar Incidencias
+    </a>
+    <a href="{% url 'usuarios:list' %}" class="list-group-item list-group-item-action">
+      🧑‍🏫 Gestión del Personal
+    </a>
+    <a href="{% url 'usuarios:profile' %}" class="list-group-item list-group-item-action">
+      🔒 Mi Perfil
+    </a>
+  </div>
+</div>
+{% endblock %}

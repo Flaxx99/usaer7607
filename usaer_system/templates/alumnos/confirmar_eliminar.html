@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %} 
+{% load group_filters %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+  <h2 class="mb-4">{{ titulo }}</h2>
+  <p>
+    ¿Estás seguro de que deseas eliminar al alumno
+    <strong>{{ alumno.apellido_paterno }} {{ alumno.apellido_materno }}, {{ alumno.nombres }}</strong>?
+    Esta acción no se puede deshacer.
+  </p>
+  <form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">
+      <i class="fas fa-trash-alt"></i> Sí, eliminar
+    </button>
+    <a href="{% url 'alumnos:listar_alumnos' %}" class="btn btn-secondary ms-2">
+      <i class="fas fa-ban"></i> Cancelar
+    </a>
+  </form>
+{% endblock %}

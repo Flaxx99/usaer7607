@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %} 
+{% load group_filters %}
+{% load i18n %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block breadcrumb_items %}
+› {{ titulo }}
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">{{ titulo }}</h3>
+    </div>
+    <div class="card-body">
+        {% crispy form %}
+    </div>
+</div>
+{% endblock %}

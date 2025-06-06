@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Panel Docente{% endblock %}
+{% block content %}
+<div class="container">
+  <h2 class="mb-4">👩‍🏫 Panel del Docente</h2>
+  <div class="list-group">
+    </a>
+        <a href="{% url 'documentos:subir_expediente' %}" class="list-group-item list-group-item-action">Subir expediente</a>      📄 Capturar RAC
+    </a>
+    <a href="{% url 'alumnos:listar_alumnos' %}" class="list-group-item list-group-item-action">
+      🧑‍🎓 Gestión de Alumnos
+    </a>
+    <a href="{% url 'permisos:solicitar' %}" class="list-group-item list-group-item-action">
+      📝 Solicitar Permiso
+    </a>
+    <a href="{% url 'asistencias:listar_asistencias' %}" class="list-group-item list-group-item-action">
+      📆 Ver Asistencias
+    </a>
+    <a href="{% url 'usuarios:profile' %}" class="list-group-item list-group-item-action">
+      🔒 Mi Perfil
+    </a>
+  </div>
+</div>
+{% endblock %}

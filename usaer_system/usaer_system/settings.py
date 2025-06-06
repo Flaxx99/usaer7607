@@ -27,6 +27,12 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+AUTH_USER_MODEL = 'usuarios.User'
+
+AUTHENTICATION_BACKENDS = [
+    'usuarios.backends.EmailOrEmpleadoBackend',       
+    'django.contrib.auth.backends.ModelBackend',
+]
 
 # Application definition
 
@@ -39,20 +45,24 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     
     # mis apps
-    'usuarios',
-    'escuelas',
+    'usuarios.apps.UsuariosConfig',
+    'escuelas.apps.EscuelasConfig',
     'asistencias',
     'permisos',
     'incidencias',
     'documentos',
+    'alumnos',
+    
     
     #dependencias
-    "crispy_forms",
-    "crispy_bootstrap5",
+    'crispy_forms',
+    'crispy_bootstrap5',
 ]
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
+
+AUTH_USER_MODEL = 'usuarios.User'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -69,7 +79,7 @@ ROOT_URLCONF = 'usaer_system.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / "templates"],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -136,3 +146,8 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+LOGIN_URL = '/accounts/login/'
+LOGIN_REDIRECT_URL = '/usuarios/redireccion/'
+LOGOUT_REDIRECT_URL = '/'
+

@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block title %}Panel Maestro(a) de Apoyo{% endblock %}
+{% block content %}
+<div class="container">
+  <h2 class="mb-4">👩‍🏫 Panel Maestro(a) de Apoyo</h2>
+  <div class="list-group">
+    <a href="{% url 'alumnos:listar_alumnos' %}" class="list-group-item list-group-item-action">
+      🧑‍🎓 Gestión de Alumnos
+    </a>
+    <a href="{% url 'documentos:subir' %}" class="list-group-item list-group-item-action">
+      📁 Subir Expedientes
+    </a>
+    <a href="{% url 'usuarios:profile' %}" class="list-group-item list-group-item-action">
+      🔒 Mi Perfil
+    </a>
+  </div>
+</div>
+{% endblock %}

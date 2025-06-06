@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% load group_filters %}
+  
+{% block content %}
+<div class="container mt-4">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+          <h3 class="card-title mb-0">
+            <i class="fas fa-file-signature me-2"></i>{{ titulo }}
+          </h3>
+        </div>
+        <div class="card-body">
+          <form method="post" novalidate>
+            {% csrf_token %}
+            {{ form|crispy }}
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+              <button type="submit" class="btn btn-success">
+                <i class="fas fa-paper-plane me-1"></i> Enviar solicitud
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

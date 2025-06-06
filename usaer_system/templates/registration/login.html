@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% load group_filters %}
+
+{% block title %}Iniciar sesión{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-4">
+    <h2 class="mb-4 text-center">Iniciar sesión</h2>
+
+    {% if form.non_field_errors %}
+      <div class="alert alert-danger">
+        {{ form.non_field_errors }}
+      </div>
+    {% endif %}
+
+    <form method="post" action="{% url 'login' %}{% if next %}?next={{ next|urlencode }}{% endif %}" novalidate>
+      {% csrf_token %}
+
+      <div class="mb-3">
+        <label for="id_username" class="form-label">Correo o número de empleado</label>
+        <input
+          type="text"
+          name="username"
+          autofocus
+          required
+          class="form-control"
+          placeholder="ejemplo@mail.com o 123456"
+          id="id_username"
+        >
+      </div>
+
+      <div class="mb-3">
+        <label for="id_password" class="form-label">Contraseña</label>
+        <input
+          type="password"
+          name="password"
+          required
+          class="form-control"
+          placeholder="Ingresa tu contraseña"
+          id="id_password"
+        >
+      </div>
+
+      {% if next %}
+        <input type="hidden" name="next" value="{{ next }}">
+      {% endif %}
+
+      <div class="d-grid gap-2 mt-3">
+        <button type="submit" class="btn btn-primary">Ingresar</button>
+      </div>
+    </form>
+
+    <div class="text-center mt-3">
+      <a href="{% url 'password_reset' %}">¿Olvidaste tu contraseña?</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

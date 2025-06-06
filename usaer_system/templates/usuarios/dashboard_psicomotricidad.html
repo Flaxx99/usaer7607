@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block title %}Panel Psicomotricidad{% endblock %}
+{% block content %}
+<div class="container">
+  <h2 class="mb-4">🤸‍♂️ Panel Psicomotricidad</h2>
+  <div class="list-group">
+    <a href="{% url 'usuarios:list' %}" class="list-group-item list-group-item-action">
+      👥 Ver Usuarios
+    </a>
+    <a href="{% url 'documentos:subir' %}" class="list-group-item list-group-item-action">
+      📁 Subir Diagnósticos Psicomotrices
+    </a>
+    <a href="{% url 'usuarios:profile' %}" class="list-group-item list-group-item-action">
+      🔒 Mi Perfil
+    </a>
+  </div>
+</div>
+{% endblock %}
