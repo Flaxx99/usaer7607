@@ -6,14 +6,15 @@ from escuelas.models import Escuela
 
 class User(AbstractUser):
     class Role(models.TextChoices):
-        APOYO = 'APOYO', _('Maestro(a) de Apoyo')
-        PSICOLOGO = 'PSIC', _('Psicólogo(a)')
-        PSICOMOTRICIDAD = 'PSICO', _('Maestro(a) de Psicomotricidad')
-        TRABAJADOR_SOCIAL = 'TRAB', _('Trabajador(a) Social')
-        DIRECTOR = 'DIR', _('Director(a)')
-        ADMINISTRATIVO = 'ADMIN', _('Personal Administrativo')
-        DOCENTE_EDFISICA = 'EDFIS', _('Maestro(a) Educación Física')
-        TRABAJADOR_MANUAL = 'MAN', _('Trabajador(a) Manual')
+        DIRECTOR = 'DIRECTOR', _('Director(a) de Escuela')
+        MAESTRO_APOYO = 'MAESTRO_APOYO', _('Maestro(a) de Apoyo')
+        TRABAJADOR_SOCIAL = 'TRAB_SOCIAL', _('Trabajador(a) Social')
+        PSICOLOGO = 'PSICOLOGO', _('Psicólogo(a)')
+        PSICOMOTRICIDAD = 'PSICOMOTRICIDAD', _('Maestro(a) de Psicomotricidad')
+        COMUNICACION = 'COMUNICACION', _('Maestro(a) de Comunicación')
+        TRABAJADOR_MANUAL = 'TRAB_MANUAL', _('Trabajador(a) Manual')
+        SECRETARIO = 'SECRETARIO', _('Secretario(a)')
+        ADMINISTRADOR = 'ADMIN', _('Administrador(a)')
 
     # Validadores mejorados
     phone_regex = RegexValidator(
@@ -34,7 +35,7 @@ class User(AbstractUser):
         _("Rol"),
         max_length=30,
         choices=Role.choices,
-        default=Role.APOYO,
+        default=Role.MAESTRO_APOYO,
         db_index=True
     )
 
@@ -136,9 +137,7 @@ class User(AbstractUser):
     class NivelEducativo(models.TextChoices):
         PRIMARIA = 'PRIM', _('Primaria')
         SECUNDARIA = 'SEC', _('Secundaria')
-        ESPECIAL = 'ESP', _('Educación Especial')
         FISICA = 'FIS', _('Educación Física')
-
 
     nivel = models.CharField(
         _("Nivel educativo"),
@@ -156,18 +155,20 @@ class User(AbstractUser):
 
     # Datos laborales
     class Puesto(models.TextChoices):
-        APOYO = 'APOYO', _('Maestro(a) de Apoyo')
-        PSICOLOGO = 'PSIC', _('Psicólogo(a)')
-        PSICOMOTRICIDAD = 'PSICO', _('Maestro(a) de Psicomotricidad')
-        TRABAJADOR_SOCIAL = 'TRAB', _('Trabajador(a) Social')
-        DIRECTOR = 'DIR', _('Director(a)')
-        ADMINISTRATIVO = 'ADMIN', _('Personal Administrativo')
-        DOCENTE_EDFISICA = 'EDFIS', _('Maestro(a) Educación Física')
-        TRABAJADOR_MANUAL = 'MAN', _('Trabajador(a) Manual')
+        DIRECTOR = 'DIRECTOR', _('Director(a) de Escuela')
+        MAESTRO_APOYO = 'MAESTRO_APOYO', _('Maestro(a) de Apoyo')
+        TRABAJADOR_SOCIAL = 'TRAB_SOCIAL', _('Trabajador(a) Social')
+        PSICOLOGO = 'PSICOLOGO', _('Psicólogo(a)')
+        PSICOMOTRICIDAD = 'PSICOMOTRICIDAD', _('Maestro(a) de Psicomotricidad')
+        COMUNICACION = 'COMUNICACION', _('Maestro(a) de Comunicación')
+        TRABAJADOR_MANUAL = 'TRAB_MANUAL', _('Trabajador(a) Manual')
+        SECRETARIO = 'SECRETARIO', _('Secretario(a)')
+        ADMINISTRADOR = 'ADMIN', _('Administrador(a)')
+
 
     puesto = models.CharField(
         _("Puesto"),
-        max_length=10,
+        max_length=20,
         choices=Puesto.choices,
         blank=True,
         help_text=_("Puesto que desempeña en la institución")
@@ -177,6 +178,7 @@ class User(AbstractUser):
         BASE = 'BASE', _('Base')
         HORAS = 'HORAS', _('Por Horas')
         INTERINO = 'INTER', _('Interino')
+
 
     situacion = models.CharField(
         _("Situación laboral"),
@@ -279,17 +281,6 @@ class User(AbstractUser):
     def nombre_completo(self):
         return self.get_full_name()
 
-    @property
-    def es_director(self):
-        return self.role == self.Role.DIRECTOR
-
-    @property
-    def es_secretario(self):
-        return self.role == self.Role.SECRETARIO
-
-    @property
-    def es_administrador(self):
-        return self.role == self.Role.ADMINISTRATIVO
 
     @property
     def antiguedad(self):

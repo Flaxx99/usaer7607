@@ -4,6 +4,7 @@ from django import forms
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Div, Field, Submit
 from .models import Alumno
+from usaer_system.forms_utils import convertir_mayusculas
 
 class AlumnoForm(forms.ModelForm):
     class Meta:
@@ -58,3 +59,7 @@ class AlumnoForm(forms.ModelForm):
             ),
             Submit('submit', 'Guardar Alumno', css_class='btn btn-primary mt-4')
         )
+    
+    def clean(self):
+        cleaned = super().clean()
+        return convertir_mayusculas(cleaned)

@@ -1,74 +1,78 @@
 from django import forms
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, Div, Field, Submit
+from crispy_forms.layout import Layout, Fieldset, Field, Div, Submit, ButtonHolder
 from .models import Escuela
+from django.utils.translation import gettext_lazy as _
+from usaer_system.forms_utils import convertir_mayusculas
+
+
 
 class EscuelaForm(forms.ModelForm):
     class Meta:
-        model  = Escuela
+        model = Escuela
         fields = [
-            'clave_estatal', 'clave_federal', 'nombre', 'nivel',
-            'domicilio', 'colonia', 'telefono_escuela', 'zona',
-            'director', 'cel_director', 'correo_director',
-            'inspector', 'tel_inspector', 'correo_inspector',
-            'situacion',
+            'clave_estatal',
+            'clave_federal',
+            'nombre',
+            'nivel',
+            'domicilio',
+            'colonia',
+            'telefono',
+            'zona',
+            'direccion',
+            'inspector',
+            'telefono_inspector',
+            'correo_inspector',
+            'director',
+            'celular_director',
+            'correo_director',
         ]
         labels = {
-            'clave_estatal':    "Clave estatal",
-            'clave_federal':    "Clave federal",
-            'nombre':           "Nombre de la escuela",
-            'nivel':            "Nivel educativo",
-            'domicilio':        "Domicilio",
-            'colonia':          "Colonia",
-            'telefono_escuela': "Teléfono escuela",
-            'zona':             "Zona",
-            'director/a':        "Director/a",
-            'cel_director/a':    "Cel. Director/a",
-            'correo_director/a': "Correo Director/a",
-            'inspector/a':        "Inspector/a",
-            'tel_inspector/a':    "Tel. Inspector/a",
-            'correo_inspector/a': "Correo Inspector/a",
-            'situacion':        "Situación",
+            'clave_estatal': _('CLAVE ESTATAL'),
+            'clave_federal': _('CLAVE FEDERAL'),
+            'nombre': _('NOMBRE'),
+            'nivel': _('NIVEL'),
+            'domicilio': _('DOMICILIO'),
+            'colonia': _('COLONIA'),
+            'telefono': _('TELÉFONO DE LA ESCUELA'),
+            'zona': _('ZONA'),
+            'direccion': _('DIRECCIÓN'),
+            'inspector': _('INSPECTOR'),
+            'telefono_inspector': _('TEL INSPECTOR'),
+            'correo_inspector': _('CORREO INSPECTOR'),
+            'director': _('NOMBRE DEL DIRECTOR'),
+            'celular_director': _('CEL DIRECTOR'),
+            'correo_director': _('CORREO DIRECTOR'),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Crispy Forms helper
         self.helper = FormHelper()
         self.helper.form_method = 'post'
+        self.helper.form_show_labels = True
+
         self.helper.layout = Layout(
-            Div(
-                Div(Field('clave_estatal'),    css_class='col-md-3'),
-                Div(Field('clave_federal'),    css_class='col-md-3'),
-                Div(Field('nombre'),           css_class='col-md-6'),
-                css_class='row mb-3'
+            Fieldset(_('Datos Generales'),
+                Div(Field('clave_estatal'), Field('clave_federal'), css_class='row'),
+                Field('nombre'),
+                Field('nivel'),
+                Div(Field('domicilio'), Field('colonia'), css_class='row'),
+                Field('telefono'),
+                Field('zona'),
+                Field('direccion')
             ),
-            Div(
-                Div(Field('nivel'),            css_class='col-md-3'),
-                Div(Field('domicilio'),        css_class='col-md-5'),
-                Div(Field('colonia'),          css_class='col-md-4'),
-                css_class='row mb-3'
+            Fieldset(_('Datos del Inspector'),
+                Field('inspector'),
+                Div(Field('telefono_inspector'), Field('correo_inspector'), css_class='row')
             ),
-            Div(
-                Div(Field('telefono_escuela'), css_class='col-md-4'),
-                Div(Field('zona'),             css_class='col-md-2'),
-                Div(Field('situacion'),        css_class='col-md-6'),
-                css_class='row mb-3'
+            Fieldset(_('Datos del Director'),
+                Field('director'),
+                Div(Field('celular_director'), Field('correo_director'), css_class='row')
             ),
-            # Bloque Director
-            Div(
-                Div(Field('director/a'),        css_class='col-md-4'),
-                Div(Field('cel_director/a'),    css_class='col-md-4'),
-                Div(Field('correo_director/a'), css_class='col-md-4'),
-                css_class='row mb-3'
-            ),
-            # Bloque Inspector
-            Div(
-                Div(Field('inspector/a'),        css_class='col-md-4'),
-                Div(Field('tel_inspector/a'),    css_class='col-md-4'),
-                Div(Field('correo_inspector/a'), css_class='col-md-4'),
-                css_class='row mb-4'
-            ),
-            Submit('submit', 'Guardar Escuela', css_class='btn btn-primary')
+            ButtonHolder(Submit('submit', _('Guardar escuela'), css_class='btn btn-primary'))
         )
+
+    def clean(self):
+        cleaned = super().clean()
+        return convertir_mayusculas(cleaned)

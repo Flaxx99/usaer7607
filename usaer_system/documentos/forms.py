@@ -3,6 +3,8 @@ from .models import Expediente
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout
 import os
+from usaer_system.forms_utils import convertir_mayusculas
+
 
 class ExpedienteForm(forms.ModelForm):
     class Meta:
@@ -56,3 +58,7 @@ class ExpedienteForm(forms.ModelForm):
                     raise forms.ValidationError(f"Archivo no permitido: {archivo.name}")
                 if archivo.size > 5 * 1024 * 1024:  # 5 MB
                     raise forms.ValidationError(f"{archivo.name} excede los 5MB permitidos.")
+    
+    def clean(self):
+        cleaned = super().clean()
+        return convertir_mayusculas(cleaned)

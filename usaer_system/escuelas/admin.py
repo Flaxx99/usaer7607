@@ -19,10 +19,10 @@ class NivelFilter(admin.SimpleListFilter):
 class EscuelaAdmin(admin.ModelAdmin):
     list_display = (
         'clave_estatal', 'clave_federal', 'nombre', 'nivel',
-        'telefono_escuela', 'zona', 'situacion_display'
+        'telefono', 'zona'
     )
 
-    list_filter = (NivelFilter, 'zona', 'situacion')
+    list_filter = (NivelFilter, 'zona',)
     search_fields = ('clave_estatal', 'clave_federal', 'nombre', 'zona')
     ordering = ('nombre',)
 
@@ -30,10 +30,10 @@ class EscuelaAdmin(admin.ModelAdmin):
 
     fieldsets = (
         (_('Información General'), {
-            'fields': ('clave_estatal', 'clave_federal', 'nombre', 'nivel', 'situacion')
+            'fields': ('clave_estatal', 'clave_federal', 'nombre', 'nivel')
         }),
         (_('Ubicación y Contacto'), {
-            'fields': ('domicilio', 'colonia', 'telefono_escuela', 'zona')
+            'fields': ('domicilio', 'colonia', 'telefono', 'zona')
         }),
         (_('Datos de la Directora'), {
             'fields': ('directora', 'cel_directora', 'correo_directora')
@@ -42,9 +42,3 @@ class EscuelaAdmin(admin.ModelAdmin):
             'fields': ('inspector', 'tel_inspector', 'correo_inspector')
         }),
     )
-
-    def situacion_display(self, obj):
-        color = 'green' if obj.situacion.lower() == "operativa" else 'red'
-        return format_html('<span style="color: {};">{}</span>', color, obj.situacion)
-
-    situacion_display.short_description = _('Situación')
