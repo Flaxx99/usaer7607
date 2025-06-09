@@ -18,5 +18,5 @@ class CustomPasswordValidator:
 
     def get_help_text(self):
         return _(
-            "Tu contraseña debe tener al menos 8 caracteres, incluyendo una mayúscula, un número y un carácter especial."
+            "Tu contraseña debe tener al menos 5 caracteres, incluyendo una mayúscula, un número y un carácter especial."
         )

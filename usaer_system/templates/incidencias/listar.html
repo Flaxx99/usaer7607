@@ -5,8 +5,11 @@
 {% block content %}
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1><i class="fas fa-exclamation-triangle me-2"></i>Mis Incidencias</h1>
+        <h1><i class="fas fa-exclamation-triangle me-2"></i>Incidencias</h1>
         <div class="d-flex">
+            <a href="{% url 'incidencias:crear_incidencia' %}" class="btn btn-success me-3">
+                <i class="fas fa-plus-circle me-1"></i> Nueva Incidencia
+            </a>
             <form class="d-flex me-2" method="get">
                 <select name="estado" class="form-select me-2" onchange="this.form.submit()">
                     <option value="">Todos los estados</option>
