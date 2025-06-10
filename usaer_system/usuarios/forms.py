@@ -24,6 +24,12 @@ class UsuarioCreationForm(UserCreationForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        # ✅ Reemplaza ayuda predeterminada por la personalizada
+        self.fields['password1'].help_text = _(
+            "Tu contraseña debe tener al menos 8 caracteres, incluyendo una mayúscula, un número y un carácter especial."
+        )
+        self.fields['password2'].help_text = _("Repite la contraseña para confirmarla.")
+
         self.helper = FormHelper()
         self.helper.form_method = 'post'
         self.helper.form_show_labels = True
@@ -51,13 +57,9 @@ class UsuarioCreationForm(UserCreationForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        convertir_mayusculas(cleaned_data, campos=[
-            'nombre', 'apellido_paterno', 'apellido_materno',
-            'domicilio', 'rfc', 'curp', 'correo',
-            'clave_presupuestal', 'numero_empleado', 'numero_pensiones',
-            'grado', 'puesto', 'situacion', 'escolaridad'
+        return convertir_mayusculas(cleaned_data, excluir=[
+            'telefono', 'celular', 'fecha_ingreso', 'email', 'password1', 'password2', 'role', 'escuela'
         ])
-        return cleaned_data
 
 
 class UsuarioChangeForm(UserChangeForm):
@@ -104,10 +106,7 @@ class UsuarioChangeForm(UserChangeForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        convertir_mayusculas(cleaned_data, campos=[
-            'nombre', 'apellido_paterno', 'apellido_materno',
-            'domicilio', 'rfc', 'curp', 'correo',
-            'clave_presupuestal', 'numero_empleado', 'numero_pensiones',
-            'grado', 'puesto', 'situacion', 'escolaridad'
+        return convertir_mayusculas(cleaned_data, excluir=[
+            'telefono', 'celular', 'fecha_ingreso', 'email', 'role', 'escuela'
         ])
-        return cleaned_data
+

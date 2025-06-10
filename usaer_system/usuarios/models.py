@@ -5,6 +5,25 @@ from django.core.validators import RegexValidator
 from escuelas.models import Escuela
 
 class User(AbstractUser):
+    username = None  # ✅ Se elimina el campo username
+    email = models.EmailField(
+        _('Correo institucional'),
+        unique=True,
+        help_text=_("Correo institucional del usuario")
+    )
+
+    numero_empleado = models.CharField(
+        _("Número de empleado"),
+        max_length=20,
+        blank=True,
+        null=True,
+        unique=True,
+        help_text=_("Número único de empleado en el sistema")
+    )
+
+    USERNAME_FIELD = 'email'  # ✅ Campo principal de login
+    REQUIRED_FIELDS = ['numero_empleado']  # Campo requerido para superusuarios
+
     class Role(models.TextChoices):
         DIRECTOR = 'DIRECTOR', _('Director(a) de Escuela')
         MAESTRO_APOYO = 'MAESTRO_APOYO', _('Maestro(a) de Apoyo')
@@ -16,21 +35,19 @@ class User(AbstractUser):
         SECRETARIO = 'SECRETARIO', _('Secretario(a)')
         ADMINISTRADOR = 'ADMIN', _('Administrador(a)')
 
-    # Validadores mejorados
     phone_regex = RegexValidator(
-        regex=r'^\+?1?\d{9,15}$',
-        message=_("El número debe estar en formato: '+999999999'. Hasta 15 dígitos.")
+        regex=r'^\+?\d{10,15}$',
+        message=_("El número debe tener entre 10 y 15 dígitos, puede comenzar con '+'.")
     )
     curp_regex = RegexValidator(
-        regex=r'^[A-Z]{4}\d{6}[HM][A-Z]{5}[A-Z\d]{2}$',
-        message=_("Formato de CURP inválido. Debe seguir el formato oficial.")
+        regex=r'^[A-Z][AEIOU][A-Z]{2}\d{6}[HM][A-Z]{5}[0-9A-Z]{2}$',
+        message=_("Formato de CURP inválido. Asegúrate de que tenga 18 caracteres y siga el formato oficial.")
     )
     rfc_regex = RegexValidator(
-        regex=r'^[A-ZÑ&]{3,4}\d{6}[A-Z0-9]{2}[0-9A]$',
-        message=_("Formato de RFC inválido. Debe seguir el formato oficial.")
+        regex=r'^[A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3}$',
+        message=_("Formato de RFC inválido. Debe seguir el formato oficial (12 o 13 caracteres).")
     )
 
-    # Campos principales
     role = models.CharField(
         _("Rol"),
         max_length=30,
@@ -48,112 +65,28 @@ class User(AbstractUser):
         related_name='personal'
     )
 
-    # Datos personales
-    nombre = models.CharField(
-        _("Nombre(s)"),
-        max_length=50,
-        blank=True,
-        help_text=_("Nombre(s) del usuario")
-    )
-    apellido_paterno = models.CharField(
-        _("Apellido paterno"),
-        max_length=50,
-        blank=True,
-        help_text=_("Apellido paterno del usuario")
-    )
-    apellido_materno = models.CharField(
-        _("Apellido materno"),
-        max_length=50,
-        blank=True,
-        help_text=_("Apellido materno del usuario")
-    )
+    nombre = models.CharField(_("Nombre(s)"), max_length=50, blank=True)
+    apellido_paterno = models.CharField(_("Apellido paterno"), max_length=50, blank=True)
+    apellido_materno = models.CharField(_("Apellido materno"), max_length=50, blank=True)
 
-    # Datos de contacto
-    domicilio = models.TextField(
-        _("Domicilio particular"),
-        blank=True,
-        help_text=_("Calle, número, colonia, código postal")
-    )
-    telefono = models.CharField(
-        _("Teléfono particular"),
-        max_length=15,
-        validators=[phone_regex],
-        blank=True,
-        help_text=_("Teléfono fijo de contacto")
-    )
-    celular = models.CharField(
-        _("Celular"),
-        max_length=15,
-        validators=[phone_regex],
-        blank=True,
-        help_text=_("Número de celular personal")
-    )
-    correo = models.EmailField(
-        _("Correo electrónico alterno"),
-        blank=True,
-        help_text=_("Correo electrónico personal alternativo")
-    )
+    domicilio = models.TextField(_("Domicilio particular"), blank=True)
+    telefono = models.CharField(_("Teléfono particular"), max_length=15, validators=[phone_regex], blank=True)
+    celular = models.CharField(_("Celular"), max_length=15, validators=[phone_regex], blank=True)
+    correo = models.EmailField(_("Correo electrónico alterno"), blank=True)
 
-    # Datos oficiales
-    rfc = models.CharField(
-        _("R.F.C."),
-        max_length=13,
-        validators=[rfc_regex],
-        blank=True,
-        null=True,
-        unique=True,
-        help_text=_("Registro Federal de Contribuyentes")
-    )
-    curp = models.CharField(
-        _("C.U.R.P."),
-        max_length=18,
-        validators=[curp_regex],
-        blank=True,
-        null=True,
-        unique=True,
-        help_text=_("Clave Única de Registro de Población")
-    )
-    clave_presupuestal = models.CharField(
-        _("Clave presupuestal"),
-        max_length=30,
-        blank=True,
-        help_text=_("Clave presupuestal asignada por la SEP")
-    )
-    numero_empleado = models.CharField(
-        _("Número de empleado"),
-        max_length=20,
-        blank=True,
-        unique=True,
-        help_text=_("Número único de empleado en el sistema")
-    )
-    numero_pensiones = models.CharField(
-        _("Número de pensiones"),
-        max_length=20,
-        blank=True,
-        help_text=_("Número de pensión o seguro social")
-    )
+    rfc = models.CharField(_("R.F.C."), max_length=13, validators=[rfc_regex], blank=True, null=True, unique=True)
+    curp = models.CharField(_("C.U.R.P."), max_length=18, validators=[curp_regex], blank=True, null=True, unique=True)
+    clave_presupuestal = models.CharField(_("Clave presupuestal"), max_length=30, blank=True)
+    numero_pensiones = models.CharField(_("Número de pensiones"), max_length=20, blank=True)
 
-    # Datos académicos
     class NivelEducativo(models.TextChoices):
         PRIMARIA = 'PRIM', _('Primaria')
         SECUNDARIA = 'SEC', _('Secundaria')
         FISICA = 'FIS', _('Educación Física')
 
-    nivel = models.CharField(
-        _("Nivel educativo"),
-        max_length=4,
-        choices=NivelEducativo.choices,
-        blank=True,
-        help_text=_("Nivel educativo donde labora")
-    )
-    grado = models.CharField(
-        _("Grado(s) que atiende"),
-        max_length=30,
-        blank=True,
-        help_text=_("Grados escolares que atiende (separados por comas)")
-    )
+    nivel = models.CharField(_("Nivel educativo"), max_length=4, choices=NivelEducativo.choices, blank=True)
+    grado = models.CharField(_("Grado(s) que atiende"), max_length=30, blank=True)
 
-    # Datos laborales
     class Puesto(models.TextChoices):
         DIRECTOR = 'DIRECTOR', _('Director(a) de Escuela')
         MAESTRO_APOYO = 'MAESTRO_APOYO', _('Maestro(a) de Apoyo')
@@ -165,47 +98,18 @@ class User(AbstractUser):
         SECRETARIO = 'SECRETARIO', _('Secretario(a)')
         ADMINISTRADOR = 'ADMIN', _('Administrador(a)')
 
-
-    puesto = models.CharField(
-        _("Puesto"),
-        max_length=20,
-        choices=Puesto.choices,
-        blank=True,
-        help_text=_("Puesto que desempeña en la institución")
-    )
+    puesto = models.CharField(_("Puesto"), max_length=20, choices=Puesto.choices, blank=True)
 
     class Situacion(models.TextChoices):
         BASE = 'BASE', _('Base')
         HORAS = 'HORAS', _('Por Horas')
         INTERINO = 'INTER', _('Interino')
 
+    situacion = models.CharField(_("Situación laboral"), max_length=5, choices=Situacion.choices, blank=True)
+    escolaridad = models.CharField(_("Escolaridad"), max_length=100, blank=True)
+    fecha_ingreso = models.DateField(_("Fecha de ingreso"), null=True, blank=True)
+    activo = models.BooleanField(_("¿Activo?"), default=True)
 
-    situacion = models.CharField(
-        _("Situación laboral"),
-        max_length=5,
-        choices=Situacion.choices,
-        blank=True,
-        help_text=_("Situación contractual del empleado")
-    )
-    escolaridad = models.CharField(
-        _("Escolaridad"),
-        max_length=100,
-        blank=True,
-        help_text=_("Grado máximo de estudios")
-    )
-    fecha_ingreso = models.DateField(
-        _("Fecha de ingreso"),
-        null=True,
-        blank=True,
-        help_text=_("Fecha de ingreso al servicio educativo")
-    )
-    activo = models.BooleanField(
-        _("¿Activo?"),
-        default=True,
-        help_text=_("Indica si el usuario está activo en el sistema")
-    )
-
-    # Permisos y grupos
     groups = models.ManyToManyField(
         Group,
         verbose_name=_('Grupos'),
@@ -229,18 +133,18 @@ class User(AbstractUser):
         ordering = ['apellido_paterno', 'apellido_materno', 'nombre']
         constraints = [
             models.UniqueConstraint(
-                fields=['numero_empleado'], 
-                name='unique_numero_empleado', 
+                fields=['numero_empleado'],
+                name='unique_numero_empleado',
                 condition=models.Q(numero_empleado__isnull=False)
             ),
             models.UniqueConstraint(
-                fields=['curp'], 
-                name='unique_curp', 
+                fields=['curp'],
+                name='unique_curp',
                 condition=models.Q(curp__isnull=False)
             ),
             models.UniqueConstraint(
-                fields=['rfc'], 
-                name='unique_rfc', 
+                fields=['rfc'],
+                name='unique_rfc',
                 condition=models.Q(rfc__isnull=False)
             ),
         ]
@@ -251,42 +155,30 @@ class User(AbstractUser):
         ]
 
     def __str__(self):
-        return self.get_full_name() or self.username
+        return self.get_full_name() or self.email or self.numero_empleado or "Usuario"
 
     def get_full_name(self):
         parts = [self.apellido_paterno, self.apellido_materno]
         name = ', '.join(filter(None, parts))
-        if self.nombre:
-            name = f"{name}, {self.nombre}" if name else self.nombre
-        return name
+        return f"{name}, {self.nombre}" if self.nombre else name
 
     def save(self, *args, **kwargs):
-        # Si es superusuario, forzamos rol Administrador y guardamos inmediatamente
         if self.is_superuser:
             self.role = self.Role.ADMINISTRADOR
-            return super().save(*args, **kwargs)
-
-        # Autoasignar rol Director si corresponde
         if self.escuela and hasattr(self.escuela, 'director') and self.escuela.director == self:
             self.role = self.Role.DIRECTOR
-
-        # Validar nombre según rol
-        if self.role in [self.Role.DIRECTOR]:
-            if not self.nombre or not self.apellido_paterno:
-                raise ValueError(_("Nombre y apellido paterno son obligatorios para este rol"))
-
         super().save(*args, **kwargs)
 
     @property
     def nombre_completo(self):
         return self.get_full_name()
 
-
     @property
     def antiguedad(self):
         if self.fecha_ingreso:
             from datetime import date
             today = date.today()
-            delta = today.year - self.fecha_ingreso.year - ((today.month, today.day) < (self.fecha_ingreso.month, self.fecha_ingreso.day))
-            return delta
+            return today.year - self.fecha_ingreso.year - (
+                (today.month, today.day) < (self.fecha_ingreso.month, self.fecha_ingreso.day)
+            )
         return None
