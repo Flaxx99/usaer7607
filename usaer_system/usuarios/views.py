@@ -74,9 +74,11 @@ class UserUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         try:
-            response = super().form_valid(form)
+            self.object = form.save(commit=False)
+            self.object.save(skip_auto_role=True)  # 👈 evitar sobrescritura automática
+            form.save_m2m()
             messages.success(self.request, _('Usuario actualizado exitosamente'))
-            return response
+            return redirect(self.success_url)
         except Exception as e:
             form.add_error(None, _('Error al actualizar el usuario: ') + str(e))
             return self.form_invalid(form)
@@ -85,6 +87,7 @@ class UserUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
         context = super().get_context_data(**kwargs)
         context['titulo'] = _('Editar usuario')
         return context
+
 
 @method_decorator(roles_permitidos(['ADMIN']), name='dispatch')
 class UserDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):

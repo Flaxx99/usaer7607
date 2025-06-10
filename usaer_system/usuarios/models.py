@@ -165,9 +165,10 @@ class User(AbstractUser):
         return f"{name}, {self.nombre}" if self.nombre else name
 
     def save(self, *args, **kwargs):
-        if self.is_superuser:
-            self.role = self.Role.ADMINISTRADOR
-        if self.escuela and hasattr(self.escuela, 'director') and self.escuela.director == self:
+        if not kwargs.pop('skip_auto_role', False):
+            if self.is_superuser:
+             self.role = self.Role.ADMINISTRADOR
+        elif self.escuela and hasattr(self.escuela, 'director') and self.escuela.director == self:
             self.role = self.Role.DIRECTOR
         super().save(*args, **kwargs)
 
