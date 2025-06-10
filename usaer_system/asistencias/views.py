@@ -32,7 +32,6 @@ def checar_asistencia(request):
             try:
                 profesor = User.objects.get(
                     Q(numero_empleado=codigo) | Q(curp=codigo),
-                    role='Profesor',
                     is_active=True
                 )
             except User.DoesNotExist:
@@ -43,6 +42,10 @@ def checar_asistencia(request):
                 return redirect('asistencias:checar_asistencia')
 
             # 2) Determinar si graba Entrada o Salida
+            if not profesor.escuela:
+                messages.error(request, "Este usuario no tiene una escuela asignada. Contacte al administrador.")
+                return redirect('asistencias:checar_asistencia')
+
             asistencia, created = Asistencia.objects.get_or_create(
                 profesor=profesor,
                 fecha=hoy,
@@ -52,6 +55,7 @@ def checar_asistencia(request):
                     'hora_entrada': ahora.time(),
                 }
             )
+
 
             if created:
                 status = 'ENTRADA'

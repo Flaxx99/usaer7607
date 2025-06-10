@@ -3,6 +3,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import RegexValidator
 from escuelas.models import Escuela
+from .managers import CustomUserManager
 
 class User(AbstractUser):
     username = None  # ✅ Se elimina el campo username
@@ -21,6 +22,7 @@ class User(AbstractUser):
         help_text=_("Número único de empleado en el sistema")
     )
 
+    objects = CustomUserManager()
     USERNAME_FIELD = 'email'  # ✅ Campo principal de login
     REQUIRED_FIELDS = ['numero_empleado']  # Campo requerido para superusuarios
 
