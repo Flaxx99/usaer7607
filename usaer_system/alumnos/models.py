@@ -8,7 +8,6 @@ class Alumno(models.Model):
     # --- Relaciones con escuela y profesor ---
     profesor = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        limit_choices_to={'role': 'Profesor'},
         on_delete=models.SET_NULL,
         null=True,
         verbose_name="Profesor responsable"

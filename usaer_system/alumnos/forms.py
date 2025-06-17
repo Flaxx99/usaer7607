@@ -3,6 +3,7 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Div, Field, Submit
 from .models import Alumno
 from usaer_system.forms_utils import convertir_mayusculas
+from django.contrib.auth import get_user_model
 
 class AlumnoForm(forms.ModelForm):
     class Meta:
@@ -15,6 +16,9 @@ class AlumnoForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        User = get_user_model()
+        self.fields['profesor'].queryset = User.objects.all().order_by('last_name', 'first_name')
 
         # Configuración de Crispy Forms
         self.helper = FormHelper()
