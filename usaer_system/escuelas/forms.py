@@ -75,4 +75,4 @@ class EscuelaForm(forms.ModelForm):
 
     def clean(self):
         cleaned = super().clean()
-        return convertir_mayusculas(cleaned)
+        return convertir_mayusculas(cleaned, excluir=['nivel'])
