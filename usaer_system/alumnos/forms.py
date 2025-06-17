@@ -1,5 +1,3 @@
-# alumnos/forms.py
-
 from django import forms
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Div, Field, Submit
@@ -11,26 +9,12 @@ class AlumnoForm(forms.ModelForm):
         model = Alumno
         fields = [
             'apellido_paterno', 'apellido_materno', 'nombres', 'curp',
-            'sexo', 'edad', 'grado', 'clasificacion', 'clasificacion_otro'
+            'sexo', 'edad', 'grado', 'clasificacion', 'clasificacion_otro',
+            'escuela', 'profesor',  # Se permiten seleccionar manualmente
         ]
 
-    def __init__(self, *args, profesor=None, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        # Si se pasa el profesor, ocultamos y fijamos los campos
-        if profesor:
-            # Ocultamos el campo 'escuela' y fijamos su valor
-            self.fields['escuela'].initial = profesor.escuela
-            self.fields['escuela'].widget = forms.HiddenInput()
-            # Ocultamos el campo 'profesor' y fijamos su valor
-            self.fields['profesor'].initial = profesor
-            self.fields['profesor'].widget = forms.HiddenInput()
-        else:
-            # Si no hay profesor, eliminamos los campos
-            if 'profesor' in self.fields:  
-                del self.fields['profesor']
-            if 'escuela' in self.fields:
-                del self.fields['escuela']
 
         # Configuración de Crispy Forms
         self.helper = FormHelper()
@@ -49,17 +33,22 @@ class AlumnoForm(forms.ModelForm):
             Div(
                 Div(Field('sexo'), css_class='col-md-4'),
                 Div(Field('edad'), css_class='col-md-4'),
-                Div(Field('grado'),css_class='col-md-4'),
+                Div(Field('grado'), css_class='col-md-4'),
                 css_class='row g-3'
             ),
             Div(
-                Div(Field('clasificacion'),     css_class='col-md-6'),
-                Div(Field('clasificacion_otro'),css_class='col-md-6'),
+                Div(Field('clasificacion'), css_class='col-md-6'),
+                Div(Field('clasificacion_otro'), css_class='col-md-6'),
+                css_class='row g-3'
+            ),
+            Div(
+                Div(Field('escuela'), css_class='col-md-6'),
+                Div(Field('profesor'), css_class='col-md-6'),
                 css_class='row g-3'
             ),
             Submit('submit', 'Guardar Alumno', css_class='btn btn-primary mt-4')
         )
-    
+
     def clean(self):
         cleaned = super().clean()
         return convertir_mayusculas(cleaned)

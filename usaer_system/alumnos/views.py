@@ -1,4 +1,3 @@
-# alumnos/views.py
 import os
 import openpyxl
 from django.shortcuts import render, redirect, get_object_or_404
@@ -13,68 +12,84 @@ from .forms import AlumnoForm
 
 User = get_user_model()
 
-def es_profesor(user):
-    """Verifica si el usuario es profesor"""
-    return user.is_authenticated and hasattr(user, 'role') and user.role == 'Profesor'
+# ✅ Permitir acceso a roles autorizados
+def puede_gestionar_alumnos(user):
+    return user.is_authenticated and user.role in ['DOCENTE', 'MAESTRO_APOYO', 'ADMIN']
+
 
 @login_required
-@user_passes_test(es_profesor)
+@user_passes_test(puede_gestionar_alumnos)
 def listar_alumnos(request):
-    """Lista todos los alumnos asignados al profesor logueado"""
-    alumnos = Alumno.objects.filter(profesor=request.user).order_by(
-        'apellido_paterno', 'apellido_materno', 'nombres'
-    )
+    """Lista todos los alumnos accesibles según el rol"""
+    if request.user.role == 'ADMIN':
+        alumnos = Alumno.objects.all()
+    elif request.user.role == 'MAESTRO_APOYO':
+        alumnos = Alumno.objects.filter(escuela=request.user.escuela)
+    else:  # DOCENTE
+        alumnos = Alumno.objects.filter(profesor=request.user)
+
+    alumnos = alumnos.order_by('apellido_paterno', 'apellido_materno', 'nombres')
     return render(request, 'alumnos/listar.html', {
         'alumnos': alumnos
     })
 
+
 @login_required
-@user_passes_test(es_profesor)
+@user_passes_test(puede_gestionar_alumnos)
 def crear_alumno(request):
-    """Permite al profesor crear un nuevo alumno"""
+    """Permite crear un nuevo alumno según el rol"""
     if request.method == 'POST':
-        form = AlumnoForm(request.POST, profesor=request.user)
+        form = AlumnoForm(request.POST)
         if form.is_valid():
-            alumno = form.save(commit=False)
-            alumno.profesor = request.user
-            alumno.escuela = request.user.escuela
-            alumno.save()
+            alumno = form.save()
             messages.success(request, "Alumno registrado correctamente.")
             return redirect('alumnos:listar_alumnos')
     else:
-        form = AlumnoForm(profesor=request.user)
+        form = AlumnoForm()
 
     return render(request, 'alumnos/form.html', {
         'form': form,
         'titulo': 'Nuevo Alumno'
     })
 
+
+
 @login_required
-@user_passes_test(es_profesor)
+@user_passes_test(puede_gestionar_alumnos)
 def editar_alumno(request, pk):
-    """Permite al profesor editar los datos de uno de sus alumnos"""
-    alumno = get_object_or_404(Alumno, pk=pk, profesor=request.user)
-    
+    """Edita datos de un alumno si el usuario tiene permisos"""
+    alumno = get_object_or_404(Alumno, pk=pk)
+
+    if request.user.role != 'ADMIN' and alumno.profesor != request.user:
+        messages.error(request, "No tienes permiso para editar este alumno.")
+        return redirect('alumnos:listar_alumnos')
+
     if request.method == 'POST':
-        form = AlumnoForm(request.POST, instance=alumno, profesor=request.user)
+        form = AlumnoForm(request.POST, instance=alumno)
         if form.is_valid():
             form.save()
             messages.success(request, "Datos del alumno actualizados.")
             return redirect('alumnos:listar_alumnos')
     else:
-        form = AlumnoForm(instance=alumno, profesor=request.user)
+        form = AlumnoForm(instance=alumno)
 
     return render(request, 'alumnos/form.html', {
         'form': form,
         'titulo': 'Editar Alumno'
     })
 
+
+
 @login_required
-@user_passes_test(es_profesor)
+@user_passes_test(puede_gestionar_alumnos)
 def eliminar_alumno(request, pk):
-    """Permite al profesor eliminar a uno de sus alumnos con confirmación"""
-    alumno = get_object_or_404(Alumno, pk=pk, profesor=request.user)
-    
+    """Elimina un alumno con confirmación si tiene permisos"""
+    alumno = get_object_or_404(Alumno, pk=pk)
+
+    if request.user.role != 'ADMIN' and alumno.profesor != request.user:
+        messages.error(request, "No tienes permiso para eliminar este alumno.")
+        return redirect('alumnos:listar_alumnos')
+
     if request.method == 'POST':
         try:
             nombre_completo = f"{alumno.apellido_paterno} {alumno.apellido_materno}, {alumno.nombres}"
@@ -90,17 +105,25 @@ def eliminar_alumno(request, pk):
         'titulo': 'Confirmar eliminación'
     })
 
+
 @login_required
-@user_passes_test(es_profesor)
+@user_passes_test(puede_gestionar_alumnos)
 def exportar_rac(request):
-    """Exporta un archivo Excel con el formato RAC usando plantilla"""
+    """Exporta RAC en formato Excel usando plantilla predefinida"""
     try:
         plantilla = os.path.join(settings.BASE_DIR, 'static', 'templates', 'template_rac.xlsx')
         wb = openpyxl.load_workbook(plantilla)
         ws = wb.active
-        fila = 5  # fila de inicio en la plantilla
+        fila = 5  # fila inicial
 
-        for alumno in Alumno.objects.filter(profesor=request.user):
+        if request.user.role == 'ADMIN':
+            alumnos = Alumno.objects.all()
+        elif request.user.role == 'MAESTRO_APOYO':
+            alumnos = Alumno.objects.filter(escuela=request.user.escuela)
+        else:
+            alumnos = Alumno.objects.filter(profesor=request.user)
+
+        for alumno in alumnos:
             ws[f'A{fila}'] = alumno.apellido_paterno or ''
             ws[f'B{fila}'] = alumno.apellido_materno or ''
             ws[f'C{fila}'] = alumno.nombres or ''
@@ -118,7 +141,7 @@ def exportar_rac(request):
         response['Content-Disposition'] = f'attachment; filename=RAC_{request.user.username}.xlsx'
         wb.save(response)
         return response
-        
+
     except Exception as e:
         messages.error(request, f"Error al generar el archivo: {str(e)}")
         return redirect('alumnos:listar_alumnos')
