@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4 text-dark">Detalle del expediente</h2>
+    <div class="card p-4 bg-light shadow-sm">
+
+        <p><strong>Alumno:</strong> {{ expediente.alumno }}</p>
+        <p><strong>Escuela:</strong> {{ expediente.alumno.escuela }}</p>
+        <p><strong>Grado:</strong> {{ expediente.alumno.grado }}</p>
+        <p><strong>Grupo:</strong> {{ expediente.alumno.grupo }}</p>
+        <p><strong>Profesor que subió:</strong> {{ expediente.profesor.get_full_name }}</p>
+        <p><strong>Fecha de subida:</strong> {{ expediente.fecha_subida|date:"d/m/Y H:i" }}</p>
+        <p><strong>Observaciones:</strong> {{ expediente.observaciones|default:"Sin observaciones" }}</p>
+
+        <hr>
+
+        <p><strong>Informe de detección:</strong>
+            <a href="{{ expediente.informe_deteccion.url }}" target="_blank" class="btn btn-sm btn-outline-primary">Ver</a>
+        </p>
+
+        <p><strong>Informe psicopedagógico:</strong>
+            <a href="{{ expediente.informe_psicopedagogico.url }}" target="_blank" class="btn btn-sm btn-outline-primary">Ver</a>
+        </p>
+
+        <p><strong>Plan de intervención:</strong>
+            <a href="{{ expediente.plan_intervencion.url }}" target="_blank" class="btn btn-sm btn-outline-primary">Ver</a>
+        </p>
+
+        {% if expediente.otros %}
+        <p><strong>Otros archivos:</strong>
+            <a href="{{ expediente.otros.url }}" target="_blank" class="btn btn-sm btn-outline-primary">Ver</a>
+        </p>
+        {% endif %}
+
+        <a href="{% url 'subir_expediente' %}" class="btn btn-secondary mt-3">⬅️ Volver</a>
+    </div>
+</div>
+{% endblock %}

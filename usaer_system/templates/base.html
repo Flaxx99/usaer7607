@@ -32,6 +32,13 @@
             <a class="nav-link" href="{% url 'index' %}"><i class="fas fa-clipboard-check me-1"></i>Checador</a>
           </li>
 
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'documentos:lista_expedientes' %}">
+              📁 Ver expedientes
+            </a>
+          </li>
+          
+
           {% if user.is_authenticated %}
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" id="menuUsuario" role="button" data-bs-toggle="dropdown">
@@ -133,6 +140,7 @@
 
       </div>
     </div>
+
   </nav>
 
   <main class="container py-4">
