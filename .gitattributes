@@ -14,3 +14,6 @@
 
 # Configuración de JetBrains (IDEA) debe mantener LF
 .idea/* text eol=lf
+
+# Fuerza los finales de línea a LF en todo el repositorio
+* text=auto eol=lf

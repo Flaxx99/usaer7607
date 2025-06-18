@@ -265,5 +265,12 @@ pyrightconfig.json
 
 /media/
 
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+desktop.ini
+
 # End of https://www.toptal.com/developers/gitignore/api/python,django
 
