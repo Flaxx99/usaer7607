@@ -2,9 +2,12 @@ from usuarios.admin import admin_site
 from django.urls import path, include
 from . import views as core_views
 from django.contrib.auth import views as auth_views
+from django.conf import settings
+from django.conf.urls.static import static
 
 
 urlpatterns = [
+    
     # Panel de administración de Django
     path('admin/', admin_site.urls),
 
@@ -24,4 +27,7 @@ urlpatterns = [
     path('permisos/',    include('permisos.urls',    namespace='permisos')),
     path('incidencias/', include('incidencias.urls', namespace='incidencias')),
     path('escuelas/',    include('escuelas.urls',    namespace='escuelas')),
+
 ]
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

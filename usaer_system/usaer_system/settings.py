@@ -143,3 +143,7 @@ LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/usuarios/redireccion/'
 LOGOUT_REDIRECT_URL = '/'
 
+# settings.py
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
