@@ -21,13 +21,13 @@
                         <small>📅 Subido el: {{ expediente.fecha_subida|date:"d/m/Y H:i" }}</small><br>
 
                         {% if expediente.informe_deteccion %}
-                            <a href="{{ expediente.informe_deteccion.url }}" target="_blank">📄 Informe Detección</a>
+                            <a href="{{ expediente.informe_deteccion.url }}" target="_blank">📄 Informe de Detección Inicial</a>
                         {% endif %}
                         {% if expediente.informe_psicopedagogico %}
-                            | <a href="{{ expediente.informe_psicopedagogico.url }}" target="_blank">🧠 Psicopedagógico</a>
+                            | <a href="{{ expediente.informe_psicopedagogico.url }}" target="_blank">🧠 Informe Psicopedagógico</a>
                         {% endif %}
                         {% if expediente.plan_intervencion %}
-                            | <a href="{{ expediente.plan_intervencion.url }}" target="_blank">📝 Plan</a>
+                            | <a href="{{ expediente.plan_intervencion.url }}" target="_blank">📝 Plan de Intervención</a>
                         {% endif %}
                         {% if expediente.otros %}
                             | <a href="{{ expediente.otros.url }}" target="_blank">📎 Otros</a>

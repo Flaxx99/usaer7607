@@ -2,6 +2,7 @@ from django.db import models
 from alumnos.models import Alumno
 from django.conf import settings
 from pathlib import Path
+import os
 
 # Función general para generar rutas limpias con nombres estandarizados
 def ruta_archivo(instance, filename, tipo):
@@ -60,3 +61,20 @@ class Expediente(models.Model):
 
     def __str__(self):
         return f"{self.alumno} - {self.profesor}"
+
+    def save(self, *args, **kwargs):
+        if self.pk:
+            old = Expediente.objects.get(pk=self.pk)
+            for field in ['informe_deteccion', 'informe_psicopedagogico', 'plan_intervencion', 'otros']:
+                old_file = getattr(old, field)
+                new_file = getattr(self, field)
+                if old_file and old_file != new_file and old_file.storage.exists(old_file.name):
+                    old_file.delete(save=False)
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        for field in ['informe_deteccion', 'informe_psicopedagogico', 'plan_intervencion', 'otros']:
+            archivo = getattr(self, field)
+            if archivo and archivo.storage.exists(archivo.name):
+                archivo.delete(save=False)
+        super().delete(*args, **kwargs)

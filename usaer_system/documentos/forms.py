@@ -47,7 +47,7 @@ class ExpedienteForm(forms.ModelForm):
 
     def clean(self):
         cleaned = super().clean()
-        extensiones = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png']
+        extensiones = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png', '.xlsx', '.xls']
 
         for field in ['informe_deteccion', 'informe_psicopedagogico', 'plan_intervencion', 'otros']:
             archivo = cleaned.get(field)
