@@ -47,7 +47,13 @@
                href="{% url 'documentos:editar_expediente' exp.pk %}">
               ✏️ Editar
             </a>
+            <a class="btn btn-outline-danger btn-sm"
+               href="{% url 'documentos:eliminar_expediente' exp.pk %}"
+               onclick="return confirm('¿Seguro que quieres eliminar este expediente? Esta acción no se puede deshacer.');">
+              🗑️ Eliminar
+            </a>
           </div>
+          
         </div>
       </div>
     {% empty %}
