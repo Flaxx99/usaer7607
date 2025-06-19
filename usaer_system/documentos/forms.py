@@ -50,6 +50,11 @@ class ExpedienteForm(forms.ModelForm):
                 )
             else:
                 self.fields['alumno'].queryset = Alumno.objects.none()
+       
+        # — texto de ayuda para reemplazo de archivos —
+        aviso = "Al seleccionar un archivo nuevo, el anterior será reemplazado."
+        for campo in ['informe_deteccion', 'informe_psicopedagogico', 'plan_intervencion']:
+            self.fields[campo].help_text = aviso
 
     def clean(self):
         cleaned = super().clean()
@@ -98,6 +103,6 @@ OtroArchivoFormSetEdit = inlineformset_factory(
     Expediente,
     OtroArchivo,
     form=OtroArchivoForm,
-    extra=0,
+    extra=1,
     can_delete=True,
 )
