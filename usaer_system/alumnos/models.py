@@ -33,7 +33,8 @@ class Alumno(models.Model):
     edad = models.PositiveSmallIntegerField("Edad")
 
     # --- Datos académicos ---
-    grado = models.CharField("Grado", max_length=20)
+    GRADOS = [(str(i), str(i)) for i in range(1, 7)]  # Temporal (1 al 6)
+    grado = models.CharField("Grado", max_length=1, choices=GRADOS)
     grupo = models.CharField(
         "Grupo", 
         max_length=5, 
@@ -44,7 +45,7 @@ class Alumno(models.Model):
     # --- Clasificación especial ---
     CLASIFICACION_CHOICES = [
         ('DISCAPACIDAD', 'Con discapacidad'),
-        ('DIFICULTADES_SEVERAS', 'Dificultades severas'),
+        ('DIFICULTADES_SEVERAS', 'Dificultades severas de aprendizaje'),
         ('TRASTORNOS', 'Trastornos'),
         ('APTITUDES_SOBRESALIENTES', 'Aptitudes sobresalientes'),
         ('NINGUNO', 'Ninguno'),

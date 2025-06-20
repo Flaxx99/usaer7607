@@ -6,20 +6,17 @@ from django.utils.translation import gettext_lazy as _
 from usaer_system.forms_utils import convertir_mayusculas
 
 
-
 class EscuelaForm(forms.ModelForm):
     class Meta:
         model = Escuela
         fields = [
             'clave_estatal',
             'clave_federal',
+            'cct',
             'nombre',
             'nivel',
-            'domicilio',
-            'colonia',
             'telefono',
             'zona',
-            'direccion',
             'inspector',
             'telefono_inspector',
             'correo_inspector',
@@ -30,13 +27,11 @@ class EscuelaForm(forms.ModelForm):
         labels = {
             'clave_estatal': _('CLAVE ESTATAL'),
             'clave_federal': _('CLAVE FEDERAL'),
+            'cct': _('CCT'),
             'nombre': _('NOMBRE'),
             'nivel': _('NIVEL'),
-            'domicilio': _('DOMICILIO'),
-            'colonia': _('COLONIA'),
             'telefono': _('TELÉFONO DE LA ESCUELA'),
             'zona': _('ZONA'),
-            'direccion': _('DIRECCIÓN'),
             'inspector': _('INSPECTOR'),
             'telefono_inspector': _('TEL INSPECTOR'),
             'correo_inspector': _('CORREO INSPECTOR'),
@@ -55,12 +50,11 @@ class EscuelaForm(forms.ModelForm):
         self.helper.layout = Layout(
             Fieldset(_('Datos Generales'),
                 Div(Field('clave_estatal'), Field('clave_federal'), css_class='row'),
+                Field('cct'),
                 Field('nombre'),
-                Field('nivel'),
-                Div(Field('domicilio'), Field('colonia'), css_class='row'),
+                Field('nivel', css_class='text-uppercase'),
                 Field('telefono'),
                 Field('zona'),
-                Field('direccion')
             ),
             Fieldset(_('Datos del Inspector'),
                 Field('inspector'),

@@ -51,7 +51,7 @@ class User(AbstractUser):
     )
 
     role = models.CharField(
-        _("Rol"),
+        _("Función"),
         max_length=30,
         choices=Role.choices,
         default=Role.MAESTRO_APOYO,
@@ -86,7 +86,7 @@ class User(AbstractUser):
         SECUNDARIA = 'SEC', _('Secundaria')
         FISICA = 'FIS', _('Educación Física')
 
-    nivel = models.CharField(_("Nivel educativo"), max_length=4, choices=NivelEducativo.choices, blank=True)
+    nivel = models.CharField(_("Escolaridad"), max_length=4, choices=NivelEducativo.choices, blank=True)
     grado = models.CharField(_("Grado(s) que atiende"), max_length=30, blank=True)
 
     class Puesto(models.TextChoices):

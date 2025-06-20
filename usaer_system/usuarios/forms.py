@@ -13,7 +13,7 @@ class UsuarioCreationForm(UserCreationForm):
         fields = [
             'nombre', 'apellido_paterno', 'apellido_materno',
             'domicilio', 'telefono', 'celular',
-            'rfc', 'curp', 'correo',
+            'rfc', 'curp',
             'clave_presupuestal', 'numero_empleado', 'numero_pensiones',
             'grado', 'puesto', 'situacion',
             'escolaridad', 'fecha_ingreso',
@@ -29,6 +29,7 @@ class UsuarioCreationForm(UserCreationForm):
             "Tu contraseña debe tener al menos 8 caracteres, incluyendo una mayúscula, un número y un carácter especial."
         )
         self.fields['password2'].help_text = _("Repite la contraseña para confirmarla.")
+        self.fields['role'].label = 'Función'
 
         self.helper = FormHelper()
         self.helper.form_method = 'post'
@@ -41,7 +42,7 @@ class UsuarioCreationForm(UserCreationForm):
                 'domicilio',
                 Div(Field('telefono', css_class='me-2'), Field('celular'), css_class='row g-3'),
                 Div(Field('rfc', css_class='me-2'), Field('curp'), css_class='row g-3'),
-                'correo'
+                
             ),
             Fieldset(_('Datos administrativos'),
                 Div(Field('clave_presupuestal', css_class='me-2'), Field('numero_empleado', css_class='me-2'), Field('numero_pensiones'), css_class='row g-3'),
@@ -70,7 +71,7 @@ class UsuarioChangeForm(UserChangeForm):
         fields = [
             'nombre', 'apellido_paterno', 'apellido_materno',
             'domicilio', 'telefono', 'celular',
-            'rfc', 'curp', 'correo',
+            'rfc', 'curp',
             'clave_presupuestal', 'numero_empleado', 'numero_pensiones',
             'grado', 'puesto', 'situacion',
             'escolaridad', 'fecha_ingreso',

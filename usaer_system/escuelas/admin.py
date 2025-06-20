@@ -1,6 +1,5 @@
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
-from django.utils.html import format_html
 from .models import Escuela
 
 class NivelFilter(admin.SimpleListFilter):
@@ -36,9 +35,9 @@ class EscuelaAdmin(admin.ModelAdmin):
             'fields': ('domicilio', 'colonia', 'telefono', 'zona')
         }),
         (_('Datos de la Directora'), {
-            'fields': ('directora', 'cel_directora', 'correo_directora')
+            'fields': ('director', 'celular_director', 'correo_director')
         }),
         (_('Datos del Inspector'), {
-            'fields': ('inspector', 'tel_inspector', 'correo_inspector')
+            'fields': ('inspector', 'telefono_inspector', 'correo_inspector')
         }),
     )
