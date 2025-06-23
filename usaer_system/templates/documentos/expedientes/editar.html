@@ -36,12 +36,13 @@
         {{ subform.archivo|as_crispy_field }}
         {{ subform.descripcion|as_crispy_field }}
 
-        <div class="form-check">
+        <div class="form-check form-check-inline mt-2">
           {{ subform.DELETE }}
-          <label class="form-check-label" for="{{ subform.DELETE.id_for_label }}">
+          <label class="form-check-label ms-2" for="{{ subform.DELETE.id_for_label }}">
             Eliminar este archivo
           </label>
         </div>
+        
 
         {% if subform.non_field_errors %}
           <div class="text-danger mt-2">{{ subform.non_field_errors }}</div>

@@ -23,10 +23,16 @@
       <div class="card card-body mb-3">
         {{ f.archivo|as_crispy_field }}
         {{ f.descripcion|as_crispy_field }}
-        {{ f.DELETE }} <label>Eliminar</label>
+        <div class="form-check form-check-inline mt-2">
+          {{ f.DELETE }}
+          <label class="form-check-label ms-2" for="{{ f.DELETE.id_for_label }}">
+            Eliminar
+          </label>
+        </div>
+        
       </div>
     {% endfor %}
-    <button type="button" class="btn btn-link" id="add-otro">+ Agregar otro archivo</button>
+   
 
     <button type="submit" class="btn btn-primary mt-3">Guardar expediente</button>
   </form>
