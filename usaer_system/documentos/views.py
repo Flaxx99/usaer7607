@@ -7,6 +7,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 
 from .forms import ExpedienteForm, OtroArchivoFormSet, OtroArchivoFormSetEdit
 from .models import Expediente
+from django.db.models import Q
 
 @login_required
 def subir_expediente(request):
@@ -62,13 +63,31 @@ class ExpedienteListView(LoginRequiredMixin, ListView):
     model = Expediente
     template_name = 'documentos/expedientes/lista.html'
     context_object_name = 'expedientes'
+    paginate_by = 10  # opcional: paginación
 
     def get_queryset(self):
+        qs = super().get_queryset()
         user = self.request.user
-        if user.is_superuser or user.role in ['ADMIN','SECRETARIO']:
-            return Expediente.objects.all().order_by('-fecha_subida')
-        return Expediente.objects.filter(profesor=user).order_by('-fecha_subida')
+        # filtro por permisos
+        if not (user.is_superuser or user.role in ['ADMIN','SECRETARIO']):
+            qs = qs.filter(profesor=user)
 
+        q = self.request.GET.get('q', '').strip()
+        if q:
+            qs = qs.filter(
+                Q(alumno__curp__icontains=q) |
+                Q(alumno__nombres__icontains=q) |
+                Q(alumno__apellido_paterno__icontains=q) |
+                Q(alumno__apellido_materno__icontains=q)
+            )
+        return qs.order_by('-fecha_subida')
+
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['q'] = self.request.GET.get('q','')
+        return ctx
+    
 class ExpedienteDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Expediente
     template_name = 'documentos/expedientes/confirmar_eliminar.html'
