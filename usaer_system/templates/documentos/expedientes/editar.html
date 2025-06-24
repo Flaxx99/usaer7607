@@ -3,11 +3,54 @@
 
 {% block content %}
 <div class="container mt-5">
-    <h2>Editar expediente de {{ expediente.alumno }}</h2>
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        {{ form|crispy }}
-        <button type="submit" class="btn btn-primary">Actualizar</button>
-    </form>
+  <h2>Editar expediente de {{ expediente.alumno }}</h2>
+
+  {% for msg in messages %}
+    <div class="alert alert-{{ msg.tags }} alert-dismissible fade show">
+      {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  {% endfor %}
+
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form|crispy }}
+
+    <hr class="my-4"/>
+    <h4>Otros archivos</h4>
+    {{ formset.management_form }}
+    
+    {% for subform in formset %}
+    {% for hidden in subform.hidden_fields %}
+     {{ hidden }}
+    {% endfor %}
+      <div class="card card-body mb-3">
+        {% if subform.instance.pk %}
+          <div class="mb-2">
+            <strong>Actualmente:</strong>
+            <a href="{{ subform.instance.archivo.url }}" target="_blank">
+              {{ subform.instance.nombre }}
+            </a>
+          </div>
+        {% endif %}
+
+        {{ subform.archivo|as_crispy_field }}
+        {{ subform.descripcion|as_crispy_field }}
+
+        <div class="form-check form-check-inline mt-2">
+          {{ subform.DELETE }}
+          <label class="form-check-label ms-2" for="{{ subform.DELETE.id_for_label }}">
+            Eliminar este archivo
+          </label>
+        </div>
+        
+
+        {% if subform.non_field_errors %}
+          <div class="text-danger mt-2">{{ subform.non_field_errors }}</div>
+        {% endif %}
+      </div>
+    {% endfor %}
+
+    <button type="submit" class="btn btn-primary">Actualizar</button>
+  </form>
 </div>
 {% endblock %}
