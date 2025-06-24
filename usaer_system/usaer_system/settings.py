@@ -62,7 +62,6 @@ INSTALLED_APPS = [
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 
-AUTH_USER_MODEL = 'usuarios.User'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -86,6 +85,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'django.template.context_processors.debug',
             ],
         },
     },
@@ -155,6 +155,10 @@ ROLE_PERMISSIONS = {
         'manage_escuelas',
         'export_rae_rac',
         'manage_documents_admin',
+        'subir_expediente',
+        'lista_expedientes',
+        'editar_expediente',         
+        'listar_global',           
         'view_incidencias',
         'manage_permisos',
         'manage_asistencias',
@@ -163,11 +167,16 @@ ROLE_PERMISSIONS = {
     'DIRECTOR': [
         'view_incidencias',
         'view_calendario',
+        'lista_expedientes',
     ],
     'SECRETARIO': [
         'manage_users',
         'manage_escuelas',
         'manage_documents_admin',
+        'subir_expediente',
+        'lista_expedientes',
+        'editar_expediente',         
+        'listar_global',             
         'export_rae_rac',
         'manage_permisos',
         'manage_asistencias',
@@ -178,36 +187,53 @@ ROLE_PERMISSIONS = {
         'manage_expedientes',
         'view_permisos',
         'manage_asistencias',
+        'subir_expediente',
+        'lista_expedientes',
     ],
     'TRAB_SOCIAL': [
         'upload_to_expedientes',
         'manage_permisos',
         'manage_asistencias',
         'download_official_docs',
+        'lista_expedientes',
+        'editar_expediente',         
+        'listar_global',             
     ],
     'PSICOLOGO': [
         'upload_to_expedientes',
         'manage_permisos',
         'manage_asistencias',
         'download_official_docs',
+        'lista_expedientes',
+        'editar_expediente',         
+        'listar_global',             
     ],
     'PSICOMOTRICIDAD': [
         'upload_to_expedientes',
         'manage_permisos',
         'manage_asistencias',
         'download_official_docs',
+        'lista_expedientes',
+        'editar_expediente',         
+        'listar_global',             
     ],
     'COMUNICACION': [
         'upload_to_expedientes',
         'manage_permisos',
         'manage_asistencias',
         'download_official_docs',
+        'lista_expedientes',
+        'editar_expediente',         
+        'listar_global',             
     ],
     'TRAB_MANUAL': [
         'manage_permisos',
         'manage_asistencias',
+        'lista_expedientes',
     ],
 }
+
+
 
 DASHBOARD_MODULES = [
     {
@@ -264,4 +290,16 @@ DASHBOARD_MODULES = [
         'url': 'alumnos:listar_alumnos',
         'icon': 'fas fa-user-graduate text-info',
     },
-]
+    {
+        'key': 'subir_expediente',
+        'title': 'Subir Expediente',
+        'url': 'documentos:subir_expediente',
+        'icon': 'fas fa-upload text-primary',
+    },
+    {
+        'key': 'lista_expedientes',
+        'title': 'Lista de Expedientes',
+        'url': 'documentos:lista_expedientes',
+        'icon': 'fas fa-list text-secondary',
+    },
+    ]
