@@ -4,6 +4,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 from escuelas.models import Escuela  # Asegúrate de importar tu modelo Escuela
+from usuarios.models import User
 
 class Permiso(models.Model):
     class Tipo(models.TextChoices):
@@ -24,7 +25,6 @@ class Permiso(models.Model):
         on_delete=models.CASCADE,
         verbose_name=_("Profesor solicitante"),
         related_name='permisos_solicitados',
-        limit_choices_to={'role': 'Profesor'}
     )
 
     # Relación con la escuela (automática desde el profesor)

@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
-
+from django.contrib.auth import get_user_model
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -147,3 +147,121 @@ LOGOUT_REDIRECT_URL = '/'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+
+ROLE_PERMISSIONS = {
+    'ADMIN': [
+        'manage_users',
+        'manage_escuelas',
+        'export_rae_rac',
+        'manage_documents_admin',
+        'view_incidencias',
+        'manage_permisos',
+        'manage_asistencias',
+        'manage_alumnos',
+    ],
+    'DIRECTOR': [
+        'view_incidencias',
+        'view_calendario',
+    ],
+    'SECRETARIO': [
+        'manage_users',
+        'manage_escuelas',
+        'manage_documents_admin',
+        'export_rae_rac',
+        'manage_permisos',
+        'manage_asistencias',
+    ],
+    'MAESTRO_APOYO': [
+        'capture_rae_rac',
+        'manage_alumnos',
+        'manage_expedientes',
+        'view_permisos',
+        'manage_asistencias',
+    ],
+    'TRAB_SOCIAL': [
+        'upload_to_expedientes',
+        'manage_permisos',
+        'manage_asistencias',
+        'download_official_docs',
+    ],
+    'PSICOLOGO': [
+        'upload_to_expedientes',
+        'manage_permisos',
+        'manage_asistencias',
+        'download_official_docs',
+    ],
+    'PSICOMOTRICIDAD': [
+        'upload_to_expedientes',
+        'manage_permisos',
+        'manage_asistencias',
+        'download_official_docs',
+    ],
+    'COMUNICACION': [
+        'upload_to_expedientes',
+        'manage_permisos',
+        'manage_asistencias',
+        'download_official_docs',
+    ],
+    'TRAB_MANUAL': [
+        'manage_permisos',
+        'manage_asistencias',
+    ],
+}
+
+DASHBOARD_MODULES = [
+    {
+        'key': 'manage_users',
+        'title': 'Gestión de Usuarios',
+        'url': 'usuarios:list',
+        'icon': 'fas fa-users text-primary',
+    },
+    {
+        'key': 'manage_escuelas',
+        'title': 'Gestión de Escuelas',
+        'url': 'escuelas:listar_escuelas',
+        'icon': 'fas fa-school text-success',
+    },
+    {
+        'key': 'export_rae_rac',
+        'title': 'Exportar RAC',
+        'url': 'alumnos:exportar_rac',
+        'icon': 'fas fa-file-export text-warning',
+    },
+    {
+        'key': 'manage_documents_admin',
+        'title': 'Control de Documentos',
+        'url': 'documentos:subir_expediente',
+        'icon': 'fas fa-folder-open text-info',
+    },
+    {
+        'key': 'view_incidencias',
+        'title': 'Revisar Incidencias',
+        'url': 'incidencias:listar_incidencias',
+        'icon': 'fas fa-exclamation-triangle text-danger',
+    },
+    {
+        'key': 'manage_permisos',
+        'title': 'Gestionar Permisos',
+        'url': 'permisos:gestionar',
+        'icon': 'fas fa-check-circle text-success',
+    },
+    {
+        'key': 'view_permisos',
+        'title': 'Mis Permisos',
+        'url': 'permisos:mis_permisos',
+        'icon': 'fas fa-user-clock text-info',
+    },
+    {
+        'key': 'manage_asistencias',
+        'title': 'Gestión de Asistencias',
+        'url': 'asistencias:listar_asistencias',
+        'icon': 'fas fa-calendar-check text-primary',
+    },
+    {
+        'key': 'manage_alumnos',
+        'title': 'Gestión de Alumnos',
+        'url': 'alumnos:listar_alumnos',
+        'icon': 'fas fa-user-graduate text-info',
+    },
+]

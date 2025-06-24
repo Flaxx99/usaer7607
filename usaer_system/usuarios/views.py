@@ -12,6 +12,8 @@ from .forms import UsuarioCreationForm, UsuarioChangeForm
 from .decoradores import roles_permitidos
 from django.contrib.auth.forms import PasswordChangeForm
 from escuelas.models import Escuela
+from django.conf import settings
+
 
 @method_decorator(roles_permitidos(['ADMIN']), name='dispatch')
 class UserListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
@@ -42,6 +44,7 @@ class UserListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
         context['escuelas'] = Escuela.objects.all()
         return context
 
+
 @method_decorator(roles_permitidos(['ADMIN']), name='dispatch')
 class UserCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
     model = User
@@ -64,6 +67,7 @@ class UserCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
         context['titulo'] = _('Crear nuevo usuario')
         return context
 
+
 @method_decorator(roles_permitidos(['ADMIN']), name='dispatch')
 class UserUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     model = User
@@ -75,7 +79,7 @@ class UserUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     def form_valid(self, form):
         try:
             self.object = form.save(commit=False)
-            self.object.save(skip_auto_role=True)  # 👈 evitar sobrescritura automática
+            self.object.save(skip_auto_role=True)
             form.save_m2m()
             messages.success(self.request, _('Usuario actualizado exitosamente'))
             return redirect(self.success_url)
@@ -96,6 +100,7 @@ class UserDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
     permission_required = 'usuarios.view_user'
     context_object_name = 'usuario'
 
+
 @method_decorator(roles_permitidos(['ADMIN']), name='dispatch')
 class UserDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
     model = User
@@ -107,6 +112,7 @@ class UserDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
         messages.success(request, _('Usuario eliminado exitosamente'))
         return super().delete(request, *args, **kwargs)
 
+
 @login_required
 @roles_permitidos(['ADMIN'])
 def toggle_user_active(request, pk):
@@ -116,6 +122,7 @@ def toggle_user_active(request, pk):
     action = _('activado') if user.activo else _('desactivado')
     messages.success(request, _('Usuario %(action)s exitosamente') % {'action': action})
     return redirect('usuarios:list')
+
 
 @login_required
 def profile(request):
@@ -134,6 +141,7 @@ def profile(request):
         'usuario': user
     })
 
+
 @login_required
 def change_password(request):
     if request.method == 'POST':
@@ -150,6 +158,7 @@ def change_password(request):
         'form': form
     })
 
+
 @login_required
 def redireccion_post_login(request):
     role = request.user.role
@@ -159,68 +168,84 @@ def redireccion_post_login(request):
         return redirect('usuarios:dashboard_director')
     elif role == User.Role.SECRETARIO:
         return redirect('usuarios:dashboard_secretario')
-    elif role == User.Role.DOCENTE:
-        return redirect('usuarios:dashboard_docente')
     elif role == User.Role.MAESTRO_APOYO:
-        return redirect('usuarios:panel_maestro_apoyo')
+        return redirect('usuarios:dashboard_maestro_apoyo')
     elif role == User.Role.TRABAJADOR_SOCIAL:
-        return redirect('usuarios:panel_trabajador_social')
+        return redirect('usuarios:dashboard_trabajador_social')
     elif role == User.Role.PSICOLOGO:
-        return redirect('usuarios:panel_psicologo')
+        return redirect('usuarios:dashboard_psicologo')
     elif role == User.Role.PSICOMOTRICIDAD:
-        return redirect('usuarios:panel_psicomotricidad')
+        return redirect('usuarios:dashboard_psicomotricidad')
     elif role == User.Role.COMUNICACION:
-        return redirect('usuarios:panel_comunicacion')
-    # Trabajador manual y otros roles sin panel propio van a perfil
-    return redirect('usuarios:profile')
+        return redirect('usuarios:dashboard_comunicacion')
+    else:
+        return redirect('usuarios:profile')
 
 
-# Dashboard del DOCENTE
-@login_required
-@roles_permitidos(['DOCENTE'])
-def dashboard_docente(request):
-    return render(request, 'usuarios/dashboard_docente.html')
-
-# Dashboard del SECRETARIO
+# Paneles según función
 @login_required
 @roles_permitidos(['SECRETARIO'])
 def dashboard_secretario(request):
     return render(request, 'usuarios/dashboard_secretario.html')
 
-# Dashboard del DIRECTOR
+
 @login_required
 @roles_permitidos(['DIRECTOR'])
 def dashboard_director(request):
     return render(request, 'usuarios/dashboard_director.html')
 
-# Dashboard del ADMINISTRADOR
+
 @login_required
 @roles_permitidos(['ADMIN'])
 def dashboard_admin(request):
     return render(request, 'usuarios/dashboard_admin.html')
+
 
 @login_required
 @roles_permitidos(['MAESTRO_APOYO'])
 def dashboard_maestro_apoyo(request):
     return render(request, 'usuarios/dashboard_maestro_apoyo.html')
 
+
 @login_required
 @roles_permitidos(['TRABAJADOR_SOCIAL'])
 def dashboard_trabajador_social(request):
     return render(request, 'usuarios/dashboard_trabajador_social.html')
+
 
 @login_required
 @roles_permitidos(['PSICOLOGO'])
 def dashboard_psicologo(request):
     return render(request, 'usuarios/dashboard_psicologo.html')
 
+
 @login_required
 @roles_permitidos(['PSICOMOTRICIDAD'])
 def dashboard_psicomotricidad(request):
     return render(request, 'usuarios/dashboard_psicomotricidad.html')
 
+
 @login_required
 @roles_permitidos(['COMUNICACION'])
 def dashboard_comunicacion(request):
     return render(request, 'usuarios/dashboard_comunicacion.html')
+
+@login_required
+def dashboard(request):
+    user_role = request.user.role  # 'ADMIN', 'DIRECTOR', 'MAESTRO_APOYO', etc.
+
+    # 1) Obtenemos las claves permitidas para este rol
+    allowed = settings.ROLE_PERMISSIONS.get(user_role, [])
+
+    # 2) Filtramos los módulos para quedarnos solo con los que su 'key' esté en allowed
+    modules = [
+        m for m in settings.DASHBOARD_MODULES
+        if m['key'] in allowed
+    ]
+
+    return render(request, 'usuarios/dashboard.html', {
+        'modules': modules,
+        'role': user_role,
+    })
+
 

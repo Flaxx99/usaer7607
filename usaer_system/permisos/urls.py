@@ -1,28 +1,31 @@
 from django.urls import path
 from . import views
 from usuarios.decoradores import roles_permitidos
+from django.contrib.auth import get_user_model
+User = get_user_model()
 
 app_name = 'permisos'
 
 # Todos los roles excepto Trabajador Manual pueden solicitar permisos
 solicitantes = [
-    'DOCENTE', 'MAESTRO_APOYO',
+    'MAESTRO_APOYO',
     'TRAB_SOCIAL', 'PSICOLOGO',
     'PSICOMOTRICIDAD', 'COMUNICACION',
-    'SECRETARIO', 'DIRECTOR', 'ADMIN'
+    'SECRETARIO', 'ADMIN', 'TRAB_MANUAL'
 ]
 solo_mis = [
-    'DOCENTE', 'MAESTRO_APOYO',
+    'MAESTRO_APOYO',
     'TRAB_SOCIAL', 'PSICOLOGO',
-    'PSICOMOTRICIDAD', 'COMUNICACION'
+    'PSICOMOTRICIDAD', 'COMUNICACION',
+    'TRAB_MANUAL'
 ]
-gestores = ['SECRETARIO', 'DIRECTOR', 'ADMIN']
+gestores = ['SECRETARIO', 'ADMIN']
 
 urlpatterns = [
     # Solicitar permiso
     path('solicitar/', roles_permitidos(solicitantes)(views.solicitar_permiso), name='solicitar'),
     # Ver mis propios permisos
-    path('mis-permisos/', roles_permitidos(solo_mis)(views.mis_permisos), name='mis_permisos'),
+    path('mis-permisos/', roles_permitidos(solo_mis + [User.Role.MAESTRO_APOYO])(views.mis_permisos), name='mis_permisos'),
     # Gestión (listar, filtrar) de todas las solicitudes
     path('gestion/', roles_permitidos(gestores)(views.gestionar_permisos), name='gestionar'),
     # Detalle de una solicitud

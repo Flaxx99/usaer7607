@@ -96,7 +96,6 @@ def mis_permisos(request):
     })
 
 @login_required
-@permission_required('permisos.gestionar_permisos')
 def gestionar_permisos(request):
     """
     Panel de control para administradores con filtros avanzados
