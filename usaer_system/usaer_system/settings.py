@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'incidencias',
     'documentos',
     'alumnos',
+    #'oficios',
     
     
     #dependencias
@@ -86,6 +87,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'django.template.context_processors.debug',
+                'usuarios.context_processors.permisos_usuario',
             ],
         },
     },
@@ -148,158 +150,287 @@ LOGOUT_REDIRECT_URL = '/'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# settings.py (fragmento corregido)
+
+# ----------------------------------------------------------------
+# Funciones permitidas según rol para el dashboard
+# ----------------------------------------------------------------
+# settings.py (fragmento)
 
 ROLE_PERMISSIONS = {
     'ADMIN': [
-        'manage_users',
-        'manage_escuelas',
-        'export_rae_rac',
-        'manage_documents_admin',
-        'subir_expediente',
-        'lista_expedientes',
-        'editar_expediente',         
-        'listar_global',           
-        'view_incidencias',
-        'manage_permisos',
-        'manage_asistencias',
-        'manage_alumnos',
-    ],
-    'DIRECTOR': [
-        'view_incidencias',
-        'view_calendario',
-        'lista_expedientes',
-    ],
-    'SECRETARIO': [
-        'manage_users',
-        'manage_escuelas',
-        'manage_documents_admin',
-        'subir_expediente',
-        'lista_expedientes',
-        'editar_expediente',         
-        'listar_global',             
-        'export_rae_rac',
-        'manage_permisos',
-        'manage_asistencias',
-    ],
-    'MAESTRO_APOYO': [
-        'capture_rae_rac',
-        'manage_alumnos',
-        'manage_expedientes',
-        'view_permisos',
-        'manage_asistencias',
-        'subir_expediente',
-        'lista_expedientes',
-    ],
-    'TRAB_SOCIAL': [
-        'upload_to_expedientes',
-        'manage_permisos',
-        'manage_asistencias',
+        # Usuarios CRUD
+        'create_user', 'list_users', 'edit_user', 'delete_user',
+        # Escuelas CRUD
+        'create_escuela', 'list_escuelas', 'edit_escuela', 'delete_escuela',
+        # Alumnos CRUD
+        'create_alumno', 'list_alumnos', 'edit_alumno', 'delete_alumno',
+        # RAE/RAC
+        'export_rae_rac', 'capture_rae_rac',
+        # Expedientes CRUD + descarga oficial
+        'create_expediente', 'list_expedientes', 'edit_expediente', 'delete_expediente',
         'download_official_docs',
-        'lista_expedientes',
-        'editar_expediente',         
-        'listar_global',             
+        # Incidencias CRUD
+        'create_incidencia', 'list_incidencias', 'edit_incidencia', 'delete_incidencia',
+        # Permisos
+        'manage_permisos',
+        # Asistencias
+        'check_asistencia', 'list_asistencias',
+    ],
+
+    'DIRECTOR': [
+        'list_incidencias',   # listar_incidenicas reemplaza view_incidencias
+    ],
+
+    'SECRETARIO': [
+        # Usuarios CRUD
+        'create_user', 'list_users', 'edit_user', 'delete_user',
+        # Escuelas CRUD
+        'create_escuela', 'list_escuelas', 'edit_escuela', 'delete_escuela',
+        # RAE/RAC
+        'export_rae_rac',
+        # Expedientes CRUD + descarga oficial
+        'create_expediente', 'list_expedientes', 'edit_expediente', 'delete_expediente',
+        'download_official_docs',
+        # Permisos
+        'manage_permisos',
+        # Asistencias
+        'check_asistencia', 'list_asistencias',
+    ],
+
+    'MAESTRO_APOYO': [
+        # Alumnos CRUD
+        'create_alumno', 'list_alumnos', 'edit_alumno',
+        # RAE/RAC
+        'export_rae_rac', 'capture_rae_rac',
+        # Expedientes CRUD + descarga oficial
+        'create_expediente', 'list_expedientes', 'edit_expediente', 'delete_expediente',
+        'download_official_docs',
+        # Permisos
+        'manage_permisos',
+        # Asistencias
+        'check_asistencia', 'list_asistencias',
+    ],
+
+    # Equipo itinerante: sólo listar/editar expediente y descarga oficial
+    'TRAB_SOCIAL': [
+        'list_expedientes', 'edit_expediente', 'download_official_docs',
+        'manage_permisos',
+        'check_asistencia', 'list_asistencias',
     ],
     'PSICOLOGO': [
-        'upload_to_expedientes',
+        'list_expedientes', 'edit_expediente', 'download_official_docs',
         'manage_permisos',
-        'manage_asistencias',
-        'download_official_docs',
-        'lista_expedientes',
-        'editar_expediente',         
-        'listar_global',             
+        'check_asistencia', 'list_asistencias',
     ],
     'PSICOMOTRICIDAD': [
-        'upload_to_expedientes',
+        'list_expedientes', 'edit_expediente', 'download_official_docs',
         'manage_permisos',
-        'manage_asistencias',
-        'download_official_docs',
-        'lista_expedientes',
-        'editar_expediente',         
-        'listar_global',             
+        'check_asistencia', 'list_asistencias',
     ],
     'COMUNICACION': [
-        'upload_to_expedientes',
+        'list_expedientes', 'edit_expediente', 'download_official_docs',
         'manage_permisos',
-        'manage_asistencias',
-        'download_official_docs',
-        'lista_expedientes',
-        'editar_expediente',         
-        'listar_global',             
+        'check_asistencia', 'list_asistencias',
     ],
+
     'TRAB_MANUAL': [
+        # Puede descargar y ver lista
+        'download_official_docs', 'list_expedientes',
+        # Permisos y asistencias
         'manage_permisos',
-        'manage_asistencias',
-        'lista_expedientes',
+        'check_asistencia', 'list_asistencias',
     ],
 }
 
 
 
+# ----------------------------------------------------------------
+# Metadatos de todos los módulos disponibles en el dashboard
+# ----------------------------------------------------------------
+# ----------------------------------------------------------------
+# Metadatos de todos los módulos disponibles en el dashboard
+# ----------------------------------------------------------------
 DASHBOARD_MODULES = [
+    # --- Usuarios CRUD ---
     {
-        'key': 'manage_users',
-        'title': 'Gestión de Usuarios',
-        'url': 'usuarios:list',
+        'key': 'create_user',
+        'title': 'Crear Usuario',
+        'url_name': 'usuarios:create',
+        'icon': 'fas fa-user-plus text-primary',
+    },
+    {
+        'key': 'list_users',
+        'title': 'Listar Usuarios',
+        'url_name': 'usuarios:list',
         'icon': 'fas fa-users text-primary',
     },
     {
-        'key': 'manage_escuelas',
-        'title': 'Gestión de Escuelas',
-        'url': 'escuelas:listar_escuelas',
+        'key': 'edit_user',
+        'title': 'Editar Usuario',
+        'url_name': 'usuarios:update',
+        'icon': 'fas fa-user-edit text-warning',
+        'needs_pk': True,
+    },
+    {
+        'key': 'delete_user',
+        'title': 'Eliminar Usuario',
+        'url_name': 'usuarios:delete',
+        'icon': 'fas fa-user-slash text-danger',
+        'needs_pk': True,
+    },
+
+    # --- Escuelas CRUD ---
+    {
+        'key': 'create_escuela',
+        'title': 'Crear Escuela',
+        'url_name': 'escuelas:crear_escuela',
+        'icon': 'fas fa-school-plus text-success',
+    },
+    {
+        'key': 'list_escuelas',
+        'title': 'Listar Escuelas',
+        'url_name': 'escuelas:listar_escuelas',
         'icon': 'fas fa-school text-success',
     },
     {
-        'key': 'export_rae_rac',
-        'title': 'Exportar RAC',
-        'url': 'alumnos:exportar_rac',
-        'icon': 'fas fa-file-export text-warning',
+        'key': 'edit_escuela',
+        'title': 'Editar Escuela',
+        'url_name': 'escuelas:editar_escuela',
+        'icon': 'fas fa-edit text-warning',
+        'needs_pk': True,
     },
     {
-        'key': 'manage_documents_admin',
-        'title': 'Control de Documentos',
-        'url': 'documentos:subir_expediente',
-        'icon': 'fas fa-folder-open text-info',
+        'key': 'delete_escuela',
+        'title': 'Eliminar Escuela',
+        'url_name': 'escuelas:eliminar_escuela',
+        'icon': 'fas fa-trash text-danger',
+        'needs_pk': True,
+    },
+
+    # --- Alumnos CRUD ---
+    {
+        'key': 'create_alumno',
+        'title': 'Crear Alumno',
+        'url_name': 'alumnos:crear_alumno',
+        'icon': 'fas fa-user-graduate text-info',
     },
     {
-        'key': 'view_incidencias',
-        'title': 'Revisar Incidencias',
-        'url': 'incidencias:listar_incidencias',
-        'icon': 'fas fa-exclamation-triangle text-danger',
+        'key': 'list_alumnos',
+        'title': 'Listar Alumnos',
+        'url_name': 'alumnos:listar_alumnos',
+        'icon': 'fas fa-users text-info',
+    },
+    {
+        'key': 'edit_alumno',
+        'title': 'Editar Alumno',
+        'url_name': 'alumnos:editar_alumno',
+        'icon': 'fas fa-edit text-warning',
+        'needs_pk': True,
+    },
+    {
+        'key': 'delete_alumno',
+        'title': 'Eliminar Alumno',
+        'url_name': 'alumnos:eliminar_alumno',
+        'icon': 'fas fa-trash text-danger',
+        'needs_pk': True,
+    },
+
+    # --- Expedientes CRUD (Documentos) ---
+    {
+        'key': 'create_expediente',
+        'title': 'Crear Expediente',
+        'url_name': 'documentos:subir_expediente',
+        'icon': 'fas fa-file-upload text-primary',
+    },
+    {
+        'key': 'list_expedientes',
+        'title': 'Listar Expedientes',
+        'url_name': 'documentos:lista_expedientes',
+        'icon': 'fas fa-file-alt text-secondary',
+    },
+    {
+        'key': 'edit_expediente',
+        'title': 'Editar Expediente',
+        'url_name': 'documentos:editar_expediente',
+        'icon': 'fas fa-edit text-warning',
+        'needs_pk': True,
+    },
+    {
+        'key': 'delete_expediente',
+        'title': 'Eliminar Expediente',
+        'url_name': 'documentos:eliminar_expediente',
+        'icon': 'fas fa-trash-alt text-danger',
+        'needs_pk': True,
+    },
+
+    # --- Incidencias CRUD ---
+    {
+        'key': 'create_incidencia',
+        'title': 'Crear Incidencia',
+        'url_name': 'incidencias:crear_incidencia',
+        'icon': 'fas fa-exclamation-circle text-warning',
+    },
+    {
+        'key': 'list_incidencias',
+        'title': 'Listar Incidencias',
+        'url_name': 'incidencias:listar_incidencias',
+        'icon': 'fas fa-list-alt text-danger',
+    },
+    {
+        'key': 'edit_incidencia',
+        'title': 'Editar Incidencia',
+        'url_name': 'incidencias:editar_incidencia',
+        'icon': 'fas fa-edit text-warning',
+        'needs_pk': True,
+    },
+    {
+        'key': 'delete_incidencia',
+        'title': 'Eliminar Incidencia',
+        'url_name': 'incidencias:eliminar_incidencia',
+        'icon': 'fas fa-trash text-danger',
+        'needs_pk': True,
+    },
+
+    # --- Permisos ---
+    {
+        'key': 'create_permiso',
+        'title': 'Solicitar Permiso',
+        'url_name': 'permisos:solicitar',
+        'icon': 'fas fa-calendar-plus text-primary',
+    },
+    {
+        'key': 'list_my_permisos',
+        'title': 'Mis Permisos',
+        'url_name': 'permisos:mis_permisos',
+        'icon': 'fas fa-user-clock text-info',
     },
     {
         'key': 'manage_permisos',
         'title': 'Gestionar Permisos',
-        'url': 'permisos:gestionar',
+        'url_name': 'permisos:gestionar',
         'icon': 'fas fa-check-circle text-success',
     },
+
+    # --- Asistencias ---
     {
-        'key': 'view_permisos',
-        'title': 'Mis Permisos',
-        'url': 'permisos:mis_permisos',
-        'icon': 'fas fa-user-clock text-info',
+        'key': 'check_asistencia',
+        'title': 'Checar Asistencia',
+        'url_name': 'asistencias:checar_asistencia',
+        'icon': 'fas fa-sign-in-alt text-primary',
     },
     {
-        'key': 'manage_asistencias',
-        'title': 'Gestión de Asistencias',
-        'url': 'asistencias:listar_asistencias',
-        'icon': 'fas fa-calendar-check text-primary',
+        'key': 'list_asistencias',
+        'title': 'Listar Asistencias',
+        'url_name': 'asistencias:listar_asistencias',
+        'icon': 'fas fa-calendar-alt text-primary',
     },
+
+    # --- Descarga de documentos oficiales ---
     {
-        'key': 'manage_alumnos',
-        'title': 'Gestión de Alumnos',
-        'url': 'alumnos:listar_alumnos',
-        'icon': 'fas fa-user-graduate text-info',
+        'key': 'download_official_docs',
+        'title': 'Descargar Documentos Oficiales',
+        'url_name': 'documentos:lista_expedientes',
+        'icon': 'fas fa-download text-secondary',
     },
-    {
-        'key': 'subir_expediente',
-        'title': 'Subir Expediente',
-        'url': 'documentos:subir_expediente',
-        'icon': 'fas fa-upload text-primary',
-    },
-    {
-        'key': 'lista_expedientes',
-        'title': 'Lista de Expedientes',
-        'url': 'documentos:lista_expedientes',
-        'icon': 'fas fa-list text-secondary',
-    },
-    ]
+]

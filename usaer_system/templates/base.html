@@ -33,6 +33,7 @@
               <i class="fas fa-bars me-1"></i>Menú
             </a>
             <ul class="dropdown-menu" aria-labelledby="menuUsuario">
+
               {# Panel principal por rol #}
               {% if user.role == 'MAESTRO_APOYO' %}
                 <li><a class="dropdown-item" href="{% url 'usuarios:dashboard_maestro_apoyo' %}">🎓 Panel Maestro Apoyo</a></li>
@@ -42,46 +43,53 @@
                 <li><a class="dropdown-item" href="{% url 'usuarios:dashboard_director' %}">👨‍🏫 Panel Director</a></li>
               {% elif user.role == 'ADMIN' or user.is_staff or user.is_superuser %}
                 <li><a class="dropdown-item" href="{% url 'usuarios:dashboard_admin' %}">⚙️ Panel Administrador</a></li>
-              {% elif user.role in 'TRAB_SOCIAL PSICOLOGO PSICOMOTRICIDAD COMUNICACION TRAB_MANUAL' %}
+              {% else %}
                 <li><a class="dropdown-item" href="{% url 'usuarios:profile' %}">👤 Mi Perfil</a></li>
               {% endif %}
 
               <li><hr class="dropdown-divider"></li>
 
-              {# Módulos comunes por permisos #}
-              {% if user.role in 'MAESTRO_APOYO ADMIN SECRETARIO' %}
+              {# Enlaces por permisos #}
+              {% if 'list_alumnos' in permisos_usuario %}
                 <li><a class="dropdown-item" href="{% url 'alumnos:listar_alumnos' %}">👨‍👩‍👧 Alumnos</a></li>
               {% endif %}
 
-              {% if user.role in 'MAESTRO_APOYO TRAB_SOCIAL PSICOLOGO PSICOMOTRICIDAD COMUNICACION SECRETARIO ADMIN' %}
+              {% if 'list_expedientes' in permisos_usuario %}
                 <li><a class="dropdown-item" href="{% url 'documentos:lista_expedientes' %}">📁 Expedientes</a></li>
+              {% endif %}
+
+              {% if 'create_expediente' in permisos_usuario %}
                 <li><a class="dropdown-item" href="{% url 'documentos:subir_expediente' %}">🧾 Subir RAE / RAC</a></li>
               {% endif %}
 
-              {% if user.role in 'MAESTRO_APOYO ADMIN SECRETARIO' %}
+              {% if 'export_rae_rac' in permisos_usuario %}
                 <li><a class="dropdown-item" href="{% url 'alumnos:exportar_rac' %}">📤 Exportar RAC</a></li>
               {% endif %}
 
-              {% if user.role in 'MAESTRO_APOYO SECRETARIO ADMIN TRAB_SOCIAL PSICOLOGO PSICOMOTRICIDAD COMUNICACION TRAB_MANUAL' %}
+              {% if 'manage_permisos' in permisos_usuario %}
                 <li><a class="dropdown-item" href="{% url 'permisos:gestionar' %}">📝 Permisos</a></li>
+              {% endif %}
+
+              {% if 'list_asistencias' in permisos_usuario %}
                 <li><a class="dropdown-item" href="{% url 'asistencias:listar_asistencias' %}">📅 Asistencias</a></li>
               {% endif %}
 
-              {% if user.role in 'ADMIN DIRECTOR SECRETARIO' %}
+              {% if 'list_incidencias' in permisos_usuario %}
                 <li><a class="dropdown-item" href="{% url 'incidencias:listar_incidencias' %}">🚨 Incidencias</a></li>
               {% endif %}
-             
 
-              {% if user.role in 'SECRETARIO ADMIN' %}
+              {% if 'list_escuelas' in permisos_usuario %}
                 <li><a class="dropdown-item" href="{% url 'escuelas:listar_escuelas' %}">🏫 Escuelas</a></li>
               {% endif %}
 
-              {% if user.role == 'ADMIN' %}
+              {% if 'list_users' in permisos_usuario %}
                 <li><a class="dropdown-item" href="{% url 'usuarios:list' %}">👥 Usuarios</a></li>
+              {% endif %}
+
+              {% if user.is_superuser %}
                 <li><a class="dropdown-item" href="{% url 'admin:index' %}">⚙️ Admin Django</a></li>
               {% endif %}
             </ul>
-
           </li>
           {% endif %}
         </ul>

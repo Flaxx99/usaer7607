@@ -2,8 +2,8 @@ from django.db import models
 
 class Escuela(models.Model):
     CLAVE_NIVELES = [
-    ('Primaria', 'Primaria'),
-    ('Secundaria', 'Secundaria'),
+    ('Primaria', 'PRIMARIA'),
+    ('Secundaria', 'SECUNDARIA'),
     ]   
 
     clave_estatal = models.CharField("Clave estatal", max_length=10, unique=True)

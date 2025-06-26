@@ -1,12 +1,15 @@
+# usuarios/views.py
+
 from django.contrib import messages
 from django.contrib.auth import login, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.shortcuts import render, redirect, get_object_or_404
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import ListView, UpdateView, DeleteView, CreateView, DetailView
 from django.utils.decorators import method_decorator
+
 from .models import User
 from .forms import UsuarioCreationForm, UsuarioChangeForm
 from .decoradores import roles_permitidos
@@ -14,7 +17,11 @@ from django.contrib.auth.forms import PasswordChangeForm
 from escuelas.models import Escuela
 from django.conf import settings
 
+from documentos.models import Expediente  # Ajusta al nombre de tu modelo de expediente si difiere
 
+# -----------------------------
+# Vistas basadas en clases para usuarios
+# -----------------------------
 @method_decorator(roles_permitidos(['ADMIN']), name='dispatch')
 class UserListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     model = User
@@ -24,25 +31,25 @@ class UserListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     paginate_by = 20
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        qs = super().get_queryset()
         role = self.request.GET.get('role')
         escuela = self.request.GET.get('escuela')
         activo = self.request.GET.get('activo')
 
         if role:
-            queryset = queryset.filter(role=role)
+            qs = qs.filter(role=role)
         if escuela:
-            queryset = queryset.filter(escuela__id=escuela)
+            qs = qs.filter(escuela__id=escuela)
         if activo:
-            queryset = queryset.filter(activo=(activo == '1'))
+            qs = qs.filter(activo=(activo == '1'))
 
-        return queryset.order_by('apellido_paterno', 'apellido_materno', 'nombre')
+        return qs.order_by('apellido_paterno', 'apellido_materno', 'nombre')
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['roles'] = User.Role.choices
-        context['escuelas'] = Escuela.objects.all()
-        return context
+        ctx = super().get_context_data(**kwargs)
+        ctx['roles'] = User.Role.choices
+        ctx['escuelas'] = Escuela.objects.all()
+        return ctx
 
 
 @method_decorator(roles_permitidos(['ADMIN']), name='dispatch')
@@ -55,17 +62,17 @@ class UserCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
 
     def form_valid(self, form):
         try:
-            response = super().form_valid(form)
+            resp = super().form_valid(form)
             messages.success(self.request, _('Usuario creado exitosamente'))
-            return response
+            return resp
         except Exception as e:
             form.add_error(None, _('Error al guardar el usuario: ') + str(e))
             return self.form_invalid(form)
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['titulo'] = _('Crear nuevo usuario')
-        return context
+        ctx = super().get_context_data(**kwargs)
+        ctx['titulo'] = _('Crear nuevo usuario')
+        return ctx
 
 
 @method_decorator(roles_permitidos(['ADMIN']), name='dispatch')
@@ -88,9 +95,9 @@ class UserUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
             return self.form_invalid(form)
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['titulo'] = _('Editar usuario')
-        return context
+        ctx = super().get_context_data(**kwargs)
+        ctx['titulo'] = _('Editar usuario')
+        return ctx
 
 
 @method_decorator(roles_permitidos(['ADMIN']), name='dispatch')
@@ -113,6 +120,9 @@ class UserDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
         return super().delete(request, *args, **kwargs)
 
 
+# -----------------------------
+# Vistas de funciones para usuario individual y autenticación
+# -----------------------------
 @login_required
 @roles_permitidos(['ADMIN'])
 def toggle_user_active(request, pk):
@@ -128,18 +138,13 @@ def toggle_user_active(request, pk):
 def profile(request):
     user = request.user
     form = UsuarioChangeForm(instance=user)
-
     if request.method == 'POST':
         form = UsuarioChangeForm(request.POST, instance=user)
         if form.is_valid():
             form.save()
             messages.success(request, _('Perfil actualizado exitosamente'))
             return redirect('usuarios:profile')
-
-    return render(request, 'usuarios/perfil.html', {
-        'form': form,
-        'usuario': user
-    })
+    return render(request, 'usuarios/perfil.html', {'form': form, 'usuario': user})
 
 
 @login_required
@@ -147,18 +152,18 @@ def change_password(request):
     if request.method == 'POST':
         form = PasswordChangeForm(request.user, request.POST)
         if form.is_valid():
-            user = form.save()
-            update_session_auth_hash(request, user)
+            usr = form.save()
+            update_session_auth_hash(request, usr)
             messages.success(request, _('Contraseña cambiada exitosamente'))
             return redirect('usuarios:profile')
     else:
         form = PasswordChangeForm(request.user)
-
-    return render(request, 'usuarios/cambiar_contrasena.html', {
-        'form': form
-    })
+    return render(request, 'usuarios/cambiar_contrasena.html', {'form': form})
 
 
+# -----------------------------
+# Redirección post-login según rol
+# -----------------------------
 @login_required
 def redireccion_post_login(request):
     role = request.user.role
@@ -182,7 +187,9 @@ def redireccion_post_login(request):
         return redirect('usuarios:profile')
 
 
-# Paneles según función
+# -----------------------------
+# Dashboards por rol (vistas separadas)
+# -----------------------------
 @login_required
 @roles_permitidos(['SECRETARIO'])
 def dashboard_secretario(request):
@@ -230,22 +237,37 @@ def dashboard_psicomotricidad(request):
 def dashboard_comunicacion(request):
     return render(request, 'usuarios/dashboard_comunicacion.html')
 
+
+# -----------------------------
+# Dashboard genérico con módulos dinámicos
+# -----------------------------
 @login_required
 def dashboard(request):
-    user_role = request.user.role  # 'ADMIN', 'DIRECTOR', 'MAESTRO_APOYO', etc.
-
-    # 1) Obtenemos las claves permitidas para este rol
+    user_role = request.user.role  # 'ADMIN', 'DIRECTOR', etc.
     allowed = settings.ROLE_PERMISSIONS.get(user_role, [])
+    modules = []
 
-    # 2) Filtramos los módulos para quedarnos solo con los que su 'key' esté en allowed
-    modules = [
-        m for m in settings.DASHBOARD_MODULES
-        if m['key'] in allowed
-    ]
+    for m in settings.DASHBOARD_MODULES:
+        if m['key'] not in allowed:
+            continue
+
+        mod = m.copy()
+        url_name = mod.get('url_name')
+        if not url_name:
+            continue
+
+        if mod.get('needs_pk'):
+            try:
+                exp = Expediente.objects.get(profesor=request.user)
+                mod['url'] = reverse(url_name, args=[exp.pk])
+            except Expediente.DoesNotExist:
+                continue
+        else:
+            mod['url'] = reverse(url_name)
+
+        modules.append(mod)
 
     return render(request, 'usuarios/dashboard.html', {
         'modules': modules,
-        'role': user_role,
+        'role':     user_role,
     })
-
-
