@@ -85,7 +85,7 @@ def eliminar_alumno(request, pk):
     if request.method == 'POST':
         alumno.delete()
         return redirect('alumnos:listar_alumnos')
-    return render(request, 'alumnos/confirmar_eliminacion.html', {
+    return render(request, 'alumnos/confirmar_eliminar.html', {
         'alumno': alumno
     })
 

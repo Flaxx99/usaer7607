@@ -1,11 +1,19 @@
 {% extends 'base.html' %}
 {% block title %}Eliminar Alumno{% endblock %}
+
 {% block content %}
-<h2 class="mb-4">Confirmar eliminación</h2>
-<p>¿Seguro que deseas eliminar a <strong>{{ alumno.apellido_paterno }} {{ alumno.apellido_materno }}, {{ alumno.nombres }}</strong>?</p>
-<form method="post">
-  {% csrf_token %}
-  <button type="submit" class="btn btn-danger">Sí, eliminar</button>
-  <a href="{% url 'alumnos:listar_alumnos' %}" class="btn btn-secondary ms-2">Cancelar</a>
-</form>
+  <h2 class="mb-4">Confirmar eliminación</h2>
+  <p>
+    ¿Estás seguro de que deseas eliminar a
+    <strong>
+      {{ alumno.apellido_paterno }} {{ alumno.apellido_materno }}, {{ alumno.nombres }}
+    </strong>?
+  </p>
+  <form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Sí, eliminar</button>
+    <a href="{% url 'alumnos:listar_alumnos' %}" class="btn btn-secondary ms-2">
+      Cancelar
+    </a>
+  </form>
 {% endblock %}
