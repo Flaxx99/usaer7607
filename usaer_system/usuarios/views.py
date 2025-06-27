@@ -166,77 +166,7 @@ def change_password(request):
 # -----------------------------
 @login_required
 def redireccion_post_login(request):
-    role = request.user.role
-    if role == User.Role.ADMINISTRADOR:
-        return redirect('usuarios:dashboard_admin')
-    elif role == User.Role.DIRECTOR:
-        return redirect('usuarios:dashboard_director')
-    elif role == User.Role.SECRETARIO:
-        return redirect('usuarios:dashboard_secretario')
-    elif role == User.Role.MAESTRO_APOYO:
-        return redirect('usuarios:dashboard_maestro_apoyo')
-    elif role == User.Role.TRABAJADOR_SOCIAL:
-        return redirect('usuarios:dashboard_trabajador_social')
-    elif role == User.Role.PSICOLOGO:
-        return redirect('usuarios:dashboard_psicologo')
-    elif role == User.Role.PSICOMOTRICIDAD:
-        return redirect('usuarios:dashboard_psicomotricidad')
-    elif role == User.Role.COMUNICACION:
-        return redirect('usuarios:dashboard_comunicacion')
-    else:
-        return redirect('usuarios:profile')
-
-
-# -----------------------------
-# Dashboards por rol (vistas separadas)
-# -----------------------------
-@login_required
-@roles_permitidos(['SECRETARIO'])
-def dashboard_secretario(request):
-    return render(request, 'usuarios/dashboard_secretario.html')
-
-
-@login_required
-@roles_permitidos(['DIRECTOR'])
-def dashboard_director(request):
-    return render(request, 'usuarios/dashboard_director.html')
-
-
-@login_required
-@roles_permitidos(['ADMIN'])
-def dashboard_admin(request):
-    return render(request, 'usuarios/dashboard_admin.html')
-
-
-@login_required
-@roles_permitidos(['MAESTRO_APOYO'])
-def dashboard_maestro_apoyo(request):
-    return render(request, 'usuarios/dashboard_maestro_apoyo.html')
-
-
-@login_required
-@roles_permitidos(['TRABAJADOR_SOCIAL'])
-def dashboard_trabajador_social(request):
-    return render(request, 'usuarios/dashboard_trabajador_social.html')
-
-
-@login_required
-@roles_permitidos(['PSICOLOGO'])
-def dashboard_psicologo(request):
-    return render(request, 'usuarios/dashboard_psicologo.html')
-
-
-@login_required
-@roles_permitidos(['PSICOMOTRICIDAD'])
-def dashboard_psicomotricidad(request):
-    return render(request, 'usuarios/dashboard_psicomotricidad.html')
-
-
-@login_required
-@roles_permitidos(['COMUNICACION'])
-def dashboard_comunicacion(request):
-    return render(request, 'usuarios/dashboard_comunicacion.html')
-
+    return redirect('usuarios:dashboard')
 
 # -----------------------------
 # Dashboard genérico con módulos dinámicos

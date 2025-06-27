@@ -243,12 +243,6 @@ ROLE_PERMISSIONS = {
     ],
 }
 
-
-
-# ----------------------------------------------------------------
-# Metadatos de todos los módulos disponibles en el dashboard
-# ----------------------------------------------------------------
-# ----------------------------------------------------------------
 # Metadatos de todos los módulos disponibles en el dashboard
 # ----------------------------------------------------------------
 DASHBOARD_MODULES = [
@@ -265,47 +259,19 @@ DASHBOARD_MODULES = [
         'url_name': 'usuarios:list',
         'icon': 'fas fa-users text-primary',
     },
-    {
-        'key': 'edit_user',
-        'title': 'Editar Usuario',
-        'url_name': 'usuarios:update',
-        'icon': 'fas fa-user-edit text-warning',
-        'needs_pk': True,
-    },
-    {
-        'key': 'delete_user',
-        'title': 'Eliminar Usuario',
-        'url_name': 'usuarios:delete',
-        'icon': 'fas fa-user-slash text-danger',
-        'needs_pk': True,
-    },
 
     # --- Escuelas CRUD ---
     {
         'key': 'create_escuela',
         'title': 'Crear Escuela',
         'url_name': 'escuelas:crear_escuela',
-        'icon': 'fas fa-school-plus text-success',
+        'icon': 'fas fa-school text-success',
     },
     {
         'key': 'list_escuelas',
         'title': 'Listar Escuelas',
         'url_name': 'escuelas:listar_escuelas',
         'icon': 'fas fa-school text-success',
-    },
-    {
-        'key': 'edit_escuela',
-        'title': 'Editar Escuela',
-        'url_name': 'escuelas:editar_escuela',
-        'icon': 'fas fa-edit text-warning',
-        'needs_pk': True,
-    },
-    {
-        'key': 'delete_escuela',
-        'title': 'Eliminar Escuela',
-        'url_name': 'escuelas:eliminar_escuela',
-        'icon': 'fas fa-trash text-danger',
-        'needs_pk': True,
     },
 
     # --- Alumnos CRUD ---
@@ -321,20 +287,6 @@ DASHBOARD_MODULES = [
         'url_name': 'alumnos:listar_alumnos',
         'icon': 'fas fa-users text-info',
     },
-    {
-        'key': 'edit_alumno',
-        'title': 'Editar Alumno',
-        'url_name': 'alumnos:editar_alumno',
-        'icon': 'fas fa-edit text-warning',
-        'needs_pk': True,
-    },
-    {
-        'key': 'delete_alumno',
-        'title': 'Eliminar Alumno',
-        'url_name': 'alumnos:eliminar_alumno',
-        'icon': 'fas fa-trash text-danger',
-        'needs_pk': True,
-    },
 
     # --- Expedientes CRUD (Documentos) ---
     {
@@ -349,20 +301,6 @@ DASHBOARD_MODULES = [
         'url_name': 'documentos:lista_expedientes',
         'icon': 'fas fa-file-alt text-secondary',
     },
-    {
-        'key': 'edit_expediente',
-        'title': 'Editar Expediente',
-        'url_name': 'documentos:editar_expediente',
-        'icon': 'fas fa-edit text-warning',
-        'needs_pk': True,
-    },
-    {
-        'key': 'delete_expediente',
-        'title': 'Eliminar Expediente',
-        'url_name': 'documentos:eliminar_expediente',
-        'icon': 'fas fa-trash-alt text-danger',
-        'needs_pk': True,
-    },
 
     # --- Incidencias CRUD ---
     {
@@ -376,20 +314,6 @@ DASHBOARD_MODULES = [
         'title': 'Listar Incidencias',
         'url_name': 'incidencias:listar_incidencias',
         'icon': 'fas fa-list-alt text-danger',
-    },
-    {
-        'key': 'edit_incidencia',
-        'title': 'Editar Incidencia',
-        'url_name': 'incidencias:editar_incidencia',
-        'icon': 'fas fa-edit text-warning',
-        'needs_pk': True,
-    },
-    {
-        'key': 'delete_incidencia',
-        'title': 'Eliminar Incidencia',
-        'url_name': 'incidencias:eliminar_incidencia',
-        'icon': 'fas fa-trash text-danger',
-        'needs_pk': True,
     },
 
     # --- Permisos ---

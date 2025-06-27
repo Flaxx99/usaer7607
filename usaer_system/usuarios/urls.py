@@ -25,14 +25,5 @@ urlpatterns = [
     # Redirección post-login
     path('redireccion/', views.redireccion_post_login, name='redireccion_post_login'),
 
-    # Dashboards por rol
-    path('dashboard/secretario/', views.dashboard_secretario, name='dashboard_secretario'),
-    path('dashboard/director/', views.dashboard_director, name='dashboard_director'),
-    path('dashboard/admin/', views.dashboard_admin, name='dashboard_admin'),
-    path('dashboard/maestro-apoyo/', views.dashboard_maestro_apoyo, name='dashboard_maestro_apoyo'),
-    path('dashboard/trabajador-social/', views.dashboard_trabajador_social, name='dashboard_trabajador_social'),
-    path('dashboard/psicologo/', views.dashboard_psicologo, name='dashboard_psicologo'),
-    path('dashboard/psicomotricidad/', views.dashboard_psicomotricidad, name='dashboard_psicomotricidad'),
-    path('dashboard/comunicacion/', views.dashboard_comunicacion, name='dashboard_comunicacion'),
     path('dashboard/', dashboard, name='dashboard'),
 ]
