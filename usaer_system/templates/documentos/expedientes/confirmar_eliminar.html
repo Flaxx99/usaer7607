@@ -3,17 +3,17 @@
 
 {% block content %}
 <div class="container mt-5">
-  <h2>Confirmar eliminación</h2>
-  <p>¿Estás seguro de que quieres eliminar el expediente de <strong>{{ object.alumno }}</strong>?</p>
-  <p>Esta acción es irreversible y borrará también los archivos físicos asociados.</p>
+  <h2 class="text-danger">⚠️ Confirmar eliminación</h2>
+  <p>¿Estás segura de que deseas eliminar el expediente de <strong>{{ object.alumno }}</strong>?</p>
+  <p class="text-muted">Esta acción es irreversible y también eliminará los archivos físicos asociados.</p>
 
   <form method="post">
     {% csrf_token %}
     <a href="{% url 'documentos:lista_expedientes' %}" class="btn btn-secondary">
-      Cancelar
+      ↩️ Cancelar
     </a>
     <button type="submit" class="btn btn-danger">
-      Sí, eliminar
+      🗑️ Sí, eliminar
     </button>
   </form>
 </div>

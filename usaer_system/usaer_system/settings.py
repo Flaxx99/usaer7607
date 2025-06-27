@@ -358,3 +358,12 @@ DASHBOARD_MODULES = [
         'icon': 'fas fa-download text-secondary',
     },
 ]
+ROLES_EQUIPO_ITINERANTE = [
+    'PSICOLOGO',
+    'TRAB_SOCIAL',
+    'PSICOMOTRICIDAD',
+    'COMUNICACION',
+    'SECRETARIO',
+    'ADMIN'
+]
+

@@ -7,14 +7,31 @@ from .forms import AlumnoForm
 
 def listar_alumnos(request):
     """
-    Lista todos los alumnos.
+    Lista alumnos según el rol del usuario autenticado.
     """
-    alumnos = (
-        Alumno.objects
-        .select_related('escuela')
-        .all()
-        .order_by('apellido_paterno', 'nombres')
-    )
+    user = request.user
+
+    # Si es maestro de apoyo, ve solo sus alumnos
+    if user.role == 'MAESTRO_APOYO':
+        alumnos = Alumno.objects.filter(profesor=user)
+
+    # Roles que pueden ver todos los alumnos
+    elif user.role in [
+        'PSICÓLOGO',
+        'TRABAJADOR_SOCIAL',
+        'COMUNICACION',
+        'PSICOMOTRICIDAD',
+        'SECRETARIO',
+        'ADMIN',
+    ]:
+        alumnos = Alumno.objects.all()
+
+    # Otros no pueden ver nada
+    else:
+        alumnos = Alumno.objects.none()
+
+    alumnos = alumnos.select_related('escuela').order_by('apellido_paterno', 'nombres')
+
     return render(request, 'alumnos/listar.html', {
         'alumnos': alumnos,
     })
