@@ -35,17 +35,9 @@
             <ul class="dropdown-menu" aria-labelledby="menuUsuario">
 
               {# Panel principal por rol #}
-              {% if user.role == 'MAESTRO_APOYO' %}
-                <li><a class="dropdown-item" href="{% url 'usuarios:dashboard_maestro_apoyo' %}">🎓 Panel Maestro Apoyo</a></li>
-              {% elif user.role == 'SECRETARIO' %}
-                <li><a class="dropdown-item" href="{% url 'usuarios:dashboard_secretario' %}">🗂 Panel Secretario</a></li>
-              {% elif user.role == 'DIRECTOR' %}
-                <li><a class="dropdown-item" href="{% url 'usuarios:dashboard_director' %}">👨‍🏫 Panel Director</a></li>
-              {% elif user.role == 'ADMIN' or user.is_staff or user.is_superuser %}
-                <li><a class="dropdown-item" href="{% url 'usuarios:dashboard_admin' %}">⚙️ Panel Administrador</a></li>
-              {% else %}
-                <li><a class="dropdown-item" href="{% url 'usuarios:profile' %}">👤 Mi Perfil</a></li>
-              {% endif %}
+              <li><a class="dropdown-item" href="{% url 'usuarios:dashboard' %}">
+                <i class="fas fa-th-large me-2"></i>Panel de Control
+              </a></li>
 
               <li><hr class="dropdown-divider"></li>
 
