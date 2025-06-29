@@ -52,12 +52,14 @@ INSTALLED_APPS = [
     'incidencias',
     'documentos',
     'alumnos',
-    #'oficios',
+    'oficios',
+    
     
     
     #dependencias
     'crispy_forms',
     'crispy_bootstrap5',
+    
 ]
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
@@ -176,6 +178,8 @@ ROLE_PERMISSIONS = {
         'manage_permisos',
         # Asistencias
         'check_asistencia', 'list_asistencias',
+        # oficios
+        'upload_oficios','list_oficios',
     ],
 
     'DIRECTOR': [
@@ -196,6 +200,8 @@ ROLE_PERMISSIONS = {
         'manage_permisos',
         # Asistencias
         'check_asistencia', 'list_asistencias',
+        # Oficios
+        'upload_oficios', 'list_oficios',
     ],
 
     'MAESTRO_APOYO': [
@@ -210,6 +216,8 @@ ROLE_PERMISSIONS = {
         'manage_permisos',
         # Asistencias
         'check_asistencia', 'list_asistencias',
+        # Oficios
+        'list_oficios',
     ],
 
     # Equipo itinerante: sólo listar/editar expediente y descarga oficial
@@ -217,21 +225,29 @@ ROLE_PERMISSIONS = {
         'list_expedientes', 'edit_expediente', 'download_official_docs',
         'manage_permisos',
         'check_asistencia', 'list_asistencias',
+        # Oficios
+        'list_oficios',
     ],
     'PSICOLOGO': [
         'list_expedientes', 'edit_expediente', 'download_official_docs',
         'manage_permisos',
         'check_asistencia', 'list_asistencias',
+        # Oficios
+        'list_oficios',
     ],
     'PSICOMOTRICIDAD': [
         'list_expedientes', 'edit_expediente', 'download_official_docs',
         'manage_permisos',
         'check_asistencia', 'list_asistencias',
+        # Oficios
+        'list_oficios',
     ],
     'COMUNICACION': [
         'list_expedientes', 'edit_expediente', 'download_official_docs',
         'manage_permisos',
         'check_asistencia', 'list_asistencias',
+        # Oficios
+        'list_oficios',
     ],
 
     'TRAB_MANUAL': [
@@ -240,6 +256,8 @@ ROLE_PERMISSIONS = {
         # Permisos y asistencias
         'manage_permisos',
         'check_asistencia', 'list_asistencias',
+        # Oficios
+        'list_oficios',
     ],
 }
 
@@ -350,13 +368,20 @@ DASHBOARD_MODULES = [
         'icon': 'fas fa-calendar-alt text-primary',
     },
 
-    # --- Descarga de documentos oficiales ---
+    # --- Oficios ---
     {
-        'key': 'download_official_docs',
-        'title': 'Descargar Documentos Oficiales',
-        'url_name': 'documentos:lista_expedientes',
-        'icon': 'fas fa-download text-secondary',
+        'key': 'upload_oficios',
+        'title': 'Subir Oficios',
+        'url_name': 'oficios:subir_oficio',
+        'icon': 'fas fa-upload text-success',
     },
+    {
+        'key': 'list_oficios',
+        'title': 'Ver Oficios',
+        'url_name': 'oficios:lista_oficios',
+         'icon': 'fas fa-download text-secondary',
+    },  
+
 ]
 ROLES_EQUIPO_ITINERANTE = [
     'PSICOLOGO',

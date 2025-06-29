@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load widget_tweaks %}
+
+{% block content %}
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+      <div class="card shadow">
+        <div class="card-header bg-success text-white">
+          <h5 class="mb-0"><i class="fas fa-upload me-2"></i>Subir nuevo oficio</h5>
+        </div>
+        <div class="card-body">
+          {% if form.errors %}
+            <div class="alert alert-danger">
+              <ul class="mb-0">
+                {% for field in form %}
+                  {% for error in field.errors %}
+                    <li>{{ error }}</li>
+                  {% endfor %}
+                {% endfor %}
+              </ul>
+            </div>
+          {% endif %}
+
+          <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="mb-3">
+              <label for="{{ form.titulo.id_for_label }}" class="form-label">Título del oficio</label>
+              {{ form.titulo|add_class:"form-control" }}
+            </div>
+
+            <div class="mb-3">
+              <label for="{{ form.descripcion.id_for_label }}" class="form-label">Descripción</label>
+              {{ form.descripcion|add_class:"form-control" }}
+            </div>
+
+            <div class="mb-3">
+              <label for="{{ form.archivo.id_for_label }}" class="form-label">Archivo</label>
+              {{ form.archivo|add_class:"form-control" }}
+            </div>
+
+            <div class="d-grid mt-4">
+              <button type="submit" class="btn btn-success">
+                <i class="fas fa-save me-1"></i> Guardar
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
