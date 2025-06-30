@@ -11,7 +11,10 @@ from .models import Expediente
 from documentos.utils import tiene_permiso
 from alumnos.models import Alumno
 from django.conf import settings
-
+import os
+import glob
+from django.conf import settings
+from pathlib import Path
 
 # Roles con permiso de edición total (sobre cualquier expediente)
 ROLES_PUEDEN_EDITAR_TODO = [
@@ -72,8 +75,30 @@ def editar_expediente(request, pk):
         formset = OtroArchivoFormSetEdit(request.POST, request.FILES, instance=expediente)
 
         if form.is_valid() and formset.is_valid():
-            form.save()
+            expediente_actualizado = form.save(commit=False)
+
+            # Eliminar archivos viejos si se sube uno nuevo
+            for field in ['informe_deteccion', 'informe_psicopedagogico', 'plan_intervencion']:
+                nuevo_archivo = form.cleaned_data.get(field)
+                if nuevo_archivo:
+                    # Detectar el tipo base (ej: deteccion, psico, plan)
+                    tipo = field.split('_')[1]
+                    carpeta = Path(settings.MEDIA_ROOT) / f"expedientes/alumno_{expediente.alumno.id}"
+                    patron = str(carpeta / f"{tipo}.*")
+                    archivos_anteriores = glob.glob(patron)
+
+                    for archivo_path in archivos_anteriores:
+                        try:
+                            os.remove(archivo_path)
+                        except FileNotFoundError:
+                            pass  # ya no existía
+
+                    # Se asigna el nuevo archivo al campo correspondiente
+                    setattr(expediente_actualizado, field, nuevo_archivo)
+
+            expediente_actualizado.save()
             formset.save()
+
             messages.success(request, "✅ Expediente y archivos adicionales actualizados.")
             return redirect('documentos:lista_expedientes')
         else:
@@ -87,6 +112,7 @@ def editar_expediente(request, pk):
         'formset': formset,
         'expediente': expediente
     })
+
 
 
 class ExpedienteListView(LoginRequiredMixin, ListView):
@@ -175,12 +201,22 @@ class ExpedienteDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         return (
             user.is_superuser or
             user == expediente.profesor or
-            user.role in ['ADMIN', 'SECRETARIO', 'MAESTRO_APOYO'] or
+            (user.role in ['MAESTRO_APOYO', 'SECRETARIO', 'ADMIN']) or
             (user.role in settings.ROLES_EQUIPO_ITINERANTE and user == expediente.profesor)
         )
 
     def dispatch(self, request, *args, **kwargs):
-        if not self.test_func():
+        expediente = self.get_object()
+        user = request.user
+
+        puede_eliminar = (
+            user.is_superuser or
+            expediente.profesor == user or
+            user.role in settings.ROLES_EQUIPO_ITINERANTE
+        )
+
+        if not puede_eliminar:
             messages.error(request, "⛔ No tienes permiso para eliminar este expediente.")
             return redirect('documentos:lista_expedientes')
+
         return super().dispatch(request, *args, **kwargs)
