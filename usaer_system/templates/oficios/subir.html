@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-{% load widget_tweaks %}
 
 {% block content %}
 <div class="container mt-5">
@@ -7,18 +6,13 @@
     <div class="col-md-8 col-lg-6">
       <div class="card shadow">
         <div class="card-header bg-success text-white">
-          <h5 class="mb-0"><i class="fas fa-upload me-2"></i>Subir nuevo oficio</h5>
+          <h5><i class="fas fa-upload me-2"></i>Subir nuevo oficio</h5>
         </div>
         <div class="card-body">
-          {% if form.errors %}
+
+          {% if form.non_field_errors %}
             <div class="alert alert-danger">
-              <ul class="mb-0">
-                {% for field in form %}
-                  {% for error in field.errors %}
-                    <li>{{ error }}</li>
-                  {% endfor %}
-                {% endfor %}
-              </ul>
+              {{ form.non_field_errors }}
             </div>
           {% endif %}
 
@@ -26,18 +20,21 @@
             {% csrf_token %}
 
             <div class="mb-3">
-              <label for="{{ form.titulo.id_for_label }}" class="form-label">Título del oficio</label>
-              {{ form.titulo|add_class:"form-control" }}
+              {{ form.titulo.label_tag }}
+              {{ form.titulo }}              {# ya viene con form-control #}
+              {{ form.titulo.errors }}
             </div>
 
             <div class="mb-3">
-              <label for="{{ form.descripcion.id_for_label }}" class="form-label">Descripción</label>
-              {{ form.descripcion|add_class:"form-control" }}
+              {{ form.descripcion.label_tag }}
+              {{ form.descripcion }}
+              {{ form.descripcion.errors }}
             </div>
 
             <div class="mb-3">
-              <label for="{{ form.archivo.id_for_label }}" class="form-label">Archivo</label>
-              {{ form.archivo|add_class:"form-control" }}
+              {{ form.archivo.label_tag }}
+              {{ form.archivo }}
+              {{ form.archivo.errors }}
             </div>
 
             <div class="d-grid mt-4">
@@ -46,6 +43,7 @@
               </button>
             </div>
           </form>
+
         </div>
       </div>
     </div>

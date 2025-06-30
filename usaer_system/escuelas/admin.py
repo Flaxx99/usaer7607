@@ -17,19 +17,19 @@ class NivelFilter(admin.SimpleListFilter):
 @admin.register(Escuela)
 class EscuelaAdmin(admin.ModelAdmin):
     list_display = (
-        'clave_estatal', 'clave_federal', 'nombre', 'nivel',
+        'clave_estatal', 'cct', 'nombre', 'nivel',
         'telefono', 'zona'
     )
 
     list_filter = (NivelFilter, 'zona',)
-    search_fields = ('clave_estatal', 'clave_federal', 'nombre', 'zona')
+    search_fields = ('clave_estatal', 'cct', 'nombre', 'zona')
     ordering = ('nombre',)
 
-    readonly_fields = ('clave_estatal', 'clave_federal')
+    readonly_fields = ('clave_estatal', 'cct')
 
     fieldsets = (
         (_('Información General'), {
-            'fields': ('clave_estatal', 'clave_federal', 'nombre', 'nivel')
+            'fields': ('clave_estatal', 'cct', 'nombre', 'nivel')
         }),
         (_('Ubicación y Contacto'), {
             'fields': ('domicilio', 'colonia', 'telefono', 'zona')
