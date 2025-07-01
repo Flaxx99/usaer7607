@@ -1,13 +1,23 @@
 {% extends 'base.html' %}
 {% block title %}Listado de Alumnos{% endblock %}
 {% block content %}
-<h2 class="mb-4">Listado de Alumnos</h2>
+<h2 class="mb-4">Listado de Alumnos</h2>  
 <a href="{% url 'alumnos:crear_alumno' %}" class="btn btn-success mb-3">Nuevo Alumno</a>
+<form method="get" class="row mb-3">
+  <div class="col-md-6">
+    <input type="text" name="q" class="form-control" placeholder="Buscar por nombre o CURP" value="{{ request.GET.q }}">
+  </div>
+  <div class="col-md-3">
+    <button type="submit" class="btn btn-primary">🔍 Buscar</button>
+    <a href="{% url 'alumnos:listar_alumnos' %}" class="btn btn-secondary">🔄 Limpiar</a>
+  </div>
+</form>
+
 <table class="table table-striped">
   <thead>
     <tr>
       <th>#</th>
-      <th>Nombre</th>
+      <th>Nombre</th> 
       <th>Escuela</th>
       <th>Grado</th>
       <th>Acciones</th>

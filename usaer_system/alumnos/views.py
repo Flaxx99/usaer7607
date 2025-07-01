@@ -4,18 +4,15 @@ import csv
 
 from .models import Alumno, Escuela
 from .forms import AlumnoForm
+from django.db.models import Q
 
 def listar_alumnos(request):
-    """
-    Lista alumnos según el rol del usuario autenticado.
-    """
     user = request.user
+    query = request.GET.get("q", "").strip()
 
-    # Si es maestro de apoyo, ve solo sus alumnos
+    # Base queryset por rol
     if user.role == 'MAESTRO_APOYO':
         alumnos = Alumno.objects.filter(profesor=user)
-
-    # Roles que pueden ver todos los alumnos
     elif user.role in [
         'PSICÓLOGO',
         'TRABAJADOR_SOCIAL',
@@ -25,10 +22,17 @@ def listar_alumnos(request):
         'ADMIN',
     ]:
         alumnos = Alumno.objects.all()
-
-    # Otros no pueden ver nada
     else:
         alumnos = Alumno.objects.none()
+
+    # Filtro de búsqueda
+    if query:
+        alumnos = alumnos.filter(
+            Q(nombres__icontains=query) |
+            Q(apellido_paterno__icontains=query) |
+            Q(apellido_materno__icontains=query) |
+            Q(curp__icontains=query)
+        )
 
     alumnos = alumnos.select_related('escuela').order_by('apellido_paterno', 'nombres')
 
