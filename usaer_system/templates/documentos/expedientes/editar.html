@@ -3,32 +3,36 @@
 
 {% block content %}
 <div class="container mt-5">
-  <h2>Editar expediente de {{ expediente.alumno }}</h2>
+  <h2>✏️ Editar expediente de {{ expediente.alumno }}</h2>
 
-  {% for msg in messages %}
-    <div class="alert alert-{{ msg.tags }} alert-dismissible fade show">
-      {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-  {% endfor %}
+  {% if messages %}
+    {% for msg in messages %}
+      <div class="alert alert-{{ msg.tags }} alert-dismissible fade show">
+        {{ msg }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
 
   <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
     {{ form|crispy }}
 
     <hr class="my-4"/>
-    <h4>Otros archivos</h4>
+    <h5 class="mb-3">📎 Archivos adicionales</h5>
     {{ formset.management_form }}
-    
+
     {% for subform in formset %}
-    {% for hidden in subform.hidden_fields %}
-     {{ hidden }}
-    {% endfor %}
+      {% for hidden in subform.hidden_fields %}
+        {{ hidden }}
+      {% endfor %}
+
       <div class="card card-body mb-3">
         {% if subform.instance.pk %}
           <div class="mb-2">
             <strong>Actualmente:</strong>
             <a href="{{ subform.instance.archivo.url }}" target="_blank">
-              {{ subform.instance.nombre }}
+              {{ subform.instance.descripcion|default:"Archivo existente" }}
             </a>
           </div>
         {% endif %}
@@ -42,7 +46,6 @@
             Eliminar este archivo
           </label>
         </div>
-        
 
         {% if subform.non_field_errors %}
           <div class="text-danger mt-2">{{ subform.non_field_errors }}</div>
@@ -50,7 +53,8 @@
       </div>
     {% endfor %}
 
-    <button type="submit" class="btn btn-primary">Actualizar</button>
+    <button type="submit" class="btn btn-primary">💾 Guardar cambios</button>
+    <a href="{% url 'documentos:lista_expedientes' %}" class="btn btn-secondary">↩️ Cancelar</a>
   </form>
 </div>
 {% endblock %}

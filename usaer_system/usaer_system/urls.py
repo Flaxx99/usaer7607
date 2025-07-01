@@ -27,7 +27,7 @@ urlpatterns = [
     path('permisos/',    include('permisos.urls',    namespace='permisos')),
     path('incidencias/', include('incidencias.urls', namespace='incidencias')),
     path('escuelas/',    include('escuelas.urls',    namespace='escuelas')),
-    #path('oficios/', include('oficios.urls', namespace='oficios')),
+    path('oficios/', include('oficios.urls', namespace='oficios')),
 
 ]
 if settings.DEBUG:

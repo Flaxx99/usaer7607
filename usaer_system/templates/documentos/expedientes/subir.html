@@ -1,9 +1,9 @@
-{# documentos/templates/documentos/expedientes/subir.html #}
 {% extends 'base.html' %}
 {% load crispy_forms_tags %}
+
 {% block content %}
 <div class="container mt-5">
-  <h2>Subir expediente del alumno</h2>
+  <h2>📁 Subir expediente del alumno</h2>
 
   {% if messages %}
     {% for msg in messages %}
@@ -13,39 +13,27 @@
 
   <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
-
     {{ form|crispy }}
 
-    <hr/>
-    <h4>Otros archivos</h4>
+    <hr class="my-4"/>
+    <h5 class="mb-3">📎 Otros archivos</h5>
     {{ formset.management_form }}
-    {% for f in formset %}
-      <div class="card card-body mb-3">
-        {{ f.archivo|as_crispy_field }}
-        {{ f.descripcion|as_crispy_field }}
-        <div class="form-check form-check-inline mt-2">
-          {{ f.DELETE }}
-          <label class="form-check-label ms-2" for="{{ f.DELETE.id_for_label }}">
-            Eliminar
-          </label>
-        </div>
-        
-      </div>
-    {% endfor %}
-   
 
-    <button type="submit" class="btn btn-primary mt-3">Guardar expediente</button>
+    {% for f in formset %}
+    <div class="card card-body mb-3">
+      {{ f.archivo|as_crispy_field }}
+      {{ f.descripcion|as_crispy_field }}
+      <div class="form-check form-check-inline mt-2">
+        {{ f.DELETE }}
+        <label class="form-check-label ms-2" for="{{ f.DELETE.id_for_label }}">
+          Eliminar
+        </label>
+      </div>
+    </div>
+    {% endfor %}
+
+    <button type="submit" class="btn btn-primary mt-3">✅ Guardar expediente</button>
+    <a href="{% url 'documentos:lista_expedientes' %}" class="btn btn-secondary mt-3">↩️ Cancelar</a>
   </form>
 </div>
-
-<script>
-  const addBtn = document.getElementById('add-otro');
-  addBtn.addEventListener('click', () => {
-    const total = document.getElementById('id_form-TOTAL_FORMS');
-    const idx = parseInt(total.value);
-    const empty = `{{ formset.empty_form.as_p|escapejs }}`.replace(/__prefix__/g, idx);
-    document.querySelector('form').insertAdjacentHTML('beforeend', empty);
-    total.value = idx+1;
-  });
-</script>
 {% endblock %}

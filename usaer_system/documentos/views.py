@@ -8,7 +8,13 @@ from django.db.models import Q
 
 from .forms import ExpedienteForm, OtroArchivoFormSet, OtroArchivoFormSetEdit
 from .models import Expediente
-from .utils import tiene_permiso
+from documentos.utils import tiene_permiso
+from alumnos.models import Alumno
+from django.conf import settings
+import os
+import glob
+from django.conf import settings
+from pathlib import Path
 
 # Roles con permiso de edición total (sobre cualquier expediente)
 ROLES_PUEDEN_EDITAR_TODO = [
@@ -22,7 +28,7 @@ ROLES_PUEDEN_EDITAR_TODO = [
 
 @login_required
 def subir_expediente(request):
-    if not tiene_permiso(request.user, 'subir_expediente'):
+    if request.user.role not in ['MAESTRO_APOYO', 'SECRETARIO', 'ADMIN']:
         messages.error(request, "🚫 No tienes permiso para subir expedientes.")
         return redirect('documentos:lista_expedientes')
 
@@ -47,6 +53,7 @@ def subir_expediente(request):
         'formset': formset,
     })
 
+
 @login_required
 def editar_expediente(request, pk):
     expediente = get_object_or_404(Expediente, pk=pk)
@@ -54,24 +61,48 @@ def editar_expediente(request, pk):
 
     puede_editar = (
         user.is_superuser or
-        user == expediente.profesor or
-        user.role in ROLES_PUEDEN_EDITAR_TODO or
-        tiene_permiso(user, 'editar_expediente')
+        expediente.profesor == user or
+        user.role in settings.ROLES_EQUIPO_ITINERANTE or
+        user.role == 'MAESTRO_APOYO'
     )
 
     if not puede_editar:
-        messages.error(request, "🚫 No tienes permiso para editar este expediente.")
+        messages.error(request, "⛔ No tienes permiso para editar este expediente.")
         return redirect('documentos:lista_expedientes')
 
     if request.method == 'POST':
         form = ExpedienteForm(request.POST, request.FILES, instance=expediente, user=user)
         formset = OtroArchivoFormSetEdit(request.POST, request.FILES, instance=expediente)
+
         if form.is_valid() and formset.is_valid():
-            form.save()
+            expediente_actualizado = form.save(commit=False)
+
+            # Eliminar archivos viejos si se sube uno nuevo
+            for field in ['informe_deteccion', 'informe_psicopedagogico', 'plan_intervencion']:
+                nuevo_archivo = form.cleaned_data.get(field)
+                if nuevo_archivo:
+                    # Detectar el tipo base (ej: deteccion, psico, plan)
+                    tipo = field.split('_')[1]
+                    carpeta = Path(settings.MEDIA_ROOT) / f"expedientes/alumno_{expediente.alumno.id}"
+                    patron = str(carpeta / f"{tipo}.*")
+                    archivos_anteriores = glob.glob(patron)
+
+                    for archivo_path in archivos_anteriores:
+                        try:
+                            os.remove(archivo_path)
+                        except FileNotFoundError:
+                            pass  # ya no existía
+
+                    # Se asigna el nuevo archivo al campo correspondiente
+                    setattr(expediente_actualizado, field, nuevo_archivo)
+
+            expediente_actualizado.save()
             formset.save()
-            messages.success(request, "✅ Expediente actualizado correctamente.")
+
+            messages.success(request, "✅ Expediente y archivos adicionales actualizados.")
             return redirect('documentos:lista_expedientes')
-        messages.error(request, "⚠️ Hay errores: revisa el formulario y los archivos.")
+        else:
+            messages.error(request, "⚠️ Corrige los errores antes de continuar.")
     else:
         form = ExpedienteForm(instance=expediente, user=user)
         formset = OtroArchivoFormSetEdit(instance=expediente)
@@ -79,8 +110,9 @@ def editar_expediente(request, pk):
     return render(request, 'documentos/expedientes/editar.html', {
         'form': form,
         'formset': formset,
-        'expediente': expediente,
+        'expediente': expediente
     })
+
 
 class ExpedienteListView(LoginRequiredMixin, ListView):
     model = Expediente
@@ -91,13 +123,26 @@ class ExpedienteListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         user = self.request.user
 
-        if not tiene_permiso(user, 'listar_expediente'):
+        if not tiene_permiso(user, 'list_expedientes'):
             return Expediente.objects.none()
 
-        qs = super().get_queryset().select_related('alumno', 'profesor')
+        qs = Expediente.objects.select_related('alumno', 'profesor')
 
-        if not (user.is_superuser or user.role in ROLES_PUEDEN_EDITAR_TODO or tiene_permiso(user, 'listar_global')):
-            qs = qs.filter(profesor=user)
+        if user.role == 'MAESTRO_APOYO':
+            alumnos_ids = Alumno.objects.filter(profesor=user).values_list('id', flat=True)
+            qs = qs.filter(alumno__id__in=alumnos_ids)
+
+        elif user.role in [
+            'PSICOLOGO',
+            'TRAB_SOCIAL',
+            'COMUNICACION',
+            'PSICOMOTRICIDAD',
+            'SECRETARIO',
+            'ADMIN',
+        ]:
+            pass  # Puede ver todos
+        else:
+            qs = qs.none()
 
         q = self.request.GET.get('q', '').strip()
         if q:
@@ -112,13 +157,37 @@ class ExpedienteListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
+        expedientes = context['expedientes']
+
+        puede_editar_todo = (
+            user.is_superuser or
+            user.role in settings.ROLES_EQUIPO_ITINERANTE or
+            tiene_permiso(user, 'editar_expediente')
+        )
+
         context.update({
             'q': self.request.GET.get('q', ''),
-            'puede_subir': tiene_permiso(user, 'subir_expediente'),
-            'puede_editar': tiene_permiso(user, 'editar_expediente'),
-            'puede_eliminar': tiene_permiso(user, 'eliminar_expediente'),
+            'puede_subir': (
+                user.is_superuser or
+                user.role in settings.ROLES_EQUIPO_ITINERANTE or
+                user.role in ['MAESTRO_APOYO', 'SECRETARIO', 'ADMIN']
+            ),
+            'puede_eliminar': (
+                user.is_superuser or
+                user.role in ['MAESTRO_APOYO', 'SECRETARIO', 'ADMIN']
+            ),
+            'expedientes_editables_ids': [
+                e.id for e in expedientes
+                if (
+                    user == e.profesor
+                    or user.is_superuser
+                    or user.role in settings.ROLES_EQUIPO_ITINERANTE
+                    or user.role == 'MAESTRO_APOYO'
+                )
+            ],
         })
         return context
+
 
 class ExpedienteDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Expediente
@@ -131,5 +200,22 @@ class ExpedienteDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         return (
             user.is_superuser or
             user == expediente.profesor or
-            tiene_permiso(user, 'eliminar_expediente')
+            (user.role in ['MAESTRO_APOYO', 'SECRETARIO', 'ADMIN']) or
+            (user.role in settings.ROLES_EQUIPO_ITINERANTE and user == expediente.profesor)
         )
+
+    def dispatch(self, request, *args, **kwargs):
+        expediente = self.get_object()
+        user = request.user
+
+        puede_eliminar = (
+            user.is_superuser or
+            expediente.profesor == user or
+            user.role in settings.ROLES_EQUIPO_ITINERANTE
+        )
+
+        if not puede_eliminar:
+            messages.error(request, "⛔ No tienes permiso para eliminar este expediente.")
+            return redirect('documentos:lista_expedientes')
+
+        return super().dispatch(request, *args, **kwargs)
