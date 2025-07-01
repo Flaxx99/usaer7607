@@ -1,3 +1,4 @@
+import os
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
@@ -24,11 +25,29 @@ def subir_oficio(request):
 
 @login_required
 @require_http_methods(["GET", "POST"])
+def editar_oficio(request, pk):
+    oficio = get_object_or_404(Oficio, pk=pk)
+    archivo_anterior = oficio.archivo.name if oficio.archivo else None
+
+    if request.method == 'POST':
+        form = OficioForm(request.POST, request.FILES, instance=oficio)
+        if form.is_valid():
+            # Verificamos si se cargó un nuevo archivo
+            nuevo_archivo = request.FILES.get('archivo')
+            if nuevo_archivo and archivo_anterior:
+                if oficio.archivo.storage.exists(archivo_anterior):
+                    oficio.archivo.storage.delete(archivo_anterior)
+            form.save()
+            return redirect('oficios:lista_oficios')
+    else:
+        form = OficioForm(instance=oficio)
+    return render(request, 'oficios/editar.html', {'form': form, 'oficio': oficio})
+
+@login_required
+@require_http_methods(["GET", "POST"])
 def eliminar_oficio(request, pk):
     oficio = get_object_or_404(Oficio, pk=pk)
     if request.method == 'POST':
-        if oficio.archivo and oficio.archivo.storage.exists(oficio.archivo.name):
-            oficio.archivo.delete()
         oficio.delete()
         return redirect('oficios:lista_oficios')
     return render(request, 'oficios/confirmar_eliminacion.html', {'oficio': oficio})
