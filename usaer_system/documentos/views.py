@@ -114,7 +114,6 @@ def editar_expediente(request, pk):
     })
 
 
-
 class ExpedienteListView(LoginRequiredMixin, ListView):
     model = Expediente
     template_name = 'documentos/expedientes/lista.html'
