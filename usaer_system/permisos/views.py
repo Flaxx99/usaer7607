@@ -133,7 +133,7 @@ def responder_permiso(request, pk):
             mensaje = _("Permiso aprobado correctamente") if permiso.estado == Permiso.Estado.APROBADO \
                 else _("Permiso rechazado con éxito")
             messages.success(request, mensaje)
-            return redirect('permisos:gestionar_permisos')
+            return redirect('permisos:gestionar')
         messages.warning(request, _("Verifica los errores en el formulario"))
 
     return render(request, 'permisos/responder.html', {
@@ -154,7 +154,7 @@ def eliminar_permiso(request, pk):
         try:
             permiso.delete()
             messages.success(request, _("Solicitud eliminada permanentemente"))
-            return redirect('permisos:gestionar_permisos')
+            return redirect('permisos:gestionar')
         except Exception as e:
             messages.error(request, _("Error al eliminar: {0}").format(e))
             return redirect('permisos:responder_permiso', pk=pk)
@@ -167,9 +167,12 @@ def eliminar_permiso(request, pk):
 
 @login_required
 def detalle_permiso(request, pk):
-    permiso = get_object_or_404(Permiso.objects.select_related('profesor', 'escuela', 'administrador'), pk=pk)
+    permiso = get_object_or_404(
+        Permiso.objects.select_related('profesor', 'escuela', 'administrador'),
+        pk=pk
+    )
 
-    if not request.user.has_perm('permisos.gestionar_permisos') and (not permiso.profesor or permiso.profesor != request.user):
+    if not request.user.has_perm('permisos.gestionar') and permiso.profesor_id != request.user.id:
         messages.error(request, _("No tienes permiso para ver esta solicitud"))
         return redirect('inicio')
 
@@ -177,5 +180,5 @@ def detalle_permiso(request, pk):
         'permiso': permiso,
         'titulo': _('Detalles del Permiso N° {numero}').format(numero=permiso.id),
         'duracion': permiso.duracion_dias,
-        'es_administrador': request.user.has_perm('permisos.gestionar_permisos')
+        'es_administrador': request.user.has_perm('permisos.gestionar_permisos'),
     })

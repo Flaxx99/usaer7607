@@ -2,6 +2,7 @@ from django.urls import path
 from . import views
 from usuarios.decoradores import roles_permitidos
 from django.contrib.auth import get_user_model
+from django.contrib.auth.decorators import login_required
 
 User = get_user_model()
 
@@ -54,10 +55,10 @@ urlpatterns = [
         name='gestionar'
     ),
 
-    # Ver detalles de una solicitud
+    # Ver detalles de una solicitud (validación dentro de la vista)
     path(
         '<int:pk>/',
-        roles_permitidos(ROLES_GESTORES)(views.detalle_permiso),
+        login_required(views.detalle_permiso),
         name='detalle'
     ),
 

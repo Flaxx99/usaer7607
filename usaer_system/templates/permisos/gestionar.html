@@ -88,23 +88,20 @@
             <td>{{ p.get_tipo_display }}</td>
             <td>{{ p.created_at|date:"d/m/Y" }}</td>
             <td>
-              {% if p.estado == 'Pendiente' %}
+              {% if p.get_estado_display == "Pendiente de revisión" %}
                 <span class="badge bg-warning text-dark">Pendiente</span>
-              {% elif p.estado == 'Aprobado' %}
+              {% elif p.get_estado_display == "Aprobado" %}
                 <span class="badge bg-success">Aprobado</span>
-              {% else %}
+              {% elif p.get_estado_display == "Rechazado" %}
                 <span class="badge bg-danger">Rechazado</span>
+              {% else %}
+                <span class="badge bg-secondary">Desconocido</span>
               {% endif %}
             </td>
             <td class="text-end">
-              <div class="btn-group" role="group">
-                <a href="{% url 'permisos:responder' p.pk %}" class="btn btn-sm btn-outline-primary" title="Revisar">
-                  <i class="fas fa-check-circle"></i>
-                </a>
-                <a href="{% url 'permisos:eliminar' p.pk %}" class="btn btn-sm btn-outline-danger" title="Eliminar">
-                  <i class="fas fa-trash-alt"></i>
-                </a>
-              </div>
+              <a href="{% url 'permisos:responder' p.pk %}" class="btn btn-sm btn-outline-primary" title="Revisar">
+                <i class="fas fa-check-circle"></i>
+              </a>
             </td>
           </tr>
           {% endfor %}
