@@ -20,7 +20,7 @@ class Incidencia(models.Model):
     )
     profesor = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        limit_choices_to={'role': 'Profesor'},
+        limit_choices_to={'role': 'MAESTRO_APOYO'},
         on_delete=models.SET_NULL,
         null=True,
         verbose_name="Profesor reportado",
