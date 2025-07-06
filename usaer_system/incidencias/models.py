@@ -51,6 +51,7 @@ class Incidencia(models.Model):
         null=True,
         help_text="Comentarios de la dirección sobre la solución"
     )
+    fecha_resolucion = models.DateTimeField(null=True, blank=True)
 
 
     class Meta:
