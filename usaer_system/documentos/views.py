@@ -5,6 +5,7 @@ from django.urls import reverse_lazy
 from django.views.generic import ListView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db.models import Q
+from django.contrib.auth import get_user_model
 
 from .forms import ExpedienteForm, OtroArchivoFormSet, OtroArchivoFormSetEdit
 from .models import Expediente
@@ -16,19 +17,25 @@ import glob
 from django.conf import settings
 from pathlib import Path
 
+User = get_user_model()
+
 # Roles con permiso de edición total (sobre cualquier expediente)
 ROLES_PUEDEN_EDITAR_TODO = [
-    'PSICOMOTRICIDAD',
-    'PSICOLOGO',
-    'COMUNICACION',
-    'TRABAJADOR_SOCIAL',
-    'SECRETARIO',
-    'ADMIN',
+    User.Role.PSICOMOTRICIDAD,
+    User.Role.PSICOLOGO,
+    User.Role.COMUNICACION,
+    User.Role.TRABAJADOR_SOCIAL,
+    User.Role.SECRETARIO,
+    User.Role.ADMINISTRADOR,
 ]
 
 @login_required
 def subir_expediente(request):
-    if request.user.role not in ['MAESTRO_APOYO', 'SECRETARIO', 'ADMIN']:
+    if request.user.role not in [
+        User.Role.MAESTRO_APOYO,
+        User.Role.SECRETARIO,
+        User.Role.ADMINISTRADOR,
+    ]:
         messages.error(request, "🚫 No tienes permiso para subir expedientes.")
         return redirect('documentos:lista_expedientes')
 
@@ -63,7 +70,7 @@ def editar_expediente(request, pk):
         user.is_superuser or
         expediente.profesor == user or
         user.role in settings.ROLES_EQUIPO_ITINERANTE or
-        user.role == 'MAESTRO_APOYO'
+        user.role == User.Role.MAESTRO_APOYO
     )
 
     if not puede_editar:
@@ -128,17 +135,17 @@ class ExpedienteListView(LoginRequiredMixin, ListView):
 
         qs = Expediente.objects.select_related('alumno', 'profesor')
 
-        if user.role == 'MAESTRO_APOYO':
+        if user.role == User.Role.MAESTRO_APOYO:
             alumnos_ids = Alumno.objects.filter(profesor=user).values_list('id', flat=True)
             qs = qs.filter(alumno__id__in=alumnos_ids)
 
         elif user.role in [
-            'PSICOLOGO',
-            'TRAB_SOCIAL',
-            'COMUNICACION',
-            'PSICOMOTRICIDAD',
-            'SECRETARIO',
-            'ADMIN',
+            User.Role.PSICOLOGO,
+            User.Role.TRABAJADOR_SOCIAL,
+            User.Role.COMUNICACION,
+            User.Role.PSICOMOTRICIDAD,
+            User.Role.SECRETARIO,
+            User.Role.ADMINISTRADOR,
         ]:
             pass  # Puede ver todos
         else:
@@ -170,11 +177,19 @@ class ExpedienteListView(LoginRequiredMixin, ListView):
             'puede_subir': (
                 user.is_superuser or
                 user.role in settings.ROLES_EQUIPO_ITINERANTE or
-                user.role in ['MAESTRO_APOYO', 'SECRETARIO', 'ADMIN']
+                user.role in [
+                    User.Role.MAESTRO_APOYO,
+                    User.Role.SECRETARIO,
+                    User.Role.ADMINISTRADOR,
+                ]
             ),
             'puede_eliminar': (
                 user.is_superuser or
-                user.role in ['MAESTRO_APOYO', 'SECRETARIO', 'ADMIN']
+                user.role in [
+                    User.Role.MAESTRO_APOYO,
+                    User.Role.SECRETARIO,
+                    User.Role.ADMINISTRADOR,
+                ]
             ),
             'expedientes_editables_ids': [
                 e.id for e in expedientes
@@ -182,7 +197,7 @@ class ExpedienteListView(LoginRequiredMixin, ListView):
                     user == e.profesor
                     or user.is_superuser
                     or user.role in settings.ROLES_EQUIPO_ITINERANTE
-                    or user.role == 'MAESTRO_APOYO'
+                    or user.role == User.Role.MAESTRO_APOYO
                 )
             ],
         })
@@ -200,7 +215,11 @@ class ExpedienteDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         return (
             user.is_superuser or
             user == expediente.profesor or
-            (user.role in ['MAESTRO_APOYO', 'SECRETARIO', 'ADMIN']) or
+            (user.role in [
+                User.Role.MAESTRO_APOYO,
+                User.Role.SECRETARIO,
+                User.Role.ADMINISTRADOR,
+            ]) or
             (user.role in settings.ROLES_EQUIPO_ITINERANTE and user == expediente.profesor)
         )
 
