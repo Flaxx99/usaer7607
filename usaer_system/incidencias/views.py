@@ -42,7 +42,7 @@ def crear_incidencia(request):
 
 
 @login_required
-@roles_permitidos(['DOCENTE', 'MAESTRO_APOYO', 'ADMIN'])
+@roles_permitidos(['MAESTRO_APOYO', 'ADMIN'])
 def listar_incidencias(request):
     """
     Muestra al docente, maestro de apoyo o admin solo sus incidencias
@@ -99,7 +99,7 @@ def revisar_incidencias(request):
 
     profesores = User.objects.filter(
         escuela=request.user.escuela,
-        role='DOCENTE'
+        role='MAESTRO_APOYO'
     ).only('id', 'first_name', 'last_name')
 
     return render(request, 'incidencias/revisar.html', {
