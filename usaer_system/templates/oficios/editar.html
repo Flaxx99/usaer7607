@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2 class="fw-bold">✏️ Editar oficio</h2>
+
+  <form method="post" enctype="multipart/form-data" class="mt-4">
+    {% csrf_token %}
+    <div class="mb-3">
+      {{ form.titulo.label_tag }} {{ form.titulo }}
+    </div>
+    <div class="mb-3">
+      {{ form.descripcion.label_tag }} {{ form.descripcion }}
+    </div>
+    <div class="mb-3">
+      {{ form.archivo.label_tag }} {{ form.archivo }}
+      {% if oficio.archivo %}
+        <p class="mt-2 small">📎 Archivo actual:
+          <a href="{{ oficio.archivo.url }}" target="_blank">
+            {{ oficio.archivo.name|cut:"oficios/" }}
+          </a>
+        </p>
+      {% endif %}
+    </div>
+    <button type="submit" class="btn btn-primary">💾 Guardar cambios</button>
+    <a href="{% url 'oficios:lista_oficios' %}" class="btn btn-secondary">Cancelar</a>
+  </form>
+</div>
+{% endblock %}

@@ -1,147 +1,141 @@
-import os
-import openpyxl
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib import messages
+from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse
-from django.conf import settings
-from django.contrib.auth.decorators import login_required, user_passes_test
-from django.contrib.auth import get_user_model
+import csv
 
-from .models import Alumno
+from .models import Alumno, Escuela
 from .forms import AlumnoForm
+from django.db.models import Q
+from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
-# ✅ Permitir acceso a roles autorizados
-def puede_gestionar_alumnos(user):
-    return user.is_authenticated and user.role in ['DOCENTE', 'MAESTRO_APOYO', 'ADMIN']
-
-
-@login_required
-@user_passes_test(puede_gestionar_alumnos)
 def listar_alumnos(request):
-    """Lista todos los alumnos accesibles según el rol"""
-    if request.user.role == 'ADMIN':
-        alumnos = Alumno.objects.all()
-    elif request.user.role == 'MAESTRO_APOYO':
-        alumnos = Alumno.objects.filter(escuela=request.user.escuela)
-    else:  # DOCENTE
-        alumnos = Alumno.objects.filter(profesor=request.user)
+    user = request.user
+    query = request.GET.get("q", "").strip()
 
-    alumnos = alumnos.order_by('apellido_paterno', 'apellido_materno', 'nombres')
+    # Base queryset por rol
+    if user.role == User.Role.MAESTRO_APOYO:
+        alumnos = Alumno.objects.filter(profesor=user)
+    elif user.role in [
+        User.Role.PSICOLOGO,
+        User.Role.TRABAJADOR_SOCIAL,
+        User.Role.COMUNICACION,
+        User.Role.PSICOMOTRICIDAD,
+        User.Role.SECRETARIO,
+        User.Role.ADMINISTRADOR,
+    ]:
+        alumnos = Alumno.objects.all()
+    else:
+        alumnos = Alumno.objects.none()
+
+    # Filtro de búsqueda
+    if query:
+        alumnos = alumnos.filter(
+            Q(nombres__icontains=query) |
+            Q(apellido_paterno__icontains=query) |
+            Q(apellido_materno__icontains=query) |
+            Q(curp__icontains=query)
+        )
+
+    alumnos = alumnos.select_related('escuela').order_by('apellido_paterno', 'nombres')
+
     return render(request, 'alumnos/listar.html', {
-        'alumnos': alumnos
+        'alumnos': alumnos,
     })
 
-
-@login_required
-@user_passes_test(puede_gestionar_alumnos)
 def crear_alumno(request):
-    """Permite crear un nuevo alumno según el rol"""
+    """
+    Crea un nuevo alumno.
+    """
+    escuelas = Escuela.objects.all()
+    contexto = {
+        'titulo':    'Nuevo Alumno',
+        'form':      None,
+        'escuelas':  escuelas,
+        'nivel_ini': '',
+        'esc_ini':   '',
+        'grado_ini': '',
+    }
+
     if request.method == 'POST':
         form = AlumnoForm(request.POST)
         if form.is_valid():
-            alumno = form.save()
-            messages.success(request, "Alumno registrado correctamente.")
+            obj = form.save(commit=False)
+            obj.escuela_id = request.POST.get('escuela')
+            obj.grado      = request.POST.get('grado')
+            obj.save()
             return redirect('alumnos:listar_alumnos')
     else:
         form = AlumnoForm()
 
-    return render(request, 'alumnos/form.html', {
-        'form': form,
-        'titulo': 'Nuevo Alumno'
-    })
+    contexto['form'] = form
+    return render(request, 'alumnos/form.html', contexto)
 
-
-
-@login_required
-@user_passes_test(puede_gestionar_alumnos)
 def editar_alumno(request, pk):
-    """Edita datos de un alumno si el usuario tiene permisos"""
-    alumno = get_object_or_404(Alumno, pk=pk)
+    """
+    Edita un alumno existente.
+    """
+    alumno   = get_object_or_404(Alumno, pk=pk)
+    escuelas = Escuela.objects.all()
 
-    if request.user.role != 'ADMIN' and alumno.profesor != request.user:
-        messages.error(request, "No tienes permiso para editar este alumno.")
-        return redirect('alumnos:listar_alumnos')
+    contexto = {
+        'titulo':    'Editar Alumno',
+        'form':      None,
+        'escuelas':  escuelas,
+        'nivel_ini': alumno.escuela.nivel,
+        'esc_ini':   alumno.escuela_id,
+        'grado_ini': alumno.grado,
+    }
 
     if request.method == 'POST':
         form = AlumnoForm(request.POST, instance=alumno)
         if form.is_valid():
-            form.save()
-            messages.success(request, "Datos del alumno actualizados.")
+            obj = form.save(commit=False)
+            obj.escuela_id = request.POST.get('escuela')
+            obj.grado      = request.POST.get('grado')
+            obj.save()
             return redirect('alumnos:listar_alumnos')
     else:
         form = AlumnoForm(instance=alumno)
 
-    return render(request, 'alumnos/form.html', {
-        'form': form,
-        'titulo': 'Editar Alumno'
-    })
+    contexto['form'] = form
+    return render(request, 'alumnos/form.html', contexto)
 
-
-
-@login_required
-@user_passes_test(puede_gestionar_alumnos)
 def eliminar_alumno(request, pk):
-    """Elimina un alumno con confirmación si tiene permisos"""
+    """
+    Elimina un alumno tras confirmación.
+    """
     alumno = get_object_or_404(Alumno, pk=pk)
-
-    if request.user.role != 'ADMIN' and alumno.profesor != request.user:
-        messages.error(request, "No tienes permiso para eliminar este alumno.")
-        return redirect('alumnos:listar_alumnos')
-
     if request.method == 'POST':
-        try:
-            nombre_completo = f"{alumno.apellido_paterno} {alumno.apellido_materno}, {alumno.nombres}"
-            alumno.delete()
-            messages.success(request, f"Alumno {nombre_completo} eliminado correctamente.")
-            return redirect('alumnos:listar_alumnos')
-        except Exception as e:
-            messages.error(request, f"Error al eliminar alumno: {str(e)}")
-            return redirect('alumnos:listar_alumnos')
-
+        alumno.delete()
+        return redirect('alumnos:listar_alumnos')
     return render(request, 'alumnos/confirmar_eliminar.html', {
-        'alumno': alumno,
-        'titulo': 'Confirmar eliminación'
+        'alumno': alumno
     })
 
-
-@login_required
-@user_passes_test(puede_gestionar_alumnos)
 def exportar_rac(request):
-    """Exporta RAC en formato Excel usando plantilla predefinida"""
-    try:
-        plantilla = os.path.join(settings.BASE_DIR, 'static', 'templates', 'template_rac.xlsx')
-        wb = openpyxl.load_workbook(plantilla)
-        ws = wb.active
-        fila = 5  # fila inicial
-
-        if request.user.role == 'ADMIN':
-            alumnos = Alumno.objects.all()
-        elif request.user.role == 'MAESTRO_APOYO':
-            alumnos = Alumno.objects.filter(escuela=request.user.escuela)
-        else:
-            alumnos = Alumno.objects.filter(profesor=request.user)
-
-        for alumno in alumnos:
-            ws[f'A{fila}'] = alumno.apellido_paterno or ''
-            ws[f'B{fila}'] = alumno.apellido_materno or ''
-            ws[f'C{fila}'] = alumno.nombres or ''
-            ws[f'D{fila}'] = alumno.curp or ''
-            ws[f'E{fila}'] = alumno.sexo or ''
-            ws[f'F{fila}'] = alumno.edad or ''
-            ws[f'G{fila}'] = alumno.grado or ''
-            ws[f'H{fila}'] = alumno.clasificacion or ''
-            ws[f'I{fila}'] = alumno.clasificacion_otro or ''
-            fila += 1
-
-        response = HttpResponse(
-            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        )
-        response['Content-Disposition'] = f'attachment; filename=RAC_{request.user.username}.xlsx'
-        wb.save(response)
-        return response
-
-    except Exception as e:
-        messages.error(request, f"Error al generar el archivo: {str(e)}")
-        return redirect('alumnos:listar_alumnos')
+    """
+    Exporta todos los alumnos a un CSV descargable.
+    """
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="alumnos.csv"'
+    writer = csv.writer(response)
+    # Cabecera
+    writer.writerow([
+        'Apellido Paterno', 'Apellido Materno', 'Nombres', 'CURP',
+        'Sexo', 'Edad', 'Escuela', 'Grado', 'Grupo'
+    ])
+    # Filas
+    for a in Alumno.objects.select_related('escuela').all():
+        writer.writerow([
+            a.apellido_paterno,
+            a.apellido_materno,
+            a.nombres,
+            a.curp,
+            a.get_sexo_display(),  # si usas choices
+            a.edad,
+            a.escuela.nombre,
+            a.grado,
+            a.grupo,
+        ])
+    return response

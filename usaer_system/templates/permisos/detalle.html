@@ -28,18 +28,20 @@
 
         <dt class="col-sm-3">Estado</dt>
         <dd class="col-sm-9">
-          {% if permiso.estado=='Pendiente' %}
-            <span class="badge bg-warning text-dark">Pendiente</span>
-          {% elif permiso.estado=='Aprobado' %}
-            <span class="badge bg-success">Aprobado</span>
+          {% if permiso.estado == 'PENDIENTE' %}
+            <span class="badge bg-warning text-dark">{{ permiso.get_estado_display }}</span>
+          {% elif permiso.estado == 'APROBADO' %}
+            <span class="badge bg-success">{{ permiso.get_estado_display }}</span>
+          {% elif permiso.estado == 'RECHAZADO' %}
+            <span class="badge bg-danger">{{ permiso.get_estado_display }}</span>
           {% else %}
-            <span class="badge bg-danger">Rechazado</span>
+            <span class="badge bg-secondary">{{ permiso.estado }}</span>
           {% endif %}
         </dd>
 
         {% if permiso.respuesta_admin %}
-        <dt class="col-sm-3">Respuesta Admin</dt>
-        <dd class="col-sm-9">{{ permiso.respuesta_admin }}</dd>
+          <dt class="col-sm-3">Respuesta Admin</dt>
+          <dd class="col-sm-9">{{ permiso.respuesta_admin }}</dd>
         {% endif %}
       </dl>
 

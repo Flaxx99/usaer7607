@@ -10,3 +10,8 @@ y revisar incidencias (pide login y no redirecciona)
 -ver logica si es correcta
 
 -mejorar interfaz y formularios
+
+## Environment variables
+
+The project expects a `SECRET_KEY` environment variable for production. When
+not set, `settings.py` falls back to a development key.

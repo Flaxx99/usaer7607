@@ -2,12 +2,11 @@ from django.db import models
 
 class Escuela(models.Model):
     CLAVE_NIVELES = [
-    ('Primaria', 'Primaria'),
-    ('Secundaria', 'Secundaria'),
+    ('Primaria', 'PRIMARIA'),
+    ('Secundaria', 'SECUNDARIA'),
     ]   
 
     clave_estatal = models.CharField("Clave estatal", max_length=10, unique=True)
-    clave_federal = models.CharField("Clave federal", max_length=20, unique=True)
     cct = models.CharField("Clave de Centro de Trabajo (CCT)", max_length=20, unique=True)
     nombre = models.CharField("Nombre de la escuela", max_length=200)
     nivel = models.CharField("Nivel educativo", max_length=20, choices=CLAVE_NIVELES)
@@ -31,4 +30,4 @@ class Escuela(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.clave_federal} – {self.nombre}"
+        return f"{self.cct} – {self.nombre}"
