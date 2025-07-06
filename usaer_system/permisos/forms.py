@@ -74,6 +74,10 @@ class GestionPermisoForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
+
+        # Convertimos todos los textos a mayúsculas
+        cleaned_data = convertir_mayusculas(cleaned_data)
+
         estado = cleaned_data.get('estado')
         respuesta = cleaned_data.get('respuesta_admin')
 
@@ -99,6 +103,3 @@ class GestionPermisoForm(forms.ModelForm):
         
         return instance
     
-    def clean(self):
-        cleaned = super().clean()
-        return convertir_mayusculas(cleaned)
