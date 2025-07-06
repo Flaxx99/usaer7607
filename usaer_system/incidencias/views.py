@@ -12,7 +12,7 @@ User = get_user_model()
 
 
 @login_required
-@roles_permitidos(['DIRECTOR', 'ADMIN'])
+@roles_permitidos([User.Role.DIRECTOR, User.Role.ADMINISTRADOR])
 def crear_incidencia(request):
     """
     Permite al director o al administrador crear y asignar una incidencia a un profesor
@@ -42,7 +42,10 @@ def crear_incidencia(request):
 
 
 @login_required
-@roles_permitidos(['MAESTRO_APOYO', 'ADMIN'])
+@roles_permitidos([
+    User.Role.MAESTRO_APOYO,
+    User.Role.ADMINISTRADOR,
+])
 def listar_incidencias(request):
     """
     Muestra al docente, maestro de apoyo o admin solo sus incidencias
@@ -71,7 +74,7 @@ def listar_incidencias(request):
 
 
 @login_required
-@roles_permitidos(['DIRECTOR', 'ADMIN'])
+@roles_permitidos([User.Role.DIRECTOR, User.Role.ADMINISTRADOR])
 def revisar_incidencias(request):
     """
     Panel para que el director o admin revise todas las incidencias de su escuela
@@ -99,7 +102,7 @@ def revisar_incidencias(request):
 
     profesores = User.objects.filter(
         escuela=request.user.escuela,
-        role='MAESTRO_APOYO'
+        role=User.Role.MAESTRO_APOYO
     ).only('id', 'first_name', 'last_name')
 
     return render(request, 'incidencias/revisar.html', {
@@ -117,7 +120,7 @@ def revisar_incidencias(request):
 
 
 @login_required
-@roles_permitidos(['DIRECTOR', 'ADMIN'])
+@roles_permitidos([User.Role.DIRECTOR, User.Role.ADMINISTRADOR])
 def editar_incidencia(request, pk):
     """
     Permite al director o admin editar una incidencia y cambiar su estado
@@ -148,7 +151,7 @@ def editar_incidencia(request, pk):
 
 
 @login_required
-@roles_permitidos(['DIRECTOR', 'ADMIN'])
+@roles_permitidos([User.Role.DIRECTOR, User.Role.ADMINISTRADOR])
 def resolver_incidencia(request, pk):
     """
     Vista para que el director o admin marque una incidencia como resuelta
@@ -168,7 +171,7 @@ def resolver_incidencia(request, pk):
 
 
 @login_required
-@roles_permitidos(['DIRECTOR', 'ADMIN'])
+@roles_permitidos([User.Role.DIRECTOR, User.Role.ADMINISTRADOR])
 def eliminar_incidencia(request, pk):
     """
     Elimina una incidencia (solo director o admin)

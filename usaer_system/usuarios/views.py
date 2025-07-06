@@ -22,7 +22,7 @@ from documentos.models import Expediente  # Ajusta al nombre de tu modelo de exp
 # -----------------------------
 # Vistas basadas en clases para usuarios
 # -----------------------------
-@method_decorator(roles_permitidos(['ADMIN']), name='dispatch')
+@method_decorator(roles_permitidos([User.Role.ADMINISTRADOR]), name='dispatch')
 class UserListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     model = User
     template_name = 'usuarios/lista_usuarios.html'
@@ -52,7 +52,7 @@ class UserListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
         return ctx
 
 
-@method_decorator(roles_permitidos(['ADMIN']), name='dispatch')
+@method_decorator(roles_permitidos([User.Role.ADMINISTRADOR]), name='dispatch')
 class UserCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
     model = User
     form_class = UsuarioCreationForm
@@ -75,7 +75,7 @@ class UserCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
         return ctx
 
 
-@method_decorator(roles_permitidos(['ADMIN']), name='dispatch')
+@method_decorator(roles_permitidos([User.Role.ADMINISTRADOR]), name='dispatch')
 class UserUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     model = User
     form_class = UsuarioChangeForm
@@ -100,7 +100,7 @@ class UserUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
         return ctx
 
 
-@method_decorator(roles_permitidos(['ADMIN']), name='dispatch')
+@method_decorator(roles_permitidos([User.Role.ADMINISTRADOR]), name='dispatch')
 class UserDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
     model = User
     template_name = 'usuarios/detalle_usuario.html'
@@ -108,7 +108,7 @@ class UserDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
     context_object_name = 'usuario'
 
 
-@method_decorator(roles_permitidos(['ADMIN']), name='dispatch')
+@method_decorator(roles_permitidos([User.Role.ADMINISTRADOR]), name='dispatch')
 class UserDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
     model = User
     template_name = 'usuarios/confirmar_eliminar_usuario.html'
@@ -124,7 +124,7 @@ class UserDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
 # Vistas de funciones para usuario individual y autenticación
 # -----------------------------
 @login_required
-@roles_permitidos(['ADMIN'])
+@roles_permitidos([User.Role.ADMINISTRADOR])
 def toggle_user_active(request, pk):
     user = get_object_or_404(User, pk=pk)
     user.activo = not user.activo

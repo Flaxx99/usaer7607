@@ -5,21 +5,24 @@ import csv
 from .models import Alumno, Escuela
 from .forms import AlumnoForm
 from django.db.models import Q
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 def listar_alumnos(request):
     user = request.user
     query = request.GET.get("q", "").strip()
 
     # Base queryset por rol
-    if user.role == 'MAESTRO_APOYO':
+    if user.role == User.Role.MAESTRO_APOYO:
         alumnos = Alumno.objects.filter(profesor=user)
     elif user.role in [
-        'PSICÓLOGO',
-        'TRABAJADOR_SOCIAL',
-        'COMUNICACION',
-        'PSICOMOTRICIDAD',
-        'SECRETARIO',
-        'ADMIN',
+        User.Role.PSICOLOGO,
+        User.Role.TRABAJADOR_SOCIAL,
+        User.Role.COMUNICACION,
+        User.Role.PSICOMOTRICIDAD,
+        User.Role.SECRETARIO,
+        User.Role.ADMINISTRADOR,
     ]:
         alumnos = Alumno.objects.all()
     else:
