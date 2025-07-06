@@ -1,9 +1,15 @@
 from pathlib import Path
 from django.contrib.auth import get_user_model
+import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-!8659yl2gf6**0m*l05cuq1%maailzw$nu*x7wmt&+pix39evh'
+# Retrieve secret key from environment for production. A fallback key is
+# provided for development environments.
+SECRET_KEY = os.environ.get(
+    "SECRET_KEY",
+    "django-insecure-!8659yl2gf6**0m*l05cuq1%maailzw$nu*x7wmt&+pix39evh",
+)
 DEBUG = True
 ALLOWED_HOSTS = []
 
