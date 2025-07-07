@@ -53,9 +53,8 @@ INSTALLED_APPS = [
     'documentos',
     'alumnos',
     'oficios',
-    
-    
-    
+    'rac',
+
     #dependencias
     'crispy_forms',
     'crispy_bootstrap5',

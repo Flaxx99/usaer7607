@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{# Sólo un bloque title #}
+{% block title %}
+  {% if form.instance.pk %}Editar Registro RAC{% else %}Nuevo Registro RAC{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h1>
+    {% if form.instance.pk %}Editar Registro RAC{% else %}Nuevo Registro RAC{% endif %}
+  </h1>
+
+  {# Datos JSON para autorrelleno #}
+  <script type="application/json" id="alumnos-data">{{ alumnos_data|safe }}</script>
+  <script type="application/json" id="escuelas-data">{{ escuelas_data|safe }}</script>
+
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    {{ form|crispy }}
+    <div class="mt-3">
+      <button type="submit" class="btn btn-success">Guardar</button>
+      <a href="{% url 'rac:registro_list' %}" class="btn btn-secondary">Cancelar</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Parseo JSON
+const alumnosData  = JSON.parse(document.getElementById('alumnos-data').textContent);
+const escuelasData = JSON.parse(document.getElementById('escuelas-data').textContent);
+
+// Subcategorías
+const subOptions = {
+  'DISCAPACIDAD': [['DI','Discapacidad intelectual'],['DMO','Discapacidad motriz'],['SO','Sordera'],['HP','Hipoacusia'],['CEG','Ceguera'],['BV','Baja visión'],['DM','Discapacidad múltiple'],['SCG','Sordoceguera'],['DME','Discapacidad mental o psicosocial'],['NO_APLICA','No aplica']],
+  'DIFICULTADES_SEVERAS': [['DSC','Dificultades severas de conducta'],['DSCO','Dificultades severas de comunicación'],['DSA','Dificultades severas de aprendizaje'],['NO_APLICA','No aplica']],
+  'TRASTORNOS': [['TEA','Trastorno del espectro autista'],['TDAH','Trastorno por Déficit de Atención e Hiperactividad'],['NO_APLICA','No aplica']],
+  'APTITUDES_SOBRESALIENTES': [['ASI','Aptitudes sobresalientes intelectuales'],['ASC','Aptitudes sobresalientes creativas'],['ASS','Aptitudes sobresalientes socioafetivas'],['ASA','Aptitudes sobresalientes artísticas'],['ASP','Aptitudes sobresalientes psicomotrices'],['NO_APLICA','No aplica']],
+  'NINGUNO': [['NO_APLICA','No aplica']],
+  'OTRO': [['NO_APLICA','No aplica']],
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  const alumField    = document.getElementById('id_alumno');
+  const escField     = document.getElementById('id_escuela_regular');
+  const zonaRegField = document.getElementById('id_zona_regular');
+  const curpField    = document.getElementById('id_curp');
+  const sexoField    = document.getElementById('id_sexo');
+  const edadField    = document.getElementById('id_edad');
+  const gradoField   = document.getElementById('id_grado');
+  const maestField   = document.getElementById('id_maestro_apoyo');
+  const clsField     = document.getElementById('id_clasificacion');
+  const subField     = document.getElementById('id_subclasificacion');
+  const basField     = document.getElementById('id_escuela_basica');
+
+  function fillAlumno() {
+    const info = alumnosData.find(a => a.id == alumField.value) || {};
+    curpField.value   = info.curp   || '';
+    sexoField.value   = info.sexo   || '';
+    edadField.value   = info.edad   || '';
+    gradoField.value  = info.grado  || '';
+    maestField.value  = info.profesor_id || '';
+  }
+
+  function fillEscuela() {
+    const info = escuelasData.find(e => e.id == escField.value) || {};
+    zonaRegField.value = info.zona || '';
+    basField.value     = escField.value;
+  }
+
+  function populateSub() {
+    subField.innerHTML = `<option value="">--- Seleccione subcategoría ---</option>`;
+    (subOptions[clsField.value] || [['NO_APLICA','No aplica']])
+      .forEach(([val, txt]) => {
+        const o = document.createElement('option');
+        o.value = val;
+        o.textContent = txt;
+        subField.appendChild(o);
+      });
+  }
+
+  alumField.addEventListener('change', fillAlumno);
+  escField.addEventListener('change', fillEscuela);
+  clsField.addEventListener('change', populateSub);
+
+  fillAlumno();
+  fillEscuela();
+  populateSub();
+});
+</script>
+{% endblock %}

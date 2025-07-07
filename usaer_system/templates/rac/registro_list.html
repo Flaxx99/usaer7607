@@ -1,0 +1,73 @@
+<!-- rac/templates/rac/registro_list.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Registros RAC{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <h1>Registros RAC</h1>
+  <a href="{% url 'rac:registro_create' %}" class="btn btn-primary mb-3">Nuevo Registro</a>
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Alumno</th>
+        <th>Escuela regular</th>
+        <th>Tipo</th>
+        <th>Supervisión CCT</th>
+        <th>Centro CCT</th>
+        <th>Maestro apoyo</th>
+        <th>Escuela básica</th>
+        <th>Clasificación</th>
+        <th>Subclasificación</th>
+        <th>Fecha</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for reg in registros %}
+      <tr>
+        <td>{{ reg.alumno }}</td>
+        <td>{{ reg.escuela_regular }}</td>
+        <td>{{ reg.get_service_type_display }}</td>
+        <td>{{ reg.sup_especial_cct }}</td>
+        <td>{{ reg.centro_cct }}</td>
+        <td>{{ reg.maestro_apoyo }}</td>
+        <td>{{ reg.escuela_basica }}</td>
+        <td>{{ reg.get_clasificacion_display }}</td>
+        <td>{{ reg.get_subclasificacion_display }}</td>
+        <td>{{ reg.fecha_registro }}</td>
+        <td>
+          <a href="{% url 'rac:registro_edit' reg.pk %}" class="btn btn-sm btn-secondary">Editar</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="11">No hay registros disponibles.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if is_paginated %}
+  <nav aria-label="Page navigation">
+    <ul class="pagination">
+      {% if page_obj.has_previous %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+      </li>
+      {% endif %}
+      {% for num in paginator.page_range %}
+      <li class="page-item {% if num == page_obj.number %}active{% endif %}">
+        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+      </li>
+      {% endfor %}
+      {% if page_obj.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente</a>
+      </li>
+      {% endif %}
+    </ul>
+  </nav>
+  {% endif %}
+</div>
+{% endblock %}

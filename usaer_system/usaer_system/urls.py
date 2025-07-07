@@ -28,6 +28,7 @@ urlpatterns = [
     path('incidencias/', include('incidencias.urls', namespace='incidencias')),
     path('escuelas/',    include('escuelas.urls',    namespace='escuelas')),
     path('oficios/', include('oficios.urls', namespace='oficios')),
+    path('rac/', include('rac.urls', namespace='rac')),
 
 ]
 if settings.DEBUG:
