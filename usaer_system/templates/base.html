@@ -33,85 +33,99 @@
             </a>
           </li>
           {% if user.is_authenticated %}
-            <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" href="#" id="menuUsuario" role="button" data-bs-toggle="dropdown">
-                <i class="fas fa-bars me-1"></i>Menú
-              </a>
-              <ul class="dropdown-menu" aria-labelledby="menuUsuario">
-                <li>
-                  <a class="dropdown-item" href="{% url 'usuarios:dashboard' %}">
-                    <i class="fas fa-th-large me-2"></i>Panel de Control
-                  </a>
-                </li>
-                <li><hr class="dropdown-divider"></li>
-                {% if 'list_alumnos' in permisos_usuario %}
-                  <li><a class="dropdown-item" href="{% url 'alumnos:listar_alumnos' %}">👨‍👩‍👧 Alumnos</a></li>
-                {% endif %}
-                {% if 'list_expedientes' in permisos_usuario %}
-                  <li><a class="dropdown-item" href="{% url 'documentos:lista_expedientes' %}">📁 Expedientes</a></li>
-                {% endif %}
-                {% if 'create_expediente' in permisos_usuario %}
-                  <li><a class="dropdown-item" href="{% url 'documentos:subir_expediente' %}">🧾 Subir RAE / RAC</a></li>
-                {% endif %}
-                {% if 'export_rae_rac' in permisos_usuario %}
-                  <li><a class="dropdown-item" href="{% url 'alumnos:exportar_rac' %}">📤 Exportar RAC</a></li>
-                {% endif %}
-                {% if 'manage_permisos' in permisos_usuario %}
-                  <li><a class="dropdown-item" href="{% url 'permisos:gestionar' %}">📝 Permisos</a></li>
-                {% endif %}
-                {% if 'list_asistencias' in permisos_usuario %}
-                  <li><a class="dropdown-item" href="{% url 'asistencias:listar_asistencias' %}">📅 Asistencias</a></li>
-                {% endif %}
-                {% if 'list_incidencias' in permisos_usuario %}
-                  <li><a class="dropdown-item" href="{% url 'incidencias:listar_incidencias' %}">🚨 Incidencias</a></li>
-                {% endif %}
-                {% if 'list_escuelas' in permisos_usuario %}
-                  <li><a class="dropdown-item" href="{% url 'escuelas:listar_escuelas' %}">🏫 Escuelas</a></li>
-                {% endif %}
-                {% if 'list_users' in permisos_usuario %}
-                  <li><a class="dropdown-item" href="{% url 'usuarios:list' %}">👥 Usuarios</a></li>
-                {% endif %}
-                {% if 'upload_oficios' in permisos_usuario %}
-                  <li><a class="dropdown-item" href="{% url 'oficios:subir_oficio' %}">📤 Subir Oficios</a></li>
-                {% endif %}
-                {% if 'list_oficios' in permisos_usuario %}
-                  <li><a class="dropdown-item" href="{% url 'oficios:lista_oficios' %}">📥 Ver Oficios</a></li>
-                {% endif %}
-                {% if user.is_superuser %}
-                  <li><a class="dropdown-item" href="{% url 'admin:index' %}">⚙️ Admin Django</a></li>
-                {% endif %}
-              </ul>
-            </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="menuUsuario" role="button" data-bs-toggle="dropdown">
+              <i class="fas fa-bars me-1"></i>Menú
+            </a>
+            <ul class="dropdown-menu" aria-labelledby="menuUsuario">
+              <li>
+                <a class="dropdown-item" href="{% url 'usuarios:dashboard' %}">
+                  <i class="fas fa-th-large me-2"></i>Panel de Control
+                </a>
+              </li>
+              <li>
+                <hr class="dropdown-divider">
+              </li>
+              {% if 'list_alumnos' in permisos_usuario %}
+              <li><a class="dropdown-item" href="{% url 'alumnos:listar_alumnos' %}">👨‍👩‍👧 Alumnos</a></li>
+              {% endif %}
+              {% if 'list_expedientes' in permisos_usuario %}
+              <li><a class="dropdown-item" href="{% url 'documentos:lista_expedientes' %}">📁 Expedientes</a></li>
+              {% endif %}
+              {% if 'create_expediente' in permisos_usuario %}
+              <li><a class="dropdown-item" href="{% url 'documentos:subir_expediente' %}">🧾 Subir Expediente Nuevo</a>
+              </li>
+              {% endif %}
+              {% if 'ver_rac' in permisos_usuario %}
+              <li>
+                <a class="dropdown-item" href="{% url 'rac:registro_list' %}">
+                  📋 Registros RAC
+                </a>
+              </li>
+              {% endif %}
+              {% if 'nuevo_rac' in permisos_usuario %}
+              <li>
+                <a class="dropdown-item" href="{% url 'rac:registro_create' %}">
+                  ➕ Nuevo RAC
+                </a>
+              </li>
+              {% endif %}
+              {% if 'manage_permisos' in permisos_usuario %}
+              <li><a class="dropdown-item" href="{% url 'permisos:gestionar' %}">📝 Permisos</a></li>
+              {% endif %}
+              {% if 'list_asistencias' in permisos_usuario %}
+              <li><a class="dropdown-item" href="{% url 'asistencias:listar_asistencias' %}">📅 Asistencias</a></li>
+              {% endif %}
+              {% if 'list_incidencias' in permisos_usuario %}
+              <li><a class="dropdown-item" href="{% url 'incidencias:listar_incidencias' %}">🚨 Incidencias</a></li>
+              {% endif %}
+              {% if 'list_escuelas' in permisos_usuario %}
+              <li><a class="dropdown-item" href="{% url 'escuelas:listar_escuelas' %}">🏫 Escuelas</a></li>
+              {% endif %}
+              {% if 'list_users' in permisos_usuario %}
+              <li><a class="dropdown-item" href="{% url 'usuarios:list' %}">👥 Usuarios</a></li>
+              {% endif %}
+              {% if 'upload_oficios' in permisos_usuario %}
+              <li><a class="dropdown-item" href="{% url 'oficios:subir_oficio' %}">📤 Subir Oficios</a></li>
+              {% endif %}
+              {% if 'list_oficios' in permisos_usuario %}
+              <li><a class="dropdown-item" href="{% url 'oficios:lista_oficios' %}">📥 Ver Oficios</a></li>
+              {% endif %}
+              {% if user.is_superuser %}
+              <li><a class="dropdown-item" href="{% url 'admin:index' %}">⚙️ Admin Django</a></li>
+              {% endif %}
+            </ul>
+          </li>
           {% endif %}
         </ul>
 
         <ul class="navbar-nav ms-auto">
           {% if user.is_authenticated %}
-            <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="cuentaDropdown" role="button"
-                 data-bs-toggle="dropdown">
-                <i class="fas fa-user-circle me-2"></i>{{ user.nombre|default:user.email }}
-              </a>
-              <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="cuentaDropdown">
-                <li><a class="dropdown-item" href="{% url 'usuarios:change_password' %}">
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="cuentaDropdown" role="button"
+              data-bs-toggle="dropdown">
+              <i class="fas fa-user-circle me-2"></i>{{ user.nombre|default:user.email }}
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="cuentaDropdown">
+              <li><a class="dropdown-item" href="{% url 'usuarios:change_password' %}">
                   <i class="fas fa-key me-2"></i>Cambiar contraseña
                 </a></li>
-                <li>
-                  <form method="post" action="{% url 'logout' %}" class="d-inline">
-                    {% csrf_token %}
-                    <button type="submit" class="dropdown-item">
-                      <i class="fas fa-sign-out-alt me-2"></i>Cerrar sesión
-                    </button>
-                  </form>
-                </li>
-              </ul>
-            </li>
+              <li>
+                <form method="post" action="{% url 'logout' %}" class="d-inline">
+                  {% csrf_token %}
+                  <button type="submit" class="dropdown-item">
+                    <i class="fas fa-sign-out-alt me-2"></i>Cerrar sesión
+                  </button>
+                </form>
+              </li>
+            </ul>
+          </li>
           {% else %}
-            <li class="nav-item">
-              <a class="nav-link" href="{% url 'login' %}">
-                <i class="fas fa-sign-in-alt me-1"></i>Iniciar sesión
-              </a>
-            </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'login' %}">
+              <i class="fas fa-sign-in-alt me-1"></i>Iniciar sesión
+            </a>
+          </li>
           {% endif %}
         </ul>
       </div>
@@ -120,12 +134,12 @@
 
   <main class="container py-4">
     {% if mostrar_mensajes and messages %}
-      {% for message in messages %}
-        <div class="alert alert-{{ message.tags }} alert-dismissible fade show mb-3" role="alert">
-          {{ message }}
-          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-        </div>
-      {% endfor %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show mb-3" role="alert">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+    {% endfor %}
     {% endif %}
 
     {% block content %}
@@ -139,4 +153,5 @@
   {% block extra_js %}
   {% endblock %}
 </body>
+
 </html>

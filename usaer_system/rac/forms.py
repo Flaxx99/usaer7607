@@ -2,6 +2,9 @@ from django import forms
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Div, Field, Submit
 
+from django.core.exceptions import ValidationError
+from datetime import date
+
 from .models import (
     RegistroRAC,
     DISCAPACIDAD_SUB,
@@ -124,3 +127,16 @@ class RegistroRACForm(forms.ModelForm):
         cls = self.data.get('clasificacion') or getattr(self.instance, 'clasificacion', None)
         init_choices = CLASS_TO_SUB.get(cls, [('NO_APLICA', 'No aplica')])
         self.fields['subclasificacion'].choices = [('', '--- Seleccione subcategoría ---')] + init_choices
+
+    def clean(self):
+        cleaned = super().clean()
+        alumno = cleaned.get('alumno')
+        # Asumimos que fecha_registro se graba con auto_now_add=date.today()
+        if alumno and RegistroRAC.objects.filter(
+            alumno=alumno,
+            fecha_registro=date.today()
+        ).exists():
+            raise ValidationError(
+                "Este alumno ya tiene un registro RAC para la fecha de hoy."
+            )
+        return cleaned

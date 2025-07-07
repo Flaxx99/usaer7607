@@ -167,7 +167,8 @@ ROLE_PERMISSIONS = {
         # Alumnos CRUD
         'create_alumno', 'list_alumnos', 'edit_alumno', 'delete_alumno',
         # RAE/RAC
-        'export_rae_rac', 'capture_rae_rac',
+        'ver_rac',
+        'nuevo_rac',
         # Expedientes CRUD + descarga oficial
         'create_expediente', 'list_expedientes', 'edit_expediente', 'delete_expediente',
         'download_official_docs',
@@ -191,7 +192,8 @@ ROLE_PERMISSIONS = {
         # Escuelas CRUD
         'create_escuela', 'list_escuelas', 'edit_escuela', 'delete_escuela',
         # RAE/RAC
-        'export_rae_rac',
+        'ver_rac',
+        'nuevo_rac',
         # Expedientes CRUD + descarga oficial
         'create_expediente', 'list_expedientes', 'edit_expediente', 'delete_expediente',
         'download_official_docs',
@@ -207,7 +209,8 @@ ROLE_PERMISSIONS = {
         # Alumnos CRUD
         'create_alumno', 'list_alumnos', 'edit_alumno',
         # RAE/RAC
-        'export_rae_rac', 'capture_rae_rac',
+        'ver_rac',
+        'nuevo_rac',
         # Expedientes CRUD + descarga oficial
         'create_expediente', 'list_expedientes', 'edit_expediente', 'delete_expediente',
         'download_official_docs',
@@ -380,7 +383,19 @@ DASHBOARD_MODULES = [
         'url_name': 'oficios:lista_oficios',
          'icon': 'fas fa-download text-secondary',
     },  
-
+    # ---RAC --- #
+      {
+        'key': 'ver_rac',
+        'title': 'Ver Registros RAC',
+        'icon':  'fas fa-list',
+        'url_name': 'rac:registro_list',
+    },
+    {
+        'key': 'nuevo_rac',
+        'title': 'Nuevo Registro RAC',
+        'icon':  'fas fa-plus',
+        'url_name': 'rac:registro_create',
+    },
 ]
 ROLES_EQUIPO_ITINERANTE = [
     'PSICOLOGO',
