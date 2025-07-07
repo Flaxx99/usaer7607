@@ -12,6 +12,8 @@ from .models import RegistroRAC
 from .forms import RegistroRACForm
 from alumnos.models import Alumno
 from escuelas.models import Escuela
+from openpyxl.styles import Font, PatternFill, Alignment
+from openpyxl.utils import get_column_letter
 
 
 class RegistroRACListView(ListView):
@@ -149,5 +151,113 @@ class ExportRACExcelView(View):
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
         response['Content-Disposition'] = 'attachment; filename="RAC_USAER7607.xlsx"'
+        wb.save(response)
+        return response
+
+
+class ExportRACExcelView(View):
+    def get(self, request, *args, **kwargs):
+        user = request.user
+
+        # 1) Filtrar y ordenar registros:
+        #    - primero por escuela_regular.nombre
+        #    - luego por alumno.apellido_paterno
+        registros = RegistroRAC.objects.all().order_by(
+            'escuela_regular__nombre',
+            'alumno__apellido_paterno'
+        )
+        if getattr(user, 'role', None) == 'MAESTRO_APOYO':
+            registros = registros.filter(maestro_apoyo=user)
+
+        # 2) Crear workbook y worksheet
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = 'RAC'
+
+        # 3) Encabezados en el orden oficial
+        headers = [
+            'NOMBRE DE ESCUELA REGULAR',
+            'TIPO DE SERVICIO',
+            'CCT', 'ZONA',  # supervisión especial
+            'CCT', 'NOMBRE CENTRO DE TRABAJO', 'NOMBRE DEL MAESTRO',  # ed. especial
+            'CCT', 'ZONA', 'NOMBRE ESCUELA',  # escuela básica
+            'APELLIDO PATERNO', 'APELLIDO MATERNO', 'NOMBRE(S)',  # alumno
+            'CURP ALUMNO(A)', 'SEXO', 'EDAD', 'GRADO',
+            'CON DISCAPACIDAD', 'DIFICULTADES SEVERAS',
+            'TRASTORNOS', 'APTITUDES SOBRESALIENTES',
+            'OTRO (ESPECIFICAR)', 'OBSERVACIONES',
+        ]
+        ws.append(headers)
+
+        # 4) Formatear fila de encabezados
+        header_fill = PatternFill(fill_type='solid', fgColor='CCCCCC')
+        header_font = Font(bold=True)
+        header_align = Alignment(horizontal='center', vertical='center', wrap_text=True)
+        for col_idx, _ in enumerate(headers, start=1):
+            cell = ws.cell(row=1, column=col_idx)
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = header_align
+            # ancho mínimo + algo de padding
+            ws.column_dimensions[get_column_letter(col_idx)].width = max(15, len(headers[col_idx-1]) + 2)
+
+        # 5) Rellenar filas
+        for reg in registros:
+            # Subclasificaciones
+            con_disc = reg.subclasificacion if reg.clasificacion == 'DISCAPACIDAD' else 'NO APLICA'
+            dif_sev  = reg.subclasificacion if reg.clasificacion == 'DIFICULTADES_SEVERAS' else 'NO APLICA'
+            trast    = reg.subclasificacion if reg.clasificacion == 'TRASTORNOS' else 'NO APLICA'
+            apti     = reg.subclasificacion if reg.clasificacion == 'APTITUDES_SOBRESALIENTES' else 'NO APLICA'
+            otro     = 'NO APLICA'
+
+            # Nivel educativo de la escuela del alumno
+            nivel_txt = reg.alumno.escuela.get_nivel_display()
+            grado_txt = f"{reg.grado} {nivel_txt}"
+
+            row = [
+                # Escuela regular
+                reg.escuela_regular.nombre,
+                reg.get_service_type_display(),
+                # Supervisión especial
+                reg.sup_especial_cct,
+                reg.sup_especial_zona,
+                # Educación especial
+                reg.centro_cct,
+                reg.centro_nombre,
+                reg.maestro_apoyo.get_full_name(),
+                # Escuela básica
+                reg.escuela_basica.cct,
+                reg.escuela_basica.zona,
+                reg.escuela_basica.nombre,
+                # Alumno
+                reg.alumno.apellido_paterno,
+                reg.alumno.apellido_materno,
+                reg.alumno.nombres,
+                # Datos del alumno
+                reg.alumno.curp,
+                reg.alumno.sexo,    # H o M
+                reg.alumno.edad,
+                grado_txt,          # e.g. "1 PRIMARIA"
+                # Clasificaciones
+                con_disc,
+                dif_sev,
+                trast,
+                apti,
+                otro,
+                # Observaciones
+                reg.observaciones or '',
+            ]
+            ws.append(row)
+
+        # 6) Auto‐filter y congelar cabecera
+        ws.auto_filter.ref = ws.dimensions
+        ws.freeze_panes    = 'A2'
+
+        # 7) Responder con el archivo
+        filename = 'MIS_REGISTROS.xlsx' if user.role == 'MAESTRO_APOYO' else 'USAER7607.xlsx'
+        response = HttpResponse(
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
         wb.save(response)
         return response
