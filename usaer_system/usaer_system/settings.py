@@ -37,8 +37,9 @@ INSTALLED_APPS = [
     'documentos',
     'alumnos',
     'oficios',
+    'rac',
 
-    # Dependencias
+    #dependencias
     'crispy_forms',
     'crispy_bootstrap5',
 ]
@@ -114,7 +115,10 @@ ROLE_PERMISSIONS = {
         'create_user', 'list_users', 'edit_user', 'delete_user',
         'create_escuela', 'list_escuelas', 'edit_escuela', 'delete_escuela',
         'create_alumno', 'list_alumnos', 'edit_alumno', 'delete_alumno',
-        'export_rae_rac', 'capture_rae_rac',
+        # RAE/RAC
+        'ver_rac',
+        'nuevo_rac',
+        # Expedientes CRUD + descarga oficial
         'create_expediente', 'list_expedientes', 'edit_expediente', 'delete_expediente',
         'download_official_docs',
         'create_incidencia', 'list_incidencias', 'edit_incidencia', 'delete_incidencia',
@@ -126,7 +130,10 @@ ROLE_PERMISSIONS = {
     'SECRETARIO': [
         'create_user', 'list_users', 'edit_user', 'delete_user',
         'create_escuela', 'list_escuelas', 'edit_escuela', 'delete_escuela',
-        'export_rae_rac',
+        # RAE/RAC
+        'ver_rac',
+        'nuevo_rac',
+        # Expedientes CRUD + descarga oficial
         'create_expediente', 'list_expedientes', 'edit_expediente', 'delete_expediente',
         'download_official_docs',
         'create_permiso', 'list_my_permisos', 'manage_permisos',
@@ -136,7 +143,10 @@ ROLE_PERMISSIONS = {
 
     'MAESTRO_APOYO': [
         'create_alumno', 'list_alumnos', 'edit_alumno',
-        'export_rae_rac', 'capture_rae_rac',
+        # RAE/RAC
+        'ver_rac',
+        'nuevo_rac',
+        # Expedientes CRUD + descarga oficial
         'create_expediente', 'list_expedientes', 'edit_expediente', 'delete_expediente',
         'download_official_docs',
         'create_permiso', 'list_my_permisos',
@@ -287,7 +297,20 @@ DASHBOARD_MODULES = [
         'key': 'list_oficios',
         'title': 'Ver Oficios',
         'url_name': 'oficios:lista_oficios',
-        'icon': 'fas fa-download text-secondary',
+         'icon': 'fas fa-download text-secondary',
+    },  
+    # ---RAC --- #
+      {
+        'key': 'ver_rac',
+        'title': 'Ver Registros RAC',
+        'icon':  'fas fa-list',
+        'url_name': 'rac:registro_list',
+    },
+    {
+        'key': 'nuevo_rac',
+        'title': 'Nuevo Registro RAC',
+        'icon':  'fas fa-plus',
+        'url_name': 'rac:registro_create',
     },
 ]
 
