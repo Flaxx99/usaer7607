@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}Calendario{% endblock %}
+
+{% block content %}
+<h1 class="mb-4"><i class="bi bi-calendar3 me-2"></i>Calendario de Eventos</h1>
+
+<div id="calendario"></div>
+
+<div class="mt-4">
+  <a href="{% url 'calendario:crear_evento' %}" class="btn btn-primary">
+    <i class="bi bi-plus-circle me-1"></i>Nuevo evento
+  </a>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var calendarEl = document.getElementById('calendario');
+  var calendar = new FullCalendar.Calendar(calendarEl, {
+    initialView: 'dayGridMonth',
+    locale: 'es',
+    headerToolbar: {
+      left: 'prev,next today',
+      center: 'title',
+      right: 'dayGridMonth,timeGridWeek'
+    },
+    events: [
+    {% for evento in eventos %}
+    {
+        title: "{{ evento.titulo|escapejs }}",
+        start: "{{ evento.fecha_inicio|date:'c' }}",
+        end: "{{ evento.fecha_fin|date:'c' }}",
+        url: "{% url 'calendario:detalle_evento' evento.pk %}",
+        {% if evento.tipo == 'INSTITUCIONAL' %}
+        color: "#007bff",
+        {% else %}
+        color: "#6c757d",
+        {% endif %}
+    },
+    {% endfor %}
+    ]
+
+  });
+  calendar.render();
+});
+</script>
+{% endblock %}
