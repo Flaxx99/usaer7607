@@ -38,6 +38,8 @@ INSTALLED_APPS = [
     'alumnos',
     'oficios',
     'rac',
+    'calendario',
+
 
     #dependencias
     'crispy_forms',
@@ -124,7 +126,7 @@ ROLE_PERMISSIONS = {
         'create_incidencia', 'list_incidencias', 'edit_incidencia', 'delete_incidencia',
         'create_permiso', 'list_my_permisos', 'manage_permisos',
         'check_asistencia', 'list_asistencias',
-        'upload_oficios', 'list_oficios',
+        'upload_oficios', 'list_oficios', 'view_calendario',
     ],
 
     'SECRETARIO': [
@@ -138,7 +140,7 @@ ROLE_PERMISSIONS = {
         'download_official_docs',
         'create_permiso', 'list_my_permisos', 'manage_permisos',
         'check_asistencia', 'list_asistencias',
-        'upload_oficios', 'list_oficios',
+        'upload_oficios', 'list_oficios', 'view_calendario',
     ],
 
     'MAESTRO_APOYO': [
@@ -151,46 +153,46 @@ ROLE_PERMISSIONS = {
         'download_official_docs',
         'create_permiso', 'list_my_permisos',
         'check_asistencia', 'list_asistencias',
-        'list_oficios',
+        'list_oficios', 'view_calendario',
     ],
 
     'TRAB_SOCIAL': [
         'list_expedientes', 'edit_expediente', 'download_official_docs',
         'create_permiso', 'list_my_permisos',
         'check_asistencia', 'list_asistencias',
-        'list_oficios',
+        'list_oficios', 'view_calendario',
     ],
 
     'PSICOLOGO': [
         'list_expedientes', 'edit_expediente', 'download_official_docs',
         'create_permiso', 'list_my_permisos',
         'check_asistencia', 'list_asistencias',
-        'list_oficios',
+        'list_oficios', 'view_calendario',
     ],
 
     'PSICOMOTRICIDAD': [
         'list_expedientes', 'edit_expediente', 'download_official_docs',
         'create_permiso', 'list_my_permisos',
         'check_asistencia', 'list_asistencias',
-        'list_oficios',
+        'list_oficios', 'view_calendario',
     ],
 
     'COMUNICACION': [
         'list_expedientes', 'edit_expediente', 'download_official_docs',
         'create_permiso', 'list_my_permisos',
         'check_asistencia', 'list_asistencias',
-        'list_oficios',
+        'list_oficios', 'view_calendario',
     ],
 
     'TRAB_MANUAL': [
         'download_official_docs', 'list_expedientes',
         'create_permiso', 'list_my_permisos',
         'check_asistencia', 'list_asistencias',
-        'list_oficios',
+        'list_oficios', 'view_calendario',
     ],
 
     'DIRECTOR': [
-        'list_incidencias',
+        'list_incidencias', 'view_calendario',
     ],
 }
 
@@ -311,6 +313,12 @@ DASHBOARD_MODULES = [
         'title': 'Nuevo Registro RAC',
         'icon':  'fas fa-plus',
         'url_name': 'rac:registro_create',
+    },
+    {
+        'key': 'view_calendario',
+        'title': 'Calendario',
+        'url_name': 'calendario:lista_eventos',
+        'icon': 'fas fa-calendar-alt text-primary',
     },
 ]
 

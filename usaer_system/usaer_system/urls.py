@@ -29,6 +29,7 @@ urlpatterns = [
     path('escuelas/',    include('escuelas.urls',    namespace='escuelas')),
     path('oficios/', include('oficios.urls', namespace='oficios')),
     path('rac/', include('rac.urls', namespace='rac')),
+    path('calendario/', include('calendario.urls', namespace='calendario')),
 
 ]
 if settings.DEBUG:
