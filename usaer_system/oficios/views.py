@@ -2,6 +2,7 @@ import os
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
+from django.contrib import messages
 from .models import Oficio
 from .forms import OficioForm
 
@@ -18,6 +19,7 @@ def subir_oficio(request):
             oficio = form.save(commit=False)
             oficio.subido_por = request.user
             oficio.save()
+            messages.success(request, "Oficio subido correctamente.")
             return redirect('oficios:lista_oficios')
     else:
         form = OficioForm()
@@ -38,6 +40,7 @@ def editar_oficio(request, pk):
                 if oficio.archivo.storage.exists(archivo_anterior):
                     oficio.archivo.storage.delete(archivo_anterior)
             form.save()
+            messages.success(request, "Oficio actualizado correctamente.")
             return redirect('oficios:lista_oficios')
     else:
         form = OficioForm(instance=oficio)
@@ -49,5 +52,6 @@ def eliminar_oficio(request, pk):
     oficio = get_object_or_404(Oficio, pk=pk)
     if request.method == 'POST':
         oficio.delete()
+        messages.success(request, "Oficio eliminado correctamente.")
         return redirect('oficios:lista_oficios')
     return render(request, 'oficios/confirmar_eliminacion.html', {'oficio': oficio})

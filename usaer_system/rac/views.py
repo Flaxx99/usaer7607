@@ -8,6 +8,7 @@ from django import forms
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, View
 from django.http import HttpResponse
+from django.contrib import messages
 
 from .models import RegistroRAC
 from .forms import RegistroRACForm
@@ -72,6 +73,10 @@ class RegistroRACCreateView(CreateView):
         ctx['escuelas_data'] = json.dumps(escuelas)
         return ctx
 
+    def form_valid(self, form):
+        messages.success(self.request, "Registro RAC creado correctamente.")
+        return super().form_valid(form)
+
 
 class RegistroRACUpdateView(RegistroRACCreateView, UpdateView):
     """
@@ -87,6 +92,10 @@ class RegistroRACUpdateView(RegistroRACCreateView, UpdateView):
             qs = qs | Alumno.objects.filter(pk=self.object.alumno.pk)
             form.fields['alumno'].queryset = qs
         return form
+
+    def form_valid(self, form):
+        messages.success(self.request, "Registro RAC actualizado correctamente.")
+        return super().form_valid(form)
 
 
 class ExportRACExcelView(View):

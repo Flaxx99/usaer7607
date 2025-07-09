@@ -238,3 +238,7 @@ class ExpedienteDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
             return redirect('documentos:lista_expedientes')
 
         return super().dispatch(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, "Expediente eliminado correctamente.")
+        return super().delete(request, *args, **kwargs)
