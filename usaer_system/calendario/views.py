@@ -2,6 +2,7 @@ from django.views.generic import ListView, CreateView, UpdateView, DeleteView, D
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.urls import reverse_lazy
 from django.http import HttpResponseForbidden
+from django.contrib import messages
 from .models import EventoCalendario
 from .forms import EventoForm
 from django.db import models
@@ -37,6 +38,7 @@ class EventoCreateView(LoginRequiredMixin, CreateView):
         # Si no es admin o secretario, forzar tipo PERSONAL
         if not (self.request.user.is_staff or getattr(self.request.user, 'rol', '') == 'SECRETARIO'):
             form.instance.tipo = 'PERSONAL'
+        messages.success(self.request, "Evento creado correctamente.")
         return super().form_valid(form)
 
 # ✅ 3. Editar evento (solo si el usuario lo creó o es institucional con permiso)
@@ -50,6 +52,10 @@ class EventoUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         kwargs = super().get_form_kwargs()
         kwargs["user"] = self.request.user
         return kwargs
+
+    def form_valid(self, form):
+        messages.success(self.request, "Evento actualizado correctamente.")
+        return super().form_valid(form)
 
     def test_func(self):
         evento = self.get_object()
@@ -71,6 +77,10 @@ class EventoDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         return evento.creado_por == user or (
             evento.tipo == 'INSTITUCIONAL' and (user.is_staff or getattr(user, 'rol', '') == 'SECRETARIO')
         )
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, "Evento eliminado correctamente.")
+        return super().delete(request, *args, **kwargs)
 
 # ✅ 5. Detalle del evento
 class EventoDetailView(LoginRequiredMixin, DetailView):

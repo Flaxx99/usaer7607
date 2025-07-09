@@ -1,5 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse
+from django.contrib import messages
 import csv
 
 from .models import Alumno, Escuela
@@ -64,6 +65,7 @@ def crear_alumno(request):
             obj.escuela_id = request.POST.get('escuela')
             obj.grado      = request.POST.get('grado')
             obj.save()
+            messages.success(request, "Alumno creado correctamente.")
             return redirect('alumnos:listar_alumnos')
     else:
         form = AlumnoForm()
@@ -94,6 +96,7 @@ def editar_alumno(request, pk):
             obj.escuela_id = request.POST.get('escuela')
             obj.grado      = request.POST.get('grado')
             obj.save()
+            messages.success(request, "Alumno actualizado correctamente.")
             return redirect('alumnos:listar_alumnos')
     else:
         form = AlumnoForm(instance=alumno)
@@ -108,6 +111,7 @@ def eliminar_alumno(request, pk):
     alumno = get_object_or_404(Alumno, pk=pk)
     if request.method == 'POST':
         alumno.delete()
+        messages.success(request, "Alumno eliminado correctamente.")
         return redirect('alumnos:listar_alumnos')
     return render(request, 'alumnos/confirmar_eliminar.html', {
         'alumno': alumno

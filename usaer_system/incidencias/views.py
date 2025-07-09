@@ -138,6 +138,8 @@ def editar_incidencia(request, pk):
                     messages.info(request, f"Estado actualizado a {incidencia.get_estado_display()}")
             if 'respuesta_admin' in form.changed_data:
                 messages.info(request, "Comentarios de dirección actualizados")
+            if not {'estado', 'respuesta_admin'} & set(form.changed_data):
+                messages.success(request, "Incidencia actualizada correctamente.")
             return redirect('incidencias:revisar_incidencias')
     else:
         form = IncidenciaForm(instance=incidencia, escuela=request.user.escuela)
