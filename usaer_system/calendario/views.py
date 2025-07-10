@@ -10,16 +10,34 @@ from django.db import models
 # ✅ 1. Vista para listar eventos visibles según reglas de rol
 class CalendarioListView(LoginRequiredMixin, ListView):
     model = EventoCalendario
-    template_name = "calendario/calendario.html"
+    template_name = "calendario/lista_eventos.html"
     context_object_name = "eventos"
 
     def get_queryset(self):
         user = self.request.user
-        # Ver eventos institucionales + personales del propio usuario
-        return EventoCalendario.objects.filter(
+        queryset = EventoCalendario.objects.filter(
             models.Q(tipo='INSTITUCIONAL') |
             models.Q(tipo='PERSONAL', creado_por=user)
-        ).order_by('-fecha_inicio')
+        )
+
+        query = self.request.GET.get('q', '').strip()
+        event_type = self.request.GET.get('tipo', '')
+
+        if query:
+            queryset = queryset.filter(
+                models.Q(titulo__icontains=query) |
+                models.Q(descripcion__icontains=query)
+            )
+        if event_type:
+            queryset = queryset.filter(tipo=event_type)
+
+        return queryset.order_by('-fecha_inicio')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['query'] = self.request.GET.get('q', '')
+        context['tipo_filtrado'] = self.request.GET.get('tipo', '')
+        return context
 
 # ✅ 2. Crear un nuevo evento
 class EventoCreateView(LoginRequiredMixin, CreateView):
@@ -68,15 +86,17 @@ class EventoUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
 # ✅ 4. Eliminar evento (con mismas reglas que edición)
 class EventoDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = EventoCalendario
-    template_name = "calendario/evento_confirm_delete.html"
     success_url = reverse_lazy("calendario:lista_eventos")
 
     def test_func(self):
         evento = self.get_object()
         user = self.request.user
         return evento.creado_por == user or (
-            evento.tipo == 'INSTITUCIONAL' and (user.is_staff or getattr(user, 'rol', '') == 'SECRETARIO')
+            evento.tipo == 'INSTITUCIONAL' and (user.is_staff or user.role == User.Role.SECRETARIO)
         )
+
+    def post(self, request, *args, **kwargs):
+        return self.delete(request, *args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
         messages.success(request, "Evento eliminado correctamente.")

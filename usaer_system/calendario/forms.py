@@ -1,5 +1,7 @@
 from django import forms
 from .models import EventoCalendario
+from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Layout, Submit, Field, Div
 
 class EventoForm(forms.ModelForm):
     class Meta:
@@ -26,6 +28,28 @@ class EventoForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.layout = Layout(
+            Div(
+                Div(Field('titulo'), css_class='col-md-12'),
+                css_class='row'
+            ),
+            Div(
+                Div(Field('descripcion'), css_class='col-md-12'),
+                css_class='row'
+            ),
+            Div(
+                Div(Field('fecha_inicio'), css_class='col-md-6'),
+                Div(Field('fecha_fin'), css_class='col-md-6'),
+                css_class='row'
+            ),
+            Div(
+                Div(Field('tipo'), css_class='col-md-6'),
+                Div(Field('archivo'), css_class='col-md-6'),
+                css_class='row'
+            ),
+            Submit('submit', 'Guardar Evento', css_class='btn btn-primary mt-3')
+        )
 
         if user and not (user.is_staff or getattr(user, 'rol', '') == 'SECRETARIO'):
             self.fields['tipo'].initial = 'PERSONAL'

@@ -36,24 +36,59 @@ class UsuarioCreationForm(UserCreationForm):
         self.helper.form_show_labels = True
         self.helper.layout = Layout(
             Fieldset(_('Nombre del Personal'),
-                Div(Field('nombre', css_class='me-2'), Field('apellido_paterno', css_class='me-2'), Field('apellido_materno'), css_class='row g-3')
+                Div(
+                    Div(Field('nombre', css_class='form-control'), css_class='col-md-4'),
+                    Div(Field('apellido_paterno', css_class='form-control'), css_class='col-md-4'),
+                    Div(Field('apellido_materno', css_class='form-control'), css_class='col-md-4'),
+                    css_class='row g-3'
+                )
             ),
             Fieldset(_('Contacto'),
-                'domicilio',
-                Div(Field('telefono', css_class='me-2'), Field('celular'), css_class='row g-3'),
-                Div(Field('rfc', css_class='me-2'), Field('curp'), css_class='row g-3'),
-                
+                Div(Field('domicilio', css_class='form-control'), css_class='col-md-12'),
+                Div(
+                    Div(Field('telefono', css_class='form-control'), css_class='col-md-6'),
+                    Div(Field('celular', css_class='form-control'), css_class='col-md-6'),
+                    css_class='row g-3'
+                ),
+                Div(
+                    Div(Field('rfc', css_class='form-control'), css_class='col-md-6'),
+                    Div(Field('curp', css_class='form-control'), css_class='col-md-6'),
+                    css_class='row g-3'
+                ),
             ),
             Fieldset(_('Datos administrativos'),
-                Div(Field('clave_presupuestal', css_class='me-2'), Field('numero_empleado', css_class='me-2'), Field('numero_pensiones'), css_class='row g-3'),
-                Div(Field('grado', css_class='me-2'), Field('puesto', css_class='me-2'), Field('situacion'), css_class='row g-3'),
-                Div(Field('escolaridad', css_class='me-2'), Field('fecha_ingreso'), css_class='row g-3')
+                Div(
+                    Div(Field('clave_presupuestal', css_class='form-control'), css_class='col-md-4'),
+                    Div(Field('numero_empleado', css_class='form-control'), css_class='col-md-4'),
+                    Div(Field('numero_pensiones', css_class='form-control'), css_class='col-md-4'),
+                    css_class='row g-3'
+                ),
+                Div(
+                    Div(Field('grado', css_class='form-control'), css_class='col-md-4'),
+                    Div(Field('puesto', css_class='form-control'), css_class='col-md-4'),
+                    Div(Field('situacion', css_class='form-control'), css_class='col-md-4'),
+                    css_class='row g-3'
+                ),
+                Div(
+                    Div(Field('escolaridad', css_class='form-control'), css_class='col-md-6'),
+                    Div(Field('fecha_ingreso', css_class='form-control'), css_class='col-md-6'),
+                    css_class='row g-3'
+                )
             ),
             Fieldset(_('Cuenta institucional'),
-                'email', 'role', 'escuela',
-                Div(Field('password1', css_class='me-2'), Field('password2'), css_class='row g-3'),
+                Div(Field('email', css_class='form-control'), css_class='col-md-12'),
+                Div(
+                    Div(Field('role', css_class='form-control'), css_class='col-md-6'),
+                    Div(Field('escuela', css_class='form-control'), css_class='col-md-6'),
+                    css_class='row g-3'
+                ),
+                Div(
+                    Div(Field('password1', css_class='form-control'), css_class='col-md-6'),
+                    Div(Field('password2', css_class='form-control'), css_class='col-md-6'),
+                    css_class='row g-3'
+                ),
             ),
-            ButtonHolder(Submit('submit', _('Crear usuario'), css_class='btn btn-primary'))
+            ButtonHolder(Submit('submit', _('Crear usuario'), css_class='btn btn-primary mt-3'))
         )
 
     def clean(self):
@@ -86,23 +121,54 @@ class UsuarioChangeForm(UserChangeForm):
         self.helper.form_show_labels = True
         self.helper.layout = Layout(
             Fieldset(_('Nombre del Personal'),
-                Div(Field('nombre', css_class='me-2'), Field('apellido_paterno', css_class='me-2'), Field('apellido_materno'), css_class='row g-3')
+                Div(
+                    Div(Field('nombre', css_class='form-control'), css_class='col-md-4'),
+                    Div(Field('apellido_paterno', css_class='form-control'), css_class='col-md-4'),
+                    Div(Field('apellido_materno', css_class='form-control'), css_class='col-md-4'),
+                    css_class='row g-3'
+                )
             ),
             Fieldset(_('Contacto'),
-                'domicilio',
-                Div(Field('telefono', css_class='me-2'), Field('celular'), css_class='row g-3'),
-                Div(Field('rfc', css_class='me-2'), Field('curp'), css_class='row g-3'),
-                'correo'
+                Div(Field('domicilio', css_class='form-control'), css_class='col-md-12'),
+                Div(
+                    Div(Field('telefono', css_class='form-control'), css_class='col-md-6'),
+                    Div(Field('celular', css_class='form-control'), css_class='col-md-6'),
+                    css_class='row g-3'
+                ),
+                Div(
+                    Div(Field('rfc', css_class='form-control'), css_class='col-md-6'),
+                    Div(Field('curp', css_class='form-control'), css_class='col-md-6'),
+                    css_class='row g-3'
+                ),
             ),
             Fieldset(_('Datos administrativos'),
-                Div(Field('clave_presupuestal', css_class='me-2'), Field('numero_empleado', css_class='me-2'), Field('numero_pensiones'), css_class='row g-3'),
-                Div(Field('grado', css_class='me-2'), Field('puesto', css_class='me-2'), Field('situacion'), css_class='row g-3'),
-                Div(Field('escolaridad', css_class='me-2'), Field('fecha_ingreso'), css_class='row g-3')
+                Div(
+                    Div(Field('clave_presupuestal', css_class='form-control'), css_class='col-md-4'),
+                    Div(Field('numero_empleado', css_class='form-control'), css_class='col-md-4'),
+                    Div(Field('numero_pensiones', css_class='form-control'), css_class='col-md-4'),
+                    css_class='row g-3'
+                ),
+                Div(
+                    Div(Field('grado', css_class='form-control'), css_class='col-md-4'),
+                    Div(Field('puesto', css_class='form-control'), css_class='col-md-4'),
+                    Div(Field('situacion', css_class='form-control'), css_class='col-md-4'),
+                    css_class='row g-3'
+                ),
+                Div(
+                    Div(Field('escolaridad', css_class='form-control'), css_class='col-md-6'),
+                    Div(Field('fecha_ingreso', css_class='form-control'), css_class='col-md-6'),
+                    css_class='row g-3'
+                )
             ),
             Fieldset(_('Cuenta institucional'),
-                'email', 'role', 'escuela',
+                Div(Field('email', css_class='form-control'), css_class='col-md-12'),
+                Div(
+                    Div(Field('role', css_class='form-control'), css_class='col-md-6'),
+                    Div(Field('escuela', css_class='form-control'), css_class='col-md-6'),
+                    css_class='row g-3'
+                ),
             ),
-            ButtonHolder(Submit('submit', _('Actualizar usuario'), css_class='btn btn-success'))
+            ButtonHolder(Submit('submit', _('Actualizar usuario'), css_class='btn btn-success mt-3'))
         )
 
     def clean(self):

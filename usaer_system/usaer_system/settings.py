@@ -27,23 +27,19 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
-    # Apps propias
-    'usuarios.apps.UsuariosConfig',
-    'escuelas.apps.EscuelasConfig',
-    'asistencias',
-    'permisos',
-    'incidencias',
-    'documentos',
+    'crispy_forms',
+    'crispy_bootstrap5',
+    'django_filters',
+    'usuarios',
     'alumnos',
+    'escuelas',
+    'asistencias',
+    'incidencias',
+    'permisos',
+    'documentos',
     'oficios',
     'rac',
     'calendario',
-
-
-    #dependencias
-    'crispy_forms',
-    'crispy_bootstrap5',
 ]
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
@@ -100,6 +96,7 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / "static"]
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -109,6 +106,7 @@ LOGOUT_REDIRECT_URL = '/'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
 
 # ------------------- PERMISOS POR ROL -------------------
 

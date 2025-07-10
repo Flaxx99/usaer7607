@@ -12,7 +12,6 @@ User = get_user_model()
 
 
 @login_required
-@roles_permitidos([User.Role.DIRECTOR, User.Role.ADMINISTRADOR])
 def crear_incidencia(request):
     """
     Permite al director o al administrador crear y asignar una incidencia a un profesor
@@ -72,9 +71,13 @@ def listar_incidencias(request):
         'query':             query
     })
 
+@login_required
+def detalle_incidencia(request, pk):
+    incidencia = get_object_or_404(Incidencia, pk=pk)
+    return render(request, 'incidencias/detalle_incidencia.html', {'incidencia': incidencia})
 
 @login_required
-@roles_permitidos([User.Role.DIRECTOR, User.Role.ADMINISTRADOR])
+@roles_permitidos([User.Role.ADMINISTRADOR, User.Role.SECRETARIO])
 def revisar_incidencias(request):
     """
     Panel para que el director o admin revise todas las incidencias de su escuela
@@ -176,15 +179,13 @@ def resolver_incidencia(request, pk):
 @roles_permitidos([User.Role.DIRECTOR, User.Role.ADMINISTRADOR])
 def eliminar_incidencia(request, pk):
     """
-    Elimina una incidencia (solo director o admin)
+    Elimina una incidencia directamente desde la lista.
     """
     incidencia = get_object_or_404(Incidencia, pk=pk, escuela=request.user.escuela)
-
     if request.method == 'POST':
-        incidencia.delete()
-        messages.success(request, f"Incidencia #{pk} eliminada correctamente")
-        return redirect('incidencias:revisar_incidencias')
-
-    return render(request, 'incidencias/confirmar_eliminar.html', {
-        'incidencia': incidencia
-    })
+        try:
+            incidencia.delete()
+            messages.success(request, f"Incidencia #{pk} eliminada correctamente.")
+        except Exception as e:
+            messages.error(request, f"Error al eliminar la incidencia: {e}")
+    return redirect('incidencias:revisar_incidencias')

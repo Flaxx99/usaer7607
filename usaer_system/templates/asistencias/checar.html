@@ -1,48 +1,58 @@
 {% extends "base.html" %}
 {% load crispy_forms_tags %}
-{% load group_filters %}
+
+{% block title %}Registro de Asistencia{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-md-8 col-lg-6">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white">
-                    <h3 class="card-title mb-0">
-                        <i class="fas fa-calendar-check me-2"></i>Registro de Asistencia
-                    </h3>
-                </div>
-                <div class="card-body">
-                    <form method="post" autocomplete="off">
-                        {% csrf_token %}
-                        {{ form|crispy }}
-                        <div class="d-grid gap-2 mt-4">
-                            <button type="submit" class="btn btn-primary btn-lg">
-                                <i class="fas fa-check-circle me-2"></i>Registrar
-                            </button>
-                        </div>
-                    </form>
-                </div>
-                {% if status %}
-                <div class="card-footer bg-light">
-                    <div class="alert alert-{% if status == 'ENTRADA' %}success{% elif status == 'SALIDA' %}info{% else %}warning{% endif %} mb-0">
-                        <strong>
-                            {% if status == 'ENTRADA' %}
-                                <i class="fas fa-sign-in-alt me-2"></i>Entrada registrada
-                            {% elif status == 'SALIDA' %}
-                                <i class="fas fa-sign-out-alt me-2"></i>Salida registrada
-                            {% else %}
-                                <i class="fas fa-check-circle me-2"></i>Asistencia completa
-                            {% endif %}
-                        </strong>
-                        {% if timestamp %}
-                            a las {{ timestamp|time:"H:i" }}
-                        {% endif %}
-                    </div>
-                </div>
-                {% endif %}
-            </div>
-        </div>
+<div class="row justify-content-center">
+  <div class="col-md-8 col-lg-6">
+    <!-- Clock and Date -->
+    <div class="checador-template-clock-container">
+      <div id="clock-time" class="checador-template-clock-time"></div>
+      <div id="clock-date" class="checador-template-clock-date"></div>
     </div>
+
+    <!-- Check-in/out Form -->
+    <div class="card check-card">
+      <div class="card-body p-4">
+        <h3 class="card-title text-center mb-4">Registro de Asistencia</h3>
+        <form method="post" autocomplete="off">
+          {% csrf_token %}
+          {{ form|crispy }}
+          <div class="d-grid gap-2 mt-4">
+            <button type="submit" class="btn btn-primary btn-lg">
+              <i class="fas fa-check-circle me-2"></i>Registrar Entrada/Salida
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Last Record Info -->
+    {% if request.session.last_check %}
+    <div class="alert alert-info mt-4">
+        {{ request.session.last_check }}
+    </div>
+    {% endif %}
+
+  </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function updateClock() {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const dateString = now.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+    document.getElementById('clock-time').textContent = timeString;
+    document.getElementById('clock-date').textContent = dateString.charAt(0).toUpperCase() + dateString.slice(1);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    updateClock();
+    setInterval(updateClock, 1000);
+});
+</script>
 {% endblock %}

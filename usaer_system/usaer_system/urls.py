@@ -1,10 +1,10 @@
 from usuarios.admin import admin_site
-from django.urls import path, include
+from django.urls import path, include, re_path
 from . import views as core_views
 from django.contrib.auth import views as auth_views
 from django.conf import settings
 from django.conf.urls.static import static
-
+from usuarios.views import CustomLoginView
 
 urlpatterns = [
     
@@ -14,10 +14,11 @@ urlpatterns = [
     # Checador público (entrada/salida) sin login
     path('', core_views.index, name='index'),
     
-    path('accounts/login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
+    path('accounts/login/', CustomLoginView.as_view(), name='login'),
 
     # Autenticación (login, logout, password reset…)
     path('accounts/', include('django.contrib.auth.urls')),
+
 
     # Módulos de la aplicación
     path('usuarios/',    include('usuarios.urls',    namespace='usuarios')),
@@ -30,6 +31,7 @@ urlpatterns = [
     path('oficios/', include('oficios.urls', namespace='oficios')),
     path('rac/', include('rac.urls', namespace='rac')),
     path('calendario/', include('calendario.urls', namespace='calendario')),
+
 
 ]
 if settings.DEBUG:

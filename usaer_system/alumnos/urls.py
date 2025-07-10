@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, include
 from . import views
 from usuarios.decoradores import roles_permitidos
 from django.contrib.auth import get_user_model
@@ -23,6 +23,14 @@ urlpatterns = [
             User.Role.ADMINISTRADOR,
         ])(views.crear_alumno),
         name='crear_alumno'
+    ),
+    path(
+        '<int:pk>/',
+        roles_permitidos([
+            User.Role.MAESTRO_APOYO,
+            User.Role.ADMINISTRADOR,
+        ])(views.detalle_alumno),
+        name='detalle_alumno'
     ),
     path(
         '<int:pk>/edit/',

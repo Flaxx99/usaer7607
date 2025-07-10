@@ -34,6 +34,15 @@ urlpatterns = [
         name='revisar_incidencias'
     ),
     path(
+        '<int:pk>/',
+        roles_permitidos([
+            User.Role.ADMINISTRADOR,
+            User.Role.DIRECTOR,
+            User.Role.MAESTRO_APOYO,
+        ])(views.detalle_incidencia),
+        name='detalle_incidencia'
+    ),
+    path(
         '<int:pk>/editar/',
         roles_permitidos([
             User.Role.DIRECTOR,

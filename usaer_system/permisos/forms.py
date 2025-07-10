@@ -2,6 +2,8 @@ from django import forms
 from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Layout, Submit, Field, Div
 
 from .models import Permiso
 from usaer_system.forms_utils import convertir_mayusculas
@@ -33,6 +35,24 @@ class SolicitudPermisoForm(forms.ModelForm):
             'fecha_fin': _('Hasta'),
             'motivo': _('Motivo del permiso'),
         }
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.layout = Layout(
+            Field('tipo'),
+            Div(
+                Div(Field('fecha_inicio', css_class='form-control'), css_class='col-md-6'),
+                Div(Field('fecha_fin', css_class='form-control'), css_class='col-md-6'),
+                css_class='row g-3'
+            ),
+            Field('motivo'),
+            Submit('submit', _('Solicitar Permiso'), css_class='btn btn-primary mt-3')
+        )
+
+        if user and not (user.is_staff or getattr(user, 'rol', '') == 'SECRETARIO'):
+            self.fields['tipo'].initial = 'PERSONAL'
+            self.fields['tipo'].widget = forms.HiddenInput()
 
     def clean(self):
         cleaned_data = super().clean()
@@ -72,6 +92,12 @@ class GestionPermisoForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.layout = Layout(
+            Div(Field('estado'), css_class='col-md-12'),
+            Div(Field('respuesta_admin'), css_class='col-md-12'),
+            Submit('submit', _('Guardar Respuesta'), css_class='btn btn-primary mt-3')
+        )
         if self.instance:
             self.fields['estado'].initial = self.instance.estado
             self.fields['respuesta_admin'].initial = self.instance.respuesta_admin

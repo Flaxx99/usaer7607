@@ -1,61 +1,107 @@
-{% extends "base.html" %}
-{% load i18n %}
+{% extends 'base.html' %}
+{% load crispy_forms_tags i18n %}
 
-{% block title %}Gestión de Escuelas{% endblock %}
-
-{% block breadcrumb_items %}
-› Escuelas
-{% endblock %}
+{% block title %}{% trans 'Gestión de Escuelas' %}{% endblock %}
 
 {% block content %}
-<div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h3 class="card-title"><i class="fas fa-school me-2"></i>Escuelas Registradas</h3>
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">{% trans 'Gestión de Escuelas' %}</h1>
+    <div class="d-none d-sm-inline-block">
         <a href="{% url 'escuelas:crear_escuela' %}" class="btn btn-success">
-            <i class="fas fa-plus-circle me-1"></i> Nueva Escuela
+            <i class="fas fa-plus-circle me-2"></i>{% trans 'Nueva Escuela' %}
         </a>
     </div>
+</div>
 
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">{% trans 'Filtros de Búsqueda' %}</h6>
+    </div>
     <div class="card-body">
-        {% if escuelas %}
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-6">
+                <label for="id_search" class="form-label">{% trans 'Buscar' %}</label>
+                <input type="text" name="q" id="id_search" class="form-control" placeholder="{% trans 'Nombre, CCT o clave estatal' %}" value="{{ request.GET.q|default:'' }}">
+            </div>
+            <div class="col-12 d-flex gap-2">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-filter me-1"></i> {% trans 'Filtrar' %}</button>
+                <a href="{% url 'escuelas:listar_escuelas' %}" class="btn btn-secondary"><i class="fas fa-sync-alt me-1"></i> {% trans 'Limpiar' %}</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">{% trans 'Listado de Escuelas' %}</h6>
+    </div>
+    <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-hover align-middle">
-                <thead class="table-light">
+            <table class="table table-bordered table-hover" id="dataTable" width="100%" cellspacing="0">
+                <thead>
                     <tr>
                         <th>{% trans 'Nombre' %}</th>
+                        <th>{% trans 'CCT' %}</th>
                         <th>{% trans 'Clave Estatal' %}</th>
-                        <th>{% trans 'Dirección' %}</th>
-                        <th>{% trans 'Teléfono' %}</th>
-                        <th class="text-end">{% trans 'Acciones' %}</th>
+                        <th>{% trans 'Nivel' %}</th>
+                        <th>{% trans 'Domicilio' %}</th>
+                        <th>{% trans 'Acciones' %}</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for escuela in escuelas %}
                     <tr>
                         <td>{{ escuela.nombre }}</td>
-                        <td>{{ escuela.clave_estatal|default:"-" }}</td>
-                        <td>{{ escuela.domicilio|truncatechars:35|default:"-" }}</td>
-                        <td>{{ escuela.telefono_escuela|default:"-" }}</td>
+                        <td>{{ escuela.cct|default:"—" }}</td>
+                        <td>{{ escuela.clave_estatal|default:"—" }}</td>
+                        <td>{{ escuela.get_nivel_display|default:"—" }}</td>
+                        <td>{{ escuela.domicilio|truncatechars:35|default:"—" }}</td>
                         <td class="text-end">
-                            <div class="btn-group">
-                                <a href="{% url 'escuelas:editar_escuela' escuela.pk %}" class="btn btn-sm btn-primary" title="Editar">
+                            <div class="d-flex gap-1" role="group" aria-label="Acciones de escuela">
+                                <a href="{% url 'escuelas:editar_escuela' escuela.pk %}" class="btn btn-primary" title="{% trans 'Editar' %}">
                                     <i class="fas fa-edit"></i>
                                 </a>
-                                <a href="{% url 'escuelas:eliminar_escuela' escuela.pk %}" class="btn btn-sm btn-danger" title="Eliminar">
-                                    <i class="fas fa-trash-alt"></i>
-                                </a>
+                                <form method="post" action="{% url 'escuelas:eliminar_escuela' escuela.pk %}" class="d-inline-block delete-form">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger" title="{% trans 'Eliminar' %}">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </form>
                             </div>
                         </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-3">{% trans 'No hay escuelas registradas.' %}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-        {% else %}
-        <div class="alert alert-info text-center mb-0">
-            <i class="fas fa-info-circle me-2"></i>{% trans 'No hay escuelas registradas.' %}
-        </div>
-        {% endif %}
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.querySelectorAll('.delete-form').forEach(form => {
+    form.addEventListener('submit', function(event) {
+      event.preventDefault();
+      Swal.fire({
+        title: '¿Estás seguro?',
+        text: "¡No podrás revertir esto!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Sí, ¡eliminar!',
+        cancelButtonText: 'Cancelar'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          this.submit();
+        }
+      });
+    });
+  });
+</script>
 {% endblock %}

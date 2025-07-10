@@ -5,6 +5,9 @@ from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
 from escuelas.models import Escuela
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 class Incidencia(models.Model):
     ESTADOS = [
@@ -20,7 +23,7 @@ class Incidencia(models.Model):
     )
     profesor = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        limit_choices_to={'role': 'MAESTRO_APOYO'},
+        limit_choices_to={'role': User.Role.MAESTRO_APOYO},
         on_delete=models.SET_NULL,
         null=True,
         verbose_name="Profesor reportado",

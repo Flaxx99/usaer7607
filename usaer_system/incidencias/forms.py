@@ -10,7 +10,7 @@ User = get_user_model()
 class IncidenciaForm(forms.ModelForm):
     class Meta:
         model = Incidencia
-        fields = ['escuela', 'profesor', 'descripcion', 'respuesta_admin']
+        fields = ['titulo', 'escuela', 'profesor', 'descripcion', 'respuesta_admin']
 
     def __init__(self, *args, escuela=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -27,13 +27,14 @@ class IncidenciaForm(forms.ModelForm):
         self.helper = FormHelper()
         self.helper.form_method = 'post'
         self.helper.layout = Layout(
+            Field('titulo', css_class='form-control'),
             Div(
-                Div(Field('escuela'),   css_class='col-md-6'),
-                Div(Field('profesor'),  css_class='col-md-6'),
+                Div(Field('escuela', css_class='form-control'),   css_class='col-md-6'),
+                Div(Field('profesor', css_class='form-control'),  css_class='col-md-6'),
                 css_class='row g-3'
             ),
-            Field('descripcion'),
-            Field('respuesta_admin'),
+            Field('descripcion', css_class='form-control'),
+            Field('respuesta_admin', css_class='form-control'),
             Submit('submit', 'Guardar', css_class='btn btn-primary mt-3')
         )
     

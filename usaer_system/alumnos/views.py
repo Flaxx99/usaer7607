@@ -44,6 +44,10 @@ def listar_alumnos(request):
         'alumnos': alumnos,
     })
 
+def detalle_alumno(request, pk):
+    alumno = get_object_or_404(Alumno, pk=pk)
+    return render(request, 'alumnos/detalle_alumno.html', {'alumno': alumno})
+
 def crear_alumno(request):
     """
     Crea un nuevo alumno.
@@ -106,16 +110,16 @@ def editar_alumno(request, pk):
 
 def eliminar_alumno(request, pk):
     """
-    Elimina un alumno tras confirmación.
+    Elimina un alumno directamente desde la lista.
     """
     alumno = get_object_or_404(Alumno, pk=pk)
     if request.method == 'POST':
-        alumno.delete()
-        messages.success(request, "Alumno eliminado correctamente.")
-        return redirect('alumnos:listar_alumnos')
-    return render(request, 'alumnos/confirmar_eliminar.html', {
-        'alumno': alumno
-    })
+        try:
+            alumno.delete()
+            messages.success(request, f"Alumno ‘{alumno.nombres} {alumno.apellido_paterno}’ eliminado correctamente.")
+        except Exception as e:
+            messages.error(request, f"Error al eliminar al alumno: {e}")
+    return redirect('alumnos:listar_alumnos')
 
 def exportar_rac(request):
     """

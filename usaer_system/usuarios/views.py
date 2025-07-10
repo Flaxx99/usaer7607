@@ -1,7 +1,29 @@
-# usuarios/views.py
-
-from django.contrib import messages
+from django.contrib.auth.views import LoginView
 from django.contrib.auth import login, update_session_auth_hash
+from django.contrib import messages
+from asistencias.forms import AsistenciaCheckForm
+
+class CustomLoginView(LoginView):
+    template_name = 'registration/login.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['asistencia_form'] = AsistenciaCheckForm()
+        return context
+
+    def form_valid(self, form):
+        # Obtener el nombre de usuario o email para el mensaje
+        user_identifier = form.cleaned_data.get('username')
+        
+        # Llamar al método original para que se complete el login
+        response = super().form_valid(form)
+        
+        # Añadir mensaje de éxito
+        messages.success(self.request, f"Bienvenido, {user_identifier}. Has iniciado sesión correctamente.")
+        
+        return response
+
+# usuarios/views.py
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.shortcuts import render, redirect, get_object_or_404
@@ -15,7 +37,10 @@ from .forms import UsuarioCreationForm, UsuarioChangeForm
 from .decoradores import roles_permitidos
 from django.contrib.auth.forms import PasswordChangeForm
 from escuelas.models import Escuela
+from alumnos.models import Alumno
+from incidencias.models import Incidencia
 from django.conf import settings
+from permisos.models import Permiso
 
 from documentos.models import Expediente  # Ajusta al nombre de tu modelo de expediente si difiere
 
@@ -35,6 +60,7 @@ class UserListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
         role = self.request.GET.get('role')
         escuela = self.request.GET.get('escuela')
         activo = self.request.GET.get('activo')
+        query = self.request.GET.get('q')
 
         if role:
             qs = qs.filter(role=role)
@@ -42,6 +68,14 @@ class UserListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
             qs = qs.filter(escuela__id=escuela)
         if activo:
             qs = qs.filter(activo=(activo == '1'))
+        if query:
+            qs = qs.filter(
+                Q(numero_empleado__icontains=query) |
+                Q(nombre__icontains=query) |
+                Q(apellido_paterno__icontains=query) |
+                Q(apellido_materno__icontains=query) |
+                Q(email__icontains=query)
+            )
 
         return qs.order_by('apellido_paterno', 'apellido_materno', 'nombre')
 
@@ -111,9 +145,11 @@ class UserDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
 @method_decorator(roles_permitidos([User.Role.ADMINISTRADOR]), name='dispatch')
 class UserDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
     model = User
-    template_name = 'usuarios/confirmar_eliminar_usuario.html'
     permission_required = 'usuarios.delete_user'
     success_url = reverse_lazy('usuarios:list')
+
+    def post(self, request, *args, **kwargs):
+        return self.delete(request, *args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
         messages.success(request, _('Usuario eliminado exitosamente'))
@@ -200,4 +236,6 @@ def dashboard(request):
     return render(request, 'usuarios/dashboard.html', {
         'modules': modules,
         'role':     user_role,
+        'permisos_pendientes': Permiso.objects.filter(estado='PENDIENTE').count(),
+        'incidencias_pendientes': Incidencia.objects.filter(estado='PENDIENTE').count(),
     })

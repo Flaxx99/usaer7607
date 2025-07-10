@@ -7,86 +7,89 @@ from django.contrib.auth.decorators import login_required
 from .models import Asistencia
 from .forms import AsistenciaCheckForm
 from escuelas.models import Escuela
-from usuarios.models import User  # necesario para acceder a User.Role
+
 
 # Obtener usuario
 User = get_user_model()
 
 
 # ----------------------------
+# Mostrar Checador (Público)
+# ----------------------------
+def mostrar_checador(request):
+    form = AsistenciaCheckForm()
+    return render(request, 'asistencias/checar.html', {'form': form})
+
+
+# ----------------------------
 # Checar Asistencia (Público)
 # ----------------------------
-def checar_asistencia(request):
-    status = None
-    timestamp = None
+from django.views.decorators.http import require_POST
 
+def checar_asistencia(request):
     if request.method == 'POST':
         form = AsistenciaCheckForm(request.POST)
         if form.is_valid():
             codigo = form.cleaned_data['numero_empleado'].strip()
-            hoy = timezone.localdate()
-            ahora = timezone.localtime()
+        hoy = timezone.localdate()
+        ahora = timezone.localtime()
 
-            try:
-                profesor = User.objects.get(
-                    Q(numero_empleado=codigo) | Q(curp=codigo),
-                    is_active=True
-                )
-            except User.DoesNotExist:
-                messages.error(request, "Código o CURP no encontrado.")
-                return redirect('asistencias:checar_asistencia')
-            except User.MultipleObjectsReturned:
-                messages.error(request, "Existen múltiples coincidencias. Contacte al administrador.")
-                return redirect('asistencias:checar_asistencia')
-
-            if not profesor.escuela:
-                messages.error(request, "Este usuario no tiene una escuela asignada.")
-                return redirect('asistencias:checar_asistencia')
-
-            asistencia, created = Asistencia.objects.get_or_create(
-                profesor=profesor,
-                fecha=hoy,
-                defaults={
-                    'escuela': profesor.escuela,
-                    'presente': True,
-                    'hora_entrada': ahora.time(),
-                }
+        try:
+            profesor = User.objects.get(
+                Q(numero_empleado=codigo) | Q(curp=codigo),
+                is_active=True
             )
+        except User.DoesNotExist:
+            messages.error(request, "Código o CURP no encontrado.")
+            return redirect('login')
+        except User.MultipleObjectsReturned:
+            messages.error(request, "Existen múltiples coincidencias. Contacte al administrador.")
+            return redirect('login')
 
-            if created:
-                status = 'ENTRADA'
-                timestamp = asistencia.hora_entrada
-                messages.success(request, f"Entrada registrada a las {timestamp.strftime('%H:%M')}")
+        if not profesor.escuela:
+            messages.error(request, "Este usuario no tiene una escuela asignada.")
+            return redirect('login')
+
+        asistencia, created = Asistencia.objects.get_or_create(
+            profesor=profesor,
+            fecha=hoy,
+            defaults={
+                'escuela': profesor.escuela,
+                'presente': True,
+                'hora_entrada': ahora.time(),
+            }
+        )
+
+        if created:
+            message = f"Entrada registrada a las {asistencia.hora_entrada.strftime('%H:%M')}"
+            messages.success(request, message)
+            request.session['last_check'] = message
+        else:
+            if asistencia.hora_salida:
+                message = "Ya registraste entrada y salida hoy."
+                messages.info(request, message)
+                request.session['last_check'] = message
             else:
-                if asistencia.hora_salida:
-                    status = 'COMPLETO'
-                    messages.info(request, "Ya registraste entrada y salida hoy.")
-                else:
-                    asistencia.hora_salida = ahora.time()
-                    asistencia.save(update_fields=['hora_salida'])
-                    status = 'SALIDA'
-                    timestamp = asistencia.hora_salida
+                asistencia.hora_salida = ahora.time()
+                asistencia.save(update_fields=['hora_salida'])
 
-                    delta = (timezone.datetime.combine(hoy, asistencia.hora_salida) -
-                             timezone.datetime.combine(hoy, asistencia.hora_entrada))
-                    horas = delta.seconds // 3600
-                    mins = (delta.seconds % 3600) // 60
+                delta = (timezone.datetime.combine(hoy, asistencia.hora_salida) -
+                         timezone.datetime.combine(hoy, asistencia.hora_entrada))
+                horas = delta.seconds // 3600
+                mins = (delta.seconds % 3600) // 60
 
-                    messages.success(
-                        request,
-                        f"Salida registrada a las {timestamp.strftime('%H:%M')} | "
-                        f"Horas trabajadas: {horas}h {mins}m"
-                    )
+                message = f"Salida registrada a las {asistencia.hora_salida.strftime('%H:%M')} | Horas trabajadas: {horas}h {mins}m"
+                messages.success(request, message)
+                request.session['last_check'] = message
 
-            return redirect('asistencias:checar_asistencia')
+        return redirect('login')
     else:
-        form = AsistenciaCheckForm()
-
-    return render(request, 'asistencias/checar.html', {
-        'form': form,
-        'status': status,
-        'timestamp': timestamp,
-    })
+        error_message = "Por favor, corrige los errores en el formulario de checador."
+        for field, errors in form.errors.items():
+            for error in errors:
+                error_message += f" {field}: {error}"
+        messages.error(request, error_message)
+        return redirect('login')
 
 
 # ----------------------------

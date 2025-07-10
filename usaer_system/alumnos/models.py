@@ -67,5 +67,8 @@ class Alumno(models.Model):
         verbose_name_plural = "Alumnos"
         ordering = ['apellido_paterno', 'apellido_materno', 'nombres']
 
+    def get_full_name(self):
+        return f"{self.nombres} {self.apellido_paterno} {self.apellido_materno}"
+
     def __str__(self):
-        return f"{self.apellido_paterno} {self.apellido_materno}, {self.nombres}"
+        return self.get_full_name()

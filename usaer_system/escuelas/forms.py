@@ -51,24 +51,53 @@ class EscuelaForm(forms.ModelForm):
 
         self.helper.layout = Layout(
             Fieldset(_('Datos Generales'),
-                Div(Field('clave_estatal'), css_class='row'),
-                Field('cct'),
-                Field('nombre'),
-                Field('nivel', css_class='text-uppercase'),
-                Field('domicilio'),
-                Field('colonia'),
-                Field('telefono'),
-                Field('zona'),
+                Div(
+                    Div(Field('clave_estatal'), css_class='col-md-6'),
+                    Div(Field('cct'), css_class='col-md-6'),
+                    css_class='row'
+                ),
+                Div(
+                    Div(Field('nombre'), css_class='col-md-12'),
+                    css_class='row'
+                ),
+                Div(
+                    Div(Field('nivel', css_class='text-uppercase'), css_class='col-md-6'),
+                    Div(Field('telefono'), css_class='col-md-6'),
+                    css_class='row'
+                ),
+                Div(
+                    Div(Field('domicilio'), css_class='col-md-8'),
+                    Div(Field('colonia'), css_class='col-md-4'),
+                    css_class='row'
+                ),
+                Div(
+                    Div(Field('zona'), css_class='col-md-12'),
+                    css_class='row'
+                ),
             ),
             Fieldset(_('Datos del Inspector'),
-                Field('inspector'),
-                Div(Field('telefono_inspector'), Field('correo_inspector'), css_class='row')
+                Div(
+                    Div(Field('inspector'), css_class='col-md-12'),
+                    css_class='row'
+                ),
+                Div(
+                    Div(Field('telefono_inspector'), css_class='col-md-6'),
+                    Div(Field('correo_inspector'), css_class='col-md-6'),
+                    css_class='row'
+                )
             ),
             Fieldset(_('Datos del Director'),
-                Field('director'),
-                Div(Field('celular_director'), Field('correo_director'), css_class='row')
+                Div(
+                    Div(Field('director'), css_class='col-md-12'),
+                    css_class='row'
+                ),
+                Div(
+                    Div(Field('celular_director'), css_class='col-md-6'),
+                    Div(Field('correo_director'), css_class='col-md-6'),
+                    css_class='row'
+                )
             ),
-            ButtonHolder(Submit('submit', _('Guardar escuela'), css_class='btn btn-primary'))
+            ButtonHolder(Submit('submit', _('Guardar escuela'), css_class='btn btn-primary mt-3'))
         )
 
     def clean(self):

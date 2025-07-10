@@ -1,89 +1,123 @@
 {% extends "base.html" %}
-{% load crispy_forms_tags %}
+{% load crispy_forms_tags i18n %}
 {% load group_filters %}
 
-{% block content %}
-<div class="container mt-4">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>
-      <i class="fas fa-clipboard-list me-2"></i>Control de Asistencias
-    </h1>
-  </div>
+{% block title %}{% trans 'Control de Asistencias' %}{% endblock %}
 
-  <div class="card shadow-sm mb-4">
-    <div class="card-header bg-light">
-      <div class="row">
-        <div class="col">
-          {% if fecha %}
-            <h5 class="mb-0">Asistencias del día: {{ fecha|date:"l, d F Y" }}</h5>
-          {% else %}
-            <h5 class="mb-0">Últimos registros de asistencia</h5>
-          {% endif %}
-        </div>
-        <div class="col-auto">
-          <span class="badge bg-primary rounded-pill">Total: {{ total }}</span>
-          <span class="badge bg-success rounded-pill ms-2">Completas: {{ completas }}</span>
-          <span class="badge bg-warning text-dark rounded-pill ms-2">Pendientes: {{ pendientes }}</span>
-        </div>
-      </div>
+{% block content %}
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">{% trans 'Control de Asistencias' %}</h1>
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">{% trans 'Filtros de Búsqueda' %}</h6>
     </div>
     <div class="card-body">
-      {% if asistencias %}
-      <div class="table-responsive">
-        <table class="table table-hover align-middle">
-          <thead class="table-light">
-            <tr>
-              <th>Profesor</th>
-              <th>Escuela</th>
-              <th class="text-center">Entrada</th>
-              <th class="text-center">Salida</th>
-              <th class="text-center">Horas</th>
-              <th class="text-center">Estado</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for asistencia in asistencias %}
-            <tr>
-              <td>
-                {{ asistencia.profesor.get_full_name }}<br>
-                <small class="text-muted">{{ asistencia.profesor.numero_empleado }}</small>
-              </td>
-              <td>{{ asistencia.escuela.nombre }}</td>
-              <td class="text-center">
-                {% if asistencia.hora_entrada %}
-                  {{ asistencia.hora_entrada|time:"H:i" }}
-                {% else %}
-                  <span class="text-danger">-</span>
-                {% endif %}
-              </td>
-              <td class="text-center">
-                {% if asistencia.hora_salida %}
-                  {{ asistencia.hora_salida|time:"H:i" }}
-                {% else %}
-                  <span class="text-danger">-</span>
-                {% endif %}
-              </td>
-              <td class="text-center">{{ asistencia.duracion_legible }}</td>
-              <td class="text-center">
-                {% if asistencia.hora_entrada and asistencia.hora_salida %}
-                  <span class="badge bg-success">Completa</span>
-                {% elif asistencia.hora_entrada %}
-                  <span class="badge bg-warning text-dark">Pendiente</span>
-                {% else %}
-                  <span class="badge bg-danger">Sin registro</span>
-                {% endif %}
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-      {% else %}
-      <div class="alert alert-info mb-0">
-        <i class="fas fa-info-circle me-2"></i>No se encontraron registros de asistencia
-      </div>
-      {% endif %}
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label for="id_fecha" class="form-label">{% trans 'Fecha' %}</label>
+                <input type="date" name="fecha" id="id_fecha" class="form-control" value="{{ fecha_actual|default:'' }}">
+            </div>
+            <div class="col-md-4">
+                <label for="id_profesor" class="form-label">{% trans 'Profesor' %}</label>
+                <select name="profesor" id="id_profesor" class="form-select">
+                    <option value="">{% trans 'Todos los profesores' %}</option>
+                    {% for id, fn, ln in profesores %}
+                    <option value="{{ id }}" {% if profesor_actual == id|stringformat:"s" %}selected{% endif %}>{{ fn }} {{ ln }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="id_escuela" class="form-label">{% trans 'Escuela' %}</label>
+                <select name="escuela" id="id_escuela" class="form-select">
+                    <option value="">{% trans 'Todas las escuelas' %}</option>
+                    {% for id, nombre in escuelas %}
+                    <option value="{{ id }}" {% if escuela_actual == id|stringformat:"s" %}selected{% endif %}>{{ nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12 d-flex gap-2">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-filter me-1"></i> {% trans 'Filtrar' %}</button>
+                <a href="{% url 'asistencias:listar_asistencias' %}" class="btn btn-secondary"><i class="fas fa-sync-alt me-1"></i> {% trans 'Limpiar' %}</a>
+            </div>
+        </form>
     </div>
-  </div>
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">{% trans 'Listado de Asistencias' %}</h6>
+    </div>
+    <div class="card-body">
+        <div class="row mb-3">
+            <div class="col-md-6">
+                {% if fecha_actual %}
+                    <h5 class="mb-0">{% trans 'Asistencias del día:' %} {{ fecha_actual|date:"l, d F Y" }}</h5>
+                {% else %}
+                    <h5 class="mb-0">{% trans 'Últimos registros de asistencia' %}</h5>
+                {% endif %}
+            </div>
+            <div class="col-md-6 text-end">
+                <span class="badge bg-primary rounded-pill">{% trans 'Total:' %} {{ total }}</span>
+                <span class="badge bg-success rounded-pill ms-2">{% trans 'Completas:' %} {{ completas }}</span>
+                <span class="badge bg-warning text-dark rounded-pill ms-2">{% trans 'Pendientes:' %} {{ pendientes }}</span>
+            </div>
+        </div>
+        {% if asistencias %}
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover" id="dataTable" width="100%" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th>{% trans 'Profesor' %}</th>
+                        <th>{% trans 'Escuela' %}</th>
+                        <th>{% trans 'Entrada' %}</th>
+                        <th>{% trans 'Salida' %}</th>
+                        <th>{% trans 'Horas' %}</th>
+                        <th>{% trans 'Estado' %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for asistencia in asistencias %}
+                    <tr>
+                        <td>
+                            {{ asistencia.profesor.get_full_name }}<br>
+                            <small class="text-muted">{{ asistencia.profesor.numero_empleado }}</small>
+                        </td>
+                        <td>{{ asistencia.escuela.nombre }}</td>
+                        <td>
+                            {% if asistencia.hora_entrada %}
+                                {{ asistencia.hora_entrada|time:"H:i" }}
+                            {% else %}
+                                <span class="text-danger">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if asistencia.hora_salida %}
+                                {{ asistencia.hora_salida|time:"H:i" }}
+                            {% else %}
+                                <span class="text-danger">-</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ asistencia.duracion_legible }}</td>
+                        <td>
+                            <span class="badge bg-{% if asistencia.hora_entrada and asistencia.hora_salida %}success{% elif asistencia.hora_entrada %}warning text-dark{% else %}danger{% endif %} p-2">
+                                {% if asistencia.hora_entrada and asistencia.hora_salida %}{% trans 'Completa' %}
+                                {% elif asistencia.hora_entrada %}{% trans 'Pendiente' %}
+                                {% else %}{% trans 'Sin registro' %}
+                                {% endif %}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info mb-0">
+            <i class="fas fa-info-circle me-2"></i>{% trans 'No se encontraron registros de asistencia' %}
+        </div>
+        {% endif %}
+    </div>
 </div>
 {% endblock %}

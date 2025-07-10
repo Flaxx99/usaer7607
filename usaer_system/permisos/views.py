@@ -12,7 +12,7 @@ from .forms import SolicitudPermisoForm, GestionPermisoForm
 @login_required
 def solicitar_permiso(request):
     if request.method == 'POST':
-        form = SolicitudPermisoForm(request.POST)
+        form = SolicitudPermisoForm(request.POST, user=request.user)
         if form.is_valid():
             permiso = form.save(commit=False)
             permiso.profesor = request.user
@@ -24,7 +24,7 @@ def solicitar_permiso(request):
         form = SolicitudPermisoForm(initial={
             'fecha_inicio': timezone.localdate(),
             'fecha_fin': timezone.localdate()
-        })
+        }, user=request.user)
 
     return render(request, 'permisos/solicitar.html', {
         'form': form,
@@ -157,12 +157,7 @@ def eliminar_permiso(request, pk):
             return redirect('permisos:gestionar')
         except Exception as e:
             messages.error(request, _("Error al eliminar: {0}").format(e))
-            return redirect('permisos:responder_permiso', pk=pk)
-
-    return render(request, 'permisos/confirmar_eliminar.html', {
-        'permiso': permiso,
-        'titulo': _('Confirmar Eliminación de Solicitud N° {numero}').format(numero=permiso.id)
-    })
+    return redirect('permisos:gestionar')
 
 
 @login_required

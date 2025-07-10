@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
+from django.db.models import Q
 
 from .models import Escuela
 from .forms import EscuelaForm
@@ -14,8 +15,18 @@ def listar_escuelas(request):
     Solo accesible para usuarios con is_staff=True.
     """
     escuelas = Escuela.objects.all().order_by('nombre')
+    query = request.GET.get("q", "").strip()
+
+    if query:
+        escuelas = escuelas.filter(
+            Q(nombre__icontains=query) |
+            Q(cct__icontains=query) |
+            Q(clave_estatal__icontains=query)
+        )
+
     return render(request, 'escuelas/listar.html', {
-        'escuelas': escuelas
+        'escuelas': escuelas,
+        'query': query,
     })
 
 @staff_member_required
@@ -62,15 +73,13 @@ def editar_escuela(request, pk):
 @staff_member_required
 def eliminar_escuela(request, pk):
     """
-    Confirmación y eliminación de una escuela.
-    GET muestra confirmación, POST borra y redirige.
+    Elimina una escuela directamente desde la lista.
     """
     escuela = get_object_or_404(Escuela, pk=pk)
     if request.method == 'POST':
-        escuela.delete()
-        messages.success(request, "Escuela eliminada correctamente.")
-        return redirect('escuelas:listar_escuelas')
-
-    return render(request, 'escuelas/confirmar_eliminar.html', {
-        'escuela': escuela
-    })
+        try:
+            escuela.delete()
+            messages.success(request, f"Escuela ‘{escuela.nombre}’ eliminada correctamente.")
+        except Exception as e:
+            messages.error(request, f"Error al eliminar la escuela: {e}")
+    return redirect('escuelas:listar_escuelas')
