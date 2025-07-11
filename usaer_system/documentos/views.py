@@ -31,6 +31,7 @@ ROLES_PUEDEN_EDITAR_TODO = [
 
 @login_required
 def subir_expediente(request):
+    from django.urls import reverse_lazy
     if request.user.role not in [
         User.Role.MAESTRO_APOYO,
         User.Role.SECRETARIO,
@@ -58,11 +59,17 @@ def subir_expediente(request):
     return render(request, 'documentos/expedientes/subir.html', {
         'form': form,
         'formset': formset,
+        'breadcrumbs': [
+            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
+            {'name': 'Expedientes', 'url': reverse_lazy('documentos:lista_expedientes')}
+        ],
+        'current_page_title': 'Subir Expediente'
     })
 
 
 @login_required
 def editar_expediente(request, pk):
+    from django.urls import reverse_lazy
     expediente = get_object_or_404(Expediente, pk=pk)
     user = request.user
 
@@ -117,7 +124,12 @@ def editar_expediente(request, pk):
     return render(request, 'documentos/expedientes/editar.html', {
         'form': form,
         'formset': formset,
-        'expediente': expediente
+        'expediente': expediente,
+        'breadcrumbs': [
+            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
+            {'name': 'Expedientes', 'url': reverse_lazy('documentos:lista_expedientes')}
+        ],
+        'current_page_title': f'Editar Expediente de {expediente.alumno.get_full_name}'
     })
 
 
@@ -200,6 +212,10 @@ class ExpedienteListView(LoginRequiredMixin, ListView):
                     or user.role == User.Role.MAESTRO_APOYO
                 )
             ],
+            'breadcrumbs': [
+                {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')}
+            ],
+            'current_page_title': 'Expedientes'
         })
         return context
 

@@ -1,9 +1,30 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.utils.translation import gettext_lazy as _
+from django.contrib.admin import AdminSite
+
 from .models import User
 from .forms import UsuarioCreationForm, UsuarioChangeForm
-from django.contrib.admin import AdminSite
+
+# Importaciones de otras apps
+from alumnos.models import Alumno
+from alumnos.admin import AlumnoAdmin
+from asistencias.models import Asistencia
+from asistencias.admin import AsistenciaAdmin
+from calendario.models import EventoCalendario
+from calendario.admin import EventoCalendarioAdmin
+from documentos.models import Expediente, OtroArchivo
+from documentos.admin import ExpedienteAdmin, OtroArchivoAdmin
+from escuelas.models import Escuela
+from escuelas.admin import EscuelaAdmin
+from incidencias.models import Incidencia
+from incidencias.admin import IncidenciaAdmin
+from oficios.models import Oficio
+from oficios.admin import OficioAdmin
+from permisos.models import Permiso
+from permisos.admin import PermisoAdmin
+from rac.models import RegistroRAC
+from rac.admin import RegistroRACAdmin
 
 
 class CustomAdminSite(AdminSite):
@@ -134,3 +155,15 @@ class UserAdminConfig(UserAdmin):
 
 
 admin_site.register(User, UserAdminConfig)
+
+# Registro de modelos de otras apps con el admin_site personalizado
+admin_site.register(Alumno, AlumnoAdmin)
+admin_site.register(Asistencia, AsistenciaAdmin)
+admin_site.register(EventoCalendario, EventoCalendarioAdmin)
+admin_site.register(Expediente, ExpedienteAdmin)
+admin_site.register(OtroArchivo, OtroArchivoAdmin)
+admin_site.register(Escuela, EscuelaAdmin)
+admin_site.register(Incidencia, IncidenciaAdmin)
+admin_site.register(Oficio, OficioAdmin)
+admin_site.register(Permiso, PermisoAdmin)
+admin_site.register(RegistroRAC, RegistroRACAdmin)

@@ -41,6 +41,9 @@ from alumnos.models import Alumno
 from incidencias.models import Incidencia
 from django.conf import settings
 from permisos.models import Permiso
+from escuelas.models import Escuela
+from calendario.models import EventoCalendario
+from oficios.models import Oficio
 
 from documentos.models import Expediente  # Ajusta al nombre de tu modelo de expediente si difiere
 
@@ -83,6 +86,10 @@ class UserListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
         ctx = super().get_context_data(**kwargs)
         ctx['roles'] = User.Role.choices
         ctx['escuelas'] = Escuela.objects.all()
+        ctx['breadcrumbs'] = [
+            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')}
+        ]
+        ctx['current_page_title'] = 'Gestión de Usuarios'
         return ctx
 
 
@@ -106,6 +113,11 @@ class UserCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx['titulo'] = _('Crear nuevo usuario')
+        ctx['breadcrumbs'] = [
+            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
+            {'name': 'Gestión de Usuarios', 'url': reverse_lazy('usuarios:list')}
+        ]
+        ctx['current_page_title'] = _('Crear nuevo usuario')
         return ctx
 
 
@@ -131,6 +143,12 @@ class UserUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx['titulo'] = _('Editar usuario')
+        ctx['breadcrumbs'] = [
+            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
+            {'name': 'Gestión de Usuarios', 'url': reverse_lazy('usuarios:list')},
+            {'name': f'Detalle de {self.object.get_full_name()}', 'url': reverse_lazy('usuarios:detail', kwargs={'pk': self.object.pk})}
+        ]
+        ctx['current_page_title'] = _('Editar usuario')
         return ctx
 
 
@@ -140,6 +158,15 @@ class UserDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
     template_name = 'usuarios/detalle_usuario.html'
     permission_required = 'usuarios.view_user'
     context_object_name = 'usuario'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['breadcrumbs'] = [
+            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
+            {'name': 'Gestión de Usuarios', 'url': reverse_lazy('usuarios:list')}
+        ]
+        context['current_page_title'] = f'Detalle de {self.object.get_full_name()}'
+        return context
 
 
 @method_decorator(roles_permitidos([User.Role.ADMINISTRADOR]), name='dispatch')
@@ -180,7 +207,14 @@ def profile(request):
             form.save()
             messages.success(request, _('Perfil actualizado exitosamente'))
             return redirect('usuarios:profile')
-    return render(request, 'usuarios/perfil.html', {'form': form, 'usuario': user})
+    return render(request, 'usuarios/perfil.html', {
+        'form': form,
+        'usuario': user,
+        'breadcrumbs': [
+            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')}
+        ],
+        'current_page_title': 'Mi Perfil'
+    })
 
 
 @login_required
@@ -194,7 +228,14 @@ def change_password(request):
             return redirect('usuarios:profile')
     else:
         form = PasswordChangeForm(request.user)
-    return render(request, 'usuarios/cambiar_contrasena.html', {'form': form})
+    return render(request, 'usuarios/cambiar_contrasena.html', {
+        'form': form,
+        'breadcrumbs': [
+            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
+            {'name': 'Mi Perfil', 'url': reverse_lazy('usuarios:profile')}
+        ],
+        'current_page_title': 'Cambiar Contraseña'
+    })
 
 
 # -----------------------------
@@ -238,4 +279,14 @@ def dashboard(request):
         'role':     user_role,
         'permisos_pendientes': Permiso.objects.filter(estado='PENDIENTE').count(),
         'incidencias_pendientes': Incidencia.objects.filter(estado='PENDIENTE').count(),
+        'total_alumnos': Alumno.objects.count(),
+        'total_escuelas': Escuela.objects.count(),
+        'total_usuarios': User.objects.count(),
+        'ultimos_eventos': EventoCalendario.objects.order_by('-fecha_inicio')[:5],
+        'ultimos_permisos': Permiso.objects.order_by('-fecha_solicitud')[:5],
+        'ultimas_incidencias': Incidencia.objects.order_by('-fecha_reporte')[:5],
+        'ultimos_expedientes': Expediente.objects.order_by('-fecha_subida')[:5],
+        'ultimos_oficios': Oficio.objects.order_by('-fecha_subida')[:5],
+        'breadcrumbs': [],
+        'current_page_title': 'Dashboard'
     })

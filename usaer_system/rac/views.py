@@ -20,6 +20,7 @@ from openpyxl.styles import Alignment
 
 
 
+from django.urls import reverse_lazy
 class RegistroRACListView(ListView):
     model = RegistroRAC
     template_name = 'rac/registro_list.html'
@@ -33,6 +34,14 @@ class RegistroRACListView(ListView):
         if hasattr(user, 'role') and user.role == 'MAESTRO_APOYO':
             qs = qs.filter(maestro_apoyo=user)
         return qs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['breadcrumbs'] = [
+            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')}
+        ]
+        context['current_page_title'] = 'Registros RAC'
+        return context
 
 
 class RegistroRACCreateView(CreateView):
@@ -71,6 +80,11 @@ class RegistroRACCreateView(CreateView):
         # Datos para JS: escuelas (para zona regular)
         escuelas = list(Escuela.objects.values('id', 'zona'))
         ctx['escuelas_data'] = json.dumps(escuelas)
+        ctx['breadcrumbs'] = [
+            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
+            {'name': 'Registros RAC', 'url': reverse_lazy('rac:registro_list')}
+        ]
+        ctx['current_page_title'] = 'Nuevo Registro RAC'
         return ctx
 
     def form_valid(self, form):
@@ -92,6 +106,11 @@ class RegistroRACUpdateView(RegistroRACCreateView, UpdateView):
             qs = qs | Alumno.objects.filter(pk=self.object.alumno.pk)
             form.fields['alumno'].queryset = qs
         return form
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['current_page_title'] = f'Editar Registro RAC #{self.object.pk}'
+        return context
 
     def form_valid(self, form):
         messages.success(self.request, "Registro RAC actualizado correctamente.")

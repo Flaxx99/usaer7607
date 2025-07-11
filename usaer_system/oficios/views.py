@@ -6,11 +6,19 @@ from django.contrib import messages
 from .models import Oficio
 from .forms import OficioForm
 
+from django.urls import reverse_lazy
 @login_required
 def lista_oficios(request):
     oficios = Oficio.objects.all().order_by('-fecha_subida')
-    return render(request, 'oficios/lista.html', {'oficios': oficios})
+    return render(request, 'oficios/lista.html', {
+        'oficios': oficios,
+        'breadcrumbs': [
+            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')}
+        ],
+        'current_page_title': 'Listado de Oficios'
+    })
 
+from django.urls import reverse_lazy
 @login_required
 def subir_oficio(request):
     if request.method == 'POST':
@@ -23,8 +31,16 @@ def subir_oficio(request):
             return redirect('oficios:lista_oficios')
     else:
         form = OficioForm()
-    return render(request, 'oficios/subir.html', {'form': form})
+    return render(request, 'oficios/subir.html', {
+        'form': form,
+        'breadcrumbs': [
+            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
+            {'name': 'Listado de Oficios', 'url': reverse_lazy('oficios:lista_oficios')}
+        ],
+        'current_page_title': 'Subir Oficio'
+    })
 
+from django.urls import reverse_lazy
 @login_required
 @require_http_methods(["GET", "POST"])
 def editar_oficio(request, pk):
@@ -44,8 +60,17 @@ def editar_oficio(request, pk):
             return redirect('oficios:lista_oficios')
     else:
         form = OficioForm(instance=oficio)
-    return render(request, 'oficios/editar.html', {'form': form, 'oficio': oficio})
+    return render(request, 'oficios/editar.html', {
+        'form': form,
+        'oficio': oficio,
+        'breadcrumbs': [
+            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
+            {'name': 'Listado de Oficios', 'url': reverse_lazy('oficios:lista_oficios')}
+        ],
+        'current_page_title': f'Editar Oficio: {oficio.titulo}'
+    })
 
+from django.urls import reverse_lazy
 @login_required
 @require_http_methods(["GET", "POST"])
 def eliminar_oficio(request, pk):
@@ -54,4 +79,11 @@ def eliminar_oficio(request, pk):
         oficio.delete()
         messages.success(request, "Oficio eliminado correctamente.")
         return redirect('oficios:lista_oficios')
-    return render(request, 'oficios/confirmar_eliminacion.html', {'oficio': oficio})
+    return render(request, 'oficios/confirmar_eliminacion.html', {
+        'oficio': oficio,
+        'breadcrumbs': [
+            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
+            {'name': 'Listado de Oficios', 'url': reverse_lazy('oficios:lista_oficios')}
+        ],
+        'current_page_title': f'Eliminar Oficio: {oficio.titulo}'
+    })

@@ -37,6 +37,10 @@ class CalendarioListView(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         context['query'] = self.request.GET.get('q', '')
         context['tipo_filtrado'] = self.request.GET.get('tipo', '')
+        context['breadcrumbs'] = [
+            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')}
+        ]
+        context['current_page_title'] = 'Calendario y Eventos'
         return context
 
 # ✅ 2. Crear un nuevo evento

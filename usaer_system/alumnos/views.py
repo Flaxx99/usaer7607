@@ -40,18 +40,32 @@ def listar_alumnos(request):
 
     alumnos = alumnos.select_related('escuela').order_by('apellido_paterno', 'nombres')
 
+    from django.urls import reverse_lazy
     return render(request, 'alumnos/listar.html', {
         'alumnos': alumnos,
+        'breadcrumbs': [
+            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')}
+        ],
+        'current_page_title': 'Gestión de Alumnos'
     })
 
 def detalle_alumno(request, pk):
+    from django.urls import reverse_lazy
     alumno = get_object_or_404(Alumno, pk=pk)
-    return render(request, 'alumnos/detalle_alumno.html', {'alumno': alumno})
+    return render(request, 'alumnos/detalle_alumno.html', {
+        'alumno': alumno,
+        'breadcrumbs': [
+            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
+            {'name': 'Gestión de Alumnos', 'url': reverse_lazy('alumnos:listar_alumnos')}
+        ],
+        'current_page_title': f'Detalle de {alumno.get_full_name}'
+    })
 
 def crear_alumno(request):
     """
     Crea un nuevo alumno.
     """
+    from django.urls import reverse_lazy
     escuelas = Escuela.objects.all()
     contexto = {
         'titulo':    'Nuevo Alumno',
@@ -60,6 +74,11 @@ def crear_alumno(request):
         'nivel_ini': '',
         'esc_ini':   '',
         'grado_ini': '',
+        'breadcrumbs': [
+            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
+            {'name': 'Gestión de Alumnos', 'url': reverse_lazy('alumnos:listar_alumnos')}
+        ],
+        'current_page_title': 'Nuevo Alumno'
     }
 
     if request.method == 'POST':
@@ -81,6 +100,7 @@ def editar_alumno(request, pk):
     """
     Edita un alumno existente.
     """
+    from django.urls import reverse_lazy
     alumno   = get_object_or_404(Alumno, pk=pk)
     escuelas = Escuela.objects.all()
 
@@ -91,6 +111,12 @@ def editar_alumno(request, pk):
         'nivel_ini': alumno.escuela.nivel,
         'esc_ini':   alumno.escuela_id,
         'grado_ini': alumno.grado,
+        'breadcrumbs': [
+            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
+            {'name': 'Gestión de Alumnos', 'url': reverse_lazy('alumnos:listar_alumnos')},
+            {'name': f'Detalle de {alumno.get_full_name}', 'url': reverse_lazy('alumnos:detalle_alumno', kwargs={'pk': alumno.pk})}
+        ],
+        'current_page_title': f'Editar {alumno.get_full_name}'
     }
 
     if request.method == 'POST':

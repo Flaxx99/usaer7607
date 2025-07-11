@@ -11,6 +11,7 @@ from .forms import IncidenciaForm
 User = get_user_model()
 
 
+from django.urls import reverse_lazy
 @login_required
 def crear_incidencia(request):
     """
@@ -36,7 +37,12 @@ def crear_incidencia(request):
     return render(request, 'incidencias/form.html', {
         'form':   form,
         'titulo': 'Nueva Incidencia',
-        'modo':   'crear'
+        'modo':   'crear',
+        'breadcrumbs': [
+            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
+            {'name': 'Revisar Incidencias', 'url': reverse_lazy('incidencias:revisar_incidencias')}
+        ],
+        'current_page_title': 'Nueva Incidencia'
     })
 
 
@@ -52,6 +58,7 @@ def listar_incidencias(request):
     estado = request.GET.get('estado', '')
     query  = request.GET.get('q', '')
 
+    from django.urls import reverse_lazy
     incidencias = Incidencia.objects.filter(profesor=request.user)
     if estado:
         incidencias = incidencias.filter(estado=estado)
@@ -68,13 +75,25 @@ def listar_incidencias(request):
         'total_incidencias': total,
         'pendientes':        pendientes,
         'estado_filtrado':   estado,
-        'query':             query
+        'query':             query,
+        'breadcrumbs': [
+            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')}
+        ],
+        'current_page_title': 'Mis Incidencias'
     })
 
 @login_required
 def detalle_incidencia(request, pk):
+    from django.urls import reverse_lazy
     incidencia = get_object_or_404(Incidencia, pk=pk)
-    return render(request, 'incidencias/detalle_incidencia.html', {'incidencia': incidencia})
+    return render(request, 'incidencias/detalle_incidencia.html', {
+        'incidencia': incidencia,
+        'breadcrumbs': [
+            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
+            {'name': 'Mis Incidencias', 'url': reverse_lazy('incidencias:listar_incidencias')}
+        ],
+        'current_page_title': f'Detalle Incidencia #{incidencia.id}'
+    })
 
 @login_required
 @roles_permitidos([User.Role.ADMINISTRADOR, User.Role.SECRETARIO])
@@ -86,6 +105,7 @@ def revisar_incidencias(request):
     profesor_id = request.GET.get('profesor', '')
     query       = request.GET.get('q', '')
 
+    from django.urls import reverse_lazy
     incidencias = Incidencia.objects.filter(escuela=request.user.escuela)
     if estado:
         incidencias = incidencias.filter(estado=estado)
@@ -118,7 +138,11 @@ def revisar_incidencias(request):
             'estado':   estado,
             'profesor': profesor_id,
             'query':    query
-        }
+        },
+        'breadcrumbs': [
+            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')}
+        ],
+        'current_page_title': 'Revisar Incidencias'
     })
 
 
@@ -128,6 +152,7 @@ def editar_incidencia(request, pk):
     """
     Permite al director o admin editar una incidencia y cambiar su estado
     """
+    from django.urls import reverse_lazy
     incidencia = get_object_or_404(Incidencia, pk=pk, escuela=request.user.escuela)
 
     if request.method == 'POST':
@@ -151,7 +176,12 @@ def editar_incidencia(request, pk):
         'form':      form,
         'titulo':    f'Editar Incidencia #{incidencia.id}',
         'modo':      'editar',
-        'incidencia': incidencia
+        'incidencia': incidencia,
+        'breadcrumbs': [
+            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
+            {'name': 'Revisar Incidencias', 'url': reverse_lazy('incidencias:revisar_incidencias')}
+        ],
+        'current_page_title': f'Editar Incidencia #{incidencia.id}'
     })
 
 
@@ -161,6 +191,7 @@ def resolver_incidencia(request, pk):
     """
     Vista para que el director o admin marque una incidencia como resuelta
     """
+    from django.urls import reverse_lazy
     incidencia = get_object_or_404(Incidencia, pk=pk, escuela=request.user.escuela)
 
     if request.method == 'POST':
@@ -171,7 +202,13 @@ def resolver_incidencia(request, pk):
         return redirect('incidencias:revisar_incidencias')
 
     return render(request, 'incidencias/resolver.html', {
-        'incidencia': incidencia
+        'incidencia': incidencia,
+        'breadcrumbs': [
+            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
+            {'name': 'Revisar Incidencias', 'url': reverse_lazy('incidencias:revisar_incidencias')},
+            {'name': f'Editar Incidencia #{incidencia.id}', 'url': reverse_lazy('incidencias:editar_incidencia', kwargs={'pk': incidencia.pk})}
+        ],
+        'current_page_title': f'Resolver Incidencia #{incidencia.id}'
     })
 
 

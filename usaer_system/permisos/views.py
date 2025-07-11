@@ -9,6 +9,7 @@ from .models import Permiso
 from .forms import SolicitudPermisoForm, GestionPermisoForm
 
 
+from django.urls import reverse_lazy
 @login_required
 def solicitar_permiso(request):
     if request.method == 'POST':
@@ -30,7 +31,12 @@ def solicitar_permiso(request):
         'form': form,
         'titulo': _('Nueva Solicitud de Permiso'),
         'hoy': timezone.localdate().isoformat(),
-        'max_date': (timezone.localdate() + timezone.timedelta(days=365)).isoformat()
+        'max_date': (timezone.localdate() + timezone.timedelta(days=365)).isoformat(),
+        'breadcrumbs': [
+            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
+            {'name': 'Mis Permisos', 'url': reverse_lazy('permisos:mis_permisos')}
+        ],
+        'current_page_title': _('Nueva Solicitud de Permiso')
     })
 
 
@@ -40,6 +46,7 @@ def mis_permisos(request):
     busqueda = request.GET.get('q', '')
     año = request.GET.get('año', timezone.now().year)
 
+    from django.urls import reverse_lazy
     permisos = Permiso.objects.filter(profesor=request.user)
 
     if estado:
@@ -67,7 +74,11 @@ def mis_permisos(request):
         'busqueda': busqueda,
         'años': Permiso.objects.dates('fecha_solicitud', 'year'),
         'año_actual': año,
-        'metricas': metricas
+        'metricas': metricas,
+        'breadcrumbs': [
+            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')}
+        ],
+        'current_page_title': 'Mis Permisos'
     })
 
 
@@ -80,6 +91,7 @@ def gestionar_permisos(request):
     fecha_desde = request.GET.get('fecha_desde', '')
     fecha_hasta = request.GET.get('fecha_hasta', '')
 
+    from django.urls import reverse_lazy
     permisos = Permiso.objects.select_related('profesor', 'escuela', 'administrador')
 
     if estado:
@@ -116,13 +128,18 @@ def gestionar_permisos(request):
         'profesor_actual': profesor_id,
         'fecha_desde': fecha_desde,
         'fecha_hasta': fecha_hasta,
-        'metricas': metricas
+        'metricas': metricas,
+        'breadcrumbs': [
+            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')}
+        ],
+        'current_page_title': 'Gestionar Permisos'
     })
 
 
 @login_required
 @permission_required('permisos.gestionar_permisos')
 def responder_permiso(request, pk):
+    from django.urls import reverse_lazy
     permiso = get_object_or_404(Permiso.objects.select_related('profesor', 'escuela'), pk=pk)
     permiso._current_user = request.user
 
@@ -130,8 +147,7 @@ def responder_permiso(request, pk):
     if request.method == 'POST':
         if form.is_valid():
             permiso = form.save()
-            mensaje = _("Permiso aprobado correctamente") if permiso.estado == Permiso.Estado.APROBADO \
-                else _("Permiso rechazado con éxito")
+            mensaje = _("Permiso aprobado correctamente") if permiso.estado == Permiso.Estado.APROBADO                 else _("Permiso rechazado con éxito")
             messages.success(request, mensaje)
             return redirect('permisos:gestionar')
         messages.warning(request, _("Verifica los errores en el formulario"))
@@ -141,7 +157,12 @@ def responder_permiso(request, pk):
         'permiso': permiso,
         'titulo': _('Gestionar Permiso N° {numero}').format(numero=permiso.id),
         'duracion': permiso.duracion_dias,
-        'puede_editar': permiso.puede_aprobar
+        'puede_editar': permiso.puede_aprobar,
+        'breadcrumbs': [
+            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
+            {'name': 'Gestionar Permisos', 'url': reverse_lazy('permisos:gestionar')}
+        ],
+        'current_page_title': _('Gestionar Permiso N° {numero}').format(numero=permiso.id)
     })
 
 
@@ -162,6 +183,7 @@ def eliminar_permiso(request, pk):
 
 @login_required
 def detalle_permiso(request, pk):
+    from django.urls import reverse_lazy
     permiso = get_object_or_404(
         Permiso.objects.select_related('profesor', 'escuela', 'administrador'),
         pk=pk
@@ -176,4 +198,9 @@ def detalle_permiso(request, pk):
         'titulo': _('Detalles del Permiso N° {numero}').format(numero=permiso.id),
         'duracion': permiso.duracion_dias,
         'es_administrador': request.user.has_perm('permisos.gestionar_permisos'),
+        'breadcrumbs': [
+            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
+            {'name': 'Mis Permisos', 'url': reverse_lazy('permisos:mis_permisos')}
+        ],
+        'current_page_title': _('Detalles del Permiso N° {numero}').format(numero=permiso.id)
     })

@@ -12,3 +12,9 @@ class ExpedienteAdmin(admin.ModelAdmin):
     search_fields = ('alumno__nombres','profesor__email')
     inlines = [OtroArchivoInline]
     exclude = ('profesor',)
+
+@admin.register(OtroArchivo)
+class OtroArchivoAdmin(admin.ModelAdmin):
+    list_display = ('expediente', 'nombre', 'descripcion')
+    search_fields = ('expediente__alumno__nombres', 'nombre', 'descripcion')
+    list_filter = ('expediente__alumno__escuela',)

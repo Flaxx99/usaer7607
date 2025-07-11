@@ -16,9 +16,16 @@ User = get_user_model()
 # ----------------------------
 # Mostrar Checador (Público)
 # ----------------------------
+from django.urls import reverse_lazy
 def mostrar_checador(request):
     form = AsistenciaCheckForm()
-    return render(request, 'asistencias/checar.html', {'form': form})
+    return render(request, 'asistencias/checar.html', {
+        'form': form,
+        'breadcrumbs': [
+            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')}
+        ],
+        'current_page_title': 'Checador'
+    })
 
 
 # ----------------------------
@@ -119,6 +126,7 @@ def listar_asistencias(request):
     completas = asistencias.filter(hora_entrada__isnull=False, hora_salida__isnull=False).count()
     pendientes = asistencias.filter(hora_entrada__isnull=False, hora_salida__isnull=True).count()
 
+    from django.urls import reverse_lazy
     return render(request, 'asistencias/listado.html', {
         'asistencias': asistencias,
         'fecha': hoy,
@@ -126,4 +134,8 @@ def listar_asistencias(request):
         'completas': completas,
         'pendientes': pendientes,
         'query': query,
+        'breadcrumbs': [
+            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')}
+        ],
+        'current_page_title': 'Listado de Asistencias'
     })

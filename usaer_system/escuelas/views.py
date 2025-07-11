@@ -8,6 +8,7 @@ from .forms import EscuelaForm
 
 # Create your views here.
 
+from django.urls import reverse_lazy
 @staff_member_required
 def listar_escuelas(request):
     """
@@ -27,8 +28,13 @@ def listar_escuelas(request):
     return render(request, 'escuelas/listar.html', {
         'escuelas': escuelas,
         'query': query,
+        'breadcrumbs': [
+            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')}
+        ],
+        'current_page_title': 'Gestión de Escuelas'
     })
 
+from django.urls import reverse_lazy
 @staff_member_required
 def crear_escuela(request):
     """
@@ -46,9 +52,15 @@ def crear_escuela(request):
 
     return render(request, 'escuelas/form.html', {
         'form': form,
-        'titulo': 'Crear escuela'
+        'titulo': 'Crear escuela',
+        'breadcrumbs': [
+            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
+            {'name': 'Gestión de Escuelas', 'url': reverse_lazy('escuelas:listar_escuelas')}
+        ],
+        'current_page_title': 'Crear Escuela'
     })
 
+from django.urls import reverse_lazy
 @staff_member_required
 def editar_escuela(request, pk):
     """
@@ -67,7 +79,12 @@ def editar_escuela(request, pk):
 
     return render(request, 'escuelas/form.html', {
         'form': form,
-        'titulo': 'Editar escuela'
+        'titulo': 'Editar escuela',
+        'breadcrumbs': [
+            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
+            {'name': 'Gestión de Escuelas', 'url': reverse_lazy('escuelas:listar_escuelas')}
+        ],
+        'current_page_title': f'Editar {escuela.nombre}'
     })
 
 @staff_member_required
