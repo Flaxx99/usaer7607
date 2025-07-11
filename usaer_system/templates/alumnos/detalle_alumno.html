@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans 'Detalles del Alumno' %}{% endblock %}
+
+{% block content %}
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">{% trans 'Detalles del Alumno' %}</h1>
+    <div class="d-none d-sm-inline-block">
+        <a href="{% url 'alumnos:listar_alumnos' %}" class="btn btn-sm btn-secondary shadow-sm"><i class="fas fa-arrow-left fa-sm text-white-50"></i> {% trans 'Volver a la lista' %}</a>
+        <a href="{% url 'alumnos:editar_alumno' alumno.pk %}" class="btn btn-sm btn-primary shadow-sm"><i class="fas fa-edit fa-sm text-white-50"></i> {% trans 'Editar Alumno' %}</a>
+        <form method="post" action="{% url 'alumnos:eliminar_alumno' alumno.pk %}" style="display:inline;" class="delete-form">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-danger shadow-sm"><i class="fas fa-trash fa-sm text-white-50"></i> {% trans 'Eliminar Alumno' %}</button>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+        <h6 class="m-0 font-weight-bold text-primary">{{ alumno.get_full_name }}</h6>
+    </div>
+    <div class="card-body">
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="personal-tab" data-bs-toggle="tab" data-bs-target="#personal" type="button" role="tab" aria-controls="personal" aria-selected="true">{% trans 'Información Personal' %}</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="escolar-tab" data-bs-toggle="tab" data-bs-target="#escolar" type="button" role="tab" aria-controls="escolar" aria-selected="false">{% trans 'Información Escolar' %}</button>
+            </li>
+        </ul>
+        <div class="tab-content p-3" id="myTabContent">
+            <div class="tab-pane fade show active" id="personal" role="tabpanel" aria-labelledby="personal-tab">
+                <dl class="row">
+                    <dt class="col-sm-4">{% trans 'CURP' %}:</dt>
+                    <dd class="col-sm-8">{{ alumno.curp|default:"-" }}</dd>
+
+                    <dt class="col-sm-4">{% trans 'Fecha de Nacimiento' %}:</dt>
+                    <dd class="col-sm-8">{{ alumno.fecha_nacimiento|date:"d/m/Y"|default:"-" }}</dd>
+
+                    <dt class="col-sm-4">{% trans 'Edad' %}:</dt>
+                    <dd class="col-sm-8">{{ alumno.edad|default:"-" }}</dd>
+
+                    <dt class="col-sm-4">{% trans 'Sexo' %}:</dt>
+                    <dd class="col-sm-8">{{ alumno.get_sexo_display|default:"-" }}</dd>
+
+                    <dt class="col-sm-4">{% trans 'Clasificación' %}:</dt>
+                    <dd class="col-sm-8">{{ alumno.get_clasificacion_display|default:"-" }}</dd>
+                </dl>
+            </div>
+            <div class="tab-pane fade" id="escolar" role="tabpanel" aria-labelledby="escolar-tab">
+                <dl class="row">
+                    <dt class="col-sm-4">{% trans 'Escuela' %}:</dt>
+                    <dd class="col-sm-8">{{ alumno.escuela.nombre|default:"-" }}</dd>
+
+                    <dt class="col-sm-4">{% trans 'Grado' %}:</dt>
+                    <dd class="col-sm-8">{{ alumno.grado|default:"-" }}</dd>
+
+                    <dt class="col-sm-4">{% trans 'Grupo' %}:</dt>
+                    <dd class="col-sm-8">{{ alumno.grupo|default:"-" }}</dd>
+
+                    <dt class="col-sm-4">{% trans 'Observaciones' %}:</dt>
+                    <dd class="col-sm-8">{{ alumno.observaciones|default:"-" }}</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.querySelectorAll('.delete-form').forEach(form => {
+    form.addEventListener('submit', function(event) {
+      event.preventDefault();
+      Swal.fire({
+        title: '¿Estás seguro?',
+        text: "¡No podrás revertir esto!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Sí, ¡eliminar!',
+        cancelButtonText: 'Cancelar'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          this.submit();
+        }
+      });
+    });
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans 'Detalles del Evento' %}{% endblock %}
+
+{% block content %}
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">{% trans 'Detalles del Evento' %}</h1>
+    <div class="d-none d-sm-inline-block">
+        <a href="{% url 'calendario:lista_eventos' %}" class="btn btn-sm btn-secondary shadow-sm"><i class="fas fa-arrow-left fa-sm text-white-50"></i> {% trans 'Volver a la lista' %}</a>
+        {% if request.user == evento.creado_por or request.user.is_staff or request.user.role == 'SECRETARIO' %}
+        <a href="{% url 'calendario:editar_evento' evento.pk %}" class="btn btn-sm btn-primary shadow-sm"><i class="fas fa-edit fa-sm text-white-50"></i> {% trans 'Editar Evento' %}</a>
+        <form method="post" action="{% url 'calendario:eliminar_evento' evento.pk %}" style="display:inline;" class="delete-form">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-danger shadow-sm"><i class="fas fa-trash fa-sm text-white-50"></i> {% trans 'Eliminar Evento' %}</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+        <h6 class="m-0 font-weight-bold text-primary">{{ evento.titulo }}</h6>
+        <span class="badge bg-{% if evento.tipo == 'INSTITUCIONAL' %}primary{% else %}secondary{% endif %} p-2">
+            {{ evento.get_tipo_display }}
+        </span>
+    </div>
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-4">{% trans 'Descripción' %}:</dt>
+            <dd class="col-sm-8">{{ evento.descripcion|default:"-" }}</dd>
+
+            <dt class="col-sm-4">{% trans 'Fecha de Inicio' %}:</dt>
+            <dd class="col-sm-8">{{ evento.fecha_inicio|date:"d/m/Y H:i"|default:"-" }}</dd>
+
+            <dt class="col-sm-4">{% trans 'Fecha de Fin' %}:</dt>
+            <dd class="col-sm-8">{{ evento.fecha_fin|date:"d/m/Y H:i"|default:"-" }}</dd>
+
+            <dt class="col-sm-4">{% trans 'Creado por' %}:</dt>
+            <dd class="col-sm-8">{{ evento.creado_por.get_full_name|default:evento.creado_por.email }}</dd>
+
+            {% if evento.archivo %}
+            <dt class="col-sm-4">{% trans 'Archivo Adjunto' %}:</dt>
+            <dd class="col-sm-8"><a href="{{ evento.archivo.url }}" target="_blank">{% trans 'Ver Archivo' %}</a></dd>
+            {% endif %}
+        </dl>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.querySelectorAll('.delete-form').forEach(form => {
+    form.addEventListener('submit', function(event) {
+      event.preventDefault();
+      Swal.fire({
+        title: '¿Estás seguro?',
+        text: "¡No podrás revertir esto!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Sí, ¡eliminar!',
+        cancelButtonText: 'Cancelar'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          this.submit();
+        }
+      });
+    });
+  });
+</script>
+{% endblock %}

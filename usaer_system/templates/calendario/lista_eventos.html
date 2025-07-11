@@ -1,14 +1,15 @@
 {% extends 'base.html' %}
 {% load crispy_forms_tags i18n %}
 
-{% block title %}{% trans 'Gestión de Incidencias' %}{% endblock %}
+{% block title %}{% trans 'Gestión de Eventos' %}{% endblock %}
 
 {% block content %}
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">{% trans 'Gestión de Incidencias' %}</h1>
+    <h1 class="h3 mb-0 text-gray-800">{% trans 'Gestión de Eventos' %}</h1>
     <div class="d-none d-sm-inline-block">
-        <a href="{% url 'incidencias:crear_incidencia' %}" class="btn btn-success">
-            <i class="fas fa-plus-circle me-2"></i>{% trans 'Nueva Incidencia' %}
+        <a href="{% url 'calendario:crear_evento' %}" class="btn btn-success btn-icon-split">
+            <span class="icon text-white-50"><i class="fas fa-plus-circle"></i></span>
+            <span class="text">{% trans 'Nuevo Evento' %}</span>
         </a>
     </div>
 </div>
@@ -21,19 +22,19 @@
         <form method="get" class="row g-3 align-items-end">
             <div class="col-md-4">
                 <label for="id_search" class="form-label">{% trans 'Buscar' %}</label>
-                <input type="text" name="q" id="id_search" class="form-control" placeholder="{% trans 'Título o descripción' %}" value="{{ query|default:'' }}">
+                <input type="text" name="q" id="id_search" class="form-control" placeholder="{% trans 'Título o descripción' %}" value="{{ request.GET.q|default:'' }}">
             </div>
             <div class="col-md-4">
-                <label for="id_estado" class="form-label">{% trans 'Estado' %}</label>
-                <select name="estado" id="id_estado" class="form-select">
-                    <option value="">{% trans 'Todos los estados' %}</option>
-                    <option value="PENDIENTE" {% if estado_filtrado == 'PENDIENTE' %}selected{% endif %}>{% trans 'Pendiente' %}</option>
-                    <option value="RESUELTA" {% if estado_filtrado == 'RESUELTA' %}selected{% endif %}>{% trans 'Resuelta' %}</option>
+                <label for="id_tipo" class="form-label">{% trans 'Tipo' %}</label>
+                <select name="tipo" id="id_tipo" class="form-select">
+                    <option value="">{% trans 'Todos los tipos' %}</option>
+                    <option value="INSTITUCIONAL" {% if request.GET.tipo == 'INSTITUCIONAL' %}selected{% endif %}>{% trans 'Institucional' %}</option>
+                    <option value="PERSONAL" {% if request.GET.tipo == 'PERSONAL' %}selected{% endif %}>{% trans 'Personal' %}</option>
                 </select>
             </div>
             <div class="col-12 d-flex gap-2">
                 <button type="submit" class="btn btn-primary"><i class="fas fa-filter me-1"></i> {% trans 'Filtrar' %}</button>
-                <a href="{% url 'incidencias:listar_incidencias' %}" class="btn btn-secondary"><i class="fas fa-sync-alt me-1"></i> {% trans 'Limpiar' %}</a>
+                <a href="{% url 'calendario:lista_eventos' %}" class="btn btn-secondary"><i class="fas fa-sync-alt me-1"></i> {% trans 'Limpiar' %}</a>
             </div>
         </form>
     </div>
@@ -41,7 +42,7 @@
 
 <div class="card shadow mb-4">
     <div class="card-header py-3">
-        <h6 class="m-0 font-weight-bold text-primary">{% trans 'Listado de Incidencias' %}</h6>
+        <h6 class="m-0 font-weight-bold text-primary">{% trans 'Listado de Eventos' %}</h6>
     </div>
     <div class="card-body">
         <div class="table-responsive">
@@ -49,32 +50,34 @@
                 <thead>
                     <tr>
                         <th>{% trans 'Título' %}</th>
-                        <th>{% trans 'Estado' %}</th>
-                        <th>{% trans 'Fecha' %}</th>
-                        <th>{% trans 'Profesor' %}</th>
-                        <th>{% trans 'Acciones' %}</th>
+                        <th>{% trans 'Tipo' %}</th>
+                        <th>{% trans 'Fecha Inicio' %}</th>
+                        <th>{% trans 'Fecha Fin' %}</th>
+                        <th>{% trans 'Creado por' %}</th>
+                        <th class="text-end">{% trans 'Acciones' %}</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for incidencia in incidencias %}
+                    {% for evento in eventos %}
                     <tr>
-                        <td>{{ incidencia.titulo }}</td>
+                        <td>{{ evento.titulo }}</td>
                         <td>
-                            <span class="badge bg-{% if incidencia.estado == 'PENDIENTE' %}warning text-dark{% elif incidencia.estado == 'RESUELTA' %}success{% else %}info{% endif %} p-2">
-                                {{ incidencia.get_estado_display }}
+                            <span class="badge bg-{% if evento.tipo == 'INSTITUCIONAL' %}primary{% else %}secondary{% endif %} p-2">
+                                {{ evento.get_tipo_display }}
                             </span>
                         </td>
-                        <td>{{ incidencia.fecha_reporte|date:"d/m/Y" }}</td>
-                        <td>{{ incidencia.profesor.get_full_name|default:"—" }}</td>
+                        <td>{{ evento.fecha_inicio|date:"d/m/Y" }}</td>
+                        <td>{{ evento.fecha_fin|date:"d/m/Y" }}</td>
+                        <td>{{ evento.creado_por.get_full_name|default:evento.creado_por.email }}</td>
                         <td class="text-end">
-                            <div class="d-flex gap-1" role="group" aria-label="Acciones de incidencia">
-                                <a href="{% url 'incidencias:detalle_incidencia' incidencia.pk %}" class="btn btn-secondary" title="{% trans 'Ver' %}">
+                            <div class="btn-group btn-group-sm" role="group" aria-label="Acciones de evento">
+                                <a href="{% url 'calendario:detalle_evento' evento.pk %}" class="btn btn-info" title="{% trans 'Ver' %}">
                                     <i class="fas fa-eye"></i>
                                 </a>
-                                <a href="{% url 'incidencias:editar_incidencia' incidencia.pk %}" class="btn btn-primary" title="{% trans 'Editar' %}">
+                                <a href="{% url 'calendario:editar_evento' evento.pk %}" class="btn btn-primary" title="{% trans 'Editar' %}">
                                     <i class="fas fa-edit"></i>
                                 </a>
-                                <form method="post" action="{% url 'incidencias:eliminar_incidencia' incidencia.pk %}" class="d-inline-block delete-form">
+                                <form method="post" action="{% url 'calendario:eliminar_evento' evento.pk %}" style="display:inline;" class="delete-form">
                                     {% csrf_token %}
                                     <button type="submit" class="btn btn-danger" title="{% trans 'Eliminar' %}">
                                         <i class="fas fa-trash-alt"></i>
@@ -85,7 +88,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="5" class="text-center text-muted py-3">{% trans 'No hay incidencias registradas.' %}</td>
+                        <td colspan="6" class="text-center text-muted py-3">{% trans 'No hay eventos registrados.' %}</td>
                     </tr>
                     {% endfor %}
                 </tbody>

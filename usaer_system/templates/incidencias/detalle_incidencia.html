@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans 'Detalles de la Incidencia' %}{% endblock %}
+
+{% block content %}
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">{% trans 'Detalles de la Incidencia' %}</h1>
+    <div class="d-none d-sm-inline-block">
+        <a href="{% url 'incidencias:listar_incidencias' %}" class="btn btn-sm btn-secondary shadow-sm"><i class="fas fa-arrow-left fa-sm text-white-50"></i> {% trans 'Volver a la lista' %}</a>
+        <a href="{% url 'incidencias:editar_incidencia' incidencia.pk %}" class="btn btn-sm btn-primary shadow-sm"><i class="fas fa-edit fa-sm text-white-50"></i> {% trans 'Editar Incidencia' %}</a>
+        <form method="post" action="{% url 'incidencias:eliminar_incidencia' incidencia.pk %}" style="display:inline;" class="delete-form">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-danger shadow-sm"><i class="fas fa-trash fa-sm text-white-50"></i> {% trans 'Eliminar Incidencia' %}</button>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+        <h6 class="m-0 font-weight-bold text-primary">{{ incidencia.titulo }}</h6>
+        <span class="badge bg-{% if incidencia.estado == 'PENDIENTE' %}warning text-dark{% elif incidencia.estado == 'RESUELTA' %}success{% else %}info{% endif %} p-2">
+            {{ incidencia.get_estado_display }}
+        </span>
+    </div>
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-4">{% trans 'Profesor' %}:</dt>
+            <dd class="col-sm-8">{{ incidencia.profesor.get_full_name|default:"-" }}</dd>
+
+            <dt class="col-sm-4">{% trans 'Escuela' %}:</dt>
+            <dd class="col-sm-8">{{ incidencia.escuela.nombre|default:"-" }}</dd>
+
+            <dt class="col-sm-4">{% trans 'Fecha de Reporte' %}:</dt>
+            <dd class="col-sm-8">{{ incidencia.fecha_reporte|date:"d/m/Y H:i"|default:"-" }}</dd>
+
+            <dt class="col-sm-4">{% trans 'Descripción' %}:</dt>
+            <dd class="col-sm-8">{{ incidencia.descripcion|default:"-" }}</dd>
+
+            <dt class="col-sm-4">{% trans 'Comentarios de Dirección' %}:</dt>
+            <dd class="col-sm-8">{{ incidencia.respuesta_admin|default:"-" }}</dd>
+        </dl>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.querySelectorAll('.delete-form').forEach(form => {
+    form.addEventListener('submit', function(event) {
+      event.preventDefault();
+      Swal.fire({
+        title: '¿Estás seguro?',
+        text: "¡No podrás revertir esto!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Sí, ¡eliminar!',
+        cancelButtonText: 'Cancelar'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          this.submit();
+        }
+      });
+    });
+  });
+</script>
+{% endblock %}
