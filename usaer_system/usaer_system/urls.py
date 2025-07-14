@@ -39,7 +39,7 @@ urlpatterns = [
     path('oficios/', include('oficios.urls', namespace='oficios')),
     path('rac/', include('rac.urls', namespace='rac')),
     path('calendario/', include('calendario.urls', namespace='calendario')),
-    path('avisos/', include('avisos.urls', namespace='avisos')),
+    
 
 
 ]
