@@ -1,11 +1,10 @@
 {% extends "base.html" %}
-{% load crispy_forms_tags %}
 {% load group_filters %}
 
 {% block content %}
 <div class="container mt-4">
     <div class="row justify-content-center">
-        <div class="col-md-8">
+        <div class="col-md-10">
             <div class="card shadow">
                 <div class="card-header bg-primary text-white">
                     <h3 class="card-title mb-0">
@@ -16,7 +15,91 @@
                 <div class="card-body">
                     <form method="post">
                         {% csrf_token %}
-                        {{ form|crispy }}
+                        
+                        <fieldset>
+                            <legend class="h6">Datos Generales de la Escuela</legend>
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label for="{{ form.clave_estatal.id_for_label }}" class="form-label">{{ form.clave_estatal.label }}{% if form.clave_estatal.field.required %}<span class="text-danger">*</span>{% endif %}</label>
+                                    {{ form.clave_estatal }}
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="{{ form.cct.id_for_label }}" class="form-label">{{ form.cct.label }}{% if form.cct.field.required %}<span class="text-danger">*</span>{% endif %}</label>
+                                    {{ form.cct }}
+                                    {% if form.cct.help_text %}<small class="form-text text-muted">{{ form.cct.help_text }}</small>{% endif %}
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="{{ form.zona.id_for_label }}" class="form-label">{{ form.zona.label }}{% if form.zona.field.required %}<span class="text-danger">*</span>{% endif %}</label>
+                                    {{ form.zona }}
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="{{ form.nombre.id_for_label }}" class="form-label">{{ form.nombre.label }}{% if form.nombre.field.required %}<span class="text-danger">*</span>{% endif %}</label>
+                                {{ form.nombre }}
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-8">
+                                    <label for="{{ form.domicilio.id_for_label }}" class="form-label">{{ form.domicilio.label }}{% if form.domicilio.field.required %}<span class="text-danger">*</span>{% endif %}</label>
+                                    {{ form.domicilio }}
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="{{ form.colonia.id_for_label }}" class="form-label">{{ form.colonia.label }}{% if form.colonia.field.required %}<span class="text-danger">*</span>{% endif %}</label>
+                                    {{ form.colonia }}
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="{{ form.nivel.id_for_label }}" class="form-label">{{ form.nivel.label }}{% if form.nivel.field.required %}<span class="text-danger">*</span>{% endif %}</label>
+                                    {{ form.nivel }}
+                                    {% if form.nivel.help_text %}<small class="form-text text-muted">{{ form.nivel.help_text }}</small>{% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="{{ form.telefono.id_for_label }}" class="form-label">{{ form.telefono.label }}{% if form.telefono.field.required %}<span class="text-danger">*</span>{% endif %}</label>
+                                    {{ form.telefono }}
+                                </div>
+                            </div>
+                        </fieldset>
+
+                        <hr class="my-4">
+
+                        <fieldset>
+                            <legend class="h6">Datos del Inspector</legend>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="{{ form.inspector.id_for_label }}" class="form-label">{{ form.inspector.label }}{% if form.inspector.field.required %}<span class="text-danger">*</span>{% endif %}</label>
+                                    {{ form.inspector }}
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="{{ form.telefono_inspector.id_for_label }}" class="form-label">{{ form.telefono_inspector.label }}{% if form.telefono_inspector.field.required %}<span class="text-danger">*</span>{% endif %}</label>
+                                    {{ form.telefono_inspector }}
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="{{ form.correo_inspector.id_for_label }}" class="form-label">{{ form.correo_inspector.label }}{% if form.correo_inspector.field.required %}<span class="text-danger">*</span>{% endif %}</label>
+                                {{ form.correo_inspector }}
+                            </div>
+                        </fieldset>
+
+                        <hr class="my-4">
+
+                        <fieldset>
+                            <legend class="h6">Datos del Director</legend>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="{{ form.director.id_for_label }}" class="form-label">{{ form.director.label }}{% if form.director.field.required %}<span class="text-danger">*</span>{% endif %}</label>
+                                    {{ form.director }}
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="{{ form.celular_director.id_for_label }}" class="form-label">{{ form.celular_director.label }}{% if form.celular_director.field.required %}<span class="text-danger">*</span>{% endif %}</label>
+                                    {{ form.celular_director }}
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="{{ form.correo_director.id_for_label }}" class="form-label">{{ form.correo_director.label }}{% if form.correo_director.field.required %}<span class="text-danger">*</span>{% endif %}</label>
+                                {{ form.correo_director }}
+                            </div>
+                        </fieldset>
+
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
                             <a href="{% url 'escuelas:listar_escuelas' %}" class="btn btn-secondary me-md-2">
                                 <i class="fas fa-times-circle me-1"></i> Cancelar

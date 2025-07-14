@@ -44,6 +44,9 @@ from permisos.models import Permiso
 from escuelas.models import Escuela
 from calendario.models import EventoCalendario
 from oficios.models import Oficio
+from avisos.models import Anuncio
+from django.db.models import Q
+from django.utils import timezone
 
 from documentos.models import Expediente  # Ajusta al nombre de tu modelo de expediente si difiere
 
@@ -287,6 +290,10 @@ def dashboard(request):
         'ultimas_incidencias': Incidencia.objects.order_by('-fecha_reporte')[:5],
         'ultimos_expedientes': Expediente.objects.order_by('-fecha_subida')[:5],
         'ultimos_oficios': Oficio.objects.order_by('-fecha_subida')[:5],
+        'ultimos_avisos': Anuncio.objects.filter(
+            (Q(fecha_expiracion__gte=timezone.now()) | Q(fecha_expiracion__isnull=True)),
+            fecha_publicacion__lte=timezone.now()
+        ).order_by('-fecha_publicacion')[:5],
         'breadcrumbs': [],
         'current_page_title': 'Dashboard'
     })

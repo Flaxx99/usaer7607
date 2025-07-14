@@ -1,105 +1,46 @@
 from django import forms
-from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, Fieldset, Field, Div, Submit, ButtonHolder
 from .models import Escuela
 from django.utils.translation import gettext_lazy as _
 from usaer_system.forms_utils import convertir_mayusculas
 
-
 class EscuelaForm(forms.ModelForm):
+    """
+    Formulario para crear y actualizar Escuelas.
+    El layout se define en la plantilla HTML para compatibilidad con el tema.
+    """
     class Meta:
         model = Escuela
         fields = [
-            'clave_estatal',
-            'cct',
-            'nombre',
-            'nivel',
-            'domicilio',
-            'colonia',
-            'telefono',
-            'zona',
-            'inspector',
-            'telefono_inspector',
-            'correo_inspector',
-            'director',
-            'celular_director',
-            'correo_director',
+            'clave_estatal', 'cct', 'nombre', 'nivel', 'domicilio',
+            'colonia', 'telefono', 'zona', 'inspector', 'telefono_inspector',
+            'correo_inspector', 'director', 'celular_director', 'correo_director',
         ]
-        labels = {
-            'clave_estatal': _('CLAVE ESTATAL'),
-            'cct': _('CCT'),
-            'nombre': _('NOMBRE'),
-            'nivel': _('NIVEL'),
-            'domicilio':_('DOMICILIO'),
-            'colonia':_('COLONIA'),
-            'telefono': _('TELÉFONO DE LA ESCUELA'),
-            'zona': _('ZONA'),
-            'inspector': _('INSPECTOR'),
-            'telefono_inspector': _('TEL INSPECTOR'),
-            'correo_inspector': _('CORREO INSPECTOR'),
-            'director': _('NOMBRE DEL DIRECTOR'),
-            'celular_director': _('CEL DIRECTOR'),
-            'correo_director': _('CORREO DIRECTOR'),
+        widgets = {
+            'clave_estatal': forms.TextInput(attrs={'placeholder': 'Clave estatal única'}),
+            'cct': forms.TextInput(attrs={'placeholder': 'Clave de Centro de Trabajo'}),
+            'nombre': forms.TextInput(attrs={'placeholder': 'Nombre completo de la escuela'}),
+            'domicilio': forms.TextInput(attrs={'placeholder': 'Calle, número, etc.'}),
+            'colonia': forms.TextInput(attrs={'placeholder': 'Colonia o localidad'}),
+            'telefono': forms.TextInput(attrs={'placeholder': 'Teléfono a 10 dígitos'}),
+            'zona': forms.TextInput(attrs={'placeholder': 'Zona escolar'}),
+            'inspector': forms.TextInput(attrs={'placeholder': 'Nombre completo del inspector/a'}),
+            'telefono_inspector': forms.TextInput(attrs={'placeholder': 'Teléfono a 10 dígitos'}),
+            'correo_inspector': forms.EmailInput(attrs={'placeholder': 'correo.inspector@ejemplo.com'}),
+            'director': forms.TextInput(attrs={'placeholder': 'Nombre completo del director/a'}),
+            'celular_director': forms.TextInput(attrs={'placeholder': 'Teléfono a 10 dígitos'}),
+            'correo_director': forms.EmailInput(attrs={'placeholder': 'correo.director@ejemplo.com'}),
+        }
+        help_texts = {
+            'cct': _('La CCT es un identificador único para cada centro educativo.'),
+            'nivel': _('Seleccione el nivel educativo correspondiente.'),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        self.helper = FormHelper()
-        self.helper.form_method = 'post'
-        self.helper.form_show_labels = True
-
-        self.helper.layout = Layout(
-            Fieldset(_('Datos Generales'),
-                Div(
-                    Div(Field('clave_estatal'), css_class='col-md-6'),
-                    Div(Field('cct'), css_class='col-md-6'),
-                    css_class='row'
-                ),
-                Div(
-                    Div(Field('nombre'), css_class='col-md-12'),
-                    css_class='row'
-                ),
-                Div(
-                    Div(Field('nivel', css_class='text-uppercase'), css_class='col-md-6'),
-                    Div(Field('telefono'), css_class='col-md-6'),
-                    css_class='row'
-                ),
-                Div(
-                    Div(Field('domicilio'), css_class='col-md-8'),
-                    Div(Field('colonia'), css_class='col-md-4'),
-                    css_class='row'
-                ),
-                Div(
-                    Div(Field('zona'), css_class='col-md-12'),
-                    css_class='row'
-                ),
-            ),
-            Fieldset(_('Datos del Inspector'),
-                Div(
-                    Div(Field('inspector'), css_class='col-md-12'),
-                    css_class='row'
-                ),
-                Div(
-                    Div(Field('telefono_inspector'), css_class='col-md-6'),
-                    Div(Field('correo_inspector'), css_class='col-md-6'),
-                    css_class='row'
-                )
-            ),
-            Fieldset(_('Datos del Director'),
-                Div(
-                    Div(Field('director'), css_class='col-md-12'),
-                    css_class='row'
-                ),
-                Div(
-                    Div(Field('celular_director'), css_class='col-md-6'),
-                    Div(Field('correo_director'), css_class='col-md-6'),
-                    css_class='row'
-                )
-            ),
-            ButtonHolder(Submit('submit', _('Guardar escuela'), css_class='btn btn-primary mt-3'))
-        )
+        # Aplicar clase form-control a todos los campos
+        for field in self.fields.values():
+            field.widget.attrs.setdefault('class', 'form-control')
 
     def clean(self):
-        cleaned = super().clean()
-        return convertir_mayusculas(cleaned, excluir=['nivel'])
+        cleaned_data = super().clean()
+        return convertir_mayusculas(cleaned_data, excluir=['correo_inspector', 'correo_director'])

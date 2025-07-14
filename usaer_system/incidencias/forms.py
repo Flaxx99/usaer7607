@@ -1,6 +1,6 @@
 from django import forms
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, Div, Field, Submit
+from crispy_forms.layout import Layout, Div, Field
 from django.contrib.auth import get_user_model
 from .models import Incidencia
 from usaer_system.forms_utils import convertir_mayusculas
@@ -23,7 +23,7 @@ class IncidenciaForm(forms.ModelForm):
         else:
             self.fields['profesor'].queryset = User.objects.filter(role='MAESTRO_APOYO')
 
-        # Configuración de Crispy
+        # Configuración de Crispy (sin botones)
         self.helper = FormHelper()
         self.helper.form_method = 'post'
         self.helper.layout = Layout(
@@ -34,8 +34,7 @@ class IncidenciaForm(forms.ModelForm):
                 css_class='row g-3'
             ),
             Field('descripcion', css_class='form-control'),
-            Field('respuesta_admin', css_class='form-control'),
-            Submit('submit', 'Guardar', css_class='btn btn-primary mt-3')
+            Field('respuesta_admin', css_class='form-control')
         )
     
     def clean(self):

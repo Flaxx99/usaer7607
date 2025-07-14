@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'oficios',
     'rac',
     'calendario',
+    'avisos',
 ]
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
@@ -125,6 +126,7 @@ ROLE_PERMISSIONS = {
         'create_permiso', 'list_my_permisos', 'manage_permisos',
         'check_asistencia', 'list_asistencias',
         'upload_oficios', 'list_oficios', 'view_calendario',
+        'list_avisos', 'create_aviso',
     ],
 
     'SECRETARIO': [
@@ -139,6 +141,7 @@ ROLE_PERMISSIONS = {
         'create_permiso', 'list_my_permisos', 'manage_permisos',
         'check_asistencia', 'list_asistencias',
         'upload_oficios', 'list_oficios', 'view_calendario',
+        'list_avisos', 'create_aviso',
     ],
 
     'MAESTRO_APOYO': [
@@ -152,6 +155,7 @@ ROLE_PERMISSIONS = {
         'create_permiso', 'list_my_permisos',
         'check_asistencia', 'list_asistencias',
         'list_oficios', 'view_calendario',
+        'list_avisos',
     ],
 
     'TRAB_SOCIAL': [
@@ -159,6 +163,7 @@ ROLE_PERMISSIONS = {
         'create_permiso', 'list_my_permisos',
         'check_asistencia', 'list_asistencias',
         'list_oficios', 'view_calendario',
+        'list_avisos',
     ],
 
     'PSICOLOGO': [
@@ -166,6 +171,7 @@ ROLE_PERMISSIONS = {
         'create_permiso', 'list_my_permisos',
         'check_asistencia', 'list_asistencias',
         'list_oficios', 'view_calendario',
+        'list_avisos',
     ],
 
     'PSICOMOTRICIDAD': [
@@ -173,6 +179,7 @@ ROLE_PERMISSIONS = {
         'create_permiso', 'list_my_permisos',
         'check_asistencia', 'list_asistencias',
         'list_oficios', 'view_calendario',
+        'list_avisos',
     ],
 
     'COMUNICACION': [
@@ -180,6 +187,7 @@ ROLE_PERMISSIONS = {
         'create_permiso', 'list_my_permisos',
         'check_asistencia', 'list_asistencias',
         'list_oficios', 'view_calendario',
+        'list_avisos',
     ],
 
     'TRAB_MANUAL': [
@@ -187,10 +195,12 @@ ROLE_PERMISSIONS = {
         'create_permiso', 'list_my_permisos',
         'check_asistencia', 'list_asistencias',
         'list_oficios', 'view_calendario',
+        'list_avisos',
     ],
 
     'DIRECTOR': [
         'list_incidencias', 'view_calendario',
+        'list_avisos',
     ],
 }
 
@@ -317,6 +327,18 @@ DASHBOARD_MODULES = [
         'title': 'Calendario',
         'url_name': 'calendario:lista_eventos',
         'icon': 'fas fa-calendar-alt text-primary',
+    },
+    {
+        'key': 'list_avisos',
+        'title': 'Tablón de Anuncios',
+        'url_name': 'avisos:lista_anuncios',
+        'icon': 'fas fa-bullhorn text-info',
+    },
+    {
+        'key': 'create_aviso',
+        'title': 'Crear Anuncio',
+        'url_name': 'avisos:nuevo_anuncio',
+        'icon': 'fas fa-plus-circle text-info',
     },
 ]
 

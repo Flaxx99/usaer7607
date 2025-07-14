@@ -1,13 +1,12 @@
 {% extends "base.html" %}
 {% load crispy_forms_tags %}
-{% load group_filters %}
 
 {% block content %}
 <div class="container mt-4">
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="card shadow">
-                <div class="card-header bg-{% if 'Editar' in titulo %}primary{% else %}success{% endif %} text-white">
+                <div class="card-header bg-warning text-dark">
                     <h3 class="card-title mb-0">
                         <i class="fas fa-{% if 'Editar' in titulo %}edit{% else %}plus-circle{% endif %} me-2"></i>
                         {{ titulo }}
@@ -18,15 +17,9 @@
                         {% csrf_token %}
                         {{ form|crispy }}
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
-                            {% if modo == 'editar' %}
-                                <a href="{% url 'incidencias:revisar_incidencias' %}" class="btn btn-secondary me-md-2">
-                                    <i class="fas fa-times-circle me-1"></i> Cancelar
-                                </a>
-                            {% else %}
-                                <a href="{% url 'incidencias:listar_incidencias' %}" class="btn btn-secondary me-md-2">
-                                    <i class="fas fa-times-circle me-1"></i> Cancelar
-                                </a>
-                            {% endif %}
+                            <a href="{% url 'incidencias:revisar_incidencias' %}" class="btn btn-secondary me-md-2">
+                                <i class="fas fa-times-circle me-1"></i> Cancelar
+                            </a>
                             <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-save me-1"></i> Guardar
                             </button>
