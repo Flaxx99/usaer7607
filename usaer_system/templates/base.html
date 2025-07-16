@@ -70,6 +70,21 @@
                 </a>
               </li>
               {% endif %}
+              {% if 'nuevo_rae' in permisos_usuario %}
+              <li>
+                <a class="dropdown-item" href="{% url 'rae:captura' %}">
+                  ➕ Nuevo RAE
+                </a>
+              </li>
+              {% endif %}
+              {% if 'exportar_rae' in permisos_usuario %}
+              <li>
+                <a class="dropdown-item" href="{% url 'rae:exportar' %}">
+                  📥 Exportar RAE
+                </a>
+              </li>
+              {% endif %}
+
               {% if 'manage_permisos' in permisos_usuario %}
               <li><a class="dropdown-item" href="{% url 'permisos:gestionar' %}">📝 Permisos</a></li>
               {% endif %}

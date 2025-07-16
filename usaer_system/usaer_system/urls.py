@@ -29,6 +29,7 @@ urlpatterns = [
     path('escuelas/',    include('escuelas.urls',    namespace='escuelas')),
     path('oficios/', include('oficios.urls', namespace='oficios')),
     path('rac/', include('rac.urls', namespace='rac')),
+    path('rae/', include('rae.urls', namespace='rae')),
 
 ]
 if settings.DEBUG:

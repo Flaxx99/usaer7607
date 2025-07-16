@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'alumnos',
     'oficios',
     'rac',
+    'rae',
 
     #dependencias
     'crispy_forms',
@@ -169,6 +170,9 @@ ROLE_PERMISSIONS = {
         # RAE/RAC
         'ver_rac',
         'nuevo_rac',
+        'ver_rae',
+        'nuevo_rae',
+        'exportar_rae',
         # Expedientes CRUD + descarga oficial
         'create_expediente', 'list_expedientes', 'edit_expediente', 'delete_expediente',
         'download_official_docs',
@@ -194,6 +198,9 @@ ROLE_PERMISSIONS = {
         # RAE/RAC
         'ver_rac',
         'nuevo_rac',
+        'ver_rae',
+        'nuevo_rae',
+        'exportar_rae',
         # Expedientes CRUD + descarga oficial
         'create_expediente', 'list_expedientes', 'edit_expediente', 'delete_expediente',
         'download_official_docs',
@@ -211,6 +218,8 @@ ROLE_PERMISSIONS = {
         # RAE/RAC
         'ver_rac',
         'nuevo_rac',
+        'ver_rae',
+        'nuevo_rae',
         # Expedientes CRUD + descarga oficial
         'create_expediente', 'list_expedientes', 'edit_expediente', 'delete_expediente',
         'download_official_docs',
@@ -396,6 +405,21 @@ DASHBOARD_MODULES = [
         'icon':  'fas fa-plus',
         'url_name': 'rac:registro_create',
     },
+    # --- RAE ---
+    {
+        'key': 'captura_rae',
+        'title': 'Captura RAE',
+        'icon': 'fas fa-clipboard-check',
+        'url_name': 'rae:captura',
+    },
+    {
+        'key': 'exportar_rae',
+        'title': 'Exportar RAE',
+        'icon': 'fas fa-file-export',
+        'url_name': 'rae:exportar',
+    },
+
+
 ]
 ROLES_EQUIPO_ITINERANTE = [
     'PSICOLOGO',
