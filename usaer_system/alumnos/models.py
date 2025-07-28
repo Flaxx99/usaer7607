@@ -61,6 +61,12 @@ class Alumno(models.Model):
         max_length=100,
         blank=True
     )
+    def get_full_name(self):
+        # Puedes ajustar el formato si prefieres "Nombre ApellidoPaterno ApellidoMaterno"
+        return f"{self.apellido_paterno} {self.apellido_materno}, {self.nombres}".upper()
+
+    def __str__(self):
+        return f"{self.apellido_paterno} {self.apellido_materno}, {self.nombres}"
 
     class Meta:
         verbose_name = "Alumno"

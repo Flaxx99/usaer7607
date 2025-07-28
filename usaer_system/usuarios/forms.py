@@ -92,7 +92,7 @@ class UsuarioChangeForm(UserChangeForm):
                 'domicilio',
                 Div(Field('telefono', css_class='me-2'), Field('celular'), css_class='row g-3'),
                 Div(Field('rfc', css_class='me-2'), Field('curp'), css_class='row g-3'),
-                'correo'
+                'email'
             ),
             Fieldset(_('Datos administrativos'),
                 Div(Field('clave_presupuestal', css_class='me-2'), Field('numero_empleado', css_class='me-2'), Field('numero_pensiones'), css_class='row g-3'),

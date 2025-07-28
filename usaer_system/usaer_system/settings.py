@@ -47,11 +47,11 @@ INSTALLED_APPS = [
     # mis apps
     'usuarios.apps.UsuariosConfig',
     'escuelas.apps.EscuelasConfig',
+    'alumnos',
     'asistencias',
     'permisos',
     'incidencias',
     'documentos',
-    'alumnos',
     'oficios',
     'rac',
     'rae',
@@ -60,6 +60,11 @@ INSTALLED_APPS = [
     'crispy_forms',
     'crispy_bootstrap5',
     
+]
+
+ADMIN_FOR_MODELS = False 
+SILENCED_SYSTEM_CHECKS = [
+    'admin.E039', # Silencia el error sobre autocomplete_fields que no encuentra un admin registrado
 ]
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
@@ -172,6 +177,7 @@ ROLE_PERMISSIONS = {
         'nuevo_rac',
         'ver_rae',
         'nuevo_rae',
+        'ver_rae_registros',
         'exportar_rae',
         # Expedientes CRUD + descarga oficial
         'create_expediente', 'list_expedientes', 'edit_expediente', 'delete_expediente',
@@ -200,6 +206,7 @@ ROLE_PERMISSIONS = {
         'nuevo_rac',
         'ver_rae',
         'nuevo_rae',
+        'ver_rae_registros',
         'exportar_rae',
         # Expedientes CRUD + descarga oficial
         'create_expediente', 'list_expedientes', 'edit_expediente', 'delete_expediente',
@@ -220,6 +227,8 @@ ROLE_PERMISSIONS = {
         'nuevo_rac',
         'ver_rae',
         'nuevo_rae',
+        'ver_rae_registros',
+        #'exportar_rae',
         # Expedientes CRUD + descarga oficial
         'create_expediente', 'list_expedientes', 'edit_expediente', 'delete_expediente',
         'download_official_docs',
@@ -378,7 +387,6 @@ DASHBOARD_MODULES = [
         'url_name': 'asistencias:listar_asistencias',
         'icon': 'fas fa-calendar-alt text-primary',
     },
-
     # --- Oficios ---
     {
         'key': 'upload_oficios',
@@ -393,7 +401,7 @@ DASHBOARD_MODULES = [
          'icon': 'fas fa-download text-secondary',
     },  
     # ---RAC --- #
-      {
+    {
         'key': 'ver_rac',
         'title': 'Ver Registros RAC',
         'icon':  'fas fa-list',
@@ -407,19 +415,18 @@ DASHBOARD_MODULES = [
     },
     # --- RAE ---
     {
-        'key': 'captura_rae',
-        'title': 'Captura RAE',
-        'icon': 'fas fa-clipboard-check',
-        'url_name': 'rae:captura',
+        'key': 'ver_rae_registros',
+        'title': 'Mis Registros RAE',
+        'icon': 'fas fa-file-export',
+        'url_name': 'rae:mis_registros_rae',
     },
     {
-        'key': 'exportar_rae',
-        'title': 'Exportar RAE',
-        'icon': 'fas fa-file-export',
-        'url_name': 'rae:exportar',
-    },
-
-
+        'key': 'nuevo_rae',
+        'title': 'Captura RAE',
+        'icon': 'fas fa-clipboard-check',
+        'url_name': 'rae:captura_rae',
+    }
+    
 ]
 ROLES_EQUIPO_ITINERANTE = [
     'PSICOLOGO',
@@ -430,3 +437,44 @@ ROLES_EQUIPO_ITINERANTE = [
     'ADMIN'
 ]
 
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',  # <-- Set console handler to DEBUG level
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple' # You can use 'verbose' here if you want more detail
+        },
+        # You might have other handlers like 'file' here
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO', # Keep Django's default INFO to avoid too much noise
+            'propagate': False,
+        },
+        'rae': { # <-- Add a logger specifically for your 'rae' app
+            'handlers': ['console'],
+            'level': 'DEBUG', # <-- Set 'rae' app logger to DEBUG level
+            'propagate': False,
+        },
+        # If you want ALL loggers to output DEBUG to console, you can use the root logger:
+        # '': { # This is the root logger
+        #    'handlers': ['console'],
+        #    'level': 'DEBUG',
+        #    'propagate': False,
+        # },
+    },
+}

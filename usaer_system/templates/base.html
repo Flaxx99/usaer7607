@@ -72,15 +72,15 @@
               {% endif %}
               {% if 'nuevo_rae' in permisos_usuario %}
               <li>
-                <a class="dropdown-item" href="{% url 'rae:captura' %}">
+                <a class="dropdown-item" href="{% url 'rae:captura_rae' %}">
                   ➕ Nuevo RAE
                 </a>
               </li>
               {% endif %}
-              {% if 'exportar_rae' in permisos_usuario %}
+              {% if 'ver_rae_registros' in permisos_usuario %}
               <li>
-                <a class="dropdown-item" href="{% url 'rae:exportar' %}">
-                  📥 Exportar RAE
+                <a class="dropdown-item" href="{% url 'rae:mis_registros_rae' %}">
+                  📥 Mis registros RAE
                 </a>
               </li>
               {% endif %}

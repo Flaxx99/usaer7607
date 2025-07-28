@@ -1,160 +1,208 @@
-{# usaer_system/templates/rae/captura.html #}
 {% extends 'base.html' %}
 {% load static %}
 
 {% block content %}
 <div class="container mt-4">
-    <h2 class="mb-4">Captura de RAE — {{ registro.escuela.nombre }}</h2>
+  <h2 class="mb-4">Captura de RAE — {{ registro.escuela.nombre }}</h2>
 
-    {% if formset %}
-    <form method="post">
-        {% csrf_token %}
-        {{ formset.management_form }}
-
-        {% for form in formset %}
-            {# Renderizamos aquí los campos ocultos, incluido el id #}
-            {% for hidden in form.hidden_fields %}
-                {{ hidden }}
-            {% endfor %}
-
-            <div class="card mb-4 border-primary">
-                <div class="card-header bg-primary text-white">
-                    Alumno: {{ form.instance.alumno }}
-                </div>
-                <div class="card-body">
-                    <!-- Grupo 1: Discapacidad -->
-                    <h6 class="mt-2">Condiciones de Discapacidad</h6>
-                    <div class="row g-3">
-                        {% for field in form %}
-                            {% if field.name in grupo_discapacidad %}
-                                <div class="col-md-4">
-                                    <div class="form-check">
-                                        {{ field }}
-                                        <label class="form-check-label" for="{{ field.id_for_label }}">
-                                            {{ field.label }}
-                                        </label>
-                                    </div>
-                                </div>
-                            {% endif %}
-                        {% endfor %}
-                    </div>
-
-                    <!-- Grupo 2: Dificultades severas -->
-                    <h6 class="mt-4">Dificultades severas</h6>
-                    <div class="row g-3">
-                        {% for field in form %}
-                            {% if field.name in grupo_dificultades %}
-                                <div class="col-md-4">
-                                    <div class="form-check">
-                                        {{ field }}
-                                        <label class="form-check-label" for="{{ field.id_for_label }}">
-                                            {{ field.label }}
-                                        </label>
-                                    </div>
-                                </div>
-                            {% endif %}
-                        {% endfor %}
-                    </div>
-
-                    <!-- Grupo 3: Trastornos -->
-                    <h6 class="mt-4">Trastornos</h6>
-                    <div class="row g-3">
-                        {% for field in form %}
-                            {% if field.name in grupo_trastornos %}
-                                <div class="col-md-4">
-                                    <div class="form-check">
-                                        {{ field }}
-                                        <label class="form-check-label" for="{{ field.id_for_label }}">
-                                            {{ field.label }}
-                                        </label>
-                                    </div>
-                                </div>
-                            {% endif %}
-                        {% endfor %}
-                    </div>
-
-                    <!-- Grupo 4: Aptitudes sobresalientes -->
-                    <h6 class="mt-4">Aptitudes sobresalientes</h6>
-                    <div class="row g-3">
-                        {% for field in form %}
-                            {% if field.name in grupo_aptitudes %}
-                                <div class="col-md-4">
-                                    <div class="form-check">
-                                        {{ field }}
-                                        <label class="form-check-label" for="{{ field.id_for_label }}">
-                                            {{ field.label }}
-                                        </label>
-                                    </div>
-                                </div>
-                            {% endif %}
-                        {% endfor %}
-                    </div>
-
-                    <!-- Grupo 5: Otra condición -->
-                    <h6 class="mt-4">Otra condición</h6>
-                    <div class="row g-3">
-                        {% for field in form %}
-                            {% if field.name == "ot" %}
-                                <div class="col-md-4">
-                                    <div class="form-check">
-                                        {{ field }}
-                                        <label class="form-check-label" for="{{ field.id_for_label }}">
-                                            {{ field.label }}
-                                        </label>
-                                    </div>
-                                </div>
-                            {% endif %}
-                        {% endfor %}
-                    </div>
-
-                    <!-- Grupo 6: Apoyos específicos -->
-                    <h6 class="mt-4">Apoyos específicos</h6>
-                    <div class="row g-3">
-                        {% for field in form %}
-                            {% if field.name in grupo_apoyos %}
-                                <div class="col-md-4">
-                                    <div class="form-check">
-                                        {{ field }}
-                                        <label class="form-check-label" for="{{ field.id_for_label }}">
-                                            {{ field.label }}
-                                        </label>
-                                    </div>
-                                </div>
-                            {% endif %}
-                        {% endfor %}
-                    </div>
-
-                    <!-- Grupo 7: Portafolio del alumno -->
-                    <h6 class="mt-4">Portafolio del alumno</h6>
-                    <div class="row g-3">
-                        {% for field in form %}
-                            {% if field.name in grupo_portafolio %}
-                                <div class="col-md-4">
-                                    <div class="form-check">
-                                        {{ field }}
-                                        <label class="form-check-label" for="{{ field.id_for_label }}">
-                                            {{ field.label }}
-                                        </label>
-                                    </div>
-                                </div>
-                            {% endif %}
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        {% endfor %}
-
-        <div class="d-flex justify-content-end mb-5">
-            <button type="submit" class="btn btn-success">
-                <i class="bi bi-save"></i> Guardar todo
-            </button>
+  <div
+    id="fichas-container"
+    data-registro-id="{{ registro.pk }}"
+    data-save-url="{% url 'rae:guardar_rae_bulk' %}" {# <-- ¡CORREGIDO AQUÍ! #}
+  >
+    {% for form in forms %}
+      <div class="card mb-4 border-primary raeficha" data-pk="{{ form.instance.pk }}">
+        <div class="card-header bg-primary text-white">
+          Alumno: {{ form.instance.alumno }}
         </div>
-    </form>
+        <div class="card-body">
+          {# Hidden fields (id y CSRF) #}
+          {% for hidden in form.hidden_fields %}
+            {{ hidden }}
+          {% endfor %}
 
-    {% else %}
-    <div class="alert alert-warning">
-        No hay alumnos asignados a tu cuenta para capturar.
-    </div>
-    {% endif %}
+          <h6 class="mt-2">Condiciones de Discapacidad</h6>
+          <div class="row g-3">
+            {% for field in form %}
+              {% if field.name in grupo_discapacidad %}
+                <div class="col-md-4">
+                  <div class="form-check">
+                    {{ field }}
+                    <label class="form-check-label" for="{{ field.id_for_label }}">
+                      {{ field.label }}
+                    </label>
+                  </div>
+                </div>
+              {% endif %}
+            {% endfor %}
+          </div>
+
+          <h6 class="mt-4">Dificultades severas</h6>
+          <div class="row g-3">
+            {% for field in form %}
+              {% if field.name in grupo_dificultades %}
+                <div class="col-md-4">
+                  <div class="form-check">
+                    {{ field }}
+                    <label class="form-check-label" for="{{ field.id_for_label }}">
+                      {{ field.label }}
+                    </label>
+                  </div>
+                </div>
+              {% endif %}
+            {% endfor %}
+          </div>
+
+          <h6 class="mt-4">Trastornos</h6>
+          <div class="row g-3">
+            {% for field in form %}
+              {% if field.name in grupo_trastornos %}
+                <div class="col-md-4">
+                  <div class="form-check">
+                    {{ field }}
+                    <label class="form-check-label" for="{{ field.id_for_label }}">
+                      {{ field.label }}
+                    </label>
+                  </div>
+                </div>
+              {% endif %}
+            {% endfor %}
+          </div>
+
+          <h6 class="mt-4">Aptitudes sobresalientes</h6>
+          <div class="row g-3">
+            {% for field in form %}
+              {% if field.name in grupo_aptitudes %}
+                <div class="col-md-4">
+                  <div class="form-check">
+                    {{ field }}
+                    <label class="form-check-label" for="{{ field.id_for_label }}">
+                      {{ field.label }}
+                    </label>
+                  </div>
+                </div>
+              {% endif %}
+            {% endfor %}
+          </div>
+
+          <h6 class="mt-4">Otra condición</h6>
+          <div class="row g-3">
+            {% for field in form %}
+              {% if field.name in grupo_otras %}
+                <div class="col-md-4">
+                  <div class="form-check">
+                    {{ field }}
+                    <label class="form-check-label" for="{{ field.id_for_label }}">
+                      {{ field.label }}
+                    </label>
+                  </div>
+                </div>
+              {% endif %}
+            {% endfor %}
+          </div>
+
+          <h6 class="mt-4">Apoyos específicos</h6>
+          <div class="row g-3">
+            {% for field in form %}
+              {% if field.name in grupo_apoyos %}
+                <div class="col-md-4">
+                  <div class="form-check">
+                    {{ field }}
+                    <label class="form-check-label" for="{{ field.id_for_label }}">
+                      {{ field.label }}
+                    </label>
+                  </div>
+                </div>
+              {% endif %}
+            {% endfor %}
+          </div>
+
+          <h6 class="mt-4">Portafolio del alumno</h6>
+          <div class="row g-3">
+            {% for field in form %}
+              {% if field.name in grupo_portafolio %}
+                <div class="col-md-4">
+                  <div class="form-check">
+                    {{ field }}
+                    <label class="form-check-label" for="{{ field.id_for_label }}">
+                      {{ field.label }}
+                    </label>
+                  </div>
+                </div>
+              {% endif %}
+            {% endfor %}
+          </div>
+
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="d-flex justify-content-end mb-5">
+    <button type="button" id="save-all" class="btn btn-success">
+      <i class="bi bi-save"></i> Guardar todo
+    </button>
+  </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  function getCookie(name) {
+    var m = document.cookie.match('(^|;)\\s*'+name+'=([^;]+)');
+    return m ? m.pop() : '';
+  }
+
+  var cards = document.querySelectorAll('.raeficha');
+  var container = document.getElementById('fichas-container');
+  var registroId = container.dataset.registroId;
+  var saveUrl    = container.dataset.saveUrl;
+
+  document.getElementById('save-all').addEventListener('click', function() {
+    var alumnos = [];
+    
+    var campos = [
+      'ceg','bv','so','hp','scg','dmo','di','dme','dm', // Incluye dme
+      'dsc','dsco','dsa',
+      'tda','tea',
+      'asi','asc','asa','asp','ass',
+      'ot',
+      'psicologia','comunicacion','psicomotricidad',
+      'trabajo_social','aprendizaje','nuevo_ingreso','subsecuente',
+      'diagnostico','educativo','deteccion',
+      'psicopedagogico','plan','modelo',
+      'psicosocial' 
+    ];
+
+
+    cards.forEach(function(card) {
+      var pk = parseInt(card.dataset.pk, 10);
+      var data = { id: pk };
+
+      card.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+          const fieldName = checkbox.name.split('-')[1]; // Extracts fieldname from "PK-fieldname"
+          data[fieldName] = checkbox.checked;
+      });
+      alumnos.push(data);
+    });
+
+    fetch(saveUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type':'application/json',
+        'X-CSRFToken': getCookie('csrftoken')
+      },
+      body: JSON.stringify({ registro_id: registroId, alumnos: alumnos })
+    })
+    .then(r => r.json())
+    .then(json => {
+      if (json.status === 'ok') {
+        alert('Guardado exitoso.');
+      } else {
+        alert('Error al guardar: '+(json.error||'Desconocido'));
+      }
+    })
+    .catch(() => alert('Error de red.'));
+  });
+});
+</script>
 {% endblock %}
