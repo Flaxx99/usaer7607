@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static %} {# Asegúrate de tener esto si usas {% static %} en alguna parte del archivo #}
 
 {% block content %}
 <div class="container mt-4">
@@ -8,14 +8,15 @@
   <div
     id="fichas-container"
     data-registro-id="{{ registro.pk }}"
-    data-save-url="{% url 'rae:guardar_rae_bulk' %}" {# <-- ¡CORREGIDO AQUÍ! #}
+    data-save-url="{% url 'rae:guardar_rae_bulk' %}"
   >
+    {# Este es el bucle principal que envuelve cada ficha de alumno #}
     {% for form in forms %}
       <div class="card mb-4 border-primary raeficha" data-pk="{{ form.instance.pk }}">
         <div class="card-header bg-primary text-white">
           Alumno: {{ form.instance.alumno }}
         </div>
-        <div class="card-body">
+        <div class="card-body"> {# Abre el div para el cuerpo de la tarjeta #}
           {# Hidden fields (id y CSRF) #}
           {% for hidden in form.hidden_fields %}
             {{ hidden }}
@@ -117,6 +118,22 @@
             {% endfor %}
           </div>
 
+          <h6 class="mt-4">Situación en USAER</h6>
+          <div class="row g-3">
+            {% for field in form %}
+              {% if field.name in grupo_situacion_usaer %}
+                <div class="col-md-4">
+                  <div class="form-check">
+                    {{ field }}
+                    <label class="form-check-label" for="{{ field.id_for_label }}">
+                      {{ field.label }}
+                    </label>
+                  </div>
+                </div>
+              {% endif %}
+            {% endfor %}
+          </div>
+
           <h6 class="mt-4">Portafolio del alumno</h6>
           <div class="row g-3">
             {% for field in form %}
@@ -133,10 +150,10 @@
             {% endfor %}
           </div>
 
-        </div>
-      </div>
-    {% endfor %}
-  </div>
+        </div> {# Cierra el div.card-body #}
+      </div> {# Cierra el div.card #}
+    {% endfor %} {# Cierra el bucle principal {% for form in forms %} #}
+  </div> {# Cierra el div#fichas-container #}
 
   <div class="d-flex justify-content-end mb-5">
     <button type="button" id="save-all" class="btn btn-success">
@@ -161,7 +178,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var alumnos = [];
     
     var campos = [
-      'ceg','bv','so','hp','scg','dmo','di','dme','dm', // Incluye dme
+      'ceg','bv','so','hp','scg','dmo','di','dme','dm',
       'dsc','dsco','dsa',
       'tda','tea',
       'asi','asc','asa','asp','ass',
@@ -173,13 +190,12 @@ document.addEventListener('DOMContentLoaded', function() {
       'psicosocial' 
     ];
 
-
     cards.forEach(function(card) {
       var pk = parseInt(card.dataset.pk, 10);
       var data = { id: pk };
 
       card.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
-          const fieldName = checkbox.name.split('-')[1]; // Extracts fieldname from "PK-fieldname"
+          const fieldName = checkbox.name.split('-')[1];
           data[fieldName] = checkbox.checked;
       });
       alumnos.push(data);
@@ -197,6 +213,7 @@ document.addEventListener('DOMContentLoaded', function() {
     .then(json => {
       if (json.status === 'ok') {
         alert('Guardado exitoso.');
+        window.location.href = "{% url 'rae:mis_registros_rae' %}";
       } else {
         alert('Error al guardar: '+(json.error||'Desconocido'));
       }

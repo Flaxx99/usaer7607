@@ -103,12 +103,13 @@ class CapturaRAEView(LoginRequiredMixin, View):
             'grupo_otras': ["ot"],
             'grupo_apoyos': [
                 "psicologia","comunicacion","psicomotricidad",
-                "trabajo_social","aprendizaje","nuevo_ingreso","subsecuente"
+                "trabajo_social","aprendizaje"
             ],
             'grupo_portafolio': [
                 "diagnostico","educativo","deteccion",
                 "psicopedagogico","plan","modelo"
             ],
+            'grupo_situacion_usaer': ["nuevo_ingreso", "subsecuente"], # Nuevo grupo para estos campos
             'current_ciclo_name': current_ciclo_escolar.nombre # Pasa el nombre del ciclo al contexto
 
         }

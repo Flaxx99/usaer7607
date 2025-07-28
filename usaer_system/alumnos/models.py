@@ -20,7 +20,7 @@ class Alumno(models.Model):
 
     # --- Datos personales ---
     apellido_paterno = models.CharField("Apellido paterno", max_length=100)
-    apellido_materno = models.CharField("Apellido materno", max_length=100)
+    apellido_materno = models.CharField("Apellido materno", max_length=100, blank= True, default='')
     nombres = models.CharField("Nombre(s)", max_length=100)
     curp = models.CharField("C.U.R.P.", max_length=18, unique=True)
 
