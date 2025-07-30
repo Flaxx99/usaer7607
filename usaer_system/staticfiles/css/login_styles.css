@@ -1,0 +1,59 @@
+.login-body {
+    background-color: #f0f2f5; /* Light gray background */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+}
+
+.login-body .login-card, .login-body .checador-card {
+    border-radius: 1rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    background-color: #fff;
+}
+
+.login-body .login-card .card-body, .login-body .checador-card .card-body {
+    padding: 1.5rem; /* Ajusta este valor si es necesario para que coincida con el login */
+}
+
+.login-body .alert-danger {
+    color: #fff;
+    background-color: #dc3545 !important;
+    border-color: #dc3545 !important;
+}
+
+.login-header, .checador-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.login-header i, .checador-header i {
+    font-size: 3rem;
+    color: #f97316; /* Primary color */
+    margin-bottom: 1rem;
+}
+
+.login-header h2, .checador-header h2 {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: #27272a; /* Dark gray */
+}
+
+.clock-container {
+    text-align: center;
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+}
+
+.clock-time {
+    font-size: 3rem;
+    font-weight: bold;
+    color: #27272a;
+}
+
+.clock-date {
+    font-size: 1.2rem;
+    color: #71717a;
+}

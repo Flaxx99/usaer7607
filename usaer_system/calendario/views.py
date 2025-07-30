@@ -31,7 +31,7 @@ class CalendarioListView(LoginRequiredMixin, ListView):
         if event_type:
             queryset = queryset.filter(tipo=event_type)
 
-        return queryset.order_by('-fecha_inicio')
+        return queryset.select_related('creado_por').order_by('-fecha_inicio')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -81,6 +81,10 @@ class EventoUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
 
     def test_func(self):
         evento = self.get_object()
+        # Optimización: precargar 'creado_por' para evitar N+1 en test_func
+        if not hasattr(evento, '_prefetched_objects_cache') or 'creado_por' not in evento._prefetched_objects_cache:
+            evento = EventoCalendario.objects.select_related('creado_por').get(pk=evento.pk)
+
         user = self.request.user
         # Solo puede editar si lo creó o si es admin/secretario y el evento es institucional
         return evento.creado_por == user or (
@@ -94,6 +98,10 @@ class EventoDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 
     def test_func(self):
         evento = self.get_object()
+        # Optimización: precargar 'creado_por' para evitar N+1 en test_func
+        if not hasattr(evento, '_prefetched_objects_cache') or 'creado_por' not in evento._prefetched_objects_cache:
+            evento = EventoCalendario.objects.select_related('creado_por').get(pk=evento.pk)
+
         user = self.request.user
         return evento.creado_por == user or (
             evento.tipo == 'INSTITUCIONAL' and (user.is_staff or user.role == User.Role.SECRETARIO)
@@ -113,7 +121,7 @@ class EventoDetailView(LoginRequiredMixin, DetailView):
     context_object_name = "evento"
 
     def dispatch(self, request, *args, **kwargs):
-        evento = self.get_object()
+        evento = self.get_object().select_related('creado_por')
         # Proteger eventos personales ajenos
         if evento.tipo == 'PERSONAL' and evento.creado_por != request.user:
             return HttpResponseForbidden("No tienes permiso para ver este evento.")

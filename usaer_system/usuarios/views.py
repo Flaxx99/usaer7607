@@ -33,7 +33,7 @@ from django.views.generic import ListView, UpdateView, DeleteView, CreateView, D
 from django.utils.decorators import method_decorator
 
 from .models import User
-from .forms import UsuarioCreationForm, UsuarioChangeForm
+from .forms import UsuarioCreationForm, UsuarioChangeForm, UserProfileForm
 from .decoradores import roles_permitidos
 from django.contrib.auth.forms import PasswordChangeForm
 from escuelas.models import Escuela
@@ -83,7 +83,7 @@ class UserListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
                 Q(email__icontains=query)
             )
 
-        return qs.order_by('apellido_paterno', 'apellido_materno', 'nombre')
+        return qs.select_related('escuela').order_by('apellido_paterno', 'apellido_materno', 'nombre')
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -203,13 +203,22 @@ def toggle_user_active(request, pk):
 @login_required
 def profile(request):
     user = request.user
-    form = UsuarioChangeForm(instance=user)
+    
+    # Determinar qué formulario usar
+    if request.user.role in [User.Role.ADMINISTRADOR, User.Role.SECRETARIO]:
+        FormClass = UsuarioChangeForm
+    else:
+        FormClass = UserProfileForm
+
     if request.method == 'POST':
-        form = UsuarioChangeForm(request.POST, instance=user)
+        form = FormClass(request.POST, instance=user)
         if form.is_valid():
             form.save()
             messages.success(request, _('Perfil actualizado exitosamente'))
             return redirect('usuarios:profile')
+    else:
+        form = FormClass(instance=user)
+        
     return render(request, 'usuarios/perfil.html', {
         'form': form,
         'usuario': user,
@@ -253,47 +262,37 @@ def redireccion_post_login(request):
 # -----------------------------
 @login_required
 def dashboard(request):
-    user_role = request.user.role  # 'ADMIN', 'DIRECTOR', etc.
-    allowed = settings.ROLE_PERMISSIONS.get(user_role, [])
-    modules = []
+    user = request.user
 
-    for m in settings.DASHBOARD_MODULES:
-        if m['key'] not in allowed:
-            continue
-
-        mod = m.copy()
-        url_name = mod.get('url_name')
-        if not url_name:
-            continue
-
-        if mod.get('needs_pk'):
-            try:
-                exp = Expediente.objects.get(profesor=request.user)
-                mod['url'] = reverse(url_name, args=[exp.pk])
-            except Expediente.DoesNotExist:
-                continue
-        else:
-            mod['url'] = reverse(url_name)
-
-        modules.append(mod)
-
-    return render(request, 'usuarios/dashboard.html', {
-        'modules': modules,
-        'role':     user_role,
+    # --- Consultas Optimizadas ---
+    ultimos_permisos = Permiso.objects.select_related('profesor').order_by('-fecha_solicitud')[:5]
+    ultimas_incidencias = Incidencia.objects.select_related('profesor').order_by('-fecha_reporte')[:5]
+    ultimos_expedientes = Expediente.objects.select_related('alumno').order_by('-fecha_subida')[:5]
+    ultimos_avisos = Anuncio.objects.filter(
+        (Q(fecha_expiracion__gte=timezone.now()) | Q(fecha_expiracion__isnull=True)),
+        fecha_publicacion__lte=timezone.now()
+    ).select_related('autor').order_by('-fecha_publicacion')[:5]
+    
+    context = {
         'permisos_pendientes': Permiso.objects.filter(estado='PENDIENTE').count(),
         'incidencias_pendientes': Incidencia.objects.filter(estado='PENDIENTE').count(),
-        'total_alumnos': Alumno.objects.count(),
-        'total_escuelas': Escuela.objects.count(),
-        'total_usuarios': User.objects.count(),
         'ultimos_eventos': EventoCalendario.objects.order_by('-fecha_inicio')[:5],
-        'ultimos_permisos': Permiso.objects.order_by('-fecha_solicitud')[:5],
-        'ultimas_incidencias': Incidencia.objects.order_by('-fecha_reporte')[:5],
-        'ultimos_expedientes': Expediente.objects.order_by('-fecha_subida')[:5],
+        'ultimos_permisos': ultimos_permisos,
+        'ultimas_incidencias': ultimas_incidencias,
+        'ultimos_expedientes': ultimos_expedientes,
         'ultimos_oficios': Oficio.objects.order_by('-fecha_subida')[:5],
-        'ultimos_avisos': Anuncio.objects.filter(
-            (Q(fecha_expiracion__gte=timezone.now()) | Q(fecha_expiracion__isnull=True)),
-            fecha_publicacion__lte=timezone.now()
-        ).order_by('-fecha_publicacion')[:5],
+        'ultimos_avisos': ultimos_avisos,
         'breadcrumbs': [],
-        'current_page_title': 'Dashboard'
-    })
+        'current_page_title': 'Dashboard',
+        'is_admin_dashboard': False
+    }
+
+    if user.role == 'ADMIN':
+        context['is_admin_dashboard'] = True
+        context.update({
+            'total_alumnos': Alumno.objects.count(),
+            'total_escuelas': Escuela.objects.count(),
+            'total_usuarios': User.objects.count(),
+        })
+
+    return render(request, 'usuarios/dashboard.html', context)

@@ -20,7 +20,7 @@
                     </div>
                     <p class="text-muted">Esta acción no se puede deshacer.</p>
                     
-                    <form method="post">
+                    <form method="post" class="delete-form">
                         {% csrf_token %}
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                             <a href="{% url 'escuelas:listar_escuelas' %}" class="btn btn-secondary me-md-2">

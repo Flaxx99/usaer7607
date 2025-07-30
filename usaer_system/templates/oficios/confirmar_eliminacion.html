@@ -5,7 +5,7 @@
   <p>¿Estás segura de que deseas eliminar el oficio <strong>{{ oficio.titulo }}</strong>?</p>
   <p class="text-muted">Esta acción es irreversible y también eliminará el archivo físico.</p>
 
-  <form method="post">
+  <form method="post" class="delete-form">
     {% csrf_token %}
     <a href="{% url 'oficios:lista_oficios' %}" class="btn btn-secondary">
       ↩️ Cancelar

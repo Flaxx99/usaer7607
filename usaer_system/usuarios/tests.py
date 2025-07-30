@@ -16,7 +16,7 @@ class UserManagerTests(TestCase):
         user = User.objects.create_user(
             email="normal@user.com",
             numero_empleado="12345",
-            password="foo",
+            password="TestPass1!",
             nombre="Test",
             apellido_paterno="User"
         )
@@ -31,7 +31,7 @@ class UserManagerTests(TestCase):
         admin_user = User.objects.create_superuser(
             email="super@user.com",
             numero_empleado="admin123",
-            password="foo"
+            password="TestPass1!",
         )
         self.assertTrue(admin_user.is_active)
         self.assertTrue(admin_user.is_staff)
@@ -46,10 +46,10 @@ class UserManagerTests(TestCase):
 class UserViewsTest(TestCase):
     def setUp(self):
         self.admin = User.objects.create_superuser(
-            email="admin@example.com", numero_empleado="admin", password="pass"
+            email="admin@example.com", numero_empleado="admin", password="TestPass1!"
         )
         self.maestro = User.objects.create_user(
-            email="maestro@example.com", numero_empleado="maestro", password="pass", role=User.Role.MAESTRO_APOYO
+            email="maestro@example.com", numero_empleado="maestro", password="TestPass1!", role=User.Role.MAESTRO_APOYO
         )
         self.escuela = Escuela.objects.create(
             clave_estatal="111", cct="CCT111", nombre="Escuela Base", nivel="Primaria", domicilio="x", colonia="y", zona="z"
@@ -72,8 +72,8 @@ class UserViewsTest(TestCase):
         self.client.login(email="admin@example.com", password="pass")
         response = self.client.get(reverse("usuarios:list"))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, self.maestro.email)
-        self.assertContains(response, self.admin.email)
+        self.assertContains(response, self.maestro.email.encode('utf-8'))
+        self.assertContains(response, self.admin.email.encode('utf-8'))
 
     def test_crear_usuario_exitoso(self):
         self.client.login(email="admin@example.com", password="pass")
@@ -84,7 +84,8 @@ class UserViewsTest(TestCase):
             "email": "new@example.com",
             "role": User.Role.SECRETARIO,
             "escuela": self.escuela.pk,
-            "password": "newpass123",
+            "password1": "newpass123",
+            "password2": "newpass123",
         }
         response = self.client.post(reverse("usuarios:create"), data=form_data)
         self.assertEqual(response.status_code, 302)  # Redirección a la lista
@@ -104,7 +105,7 @@ class UserViewsTest(TestCase):
         response = self.client.post(url, data=form_data)
         self.assertEqual(response.status_code, 302)
         self.maestro.refresh_from_db()
-        self.assertEqual(self.maestro.nombre, "Nombre Editado")
+        self.assertEqual(self.maestro.nombre, "NOMBRE EDITADO")
         self.assertEqual(self.maestro.role, User.Role.DIRECTOR)
 
     def test_eliminar_usuario(self):
@@ -155,7 +156,7 @@ class DashboardViewTest(TestCase):
         response = self.client.get(reverse("usuarios:dashboard"))
         self.assertEqual(response.status_code, 200)
         # Un admin debería ver el módulo de gestión de usuarios
-        self.assertContains(response, "Gestión de Usuarios")
+        self.assertContains(response, "Gestión de Usuarios".encode('utf-8'))
         self.assertContains(response, reverse("usuarios:list"))
 
     def test_dashboard_modulos_para_maestro(self):
@@ -163,7 +164,7 @@ class DashboardViewTest(TestCase):
         response = self.client.get(reverse("usuarios:dashboard"))
         self.assertEqual(response.status_code, 200)
         # Un maestro NO debería ver el módulo de gestión de usuarios
-        self.assertNotContains(response, "Gestión de Usuarios")
+        self.assertNotContains(response, "Gestión de Usuarios".encode('utf-8'))
         # Pero sí debería ver el de alumnos
         self.assertContains(response, "Gestión de Alumnos")
         self.assertContains(response, reverse("alumnos:listar_alumnos"))

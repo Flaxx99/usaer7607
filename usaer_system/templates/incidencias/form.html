@@ -17,7 +17,7 @@
                         {% csrf_token %}
                         {{ form|crispy }}
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
-                            <a href="{% url 'incidencias:revisar_incidencias' %}" class="btn btn-secondary me-md-2">
+                            <a href="{{ referer_url|default:revisar_incidencias_url }}" class="btn btn-secondary me-md-2">
                                 <i class="fas fa-times-circle me-1"></i> Cancelar
                             </a>
                             <button type="submit" class="btn btn-primary">

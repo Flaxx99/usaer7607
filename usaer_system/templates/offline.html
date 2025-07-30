@@ -1,0 +1,17 @@
+{% extends 'base_auth.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans 'Estás Offline' %}{% endblock %}
+
+{% block content %}
+<div class="container text-center mt-5">
+    <div class="card shadow-lg p-5">
+        <i class="fas fa-wifi-slash fa-5x text-danger mb-4"></i>
+        <h1 class="display-4">{% trans '¡Estás Offline!' %}</h1>
+        <p class="lead">{% trans 'Parece que no tienes conexión a internet.' %}</p>
+        <p>{% trans 'Por favor, verifica tu conexión y vuelve a intentarlo.' %}</p>
+        <a href="javascript:window.location.reload();" class="btn btn-primary mt-3">{% trans 'Reintentar' %}</a>
+    </div>
+</div>
+{% endblock %}

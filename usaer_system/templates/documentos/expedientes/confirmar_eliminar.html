@@ -7,7 +7,7 @@
   <p>¿Estás segura de que deseas eliminar el expediente de <strong>{{ object.alumno }}</strong>?</p>
   <p class="text-muted">Esta acción es irreversible y también eliminará los archivos físicos asociados.</p>
 
-  <form method="post">
+  <form method="post" class="delete-form">
     {% csrf_token %}
     <a href="{% url 'documentos:lista_expedientes' %}" class="btn btn-secondary">
       ↩️ Cancelar

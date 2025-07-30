@@ -40,6 +40,7 @@ urlpatterns = [
     path('rac/', include('rac.urls', namespace='rac')),
     path('calendario/', include('calendario.urls', namespace='calendario')),
     path('avisos/', include('avisos.urls', namespace='avisos')),
+    path('notificaciones/', include('notificaciones.urls', namespace='notificaciones')),
     
 
 

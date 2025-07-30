@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags i18n %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">{{ titulo }}</h1>
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">{% trans 'Datos del Anuncio' %}</h6>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            {{ form|crispy }}
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-3">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-1"></i>{% trans 'Guardar Anuncio' %}
+                </button>
+                <a href="{% url 'avisos:lista_anuncios' %}" class="btn btn-secondary">{% trans 'Cancelar' %}</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

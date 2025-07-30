@@ -191,7 +191,7 @@ def detalle_permiso(request, pk):
 
     if not request.user.has_perm('permisos.gestionar_permisos') and permiso.profesor_id != request.user.id:
         messages.error(request, _("No tienes permiso para ver esta solicitud"))
-        return redirect('inicio')
+        return redirect('usuarios:dashboard')
 
     return render(request, 'permisos/detalle.html', {
         'permiso': permiso,

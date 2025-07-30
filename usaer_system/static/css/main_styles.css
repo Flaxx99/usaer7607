@@ -1,0 +1,48 @@
+/* Configuración de fuente base para legibilidad en adultos */
+html {
+    font-size: 16px; /* Base para facilitar la lectura, ligeramente más pequeña */
+}
+
+body {
+    font-family: "Roboto", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 1.2rem; /* Escala desde el html, ~21.6px */
+    line-height: 1.6; /* Mejora la legibilidad de bloques de texto */
+    /* El color del texto se hereda de Soft UI por defecto, que es #344767 */
+}
+
+/* Puedes añadir más reglas aquí para elementos específicos si es necesario */
+
+/* --- Estilos para refinamiento estético --- */
+
+/* Refinamiento de Tarjetas (Cards) */
+.card {
+    border-radius: 0.75rem; /* Bordes ligeramente más redondeados */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08); /* Sombra más suave y moderna */
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; /* Transición suave para hover */
+}
+
+.card:hover {
+    transform: translateY(-3px); /* Efecto de "levantamiento" sutil al pasar el ratón */
+    box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15), 0 3px 6px rgba(0, 0, 0, 0.1); /* Sombra ligeramente más pronunciada en hover */
+}
+
+/* Estilo Consistente para Botones */
+.btn {
+    border-radius: 0.5rem; /* Bordes redondeados para todos los botones */
+    transition: all 0.2s ease-in-out; /* Transición para efectos de hover/focus */
+}
+
+/* Estilo Consistente para Campos de Formulario */
+.form-control,
+.form-select {
+    border-radius: 0.5rem; /* Bordes redondeados para campos de texto y selects */
+    padding: 0.75rem 1rem; /* Aumentar un poco el padding para mayor comodidad */
+    font-size: 1rem; /* Asegurar un tamaño de fuente legible */
+}
+
+.form-control:focus,
+.form-select:focus {
+    /* Estilo de enfoque neutro similar a Bootstrap */
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}

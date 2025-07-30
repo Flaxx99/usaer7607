@@ -1,5 +1,5 @@
 from django.shortcuts import render, get_object_or_404
-from django.views.generic import ListView, CreateView
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 from django.utils import timezone
@@ -8,6 +8,11 @@ from django.contrib import messages
 
 from .models import Anuncio
 from .forms import AnuncioForm
+
+from django.views.decorators.cache import cache_page
+
+# ... (resto de imports)
+
 
 class AnuncioListView(LoginRequiredMixin, ListView):
     model = Anuncio
@@ -59,4 +64,43 @@ class AnuncioCreateView(LoginRequiredMixin, CreateView):
             {'name': 'Tablón de Anuncios', 'url': reverse_lazy('avisos:lista_anuncios')}
         ]
         context['current_page_title'] = 'Crear Nuevo Anuncio'
+        return context
+
+
+class AnuncioUpdateView(LoginRequiredMixin, UpdateView):
+    model = Anuncio
+    form_class = AnuncioForm
+    template_name = 'avisos/formulario_anuncio.html'
+    success_url = reverse_lazy('avisos:lista_anuncios')
+
+    def form_valid(self, form):
+        messages.success(self.request, "Anuncio actualizado exitosamente.")
+        return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['breadcrumbs'] = [
+            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
+            {'name': 'Tablón de Anuncios', 'url': reverse_lazy('avisos:lista_anuncios')}
+        ]
+        context['current_page_title'] = 'Editar Anuncio'
+        return context
+
+
+class AnuncioDeleteView(LoginRequiredMixin, DeleteView):
+    model = Anuncio
+    template_name = 'avisos/confirm_delete_anuncio.html'
+    success_url = reverse_lazy('avisos:lista_anuncios')
+
+    def form_valid(self, form):
+        messages.success(self.request, "Anuncio eliminado exitosamente.")
+        return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['breadcrumbs'] = [
+            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
+            {'name': 'Tablón de Anuncios', 'url': reverse_lazy('avisos:lista_anuncios')}
+        ]
+        context['current_page_title'] = 'Eliminar Anuncio'
         return context

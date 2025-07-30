@@ -42,7 +42,7 @@ def checar_asistencia(request):
         ahora = timezone.localtime()
 
         try:
-            profesor = User.objects.get(
+            profesor = User.objects.select_related('escuela').get(
                 Q(numero_empleado=codigo) | Q(curp=codigo),
                 is_active=True
             )

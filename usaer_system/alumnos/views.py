@@ -51,7 +51,7 @@ def listar_alumnos(request):
 
 def detalle_alumno(request, pk):
     from django.urls import reverse_lazy
-    alumno = get_object_or_404(Alumno, pk=pk)
+    alumno = get_object_or_404(Alumno.objects.select_related('escuela'), pk=pk)
     return render(request, 'alumnos/detalle_alumno.html', {
         'alumno': alumno,
         'breadcrumbs': [
@@ -101,7 +101,7 @@ def editar_alumno(request, pk):
     Edita un alumno existente.
     """
     from django.urls import reverse_lazy
-    alumno   = get_object_or_404(Alumno, pk=pk)
+    alumno   = get_object_or_404(Alumno.objects.select_related('escuela'), pk=pk)
     escuelas = Escuela.objects.all()
 
     contexto = {

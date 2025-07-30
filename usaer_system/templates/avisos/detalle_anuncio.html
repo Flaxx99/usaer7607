@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags i18n %}
+
+{% block title %}{% trans 'Detalles del Anuncio' %}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">{% trans 'Detalles del Anuncio' %}</h1>
+    {% if perms.avisos.change_anuncio %}
+    <a href="{% url 'avisos:editar_anuncio' anuncio.pk %}" class="btn btn-primary">
+        <i class="fas fa-edit me-2"></i>{% trans 'Editar Anuncio' %}
+    </a>
+    {% endif %}
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">{% trans 'Información del Anuncio' %}</h6>
+    </div>
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-3">{% trans 'Título' %}</dt>
+            <dd class="col-sm-9">{{ anuncio.titulo }}</dd>
+
+            <dt class="col-sm-3">{% trans 'Contenido' %}</dt>
+            <dd class="col-sm-9">{{ anuncio.contenido|linebreaksbr }}</dd>
+
+            <dt class="col-sm-3">{% trans 'Autor' %}</dt>
+            <dd class="col-sm-9">{{ anuncio.autor.get_full_name }}</dd>
+
+            <dt class="col-sm-3">{% trans 'Fecha de Publicación' %}</dt>
+            <dd class="col-sm-9">{{ anuncio.fecha_publicacion|date:"d/m/Y H:i" }}</dd>
+
+            <dt class="col-sm-3">{% trans 'Fecha de Expiración' %}</dt>
+            <dd class="col-sm-9">{{ anuncio.fecha_expiracion|date:"d/m/Y H:i"|default:"N/A" }}</dd>
+
+            <dt class="col-sm-3">{% trans 'Estado' %}</dt>
+            <dd class="col-sm-9">
+                <span class="badge bg-{% if anuncio.is_active %}success{% else %}secondary{% endif %}">
+                    {% if anuncio.is_active %}{% trans 'Activo' %}{% else %}{% trans 'Inactivo' %}{% endif %}
+                </span>
+            </dd>
+        </dl>
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="{% url 'avisos:lista_anuncios' %}" class="btn btn-secondary">{% trans 'Volver al Tablón' %}</a>
+</div>
+{% endblock %}

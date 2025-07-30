@@ -42,13 +42,14 @@ def crear_incidencia(request):
             {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
             {'name': 'Revisar Incidencias', 'url': reverse_lazy('incidencias:revisar_incidencias')}
         ],
-        'current_page_title': 'Nueva Incidencia'
+        'current_page_title': 'Nueva Incidencia',
+        'referer_url': request.META.get('HTTP_REFERER'),
+        'revisar_incidencias_url': reverse_lazy('incidencias:revisar_incidencias')
     })
 
 
 @login_required
 @roles_permitidos([
-    User.Role.MAESTRO_APOYO,
     User.Role.ADMINISTRADOR,
 ])
 def listar_incidencias(request):
@@ -83,6 +84,7 @@ def listar_incidencias(request):
     })
 
 @login_required
+@roles_permitidos([User.Role.ADMINISTRADOR, User.Role.DIRECTOR, User.Role.SECRETARIO])
 def detalle_incidencia(request, pk):
     from django.urls import reverse_lazy
     incidencia = get_object_or_404(Incidencia, pk=pk)
