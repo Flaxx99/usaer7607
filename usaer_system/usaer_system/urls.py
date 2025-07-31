@@ -5,19 +5,10 @@ from django.contrib.auth import views as auth_views
 from django.conf import settings
 from django.conf.urls.static import static
 from usuarios.views import CustomLoginView
-from rest_framework.routers import DefaultRouter
-from calendario.api_views import EventoCalendarioViewSet
-
-router = DefaultRouter()
-router.register(r'calendario', EventoCalendarioViewSet, basename='calendario-api')
-
 urlpatterns = [
     
     # Panel de administración de Django
     path('admin/', admin_site.urls),
-
-    # API endpoints
-    path('api/', include(router.urls)),
 
     # Checador público (entrada/salida) sin login
     path('', core_views.index, name='index'),
