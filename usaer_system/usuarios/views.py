@@ -23,7 +23,7 @@ from documentos.models import Expediente  # Ajusta al nombre de tu modelo de exp
 # Vistas basadas en clases para usuarios
 # -----------------------------
 @method_decorator(roles_permitidos(['ADMIN']), name='dispatch')
-class UserListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
+class UserListView(LoginRequiredMixin, ListView):
     model = User
     template_name = 'usuarios/lista_usuarios.html'
     context_object_name = 'usuarios'
@@ -52,8 +52,8 @@ class UserListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
         return ctx
 
 
-@method_decorator(roles_permitidos(['ADMIN']), name='dispatch')
-class UserCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
+@method_decorator(roles_permitidos(['ADMIN', 'SECRETARIO']), name='dispatch')
+class UserCreateView(LoginRequiredMixin, CreateView):
     model = User
     form_class = UsuarioCreationForm
     template_name = 'usuarios/formulario_usuario.html'
@@ -75,7 +75,7 @@ class UserCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
         return ctx
 
 
-@method_decorator(roles_permitidos(['ADMIN']), name='dispatch')
+@method_decorator(roles_permitidos(['ADMIN', 'SECRETARIO']), name='dispatch')
 class UserUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     model = User
     form_class = UsuarioChangeForm

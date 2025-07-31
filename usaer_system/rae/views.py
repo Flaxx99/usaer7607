@@ -180,22 +180,16 @@ class RegistroRAEListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         user = self.request.user
         queryset = super().get_queryset()
-
-        # Si el usuario no es superusuario y no pertenece al grupo 'Secretario',
-        # solo debe ver los RAEs de su escuela y del ciclo escolar actual.
-        if not (user.is_superuser or user.groups.filter(name='Secretario').exists()):
-            # Obtener la escuela del usuario
+        roles_con_acceso_total = ['ADMIN', 'SECRETARIO'] 
+        if not (user.is_superuser or user.role in roles_con_acceso_total):
+            # Tu lógica actual de filtrado por escuela y ciclo escolar
             if not hasattr(user, 'escuela') or not user.escuela:
-                # Si el usuario no tiene escuela asignada, no debería ver ningún RAE
                 return RegistroRAE.objects.none()
 
             escuela_usuario = user.escuela
-
-            # Obtener el ciclo escolar actual para filtrar por él
             try:
                 current_ciclo_escolar = CicloEscolar.get_current_or_next_cycle()
             except CicloEscolar.DoesNotExist:
-                # Si no hay ciclo activo, no hay registros RAE que mostrar para el usuario
                 return RegistroRAE.objects.none()
 
             queryset = queryset.filter(
@@ -203,16 +197,20 @@ class RegistroRAEListView(LoginRequiredMixin, ListView):
                 ciclo_escolar=current_ciclo_escolar
             )
 
-        # Ordenar los resultados para una mejor visualización
+        # Si el usuario es superusuario O si su rol está en la lista de roles con acceso total,
+        # el filtro anterior no se aplica y la vista devolverá todos los registros.
+        
         queryset = queryset.order_by('escuela__nombre', 'ciclo_escolar__nombre', 'fecha_creacion')
-
         return queryset
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        # También adapta esta lógica para usar el rol en lugar de los grupos
+        roles_con_acceso_total = ['ADMIN', 'SECRETARIO']
         context['can_export_all'] = self.request.user.is_superuser or \
-                                    self.request.user.groups.filter(name='Secretario').exists()
+                                    self.request.user.role in roles_con_acceso_total
         return context
+
     
 class ExportRAEExcelView(LoginRequiredMixin, View):
     """
@@ -269,6 +267,11 @@ class ExportRAEExcelView(LoginRequiredMixin, View):
         ws['AG14'] = registro.docente_hombres # NÚMERO DE DOCENTES DE APOYO: HOMBRES:
         ws['AO14'] = registro.docente_mujeres # MUJERES:
 
+        ws['C80'] = ws['D14'].value
+
+        # CAMBIO: Usamos una lista de roles con acceso total, consistente con settings.py
+        roles_con_acceso_total = ['ADMIN', 'SECRETARIO']
+
         # ************ INICIO DEL CAMBIO CLAVE PARA FILTRAR ALUMNOS ************
         qs = RAEAlumno.objects.filter(registro=registro)
 
@@ -289,9 +292,6 @@ class ExportRAEExcelView(LoginRequiredMixin, View):
 
         if not qs.exists():
             logger.warning(f"ExportRAEExcelView: No se encontraron RAEAlumno para el Registro ID {registro_id} y el profesor logueado. El archivo Excel se generará con la plantilla pero sin datos de alumnos.")
-
-        # Resto de tu lógica para llenar el Excel (Totales, tabla de alumnos)
-        # Esto ya es correcto, se aplicará sobre el 'qs' filtrado
 
         # --- Totales por Aptitudes Sobresalientes (AS) ---
         # ... (la lógica de totales debe operar sobre el 'qs' ya filtrado) ...
@@ -388,10 +388,22 @@ class ExportRAEExcelView(LoginRequiredMixin, View):
         ws['C76'] = "Juan Aldama, Chihuahua"
         ws['N76'] = date.today().strftime("%d/%m/%Y")
 
+        # Obtener la escuela asociada al registro
+        escuela = registro.escuela
+        # Escribir el nombre del director de la escuela en la celda K80
+        # Usamos .director o .get_director() si lo tuvieras
+        director_nombre = escuela.director if escuela.director else "Nombre no disponible"
+        ws['K80'] = director_nombre
+
         output = BytesIO()
         wb.save(output)
         output.seek(0)
-        filename = f"Reporte_RAE_{registro.escuela.nombre}_{registro.ciclo_escolar.nombre}_Maestro_{request.user.last_name}.xlsx" # <--- CAMBIO DE NOMBRE DE ARCHIVO
+
+        if request.user.is_superuser or request.user.role in roles_con_acceso_total:
+            filename = f"Reporte_RAE_{registro.escuela.nombre}_{registro.ciclo_escolar.nombre}.xlsx"
+        else:
+            filename = f"Reporte_RAE_{registro.escuela.nombre}_{registro.ciclo_escolar.nombre}_Maestro_{request.user.last_name}.xlsx"
+
         response = HttpResponse(
             output.read(),
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -401,7 +413,10 @@ class ExportRAEExcelView(LoginRequiredMixin, View):
 
 class ExportAllRAEExcelView(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
-        if not (request.user.is_superuser or request.user.groups.filter(name='Secretario').exists()):
+        roles_con_acceso_total = ['ADMIN', 'SECRETARIO']
+
+        # CAMBIO: La condición de permiso ahora usa el rol del usuario
+        if not (request.user.is_superuser or request.user.role in roles_con_acceso_total):
             return HttpResponse("No tienes permiso para realizar esta acción.", status=403)
 
         template_path = os.path.join(settings.BASE_DIR, 'rae', 'static', 'excel_templates', 'rae_template.xlsx')
@@ -475,6 +490,15 @@ class ExportAllRAEExcelView(LoginRequiredMixin, View):
             new_sheet['AG14'] = registro.docente_hombres
             new_sheet['AO14'] = registro.docente_mujeres
 
+            new_sheet['C80'] = new_sheet['D14'].value
+
+            # Obtener la escuela asociada al registro
+            escuela = registro.escuela
+            # Escribir el nombre del director de la escuela en la celda K80
+            # Usamos .director o .get_director() si lo tuvieras
+            director_nombre = escuela.director if escuela.director else "Nombre no disponible"
+            new_sheet['K80'] = director_nombre
+            
             qs_alumnos_rae = registro.detalles_alumnos.all().order_by(
                 'alumno__grado', 'alumno__grupo', 'alumno__apellido_paterno', 'alumno__apellido_materno', 'alumno__nombres'
             ).select_related('alumno__profesor')
@@ -575,7 +599,8 @@ class ExportAllRAEExcelView(LoginRequiredMixin, View):
                 
             new_sheet['C76'] = "Juan Aldama, Chihuahua"
             new_sheet['N76'] = date.today().strftime("%d/%m/%Y")
-            
+
+
             # --- FIN DE LÓGICA DE LLENADO DE DATOS ---
 
         if template_sheet_name in master_workbook.sheetnames:
