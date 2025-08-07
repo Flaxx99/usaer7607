@@ -26,7 +26,7 @@ def solo_admin(view_func):
     @login_required
     def _wrapped(request, *args, **kwargs):
         # comparamos contra el .value correcto del enum
-        if request.user.role != User.Role.ADMIN.value:
+        if request.user.role != User.Role.ADMINISTRADOR.value:
             raise PermissionDenied
         return view_func(request, *args, **kwargs)
     return _wrapped

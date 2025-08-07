@@ -6,7 +6,7 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="h3 mb-0 text-gray-800">{% trans 'Gestión de Usuarios' %}</h1>
-    {% if perms.usuarios.add_user %}
+    {% if 'create_user' in permisos_usuario %}
     <a href="{% url 'usuarios:create' %}" class="btn btn-success">
         <i class="fas fa-user-plus me-2"></i>{% trans 'Nuevo Usuario' %}
     </a>
@@ -91,12 +91,12 @@
                                 <a href="{% url 'usuarios:detail' usuario.pk %}" class="btn btn-secondary" title="{% trans 'Ver' %}">
                                     <i class="fas fa-eye"></i>
                                 </a>
-                                {% if perms.usuarios.change_user %}
+                                {% if 'edit_user' in permisos_usuario %}
                                 <a href="{% url 'usuarios:update' usuario.pk %}" class="btn btn-primary" title="{% trans 'Editar' %}">
                                     <i class="fas fa-edit"></i>
                                 </a>
                                 {% endif %}
-                                {% if perms.usuarios.delete_user %}
+                                {% if 'delete_user' in permisos_usuario %}
                                 <form method="post" action="{% url 'usuarios:delete' usuario.pk %}" class="d-inline-block delete-form">
                                     {% csrf_token %}
                                     <button type="submit" class="btn btn-danger" title="{% trans 'Eliminar' %}">
@@ -104,7 +104,7 @@
                                     </button>
                                 </form>
                                 {% endif %}
-                                {% if perms.usuarios.change_user %}
+                                {% if 'edit_user' in permisos_usuario %}
                                 <a href="{% url 'usuarios:toggle_active' usuario.pk %}"
                                    class="btn btn-{% if usuario.activo %}warning{% else %}success{% endif %}"
                                    title="{% if usuario.activo %}{% trans 'Desactivar' %}{% else %}{% trans 'Activar' %}{% endif %}">

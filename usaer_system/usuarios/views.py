@@ -25,7 +25,7 @@ class CustomLoginView(LoginView):
 
 # usuarios/views.py
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse, reverse_lazy
 from django.utils.translation import gettext_lazy as _
@@ -53,12 +53,11 @@ from documentos.models import Expediente  # Ajusta al nombre de tu modelo de exp
 # -----------------------------
 # Vistas basadas en clases para usuarios
 # -----------------------------
-@method_decorator(roles_permitidos(['ADMIN']), name='dispatch')
 class UserListView(LoginRequiredMixin, ListView):
     model = User
     template_name = 'usuarios/lista_usuarios.html'
     context_object_name = 'usuarios'
-    permission_required = 'usuarios.view_user'
+    
     paginate_by = 20
 
     def get_queryset(self):
@@ -96,12 +95,10 @@ class UserListView(LoginRequiredMixin, ListView):
         return ctx
 
 
-@method_decorator(roles_permitidos(['ADMIN', 'SECRETARIO']), name='dispatch')
 class UserCreateView(LoginRequiredMixin, CreateView):
     model = User
     form_class = UsuarioCreationForm
     template_name = 'usuarios/formulario_usuario.html'
-    permission_required = 'usuarios.add_user'
     success_url = reverse_lazy('usuarios:list')
 
     def form_valid(self, form):
@@ -124,12 +121,10 @@ class UserCreateView(LoginRequiredMixin, CreateView):
         return ctx
 
 
-@method_decorator(roles_permitidos(['ADMIN', 'SECRETARIO']), name='dispatch')
-class UserUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
+class UserUpdateView(LoginRequiredMixin, UpdateView):
     model = User
     form_class = UsuarioChangeForm
     template_name = 'usuarios/formulario_usuario.html'
-    permission_required = 'usuarios.change_user'
     success_url = reverse_lazy('usuarios:list')
 
     def form_valid(self, form):
@@ -155,11 +150,10 @@ class UserUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
         return ctx
 
 
-@method_decorator(roles_permitidos([User.Role.ADMINISTRADOR]), name='dispatch')
-class UserDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
+class UserDetailView(LoginRequiredMixin, DetailView):
     model = User
     template_name = 'usuarios/detalle_usuario.html'
-    permission_required = 'usuarios.view_user'
+    
     context_object_name = 'usuario'
 
     def get_context_data(self, **kwargs):
@@ -172,10 +166,8 @@ class UserDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
         return context
 
 
-@method_decorator(roles_permitidos([User.Role.ADMINISTRADOR]), name='dispatch')
-class UserDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
+class UserDeleteView(LoginRequiredMixin, DeleteView):
     model = User
-    permission_required = 'usuarios.delete_user'
     success_url = reverse_lazy('usuarios:list')
 
     def post(self, request, *args, **kwargs):
@@ -189,8 +181,6 @@ class UserDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
 # -----------------------------
 # Vistas de funciones para usuario individual y autenticación
 # -----------------------------
-@login_required
-@roles_permitidos([User.Role.ADMINISTRADOR])
 def toggle_user_active(request, pk):
     user = get_object_or_404(User, pk=pk)
     user.activo = not user.activo
@@ -205,7 +195,7 @@ def profile(request):
     user = request.user
     
     # Determinar qué formulario usar
-    if request.user.role in [User.Role.ADMINISTRADOR, User.Role.SECRETARIO]:
+    if request.user.role in [User.Role.ADMINISTRADOR.value, User.Role.SECRETARIO.value]:
         FormClass = UsuarioChangeForm
     else:
         FormClass = UserProfileForm
@@ -287,7 +277,7 @@ def dashboard(request):
         'is_admin_dashboard': False
     }
 
-    if user.role == 'ADMIN':
+    if user.role == User.Role.ADMINISTRADOR:
         context['is_admin_dashboard'] = True
         context.update({
             'total_alumnos': Alumno.objects.count(),
@@ -296,3 +286,11 @@ def dashboard(request):
         })
 
     return render(request, 'usuarios/dashboard.html', context)
+
+# -----------------------------
+# Vista de redirección para el checador
+# -----------------------------
+def checador_redirect(request):
+    if request.user.is_authenticated:
+        return redirect('usuarios:dashboard')
+    return redirect('asistencias:mostrar_checador')

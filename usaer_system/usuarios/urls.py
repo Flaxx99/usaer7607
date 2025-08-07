@@ -24,17 +24,31 @@ urlpatterns = [
         'nuevo/',
         roles_permitidos([
             User.Role.ADMINISTRADOR,
+            User.Role.SECRETARIO,
         ])(views.UserCreateView.as_view()),
         name='create'
     ),
 
     # Detalle, editar, eliminar
-    path('<int:pk>/', views.UserDetailView.as_view(), name='detail'),
-    path('<int:pk>/editar/', views.UserUpdateView.as_view(), name='update'),
+        path('<int:pk>/detail/',
+        roles_permitidos([
+            User.Role.ADMINISTRADOR,
+            User.Role.SECRETARIO,
+        ])(views.UserDetailView.as_view()),
+        name='detail'
+    ),
+    path('<int:pk>/editar/',
+        roles_permitidos([
+            User.Role.ADMINISTRADOR,
+            User.Role.SECRETARIO,
+        ])(views.UserUpdateView.as_view()),
+        name='update'
+    ),
     path(
         '<int:pk>/eliminar/',
         roles_permitidos([
             User.Role.ADMINISTRADOR,
+            User.Role.SECRETARIO,
         ])(views.UserDeleteView.as_view()),
         name='delete'
     ),
@@ -42,6 +56,7 @@ urlpatterns = [
         '<int:pk>/toggle-active/',
         roles_permitidos([
             User.Role.ADMINISTRADOR,
+            User.Role.SECRETARIO,
         ])(views.toggle_user_active),
         name='toggle_active'
     ),
