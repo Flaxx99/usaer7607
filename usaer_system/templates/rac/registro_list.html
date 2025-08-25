@@ -5,13 +5,15 @@
 {% block title %}Registros RAC{% endblock %}
 {% block content %}
 <div class="container mt-4">
-  <h1>Registros RAC</h1>
-  <a href="{% url 'rac:registro_create' %}" class="btn btn-primary mb-3">Nuevo Registro</a>
   <div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>Registros RAC</h2>
-    <a href="{% url 'rac:registro_export' %}" class="btn btn-outline-success">
-      📤 Exportar a Excel
-    </a>
+    <h1>Registros RAC</h1>
+    <div>
+      <a href="{% url 'rac:registro_create' %}" class="btn btn-primary">Nuevo Registro</a>
+      <a href="{% url 'rac:registro_export' %}" class="btn btn-outline-success">📤 Exportar a Excel</a>
+      {% if can_export_all %}
+      <a href="{% url 'rac:export_all' %}" class="btn btn-success">📤 Exportar Todo a Excel</a>
+      {% endif %}
+    </div>
   </div>
   <table class="table table-striped">
     <thead>

@@ -6,6 +6,7 @@ from .views import (
     RegistroRACCreateView,
     RegistroRACUpdateView,
     ExportRACExcelView,
+    ExportAllRACExcelView,
 )
 
 app_name = 'rac'
@@ -15,5 +16,6 @@ urlpatterns = [
     path('nuevo/', RegistroRACCreateView.as_view(), name='registro_create'),
     path('<int:pk>/editar/', RegistroRACUpdateView.as_view(), name='registro_edit'),
     path('exportar/', ExportRACExcelView.as_view(), name='registro_export'),
+    path('exportar-todo/', ExportAllRACExcelView.as_view(), name='export_all'),
 
 ]
