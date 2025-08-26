@@ -6,9 +6,9 @@
   <!-- Welcome Section -->
   <div class="card shadow mb-4">
     <div class="card-body">
-      <h1 class="h3 mb-0 text-gray-800">Bienvenido, {{ request.user.get_full_name|default:request.user.email }}!</h1>
-      <p class="mt-3">Desde aquí puedes gestionar todos los módulos principales del sistema de USAER 7607.</p>
-      <p class="text-muted">Estás en el panel de: <strong>{{ request.user.get_role_display }}</strong></p>
+      <h1 class="h3 mb-0 text-dark">Bienvenido, {{ request.user.get_full_name|default:request.user.email }}!</h1>
+      <p class="mt-3 text-dark">Desde aquí puedes gestionar todos los módulos principales del sistema de USAER 7607.</p>
+      <p class="text-dark">Estás en el panel de: <strong>{{ request.user.get_role_display }}</strong></p>
     </div>
   </div>
 
@@ -52,7 +52,7 @@
             <div class="col-md-6">
               <div class="card shadow h-100">
                 <div class="card-body">
-                  <h5 class="card-title"><i class="fas fa-file-alt me-2 text-info"></i>Solicitudes de Permiso</h5>
+                  <h5 class="card-title text-dark"><i class="fas fa-file-alt me-2 text-info" style="color: #0dcaf0 !important;"></i>Solicitudes de Permiso</h5>
                   <p class="card-text display-6">{{ permisos_pendientes }}</p>
                 </div>
               </div>
@@ -60,7 +60,7 @@
             <div class="col-md-6">
               <div class="card shadow h-100">
                 <div class="card-body">
-                  <h5 class="card-title"><i class="fas fa-exclamation-triangle me-2 text-warning"></i>Incidencias</h5>
+                  <h5 class="card-title text-dark"><i class="fas fa-exclamation-triangle me-2 text-warning" style="color: #ffc107 !important;"></i>Incidencias</h5>
                   <p class="card-text display-6">{{ incidencias_pendientes }}</p>
                 </div>
               </div>
@@ -76,7 +76,7 @@
                 {% cache 600 latest_events_panel request.user.id %}
                 <div class="card shadow h-100">
                     <div class="card-header">
-                        <h5 class="mb-0"><i class="fas fa-calendar-check me-2"></i>Últimos Eventos del Calendario</h5>
+                        <h5 class="mb-0"><i class="fas fa-calendar-check me-2" style="color: #0d6efd !important;"></i>Últimos Eventos del Calendario</h5>
                     </div>
                     <div class="card-body">
                         <ul class="list-group list-group-flush">
@@ -84,12 +84,12 @@
                                 <li class="list-group-item d-flex justify-content-between align-items-center">
                                     <div>
                                         <a href="{% url 'calendario:detalle_evento' evento.pk %}" class="text-decoration-none text-dark fw-bold">{{ evento.titulo }}</a>
-                                        <small class="d-block text-muted">{{ evento.fecha_inicio|date:"d M Y" }} - {{ evento.get_tipo_display }}</small>
+                                        <small class="d-block text-dark">{{ evento.fecha_inicio|date:"d M Y" }} - {{ evento.get_tipo_display }}</small>
                                     </div>
                                     <span class="badge bg-gradient-{% if evento.tipo == 'INSTITUCIONAL' %}primary{% else %}secondary{% endif %} p-2">{{ evento.get_tipo_display }}</span>
                                 </li>
                             {% empty %}
-                                <li class="list-group-item text-center text-muted">No hay eventos recientes.</li>
+                                <li class="list-group-item text-center text-dark">No hay eventos recientes.</li>
                             {% endfor %}
                         </ul>
                     </div>
@@ -100,7 +100,7 @@
                 {% cache 600 latest_permisos_panel request.user.id %}
                 <div class="card shadow h-100">
                     <div class="card-header">
-                        <h5 class="mb-0"><i class="fas fa-file-signature me-2"></i>Últimas Solicitudes de Permiso</h5>
+                        <h5 class="mb-0"><i class="fas fa-file-signature me-2" style="color: #0dcaf0 !important;"></i>Últimas Solicitudes de Permiso</h5>
                     </div>
                     <div class="card-body">
                         <ul class="list-group list-group-flush">
@@ -108,12 +108,12 @@
                                 <li class="list-group-item d-flex justify-content-between align-items-center">
                                     <div>
                                         <a href="{% url 'permisos:detalle' permiso.pk %}" class="text-decoration-none text-dark fw-bold">Permiso N° {{ permiso.id }} - {{ permiso.profesor.get_full_name }}</a>
-                                        <small class="d-block text-muted">{{ permiso.fecha_solicitud|date:"d M Y" }} - {{ permiso.motivo }}</small>
+                                        <small class="d-block text-dark">{{ permiso.fecha_solicitud|date:"d M Y" }} - {{ permiso.motivo }}</small>
                                     </div>
                                     <span class="badge bg-gradient-{% if permiso.estado == 'PENDIENTE' %}warning{% elif permiso.estado == 'APROBADO' %}success{% else %}danger{% endif %} p-2">{{ permiso.get_estado_display }}</span>
                                 </li>
                             {% empty %}
-                                <li class="list-group-item text-center text-muted">No hay solicitudes de permiso recientes.</li>
+                                <li class="list-group-item text-center text-dark">No hay solicitudes de permiso recientes.</li>
                             {% endfor %}
                         </ul>
                     </div>
@@ -124,7 +124,7 @@
                 {% cache 600 latest_incidencias_panel request.user.id %}
                 <div class="card shadow h-100">
                     <div class="card-header">
-                        <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Últimas Incidencias</h5>
+                        <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2" style="color: #ffc107 !important;"></i>Últimas Incidencias</h5>
                     </div>
                     <div class="card-body">
                         <ul class="list-group list-group-flush">
@@ -132,12 +132,12 @@
                                 <li class="list-group-item d-flex justify-content-between align-items-center">
                                     <div>
                                         <a href="{% url 'incidencias:detalle_incidencia' incidencia.pk %}" class="text-decoration-none text-dark fw-bold">{{ incidencia.titulo }} - {{ incidencia.profesor.get_full_name }}</a>
-                                        <small class="d-block text-muted">{{ incidencia.fecha_reporte|date:"d M Y" }} - {{ incidencia.get_tipo_display }}</small>
+                                        <small class="d-block text-dark">{{ incidencia.fecha_reporte|date:"d M Y" }} - {{ incidencia.get_tipo_display }}</small>
                                     </div>
                                     <span class="badge bg-gradient-{% if incidencia.estado == 'PENDIENTE' %}warning{% elif incidencia.estado == 'RESUELTA' %}success{% else %}danger{% endif %} p-2">{{ incidencia.get_estado_display }}</span>
                                 </li>
                             {% empty %}
-                                <li class="list-group-item text-center text-muted">No hay incidencias recientes.</li>
+                                <li class="list-group-item text-center text-dark">No hay incidencias recientes.</li>
                             {% endfor %}
                         </ul>
                     </div>
@@ -148,7 +148,7 @@
                 {% cache 600 latest_oficios_panel request.user.id %}
                 <div class="card shadow h-100">
                     <div class="card-header">
-                        <h5 class="mb-0"><i class="fas fa-file-alt me-2"></i>Últimos Oficios</h5>
+                        <h5 class="mb-0"><i class="fas fa-file-alt me-2" style="color: #0dcaf0 !important;"></i>Últimos Oficios</h5>
                     </div>
                     <div class="card-body">
                         <ul class="list-group list-group-flush">
@@ -156,12 +156,12 @@
                                 <li class="list-group-item d-flex justify-content-between align-items-center">
                                     <div>
                                         <a href="{% url 'oficios:detalle_oficio' oficio.pk %}" class="text-decoration-none text-dark fw-bold">{{ oficio.asunto }}</a>
-                                        <small class="d-block text-muted">Fecha: {{ oficio.fecha_oficio|date:"d M Y" }}</small>
+                                        <small class="d-block text-dark">Fecha: {{ oficio.fecha_oficio|date:"d M Y" }}</small>
                                     </div>
                                     <span class="badge bg-gradient-info p-2">{{ oficio.tipo_oficio }}</span>
                                 </li>
                             {% empty %}
-                                <li class="list-group-item text-center text-muted">No hay oficios recientes.</li>
+                                <li class="list-group-item text-center text-dark">No hay oficios recientes.</li>
                             {% endfor %}
                         </ul>
                     </div>
@@ -173,7 +173,7 @@
                 {% cache 600 latest_expedientes_panel request.user.id %}
                 <div class="card shadow h-100">
                     <div class="card-header">
-                        <h5 class="mb-0"><i class="fas fa-folder-open me-2"></i>Últimos Expedientes</h5>
+                        <h5 class="mb-0 text-dark"><i class="fas fa-folder-open me-2" style="color: #0dcaf0 !important;"></i>Últimos Expedientes</h5>
                     </div>
                     <div class="card-body">
                         <ul class="list-group list-group-flush">
@@ -181,12 +181,12 @@
                                 <li class="list-group-item d-flex justify-content-between align-items-center">
                                     <div>
                                         <a href="{% url 'documentos:editar_expediente' expediente.pk %}" class="text-decoration-none text-dark fw-bold">Expediente de {{ expediente.alumno.get_full_name }}</a>
-                                        <small class="d-block text-muted">Subido: {{ expediente.fecha_subida|date:"d M Y" }}</small>
+                                        <small class="d-block text-dark">Subido: {{ expediente.fecha_subida|date:"d M Y" }}</small>
                                     </div>
                                     <span class="badge bg-gradient-info p-2">{{ expediente.alumno.curp }}</span>
                                 </li>
                             {% empty %}
-                                <li class="list-group-item text-center text-muted">No hay expedientes recientes.</li>
+                                <li class="list-group-item text-center text-dark">No hay expedientes recientes.</li>
                             {% endfor %}
                         </ul>
                     </div>
@@ -199,7 +199,7 @@
                 {% cache 600 latest_avisos_panel request.user.id %}
                 <div class="card shadow h-100">
                     <div class="card-header">
-                        <h5 class="mb-0"><i class="fas fa-bullhorn me-2"></i>Últimos Avisos</h5>
+                        <h5 class="mb-0 text-dark"><i class="fas fa-bullhorn me-2" style="color: #0dcaf0 !important;"></i>Últimos Avisos</h5>
                     </div>
                     <div class="card-body">
                         <ul class="list-group list-group-flush">
@@ -207,12 +207,12 @@
                                 <li class="list-group-item d-flex justify-content-between align-items-center">
                                     <div>
                                         <a href="{% url 'avisos:detalle_anuncio' aviso.pk %}" class="text-decoration-none text-dark fw-bold">{{ aviso.titulo }}</a>
-                                        <small class="d-block text-muted">Publicado: {{ aviso.fecha_publicacion|date:"d M Y" }}</small>
+                                        <small class="d-block text-dark">Publicado: {{ aviso.fecha_publicacion|date:"d M Y" }}</small>
                                     </div>
                                     <span class="badge bg-gradient-info p-2">Nuevo</span>
                                 </li>
                             {% empty %}
-                                <li class="list-group-item text-center text-muted">No hay avisos recientes.</li>
+                                <li class="list-group-item text-center text-dark">No hay avisos recientes.</li>
                             {% endfor %}
                         </ul>
                     </div>

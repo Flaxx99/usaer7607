@@ -78,6 +78,19 @@
         });
     });
   </script>
+<style>
+    /* Force icon colors with high specificity */
+    .fas.text-primary, .far.text-primary, .fal.text-primary, .fab.text-primary { color: #0d6efd !important; }
+    .fas.text-success, .far.text-success, .fal.text-success, .fab.text-success { color: #198754 !important; }
+    .fas.text-info, .far.text-info, .fal.text-info, .fab.text-info { color: #0dcaf0 !important; }
+    .fas.text-warning, .far.text-warning, .fal.text-warning, .fab.text-warning { color: #ffc107 !important; }
+    .fas.text-danger, .far.text-danger, .fal.text-danger, .fab.text-danger { color: #dc3545 !important; }
+
+    /* Default color for icons without a specific text-* color class, if needed */
+    .fas:not([class*="text-"]), .far:not([class*="text-"]), .fal:not([class*="text-"]), .fab:not([class*="text-"]) {
+        color: #0dcaf0 !important; /* Default to info color */
+    }
+</style>
 </head>
 
 <body class="g-sidenav-show bg-gray-100 {% block body_class %}{% endblock %}">

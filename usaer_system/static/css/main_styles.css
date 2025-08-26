@@ -46,3 +46,35 @@ body {
     border-color: #86b7fe;
     box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
 }
+
+/* Force specific colors for icons within card titles and headers */
+.card-title i.text-primary,
+.card-header i.text-primary {
+    color: #0d6efd !important; /* Blue */
+}
+
+.card-title i.text-success,
+.card-header i.text-success {
+    color: #198754 !important; /* Green */
+}
+
+.card-title i.text-info,
+.card-header i.text-info {
+    color: #0dcaf0 !important; /* Cyan */
+}
+
+.card-title i.text-warning,
+.card-header i.text-warning {
+    color: #ffc107 !important; /* Orange/Yellow */
+}
+
+.card-title i.text-danger,
+.card-header i.text-danger {
+    color: #dc3545 !important; /* Red */
+}
+
+/* For icons without a specific text-* color class, apply a default */
+.card-title i:not([class*="text-"]),
+.card-header i:not([class*="text-"]) {
+    color: #0dcaf0 !important; /* Default to info color if no text-* class */
+}
