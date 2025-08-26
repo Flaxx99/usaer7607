@@ -20,7 +20,7 @@ class Alumno(models.Model):
 
     # --- Datos personales ---
     apellido_paterno = models.CharField("Apellido paterno", max_length=100)
-    apellido_materno = models.CharField("Apellido materno", max_length=100)
+    apellido_materno = models.CharField("Apellido materno", max_length=100, blank= True, default='')
     nombres = models.CharField("Nombre(s)", max_length=100)
     curp = models.CharField("C.U.R.P.", max_length=18, unique=True)
 
@@ -61,14 +61,13 @@ class Alumno(models.Model):
         max_length=100,
         blank=True
     )
+    def get_full_name(self):
+        return f"{self.nombres} {self.apellido_paterno} {self.apellido_materno}".upper()
+
+    def __str__(self):
+        return self.get_full_name()
 
     class Meta:
         verbose_name = "Alumno"
         verbose_name_plural = "Alumnos"
         ordering = ['apellido_paterno', 'apellido_materno', 'nombres']
-
-    def get_full_name(self):
-        return f"{self.nombres} {self.apellido_paterno} {self.apellido_materno}"
-
-    def __str__(self):
-        return self.get_full_name()

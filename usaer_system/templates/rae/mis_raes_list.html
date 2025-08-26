@@ -1,0 +1,56 @@
+{% extends 'base.html' %} {# Asegúrate de que esto apunta a tu plantilla base #}
+
+{% block content %}
+
+
+{# Agrega un botón para exportar todos los registros si lo necesitas y tienes la URL configurada #}
+{% if can_export_all %} {# ¡CAMBIADO AQUÍ! #}
+<div class="mt-4">
+    <a href="{% url 'rae:exportar_todo_rae_excel' %}" class="btn btn-primary">
+        <i class="fas fa-download"></i> Exportar Todos los Registros RAE (Admin/Secretario)
+    </a>
+</div>
+{% endif %}
+
+<div class="container py-4"> {# Usamos py-4 para consistencia con main en base.html #}
+    <h1 class="mb-4 text-center">Mis Registros RAE</h1> {# Título centrado con margen inferior #}
+
+    {% if registros_rae %} {# Muestra la tabla solo si hay registros #}
+    <div class="table-responsive"> {# Hace la tabla responsive en pantallas pequeñas #}
+        <table class="table table-striped table-bordered table-hover align-middle">
+            
+            <thead class="table-light"> {# Encabezado de la tabla con fondo claro, o table-secondary para un gris suave #}
+                <tr>
+                    <th scope="col">ID</th>
+                    <th scope="col">Escuela</th>
+                    <th scope="col">Ciclo Escolar</th>
+                    <th scope="col">Creado por</th>
+                    <th scope="col">Fecha de Creación</th>
+                    <th scope="col" class="text-center">Acciones</th> {# Centra el texto de la columna de acciones #}
+                </tr>
+            </thead>
+            <tbody>
+                {% for registro in registros_rae %}
+                <tr>
+                    <td>{{ registro.id }}</td>
+                    <td>{{ registro.escuela.nombre }}</td>
+                    <td>{{ registro.ciclo_escolar.nombre }}</td>
+                    <td>{{ registro.creado_por.get_full_name|default:registro.creado_por.username }}</td> {# Muestra nombre completo o username #}
+                    <td>{{ registro.fecha_creacion|date:"d M Y H:i" }}</td> {# Formato de fecha más legible #}
+                    <td class="text-center">
+                        <a href="{% url 'rae:exportar_rae_excel' registro.id %}" class="btn btn-primary btn-sm">
+                            Exportar Excel
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info text-center" role="alert">
+        No tienes registros RAE disponibles.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

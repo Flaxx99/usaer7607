@@ -101,6 +101,7 @@
         <img src="{% static 'soft-ui-dashboard/assets/img/logo-ct.png' %}" class="navbar-brand-img h-100" alt="main_logo" loading="lazy">
         <span class="ms-1 font-weight-bold">Gestor USAER</span>
       </a>
+<<<<<<< HEAD
     </div>
     <hr class="horizontal dark mt-0">
     <div class="collapse navbar-collapse w-auto " id="sidenav-collapse-main">
@@ -124,7 +125,7 @@
         {% if user.is_authenticated %}
           {% if 'list_alumnos' in permisos_usuario %}
             <li class="nav-item">
-              <a class="nav-link {% if request.path == '/alumnos/' %}active{% endif %}" href="{% url 'alumnos:listar_alumnos' %}">
+              <a class="nav-link {% if '/alumnos/' in request.path %}active{% endif %}" href="{% url 'alumnos:listar_alumnos' %}">
                 <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
                   <i class="fas fa-user-graduate text-dark text-sm opacity-10"></i>
                 </div>
@@ -134,7 +135,7 @@
           {% endif %}
           {% if 'list_expedientes' in permisos_usuario %}
             <li class="nav-item">
-              <a class="nav-link {% if request.path == '/documentos/lista/' %}active{% endif %}" href="{% url 'documentos:lista_expedientes' %}">
+              <a class="nav-link {% if '/documentos/' in request.path %}active{% endif %}" href="{% url 'documentos:lista_expedientes' %}">
                 <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
                   <i class="fas fa-folder-open text-dark text-sm opacity-10"></i>
                 </div>
@@ -142,9 +143,29 @@
               </a>
             </li>
           {% endif %}
+          {% if 'ver_rac' in permisos_usuario %}
+            <li class="nav-item">
+              <a class="nav-link {% if '/rac/' in request.path %}active{% endif %}" href="{% url 'rac:registro_list' %}">
+                <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
+                  <i class="fas fa-clipboard-list text-dark text-sm opacity-10"></i>
+                </div>
+                <span class="nav-link-text ms-1">Registros RAC</span>
+              </a>
+            </li>
+          {% endif %}
+          {% if 'ver_rae_registros' in permisos_usuario %}
+            <li class="nav-item">
+              <a class="nav-link {% if '/rae/' in request.path %}active{% endif %}" href="{% url 'rae:mis_registros_rae' %}">
+                <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
+                  <i class="fas fa-archive text-dark text-sm opacity-10"></i>
+                </div>
+                <span class="nav-link-text ms-1">Registros RAE</span>
+              </a>
+            </li>
+          {% endif %}
           {% if 'manage_permisos' in permisos_usuario %}
             <li class="nav-item">
-              <a class="nav-link {% if request.path == '/permisos/gestion/' %}active{% endif %}" href="{% url 'permisos:gestionar' %}">
+              <a class="nav-link {% if '/permisos/' in request.path %}active{% endif %}" href="{% url 'permisos:gestionar' %}">
                 <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
                   <i class="fas fa-file-signature text-dark text-sm opacity-10"></i>
                 </div>
@@ -154,16 +175,16 @@
           {% endif %}
           {% if 'list_asistencias' in permisos_usuario %}
             <li class="nav-item">
-              <a class="nav-link {% if request.path == '/asistencias/listado/' %}active{% endif %}" href="{% url 'asistencias:listar_asistencias' %}">
+              <a class="nav-link {% if '/asistencias/listado/' in request.path %}active{% endif %}" href="{% url 'asistencias:listar_asistencias' %}">
                 <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-                  <i class="fas fa-calendar-alt text-dark text-sm opacity-10"></i>
+                  <i class="fas fa-calendar-check text-dark text-sm opacity-10"></i>
                 </div>
                 <span class="nav-link-text ms-1">Asistencias</span>
               </a>
             </li>
           {% endif %}
           <li class="nav-item">
-            <a class="nav-link {% if request.path == '/calendario/' %}active{% endif %}" href="{% url 'calendario:lista_eventos' %}">
+            <a class="nav-link {% if '/calendario/' in request.path %}active{% endif %}" href="{% url 'calendario:lista_eventos' %}">
               <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
                 <i class="fas fa-calendar-alt text-dark text-sm opacity-10"></i>
               </div>
@@ -172,7 +193,7 @@
           </li>
           {% if 'list_avisos' in permisos_usuario %}
             <li class="nav-item">
-              <a class="nav-link {% if request.path == '/avisos/' %}active{% endif %}" href="{% url 'avisos:lista_anuncios' %}">
+              <a class="nav-link {% if '/avisos/' in request.path %}active{% endif %}" href="{% url 'avisos:lista_anuncios' %}">
                 <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
                   <i class="fas fa-bullhorn text-dark text-sm opacity-10"></i>
                 </div>
@@ -180,10 +201,9 @@
               </a>
             </li>
           {% endif %}
-          {% endif %}
           {% if 'list_incidencias' in permisos_usuario %}
             <li class="nav-item">
-              <a class="nav-link {% if request.path == '/incidencias/' %}active{% endif %}" href="{% url 'incidencias:listar_incidencias' %}">
+              <a class="nav-link {% if '/incidencias/' in request.path %}active{% endif %}" href="{% url 'incidencias:listar_incidencias' %}">
                 <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
                   <i class="fas fa-exclamation-triangle text-dark text-sm opacity-10"></i>
                 </div>
@@ -193,7 +213,7 @@
           {% endif %}
           {% if 'list_escuelas' in permisos_usuario %}
             <li class="nav-item">
-              <a class="nav-link {% if request.path == '/escuelas/' %}active{% endif %}" href="{% url 'escuelas:listar_escuelas' %}">
+              <a class="nav-link {% if '/escuelas/' in request.path %}active{% endif %}" href="{% url 'escuelas:listar_escuelas' %}">
                 <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
                   <i class="fas fa-school text-dark text-sm opacity-10"></i>
                 </div>
@@ -203,7 +223,7 @@
           {% endif %}
           {% if 'list_users' in permisos_usuario %}
             <li class="nav-item">
-              <a class="nav-link {% if request.path == '/usuarios/list/' %}active{% endif %}" href="{% url 'usuarios:list' %}">
+              <a class="nav-link {% if '/usuarios/list/' in request.path %}active{% endif %}" href="{% url 'usuarios:list' %}">
                 <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
                   <i class="fas fa-users text-dark text-sm opacity-10"></i>
                 </div>
@@ -211,27 +231,28 @@
               </a>
             </li>
           {% endif %}
-          {% if 'upload_oficios' in permisos_usuario %}
-            <li class="nav-item">
-              <a class="nav-link {% if request.path == '/oficios/subir/' %}active{% endif %}" href="{% url 'oficios:subir_oficio' %}">
-                <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-                  <i class="fas fa-upload text-dark text-sm opacity-10"></i>
-                </div>
-                <span class="nav-link-text ms-1">Subir Oficio</span>
-              </a>
-            </li>
-          {% endif %}
           {% if 'list_oficios' in permisos_usuario %}
             <li class="nav-item">
-              <a class="nav-link {% if request.path == '/oficios/' %}active{% endif %}" href="{% url 'oficios:lista_oficios' %}">
+              <a class="nav-link {% if '/oficios/' in request.path %}active{% endif %}" href="{% url 'oficios:lista_oficios' %}">
                 <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-                  <i class="fas fa-download text-dark text-sm opacity-10"></i>
+                  <i class="fas fa-file-alt text-dark text-sm opacity-10"></i>
                 </div>
                 <span class="nav-link-text ms-1">Oficios</span>
               </a>
             </li>
           {% endif %}
-          </ul>
+          {% if user.is_superuser %}
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'admin:index' %}">
+                <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
+                  <i class="fas fa-cogs text-dark text-sm opacity-10"></i>
+                </div>
+                <span class="nav-link-text ms-1">Admin Django</span>
+              </a>
+            </li>
+          {% endif %}
+        {% endif %}
+      </ul>
     </div>
   </aside>
   <main class="main-content position-relative max-height-vh-100 h-100 mt-1 border-radius-lg ">

@@ -25,7 +25,7 @@ class CustomLoginView(LoginView):
 
 # usuarios/views.py
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse, reverse_lazy
 from django.utils.translation import gettext_lazy as _
@@ -53,6 +53,7 @@ from documentos.models import Expediente  # Ajusta al nombre de tu modelo de exp
 # -----------------------------
 # Vistas basadas en clases para usuarios
 # -----------------------------
+@method_decorator(roles_permitidos(['ADMIN']), name='dispatch')
 class UserListView(LoginRequiredMixin, ListView):
     model = User
     template_name = 'usuarios/lista_usuarios.html'
@@ -95,6 +96,7 @@ class UserListView(LoginRequiredMixin, ListView):
         return ctx
 
 
+@method_decorator(roles_permitidos(['ADMIN', 'SECRETARIO']), name='dispatch')
 class UserCreateView(LoginRequiredMixin, CreateView):
     model = User
     form_class = UsuarioCreationForm
@@ -121,33 +123,8 @@ class UserCreateView(LoginRequiredMixin, CreateView):
         return ctx
 
 
-class UserUpdateView(LoginRequiredMixin, UpdateView):
-    model = User
-    form_class = UsuarioChangeForm
-    template_name = 'usuarios/formulario_usuario.html'
-    success_url = reverse_lazy('usuarios:list')
-
-    def form_valid(self, form):
-        try:
-            self.object = form.save(commit=False)
-            self.object.save(skip_auto_role=True)
-            form.save_m2m()
-            messages.success(self.request, _('Usuario actualizado exitosamente'))
-            return redirect(self.success_url)
-        except Exception as e:
-            form.add_error(None, _('Error al actualizar el usuario: ') + str(e))
-            return self.form_invalid(form)
-
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ctx['titulo'] = _('Editar usuario')
-        ctx['breadcrumbs'] = [
-            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
-            {'name': 'Gestión de Usuarios', 'url': reverse_lazy('usuarios:list')},
-            {'name': f'Detalle de {self.object.get_full_name()}', 'url': reverse_lazy('usuarios:detail', kwargs={'pk': self.object.pk})}
-        ]
-        ctx['current_page_title'] = _('Editar usuario')
-        return ctx
+@method_decorator(roles_permitidos(['ADMIN', 'SECRETARIO']), name='dispatch')
+class UserUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
 
 
 class UserDetailView(LoginRequiredMixin, DetailView):

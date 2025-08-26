@@ -32,8 +32,7 @@ urlpatterns = [
     path('calendario/', include('calendario.urls', namespace='calendario')),
     path('avisos/', include('avisos.urls', namespace='avisos')),
     path('notificaciones/', include('notificaciones.urls', namespace='notificaciones')),
-    
-
+    path('rae/', include('rae.urls', namespace='rae')),
 
 ]
 if settings.DEBUG:

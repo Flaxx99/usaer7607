@@ -24,6 +24,7 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
 
+# Merged INSTALLED_APPS
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -31,9 +32,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    
+    # 3rd Party
     'crispy_forms',
     'crispy_bootstrap5',
     
+    # Mis Apps
     'usuarios',
     'alumnos',
     'escuelas',
@@ -43,9 +47,15 @@ INSTALLED_APPS = [
     'documentos',
     'oficios',
     'rac',
+    'rae',
     'calendario',
     'avisos',
     'notificaciones',
+]
+
+ADMIN_FOR_MODELS = False 
+SILENCED_SYSTEM_CHECKS = [
+    'admin.E039', # Silencia el error sobre autocomplete_fields que no encuentra un admin registrado
 ]
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
@@ -134,6 +144,10 @@ ROLE_PERMISSIONS = {
         # RAE/RAC
         'ver_rac',
         'nuevo_rac',
+        'ver_rae',
+        'nuevo_rae',
+        'ver_rae_registros',
+        'exportar_rae',
         # Expedientes CRUD + descarga oficial
         'create_expediente', 'list_expedientes', 'edit_expediente', 'delete_expediente',
         'download_official_docs',
@@ -150,6 +164,10 @@ ROLE_PERMISSIONS = {
         # RAE/RAC
         'ver_rac',
         'nuevo_rac',
+        'ver_rae',
+        'nuevo_rae',
+        'ver_rae_registros',
+        'exportar_rae',
         # Expedientes CRUD + descarga oficial
         'create_expediente', 'list_expedientes', 'edit_expediente', 'delete_expediente',
         'download_official_docs',
@@ -164,6 +182,10 @@ ROLE_PERMISSIONS = {
         # RAE/RAC
         'ver_rac',
         'nuevo_rac',
+        'ver_rae',
+        'nuevo_rae',
+        'ver_rae_registros',
+        #'exportar_rae',
         # Expedientes CRUD + descarga oficial
         'create_expediente', 'list_expedientes', 'edit_expediente', 'delete_expediente',
         'download_official_docs',
@@ -325,7 +347,7 @@ DASHBOARD_MODULES = [
          'icon': 'fas fa-download text-secondary',
     },  
     # ---RAC --- #
-      {
+    {
         'key': 'ver_rac',
         'title': 'Ver Registros RAC',
         'icon':  'fas fa-list',
@@ -355,6 +377,20 @@ DASHBOARD_MODULES = [
         'url_name': 'avisos:nuevo_anuncio',
         'icon': 'fas fa-plus-circle text-info',
     },
+    # --- RAE ---
+    {
+        'key': 'ver_rae_registros',
+        'title': 'Mis Registros RAE',
+        'icon': 'fas fa-file-export',
+        'url_name': 'rae:mis_registros_rae',
+    },
+    {
+        'key': 'nuevo_rae',
+        'title': 'Captura RAE',
+        'icon': 'fas fa-clipboard-check',
+        'url_name': 'rae:captura_rae',
+    }
+    
 ]
 
 ROLES_EQUIPO_ITINERANTE = [
