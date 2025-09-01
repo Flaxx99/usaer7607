@@ -11,6 +11,7 @@ from django.conf import settings
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import View, ListView
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib import messages
 from django.http import HttpResponse, JsonResponse
 from django.db.models import Prefetch, Q
 from django.utils.decorators import method_decorator
@@ -85,7 +86,7 @@ class CapturaRAEView(LoginRequiredMixin, View):
             ciclo_escolar=current_ciclo_escolar, # Asignar la INSTANCIA del CicloEscolar
             defaults={'creado_por': request.user}
         )
-        alumnos_maestra = Alumno.objects.filter(profesor=request.user)
+        alumnos_maestra = Alumno.objects.filter(profesor=request.user, activo=True)
         queryset = self.get_queryset(registro, alumnos_maestra)
 
         forms = [
@@ -180,28 +181,22 @@ class RegistroRAEListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         user = self.request.user
         queryset = super().get_queryset()
-        roles_con_acceso_total = ['ADMIN', 'SECRETARIO'] 
+
+        try:
+            ciclo_actual = get_current_ciclo_escolar_instance()
+            queryset = queryset.filter(ciclo_escolar=ciclo_actual)
+        except CicloEscolar.DoesNotExist as e:
+            messages.warning(self.request, str(e))
+            return queryset.none()
+
+        roles_con_acceso_total = ['ADMIN', 'SECRETARIO']
         if not (user.is_superuser or user.role in roles_con_acceso_total):
-            # Tu lógica actual de filtrado por escuela y ciclo escolar
-            if not hasattr(user, 'escuela') or not user.escuela:
-                return RegistroRAE.objects.none()
+            if hasattr(user, 'escuela') and user.escuela:
+                queryset = queryset.filter(escuela=user.escuela)
+            else:
+                return queryset.none()
 
-            escuela_usuario = user.escuela
-            try:
-                current_ciclo_escolar = CicloEscolar.get_current_or_next_cycle()
-            except CicloEscolar.DoesNotExist:
-                return RegistroRAE.objects.none()
-
-            queryset = queryset.filter(
-                escuela=escuela_usuario,
-                ciclo_escolar=current_ciclo_escolar
-            )
-
-        # Si el usuario es superusuario O si su rol está en la lista de roles con acceso total,
-        # el filtro anterior no se aplica y la vista devolverá todos los registros.
-        
-        queryset = queryset.order_by('escuela__nombre', 'ciclo_escolar__nombre', 'fecha_creacion')
-        return queryset
+        return queryset.order_by('escuela__nombre', 'fecha_creacion')
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -415,9 +410,14 @@ class ExportAllRAEExcelView(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
         roles_con_acceso_total = ['ADMIN', 'SECRETARIO']
 
-        # CAMBIO: La condición de permiso ahora usa el rol del usuario
         if not (request.user.is_superuser or request.user.role in roles_con_acceso_total):
             return HttpResponse("No tienes permiso para realizar esta acción.", status=403)
+
+        try:
+            ciclo_actual = get_current_ciclo_escolar_instance()
+        except CicloEscolar.DoesNotExist as e:
+            logger.error(f"ExportAllRAEExcelView: No se pudo determinar el ciclo escolar activo: {e}")
+            return HttpResponse(f"Error: No se pudo determinar el ciclo escolar activo. {e}", status=400)
 
         template_path = os.path.join(settings.BASE_DIR, 'rae', 'static', 'excel_templates', 'rae_template.xlsx')
         try:
@@ -430,18 +430,19 @@ class ExportAllRAEExcelView(LoginRequiredMixin, View):
             logger.error(f"ExportAllRAEExcelView: Error al cargar la plantilla de Excel: {e}")
             return HttpResponse(f"Error al cargar la plantilla de Excel: {e}", status=500)
 
-        template_sheet_name = "Sheet1" # Asegúrate que el nombre de la hoja sea "Sheet1"
+        template_sheet_name = "Sheet1"
         if template_sheet_name not in master_workbook.sheetnames:
             logger.error(f"ExportAllRAEExcelView: La hoja '{template_sheet_name}' no se encontró en la plantilla de Excel. Por favor, verifica el nombre de la hoja.")
             return HttpResponse(f"Error: La hoja '{template_sheet_name}' no se encontró en la plantilla de Excel.", status=500)
         
         template_sheet = master_workbook[template_sheet_name]
 
-        registros = RegistroRAE.objects.all().select_related(
+        # FILTRADO POR CICLO ESCOLAR ACTIVO
+        registros = RegistroRAE.objects.filter(ciclo_escolar=ciclo_actual).select_related(
             'escuela', 'ciclo_escolar', 'creado_por'
         ).prefetch_related(
             'detalles_alumnos__alumno__profesor'
-        ).order_by('fecha_creacion')
+        ).order_by('escuela__nombre')
 
         if not registros.exists():
             logger.warning("ExportAllRAEExcelView: No se encontraron registros RAE para exportar.")

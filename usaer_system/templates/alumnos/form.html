@@ -69,6 +69,10 @@
       {{ form.sexo }}
     </div>
     <div class="col-md-3">
+      <label for="id_fecha_nacimiento" class="form-label">Fecha de nacimiento</label>
+      {{ form.fecha_nacimiento }}
+    </div>
+    <div class="col-md-3">
       <label for="id_edad" class="form-label">Edad</label>
       {{ form.edad }}
     </div>
@@ -88,6 +92,13 @@
   <div class="mb-3 mt-3">
     <label for="id_profesor" class="form-label">Profesor</label>
     {{ form.profesor }}
+  </div>
+
+  <div class="form-check mb-3">
+    {{ form.activo }}
+    <label class="form-check-label" for="{{ form.activo.id_for_label }}">
+      {{ form.activo.label }}
+    </label>
   </div>
 
   <button type="submit" class="btn btn-primary">Guardar</button>

@@ -6,6 +6,7 @@ from django.contrib.auth import get_user_model
 
 from alumnos.models import Alumno
 from escuelas.models import Escuela
+from rae.models import CicloEscolar # <--- IMPORTADO
 
 User = get_user_model()
 
@@ -64,6 +65,13 @@ class RegistroRAC(models.Model):
         Alumno,
         on_delete=models.CASCADE,
         verbose_name="Alumno"
+    )
+    ciclo_escolar = models.ForeignKey(
+        CicloEscolar,
+        on_delete=models.PROTECT,
+        related_name='racs',
+        verbose_name='Ciclo Escolar',
+        null=True # <--- AÑADIDO TEMPORALMENTE
     )
 
     # Escuela regular y zona (se autorrellena)
@@ -168,7 +176,7 @@ class RegistroRAC(models.Model):
     class Meta:
         verbose_name = "Registro RAC"
         verbose_name_plural = "Registros RAC"
-        unique_together = ('alumno', 'fecha_registro')
+        unique_together = ('alumno', 'ciclo_escolar')
         ordering = ['-fecha_registro']
 
     def clean(self):

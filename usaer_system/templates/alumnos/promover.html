@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% block title %}{{ current_page_title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow">
+
+        {% if simulation_mode %}
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Resultados de la Simulación</h4>
+        </div>
+        <div class="card-body">
+            <p class="fs-5">A continuación se muestra el resultado de la simulación. Revisa los cambios cuidadosamente. <strong>No se ha realizado ninguna modificación todavía.</strong></p>
+            <hr>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Alumnos a Promover ({{ alumnos_a_promover|length }})</h5>
+                    {% if alumnos_a_promover %}
+                        <ul class="list-group">
+                            {% for alumno in alumnos_a_promover %}
+                                <li class="list-group-item">{{ alumno.get_full_name }} (Grado actual: {{ alumno.grado }})</li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted">No hay alumnos para promover.</p>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <h5>Alumnos a Graduar ({{ alumnos_a_graduar|length }})</h5>
+                    {% if alumnos_a_graduar %}
+                        <ul class="list-group">
+                            {% for alumno in alumnos_a_graduar %}
+                                <li class="list-group-item">{{ alumno.get_full_name }} (Grado actual: {{ alumno.grado }})</li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted">No hay alumnos para graduar.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="alert alert-danger mt-4" role="alert">
+                <i class="fas fa-exclamation-triangle"></i>
+                <strong>¡Confirmación Final!</strong> Al presionar el siguiente botón, los cambios se aplicarán de forma permanente.
+            </div>
+
+            <form method="post" class="mt-4">
+                {% csrf_token %}
+                <input type="hidden" name="confirmed" value="true">
+                <button type="submit" class="btn btn-danger btn-lg">Confirmar y Ejecutar Promoción</button>
+                <a href="{% url 'alumnos:listar_alumnos' %}" class="btn btn-secondary btn-lg ms-2">Cancelar</a>
+            </form>
+        </div>
+
+        {% else %}
+
+        <div class="card-header bg-warning text-dark">
+            <h4 class="mb-0">Confirmar Proceso de Promoción de Alumnos</h4>
+        </div>
+        <div class="card-body">
+            <p class="card-text fs-5">
+                Estás a punto de iniciar el proceso de fin de ciclo escolar para todos los alumnos <strong>activos</strong>.
+            </p>
+            <hr>
+            <h5 class="card-title">Este proceso realizará las siguientes acciones:</h5>
+            <ul>
+                <li>Todos los alumnos activos cuyo grado sea de <strong>1º a 5º</strong> serán promovidos al siguiente grado (ej. 1º → 2º).</li>
+                <li>Todos los alumnos activos cuyo grado sea <strong>6º</strong> serán marcados como <strong>inactivos</strong> (se consideran graduados).</li>
+                <li>El campo "Grupo" de todos los alumnos promovidos se limpiará.</li>
+            </ul>
+            <div class="alert alert-danger mt-4" role="alert">
+                <i class="fas fa-exclamation-triangle"></i>
+                <strong>¡Atención!</strong> Esta acción es irreversible y afectará a todos los alumnos activos del sistema. Asegúrate de que el ciclo escolar actual haya finalizado antes de continuar.
+            </div>
+
+            <form method="post" class="mt-4">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-warning btn-lg">Simular Proceso de Promoción</button>
+                <a href="{% url 'alumnos:listar_alumnos' %}" class="btn btn-secondary btn-lg ms-2">Cancelar</a>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

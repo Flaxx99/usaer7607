@@ -3,6 +3,7 @@
 from django.db import models
 from django.conf import settings
 from escuelas.models import Escuela
+from datetime import date
 
 class Alumno(models.Model):
     # --- Relaciones con escuela y profesor ---
@@ -23,6 +24,7 @@ class Alumno(models.Model):
     apellido_materno = models.CharField("Apellido materno", max_length=100, blank= True, default='')
     nombres = models.CharField("Nombre(s)", max_length=100)
     curp = models.CharField("C.U.R.P.", max_length=18, unique=True)
+    fecha_nacimiento = models.DateField("Fecha de nacimiento", null=True, blank=True)
 
     # --- Datos demográficos ---
     SEXO_CHOICES = [
@@ -30,7 +32,7 @@ class Alumno(models.Model):
         ('H', 'Hombre'),
     ]
     sexo = models.CharField("Sexo", max_length=1, choices=SEXO_CHOICES)
-    edad = models.PositiveSmallIntegerField("Edad")
+    edad = models.PositiveSmallIntegerField("Edad", null=True, blank=True) # Re-añadido y hecho opcional
 
     # --- Datos académicos ---
     GRADOS = [(str(i), str(i)) for i in range(1, 7)]  # Temporal (1 al 6)
@@ -43,6 +45,7 @@ class Alumno(models.Model):
     )
 
     # --- Clasificación especial ---
+    activo = models.BooleanField(default=True, verbose_name="¿Está activo?")
     CLASIFICACION_CHOICES = [
         ('DISCAPACIDAD', 'Con discapacidad'),
         ('DIFICULTADES_SEVERAS', 'Dificultades severas de aprendizaje'),
@@ -63,6 +66,12 @@ class Alumno(models.Model):
     )
     def get_full_name(self):
         return f"{self.nombres} {self.apellido_paterno} {self.apellido_materno}".upper()
+
+    def save(self, *args, **kwargs):
+        if self.fecha_nacimiento:
+            today = date.today()
+            self.edad = today.year - self.fecha_nacimiento.year - ((today.month, today.day) < (self.fecha_nacimiento.month, self.fecha_nacimiento.day))
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.get_full_name()

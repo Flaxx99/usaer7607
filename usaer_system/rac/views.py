@@ -18,6 +18,7 @@ from .forms import RegistroRACForm
 from .models import RegistroRAC
 from alumnos.models import Alumno
 from escuelas.models import Escuela
+from rae.views import get_current_ciclo_escolar_instance
 
 # --- Views for CRUD operations ---
 
@@ -30,6 +31,14 @@ class RegistroRACListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         qs = super().get_queryset().order_by('-fecha_registro')
         user = self.request.user
+
+        try:
+            ciclo_actual = get_current_ciclo_escolar_instance()
+            qs = qs.filter(ciclo_escolar=ciclo_actual)
+        except Exception as e:
+            messages.warning(self.request, f"No se pudo determinar el ciclo escolar activo: {e}")
+            return RegistroRAC.objects.none()
+
         if hasattr(user, 'role') and user.role == 'MAESTRO_APOYO':
             qs = qs.filter(maestro_apoyo=user)
         return qs
@@ -58,15 +67,20 @@ class RegistroRACCreateView(LoginRequiredMixin, CreateView):
         if hasattr(user, 'role') and user.role == 'MAESTRO_APOYO':
             form.fields['maestro_apoyo'].widget = forms.HiddenInput()
             form.initial['maestro_apoyo'] = user.pk
-            qs = Alumno.objects.filter(profesor=user)
+            qs = Alumno.objects.filter(profesor=user, activo=True)
         else:
-            qs = Alumno.objects.all()
+            qs = Alumno.objects.filter(activo=True)
 
-        hoy = date.today()
-        if self.object and self.object.pk:
-             qs = qs.exclude(registrorac__fecha_registro=hoy).exclude(pk=self.object.alumno.pk)
-        else:
-             qs = qs.exclude(registrorac__fecha_registro=hoy)
+        try:
+            ciclo_actual = get_current_ciclo_escolar_instance()
+            # Excluir alumnos que ya tienen un RAC en el ciclo actual
+            alumnos_con_rac_en_ciclo = RegistroRAC.objects.filter(ciclo_escolar=ciclo_actual).values_list('alumno_id', flat=True)
+            qs = qs.exclude(pk__in=alumnos_con_rac_en_ciclo)
+
+        except Exception as e:
+            messages.error(self.request, f"No se pudo determinar el ciclo escolar actual: {e}")
+            # No mostrar alumnos si no hay ciclo escolar
+            qs = Alumno.objects.none()
 
         form.fields['alumno'].queryset = qs
         return form
@@ -85,6 +99,13 @@ class RegistroRACCreateView(LoginRequiredMixin, CreateView):
         return ctx
 
     def form_valid(self, form):
+        try:
+            ciclo_actual = get_current_ciclo_escolar_instance()
+            form.instance.ciclo_escolar = ciclo_actual
+        except Exception as e:
+            messages.error(self.request, f"Error al obtener el ciclo escolar: {e}")
+            return self.form_invalid(form)
+
         messages.success(self.request, "Registro RAC creado correctamente.")
         return super().form_valid(form)
 
