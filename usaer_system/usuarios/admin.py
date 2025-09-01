@@ -26,8 +26,8 @@ from calendario.models import EventoCalendario
 from calendario.admin import EventoCalendarioAdmin
 
 # Documentos
-from documentos.models import Expediente, OtroArchivo
-from documentos.admin import ExpedienteAdmin, OtroArchivoAdmin
+from documentos.models import Expediente
+from documentos.admin import ExpedienteAdmin
 
 # Escuelas
 from escuelas.models import Escuela
@@ -129,7 +129,7 @@ admin_site.register(Group, GroupAdmin)
 admin_site.register(Alumno, AlumnoAdmin)
 admin_site.register(Asistencia, AsistenciaAdmin)
 admin_site.register(Expediente, ExpedienteAdmin)
-admin_site.register(OtroArchivo, OtroArchivoAdmin)
+
 admin_site.register(Escuela, EscuelaAdmin)
 admin_site.register(Oficio, OficioAdmin)
 admin_site.register(RegistroRAC, RegistroRACAdmin)

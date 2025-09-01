@@ -1,5 +1,6 @@
 # usuarios/decoradores.py
 from functools import wraps
+from django.http import HttpResponseForbidden
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.decorators import login_required
 from .models import User
@@ -13,7 +14,7 @@ def roles_permitidos(roles):
         @login_required  # maneja el 'next' y la redirección al LOGIN_URL automáticamente
         def _wrapped(request, *args, **kwargs):
             if request.user.role not in roles:
-                raise PermissionDenied
+                return HttpResponseForbidden("No tienes permiso para acceder a esta página.")
             return view_func(request, *args, **kwargs)
         return _wrapped
     return decorator

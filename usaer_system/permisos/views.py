@@ -10,6 +10,14 @@ from .forms import SolicitudPermisoForm, GestionPermisoForm
 
 
 from django.urls import reverse_lazy
+
+@login_required
+def permisos_redirect(request):
+    if request.user.has_perm('permisos.gestionar_permisos'):
+        return redirect('permisos:gestionar')
+    else:
+        return redirect('permisos:mis_permisos')
+
 @login_required
 def solicitar_permiso(request):
     if request.method == 'POST':
@@ -37,6 +45,39 @@ def solicitar_permiso(request):
             {'name': 'Mis Permisos', 'url': reverse_lazy('permisos:mis_permisos')}
         ],
         'current_page_title': _('Nueva Solicitud de Permiso')
+    })
+
+
+@login_required
+def editar_permiso(request, pk):
+    permiso = get_object_or_404(Permiso, pk=pk)
+
+    # Only allow editing if the permission is PENDING and belongs to the current user
+    # Or if the user has manage_permisos permission
+    if not request.user.has_perm('permisos.gestionar_permisos') and (permiso.profesor != request.user or permiso.estado != Permiso.Estado.PENDIENTE):
+        messages.error(request, _("No tienes permiso para editar esta solicitud o no se puede editar en su estado actual."))
+        return redirect('permisos:mis_permisos')
+
+    if request.method == 'POST':
+        form = SolicitudPermisoForm(request.POST, instance=permiso, user=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, _("Solicitud de permiso actualizada correctamente."))
+            return redirect('permisos:mis_permisos')
+        messages.warning(request, _("Corrige los errores en el formulario."))
+    else:
+        form = SolicitudPermisoForm(instance=permiso, user=request.user)
+
+    return render(request, 'permisos/solicitar.html', { # Reusing solicitar.html template
+        'form': form,
+        'titulo': _('Editar Solicitud de Permiso N° {0}').format(permiso.id),
+        'hoy': timezone.localdate().isoformat(),
+        'max_date': (timezone.localdate() + timezone.timedelta(days=365)).isoformat(),
+        'breadcrumbs': [
+            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
+            {'name': 'Mis Permisos', 'url': reverse_lazy('permisos:mis_permisos')}
+        ],
+        'current_page_title': _('Editar Solicitud de Permiso N° {0}').format(permiso.id)
     })
 
 
