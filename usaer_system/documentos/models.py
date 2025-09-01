@@ -29,7 +29,7 @@ class Expediente(models.Model):
     plan_intervencion       = models.FileField(upload_to=ruta_plan_intervencion,      verbose_name="Plan de Intervención")
     observaciones           = models.TextField(blank=True)
     fecha_subida            = models.DateTimeField(auto_now_add=True)
-   
+
     def __str__(self):
         return f"{self.alumno} - {self.profesor}"
 

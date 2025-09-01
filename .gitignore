@@ -263,6 +263,14 @@ poetry.toml
 # LSP config files
 pyrightconfig.json
 
+/media/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+desktop.ini
+
 # End of https://www.toptal.com/developers/gitignore/api/python,django
-!/usaer_system/static/soft-ui-dashboard/
-frontend/
+

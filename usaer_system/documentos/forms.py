@@ -52,7 +52,7 @@ class ExpedienteForm(forms.ModelForm):
                 self.fields['alumno'].queryset = Alumno.objects.none()
        
         # — texto de ayuda para reemplazo de archivos —
-        aviso = "Al seleccionar un archivo nuevo, el anterior será reemplazado. Tamaño máximo: 8 GB"
+        aviso = "Al seleccionar un archivo nuevo, el anterior será reemplazado."
         for campo in ['informe_deteccion', 'informe_psicopedagogico', 'plan_intervencion']:
             self.fields[campo].help_text = aviso
 
@@ -65,12 +65,8 @@ class ExpedienteForm(forms.ModelForm):
                 ext = Path(archivo.name).suffix.lower()
                 if ext not in extensiones:
                     raise forms.ValidationError(f"Extensión no permitida: {archivo.name}")
-               # Límite: 8 GB en bytes
-                LIMITE_BYTES = 8 * 1024 * 1024 * 1024
-
-                if archivo.size > LIMITE_BYTES:
-                    raise forms.ValidationError(f"❌ {archivo.name} excede el límite de 8 GB.")
-
+                if archivo.size > 50*1024*1024:
+                    raise forms.ValidationError(f"{archivo.name} excede 50MB.")
         return convertir_mayusculas(cleaned)
 
     def save(self, commit=True):
