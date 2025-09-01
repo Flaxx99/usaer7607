@@ -97,7 +97,7 @@ class RAEAlumno(models.Model):
         related_name='detalles_alumnos', # Cambiado a plural
         verbose_name="Registro RAE"
     )
-    alumno = models.OneToOneField( # Mantener OneToOneField si un alumno solo puede tener un RAE por registro
+    alumno = models.ForeignKey( # CAMBIADO: De OneToOneField a ForeignKey
         Alumno,
         on_delete=models.PROTECT,
         verbose_name="Alumno atendido"
@@ -162,7 +162,7 @@ class RAEAlumno(models.Model):
         verbose_name = "Detalle RAE"
         verbose_name_plural = "Detalle RAE"
         ordering = ['grado', 'alumno__apellido_paterno']
-        # unique_together = ('registro', 'alumno') # Esto ya está en RegistroRAE, no es necesario aquí si un alumno solo tiene un RAE por registro
+        unique_together = ('registro', 'alumno') # AÑADIDO: Un alumno solo puede tener un RAE por registro
 
     def __str__(self):
         return f"{self.alumno.get_full_name()} en RAE {self.registro.escuela.nombre} ({self.registro.ciclo_escolar.nombre})"
