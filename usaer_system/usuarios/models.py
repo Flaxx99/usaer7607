@@ -82,6 +82,7 @@ class User(AbstractUser):
     numero_pensiones = models.CharField(_("Número de pensiones"), max_length=20, blank=True)
 
     class NivelEducativo(models.TextChoices):
+        PREESCOLAR = 'PRE', _('Preescolar')
         PRIMARIA = 'PRIM', _('Primaria')
         SECUNDARIA = 'SEC', _('Secundaria')
         FISICA = 'FIS', _('Educación Física')

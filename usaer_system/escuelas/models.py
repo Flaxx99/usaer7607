@@ -2,6 +2,7 @@ from django.db import models
 
 class Escuela(models.Model):
     CLAVE_NIVELES = [
+    ('Preescolar', 'PREESCOLAR'),
     ('Primaria', 'PRIMARIA'),
     ('Secundaria', 'SECUNDARIA'),
     ]   

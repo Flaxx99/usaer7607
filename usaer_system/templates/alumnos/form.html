@@ -12,6 +12,7 @@
       <label for="nivel_select" class="form-label">Nivel</label>
       <select id="nivel_select" name="nivel" class="form-select">
         <option value="">Seleccione nivel…</option>
+        <option value="PREESCOLAR">Preescolar</option>
         <option value="PRIMARIA">Primaria</option>
         <option value="SECUNDARIA">Secundaria</option>
       </select>
@@ -106,6 +107,7 @@
 </form>
 
 <script>
+const PREESCOLAR = ['1','2','3'];
 const PRIMARIA   = ['1','2','3','4','5','6'];
 const SECUNDARIA = ['1','2','3'];
 
@@ -121,11 +123,15 @@ function filtrarEscuelas() {
 }
 
 function poblarGrados() {
-  const lista = nivelSel.value === 'PRIMARIA'
-    ? PRIMARIA
-    : nivelSel.value === 'SECUNDARIA'
-      ? SECUNDARIA
-      : [];
+  let lista = [];
+  if (nivelSel.value === 'PREESCOLAR') {
+    lista = PREESCOLAR;
+  } else if (nivelSel.value === 'PRIMARIA') {
+    lista = PRIMARIA;
+  } else if (nivelSel.value === 'SECUNDARIA') {
+    lista = SECUNDARIA;
+  }
+
   grdSel.innerHTML = '<option value="">Seleccione grado…</option>';
   lista.forEach(g => {
     const o = document.createElement('option');
