@@ -101,7 +101,6 @@
         <img src="{% static 'soft-ui-dashboard/assets/img/logo-ct.png' %}" class="navbar-brand-img h-100" alt="main_logo" loading="lazy">
         <span class="ms-1 font-weight-bold">Gestor USAER</span>
       </a>
-<<<<<<< HEAD
     </div>
     <hr class="horizontal dark mt-0">
     <div class="collapse navbar-collapse w-auto " id="sidenav-collapse-main">
@@ -362,40 +361,6 @@
   <!--   Core JS Files   -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 
-  
-
-  <script>
-    var win = navigator.platform.indexOf('Win') > -1;
-    if (win && document.querySelector('#sidenav-scrollbar')) {
-      var options = {
-        damping: '0.5'
-      }
-      Scrollbar.init(document.querySelector('#sidenav-scrollbar'), options);
-    }
-  </script>
-
-
-  <!--   Core JS Files   -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
-
-  
-
-  <script>
-    var win = navigator.platform.indexOf('Win') > -1;
-    if (win && document.querySelector('#sidenav-scrollbar')) {
-      var options = {
-        damping: '0.5'
-      }
-      Scrollbar.init(document.querySelector('#sidenav-scrollbar'), options);
-    }
-  </script>
-
-
-  <!--   Core JS Files   -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
-
-  
-
   <script>
     var win = navigator.platform.indexOf('Win') > -1;
     if (win && document.querySelector('#sidenav-scrollbar')) {
@@ -410,7 +375,7 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('{% static 'service-worker.js' %}').then(function(registration) {
+        navigator.serviceWorker.register("{% static 'service-worker.js' %}").then(function(registration) {
           // Registration was successful
           console.log('ServiceWorker registration successful with scope: ', registration.scope);
         }, function(err) {
@@ -543,7 +508,5 @@
 
   </script>
   {% endblock %}
-</body>
-</body>
 </body>
 </html>

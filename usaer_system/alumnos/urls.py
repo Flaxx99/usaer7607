@@ -48,12 +48,5 @@ urlpatterns = [
         ])(views.eliminar_alumno),
         name='eliminar_alumno'
     ),
-    path(
-        'exportar/',
-        roles_permitidos([
-            User.Role.MAESTRO_APOYO,
-            User.Role.ADMINISTRADOR,
-        ])(views.exportar_rac),
-        name='exportar_rac'
-    ),
+    
 ]

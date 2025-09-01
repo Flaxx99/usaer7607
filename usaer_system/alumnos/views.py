@@ -147,29 +147,4 @@ def eliminar_alumno(request, pk):
             messages.error(request, f"Error al eliminar al alumno: {e}")
     return redirect('alumnos:listar_alumnos')
 
-def exportar_rac(request):
-    """
-    Exporta todos los alumnos a un CSV descargable.
-    """
-    response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename="alumnos.csv"'
-    writer = csv.writer(response)
-    # Cabecera
-    writer.writerow([
-        'Apellido Paterno', 'Apellido Materno', 'Nombres', 'CURP',
-        'Sexo', 'Edad', 'Escuela', 'Grado', 'Grupo'
-    ])
-    # Filas
-    for a in Alumno.objects.select_related('escuela').all():
-        writer.writerow([
-            a.apellido_paterno,
-            a.apellido_materno,
-            a.nombres,
-            a.curp,
-            a.get_sexo_display(),  # si usas choices
-            a.edad,
-            a.escuela.nombre,
-            a.grado,
-            a.grupo,
-        ])
-    return response
+

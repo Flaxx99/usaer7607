@@ -230,9 +230,6 @@ class BaseRACExportView(LoginRequiredMixin, View):
         except (KeyError, FileNotFoundError):
             return HttpResponse("Error: El formato de la plantilla es incorrecto o faltan hojas.", status=500)
 
-        # Importar estilos necesarios para la limpieza
-        from openpyxl.styles import Border, Side, PatternFill, Font, Alignment
-
         print("--- INICIANDO EXPORTACIÓN RAC ---")
         print(f"Usuario: {request.user} (Rol: {getattr(request.user, 'role', 'N/A')})")
 
@@ -242,24 +239,24 @@ class BaseRACExportView(LoginRequiredMixin, View):
         fill_rac_data(ws_rac, registros)
         fill_statistics_data(ws_stats, registros)
 
-        # Forzar limpieza de formato en celdas vacías
-        empty_border = Border(left=Side(style=None),
-                              right=Side(style=None),
-                              top=Side(style=None),
-                              bottom=Side(style=None))
-        default_font = Font(name='Calibri', size=11, bold=False, italic=False, underline='none', strike=False, color='FF000000')
-        default_alignment = Alignment(horizontal='general', vertical='bottom', wrap_text=False)
-
-        for row in ws_rac.iter_rows(min_row=1, max_row=3, min_col=24, max_col=50):
-            for cell in row:
-                cell.border = empty_border
-                cell.fill = PatternFill(patternType=None)
-                cell.font = default_font
-                cell.alignment = default_alignment
-
         # Ajustar ancho de columnas
         ws_rac.column_dimensions['O'].width = 5
         ws_rac.column_dimensions['P'].width = 6
+
+        output = BytesIO()
+        wb.save(output)
+        output.seek(0)
+
+        filename = self.get_filename()
+        print(f"Nombre de archivo generado: {filename}")
+        print("--- FINALIZANDO EXPORTACIÓN RAC ---")
+
+        response = HttpResponse(
+            output.read(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
 
         output = BytesIO()
         wb.save(output)

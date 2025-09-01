@@ -155,7 +155,7 @@
                             {% for oficio in ultimos_oficios %}
                                 <li class="list-group-item d-flex justify-content-between align-items-center">
                                     <div>
-                                        <a href="{% url 'oficios:detalle_oficio' oficio.pk %}" class="text-decoration-none text-dark fw-bold">{{ oficio.asunto }}</a>
+                                        <h6 class="mb-0 text-sm">{{ oficio.asunto }}</h6>
                                         <small class="d-block text-dark">Fecha: {{ oficio.fecha_oficio|date:"d M Y" }}</small>
                                     </div>
                                     <span class="badge bg-gradient-info p-2">{{ oficio.tipo_oficio }}</span>
