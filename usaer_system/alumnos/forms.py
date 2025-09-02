@@ -14,7 +14,11 @@ class AlumnoForm(forms.ModelForm):
     class Meta:
         model = Alumno
         # Excluimos escuela y grado porque los asignaremos manualmente en la vista
-        exclude = ['escuela', 'grado', 'edad'] # Excluimos edad también ya que se calcula sola
+        exclude = ['escuela', 'grado'] # edad ya no se excluye
+        widgets = {
+            'fecha_nacimiento': forms.DateInput(attrs={'type': 'date'}),
+            'edad': forms.NumberInput(attrs={'readonly': 'readonly'}), # Hacer edad de solo lectura
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
