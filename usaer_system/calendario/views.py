@@ -120,8 +120,11 @@ class EventoDetailView(LoginRequiredMixin, DetailView):
     template_name = "calendario/evento_detail.html"
     context_object_name = "evento"
 
+    def get_queryset(self):
+        return super().get_queryset().select_related('creado_por')
+
     def dispatch(self, request, *args, **kwargs):
-        evento = self.get_object().select_related('creado_por')
+        evento = self.get_object()
         # Proteger eventos personales ajenos
         if evento.tipo == 'PERSONAL' and evento.creado_por != request.user:
             return HttpResponseForbidden("No tienes permiso para ver este evento.")

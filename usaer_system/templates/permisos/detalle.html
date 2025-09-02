@@ -35,7 +35,12 @@
             <dd class="col-sm-8">{{ permiso.escuela.nombre }}</dd>
 
             <dt class="col-sm-4">{% trans 'Tipo' %}:</dt>
-            <dd class="col-sm-8">{{ permiso.get_tipo_display }}</dd>
+            <dd class="col-sm-8">
+                {{ permiso.get_tipo_display }}
+                {% if permiso.horas_solicitadas and permiso.tipo in 'LLEGADA_TARDE,SALIDA_TEMPRANA' %}
+                    ({{ permiso.horas_solicitadas }} {% trans 'horas' %})
+                {% endif %}
+            </dd>
 
             <dt class="col-sm-4">{% trans 'Motivo' %}:</dt>
             <dd class="col-sm-8">{{ permiso.motivo }}</dd>
@@ -47,7 +52,13 @@
             <dd class="col-sm-8">{{ permiso.fecha_fin|date:"d/m/Y" }}</dd>
 
             <dt class="col-sm-4">{% trans 'Duración' %}:</dt>
-            <dd class="col-sm-8">{{ permiso.duracion_dias }} {% trans 'días' %}</dd>
+            <dd class="col-sm-8">
+                {% if permiso.tipo == 'LLEGADA_TARDE' or permiso.tipo == 'SALIDA_TEMPRANA' %}
+                    {{ permiso.horas_solicitadas }} {% trans 'horas' %}
+                {% else %}
+                    {{ permiso.duracion_dias }} {% trans 'días' %}
+                {% endif %}
+            </dd>
 
             <dt class="col-sm-4">{% trans 'Fecha de Solicitud' %}:</dt>
             <dd class="col-sm-8">{{ permiso.fecha_solicitud|date:"d/m/Y H:i" }}</dd>

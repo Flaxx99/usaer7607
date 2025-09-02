@@ -39,6 +39,14 @@ class Permiso(models.Model):
         choices=Tipo.choices,
         default=Tipo.PERSONAL
     )
+    horas_solicitadas = models.DecimalField(
+        _("Horas solicitadas"),
+        max_digits=4, 
+        decimal_places=2, 
+        blank=True, 
+        null=True,
+        help_text=_("Solo para permisos de llegada tarde o salida temprana.")
+    )
     motivo = models.TextField(
         _("Motivo del permiso"),
         max_length=500,

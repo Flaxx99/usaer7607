@@ -17,6 +17,7 @@
             <div class="col-md-3">
                 <label for="id_estado" class="form-label">{% trans 'Estado' %}</label>
                 <select name="estado" id="id_estado" class="form-select">
+                    <option value="">{% trans 'Todos los estados' %}</option>
                     {% for val, label in estados %}
                     <option value="{{ val }}" {% if estado_actual == val %}selected{% endif %}>{{ label }}</option>
                     {% endfor %}

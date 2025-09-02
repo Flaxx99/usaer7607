@@ -28,3 +28,27 @@
   </div>
 </div>
 {% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const tipoPermisoSelect = document.getElementById('id_tipo');
+        const horasSolicitadasDiv = document.getElementById('div_id_horas_solicitadas');
+
+        function toggleHorasSolicitadas() {
+            const selectedTipo = tipoPermisoSelect.value;
+            if (selectedTipo === 'LLEGADA_TARDE' || selectedTipo === 'SALIDA_TEMPRANA') {
+                horasSolicitadasDiv.style.display = 'block';
+            } else {
+                horasSolicitadasDiv.style.display = 'none';
+            }
+        }
+
+        // Ejecutar al cargar la página
+        toggleHorasSolicitadas();
+
+        // Ejecutar al cambiar la selección
+        tipoPermisoSelect.addEventListener('change', toggleHorasSolicitadas);
+    });
+</script>
+{% endblock %}

@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% load crispy_forms_tags %}
 {% load group_filters %}
+{% load i18n %}
 
 {% block content %}
 <div class="container mt-4">
@@ -14,8 +15,31 @@
         </div>
         <div class="card-body">
           <p class="mb-3">
-            Duración: <strong>{{ duracion }} días</strong>
+            Duración: <strong>
+                {% if permiso.tipo == 'LLEGADA_TARDE' or permiso.tipo == 'SALIDA_TEMPRANA' %}
+                    {{ permiso.horas_solicitadas }} {% trans 'horas' %}
+                {% else %}
+                    {{ duracion }} {% trans 'días' %}
+                {% endif %}
+            </strong>
           </p>
+          <hr>
+          <dl class="row mb-3">
+            <dt class="col-sm-4">Tipo de Permiso:</dt>
+            <dd class="col-sm-8">
+                {{ permiso.get_tipo_display }}
+                {% if permiso.horas_solicitadas and permiso.tipo in 'LLEGADA_TARDE,SALIDA_TEMPRANA' %}
+                    ({{ permiso.horas_solicitadas }} horas)
+                {% endif %}
+            </dd>
+
+            <dt class="col-sm-4">Fechas:</dt>
+            <dd class="col-sm-8">{{ permiso.fecha_inicio|date:"d/m/Y" }} - {{ permiso.fecha_fin|date:"d/m/Y" }}</dd>
+
+            <dt class="col-sm-4">Motivo:</dt>
+            <dd class="col-sm-8">{{ permiso.motivo }}</dd>
+          </dl>
+          <hr>
           <form method="post" novalidate>
             {% csrf_token %}
             {{ form|crispy }}

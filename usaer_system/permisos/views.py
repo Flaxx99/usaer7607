@@ -126,7 +126,7 @@ def mis_permisos(request):
 @login_required
 @permission_required('permisos.gestionar_permisos')
 def gestionar_permisos(request):
-    estado = request.GET.get('estado', Permiso.Estado.PENDIENTE)
+    estado = request.GET.get('estado', '') # Cambiado a cadena vacía por defecto
     escuela_id = request.GET.get('escuela', '')
     profesor_id = request.GET.get('profesor', '')
     fecha_desde = request.GET.get('fecha_desde', '')

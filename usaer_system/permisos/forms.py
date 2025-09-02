@@ -12,7 +12,7 @@ from usaer_system.forms_utils import convertir_mayusculas
 class SolicitudPermisoForm(forms.ModelForm):
     class Meta:
         model = Permiso
-        fields = ['tipo', 'fecha_inicio', 'fecha_fin', 'motivo']
+        fields = ['tipo', 'fecha_inicio', 'fecha_fin', 'motivo', 'horas_solicitadas'] # Añadido horas_solicitadas
         widgets = {
             'tipo': forms.Select(attrs={'class': 'form-select'}),
             'fecha_inicio': forms.DateInput(
@@ -24,20 +24,27 @@ class SolicitudPermisoForm(forms.ModelForm):
             'motivo': forms.Textarea(
                 attrs={'rows': 4, 'placeholder': _('Describa el motivo...'), 'class': 'form-control'}
             ),
+            'horas_solicitadas': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.5', 'min': '0.5', 'max': '8'}), # Nuevo widget
         }
         help_texts = {
             'fecha_inicio': _('Primer día que solicita permiso'),
             'fecha_fin': _('Último día que solicita permiso'),
+            'horas_solicitadas': _('Solo para permisos de llegada tarde o salida temprana (ej. 0.5, 1, 2.5).'), # Nuevo help_text
         }
         labels = {
             'tipo': _('Tipo de permiso'),
             'fecha_inicio': _('Desde'),
             'fecha_fin': _('Hasta'),
             'motivo': _('Motivo del permiso'),
+            'horas_solicitadas': _('Horas solicitadas'), # Nuevo label
         }
 
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
+        # Filtrar opciones de tipo
+        tipos_permitidos = [choice for choice in Permiso.Tipo.choices if choice[0] != Permiso.Tipo.ENFERMEDAD] # Excluir ENFERMEDAD
+        self.fields['tipo'].choices = tipos_permitidos
+
         self.helper = FormHelper()
         self.helper.layout = Layout(
             Field('tipo'),
@@ -46,13 +53,10 @@ class SolicitudPermisoForm(forms.ModelForm):
                 Div(Field('fecha_fin', css_class='form-control'), css_class='col-md-6'),
                 css_class='row g-3'
             ),
+            Div(Field('horas_solicitadas'), css_class='form-group', css_id='div_id_horas_solicitadas'), # Añadido con ID para JS
             Field('motivo'),
             Submit('submit', _('Solicitar Permiso'), css_class='btn btn-primary mt-3')
         )
-
-        if user and not (user.is_staff or getattr(user, 'rol', '') == 'SECRETARIO'):
-            self.fields['tipo'].initial = 'PERSONAL'
-            self.fields['tipo'].widget = forms.HiddenInput()
 
     def clean(self):
         cleaned_data = super().clean()
