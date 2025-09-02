@@ -124,7 +124,7 @@ class UserCreateView(LoginRequiredMixin, CreateView):
 
 
 @method_decorator(roles_permitidos(['ADMIN', 'SECRETARIO']), name='dispatch')
-class UserUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
+class UserUpdateView(LoginRequiredMixin, UpdateView):
     model = User
     form_class = UsuarioChangeForm
     template_name = 'usuarios/formulario_usuario.html'
