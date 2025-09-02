@@ -259,13 +259,22 @@ def dashboard(request):
 
     # Definir queryset base para permisos según el rol del usuario
     permisos_base_qs = Permiso.objects.all()
+    eventos_base_qs = EventoCalendario.objects.all()
+    incidencias_base_qs = Incidencia.objects.all()
+    expedientes_base_qs = Expediente.objects.all()
+    oficios_base_qs = Oficio.objects.all()
+
     if user.role != User.Role.ADMINISTRADOR:
         permisos_base_qs = permisos_base_qs.filter(profesor=user)
+        eventos_base_qs = eventos_base_qs.filter(Q(tipo='INSTITUCIONAL') | Q(tipo='PERSONAL', creado_por=user))
+        incidencias_base_qs = incidencias_base_qs.filter(profesor=user)
+        expedientes_base_qs = expedientes_base_qs.filter(alumno__profesor=user)
+        oficios_base_qs = oficios_base_qs.filter(subido_por=user)
 
     # --- Consultas Optimizadas ---
     ultimos_permisos = permisos_base_qs.select_related('profesor').order_by('-fecha_solicitud')[:5]
-    ultimas_incidencias = Incidencia.objects.select_related('profesor').order_by('-fecha_reporte')[:5]
-    ultimos_expedientes = Expediente.objects.select_related('alumno').order_by('-fecha_subida')[:5]
+    ultimas_incidencias = incidencias_base_qs.select_related('profesor').order_by('-fecha_reporte')[:5]
+    ultimos_expedientes = expedientes_base_qs.select_related('alumno').order_by('-fecha_subida')[:5]
     ultimos_avisos = Anuncio.objects.filter(
         (Q(fecha_expiracion__gte=timezone.now()) | Q(fecha_expiracion__isnull=True)),
         fecha_publicacion__lte=timezone.now()
@@ -273,12 +282,12 @@ def dashboard(request):
     
     context = {
         'permisos_pendientes': permisos_base_qs.filter(estado='PENDIENTE').count(),
-        'incidencias_pendientes': Incidencia.objects.filter(estado='PENDIENTE').count(),
-        'ultimos_eventos': EventoCalendario.objects.order_by('-fecha_inicio')[:5],
+        'incidencias_pendientes': incidencias_base_qs.filter(estado='PENDIENTE').count(),
+        'ultimos_eventos': eventos_base_qs.order_by('-fecha_inicio')[:5],
         'ultimos_permisos': ultimos_permisos,
         'ultimas_incidencias': ultimas_incidencias,
         'ultimos_expedientes': ultimos_expedientes,
-        'ultimos_oficios': Oficio.objects.order_by('-fecha_subida')[:5],
+        'ultimos_oficios': oficios_base_qs.order_by('-fecha_subida')[:5],
         'ultimos_avisos': ultimos_avisos,
         'breadcrumbs': [],
         'current_page_title': 'Dashboard',

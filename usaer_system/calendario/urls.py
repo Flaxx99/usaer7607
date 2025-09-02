@@ -4,6 +4,7 @@ from . import views
 app_name = "calendario"
 
 urlpatterns = [
+    path('api/', views.api_eventos_calendario, name='api_eventos_calendario'),
     path('', views.CalendarioListView.as_view(), name='lista_eventos'),
     path('crear/', views.EventoCreateView.as_view(), name='crear_evento'),
     path('<int:pk>/', views.EventoDetailView.as_view(), name='detalle_evento'),

@@ -1,11 +1,43 @@
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.urls import reverse_lazy
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden, JsonResponse
+from django.core import serializers
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required, permission_required
 from .models import EventoCalendario
 from .forms import EventoForm
 from django.db import models
+from django.utils import timezone
+import logging
+
+logger = logging.getLogger(__name__)
+
+# ✅ API para eventos de calendario
+@login_required
+def api_eventos_calendario(request):
+    logger.info("API Calendario: Request received.")
+    user = request.user
+    eventos = EventoCalendario.objects.filter(
+        models.Q(tipo='INSTITUCIONAL') |
+        models.Q(tipo='PERSONAL', creado_por=user)
+    ).select_related('creado_por')
+
+    eventos_data = []
+    for evento in eventos:
+        eventos_data.append({
+            'id': evento.id,
+            'title': evento.titulo,
+            'start': evento.fecha_inicio.isoformat(),
+            'end': (evento.fecha_fin + timezone.timedelta(days=1)).isoformat() if evento.fecha_fin.time() == timezone.datetime.min.time() and evento.fecha_inicio.time() == timezone.datetime.min.time() else evento.fecha_fin.isoformat(),
+            'allDay': evento.fecha_fin.time() == timezone.datetime.min.time() and evento.fecha_inicio.time() == timezone.datetime.min.time(), # Keep this for now, as allDay was removed
+            'tipo': evento.tipo,
+            'url': reverse_lazy('calendario:detalle_evento', args=[evento.id]),
+            'description': evento.descripcion,
+        })
+    logger.info(f"API Calendario: Returning {len(eventos_data)} events.")
+    logger.debug(f"API Calendario: Data: {eventos_data}") # Use debug for potentially large data
+    return JsonResponse(eventos_data, safe=False)
 
 # ✅ 1. Vista para listar eventos visibles según reglas de rol
 class CalendarioListView(LoginRequiredMixin, ListView):

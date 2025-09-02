@@ -132,20 +132,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 day:      'Día',
                 list:     'Lista'
             },
-            events: '/api/calendario/',
-            eventDataTransform: function(eventData) {
-                // Asignar URL y colores del tema
-                return {
-                    id: eventData.id,
-                    title: eventData.titulo,
-                    start: eventData.fecha_inicio,
-                    end: eventData.fecha_fin,
-                    url: eventData.url, // Usar la URL directamente del API
-                    backgroundColor: eventData.tipo === 'INSTITUCIONAL' ? 'var(--bs-primary)' : 'var(--bs-secondary)',
-                    borderColor: eventData.tipo === 'INSTITUCIONAL' ? 'var(--bs-primary)' : 'var(--bs-secondary)',
-                    allDay: true
-                };
-            },
+            events: '/calendario/api/',
             eventClick: function(info) {
                 info.jsEvent.preventDefault();
                 if (info.event.url) {
@@ -193,5 +180,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+</script>
 </script>
 {% endblock %}
