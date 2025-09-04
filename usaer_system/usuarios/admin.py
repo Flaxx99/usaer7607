@@ -63,7 +63,7 @@ class CustomAdminSite(AdminSite):
         if request.user.is_superuser:
             return True
         user_role = getattr(request.user, 'role', None)
-        return request.user.is_active and request.user.is_staff and (user_role and user_role.upper() == 'ADMIN')
+        return request.user.is_active and request.user.is_staff and (user_role and user_role == User.Role.ADMINISTRADOR.value)
 
 
 admin_site = CustomAdminSite(name='custom_admin')
@@ -80,13 +80,11 @@ class UserAdminConfig(UserAdmin):
         'get_full_name',
         'role',
         'escuela',
-        'puesto',
         'activo'
     )
     list_filter = (
         'role',
         'escuela',
-        'puesto',
         'activo',
         'nivel',
         'situacion'
@@ -106,7 +104,7 @@ class UserAdminConfig(UserAdmin):
         (_('Información personal'), { 'fields': ('nombre', 'apellido_paterno', 'apellido_materno', ('curp', 'rfc')) }),
         (_('Información de contacto'), { 'fields': ('domicilio', ('telefono', 'celular'), 'correo') }),
         (_('Información académica'), { 'fields': (('nivel', 'grado'), 'escolaridad') }),
-        (_('Información laboral'), { 'fields': ('role', 'escuela', ('puesto', 'situacion'), 'fecha_ingreso', 'clave_presupuestal', 'numero_pensiones', 'activo') }),
+        (_('Información laboral'), { 'fields': ('role', 'escuela', 'situacion', 'fecha_ingreso', 'clave_presupuestal', 'numero_pensiones', 'activo') }),
         (_('Permisos'), { 'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions'), }),
         (_('Fechas importantes'), { 'fields': ('last_login', 'date_joined') }),
     )
@@ -124,7 +122,8 @@ class UserAdminConfig(UserAdmin):
 # Esto garantiza que el registro ocurra tan pronto como este módulo se cargue.
 admin_site.register(User, UserAdminConfig)
 admin_site.register(Group, GroupAdmin)
-# admin_site.register(Permission) # Opcional
+# admin_site.register(Permission) # Opcional: Si el sistema de roles personalizado reemplaza los permisos de Django, este registro podría no ser necesario.
+# Si se usan en conjunto, asegúrate de que sus roles estén claramente definidos.
 
 admin_site.register(Alumno, AlumnoAdmin)
 admin_site.register(Asistencia, AsistenciaAdmin)

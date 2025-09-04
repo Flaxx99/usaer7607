@@ -92,9 +92,12 @@ class AnuncioDeleteView(LoginRequiredMixin, DeleteView):
     template_name = 'avisos/confirm_delete_anuncio.html'
     success_url = reverse_lazy('avisos:lista_anuncios')
 
-    def form_valid(self, form):
+    def post(self, request, *args, **kwargs):
+        return self.delete(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
         messages.success(self.request, "Anuncio eliminado exitosamente.")
-        return super().form_valid(form)
+        return super().delete(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

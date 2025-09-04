@@ -17,7 +17,7 @@ class Command(BaseCommand):
 
             nueva_ruta.mkdir(parents=True, exist_ok=True)
 
-            for field in ['informe_deteccion', 'informe_psicopedagogico', 'plan_intervencion', 'otros']:
+            for field in ['informe_deteccion', 'informe_psicopedagogico', 'plan_intervencion']:
                 archivo = getattr(exp, field)
                 if archivo and archivo.name.startswith('expedientes/') and not f"alumno_{alumno_id}/" in archivo.name:
                     origen = base_media / archivo.name

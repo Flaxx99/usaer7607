@@ -1,6 +1,10 @@
 from pathlib import Path
 from django.contrib.auth import get_user_model
 import os
+import dj_database_url
+from dotenv import load_dotenv
+
+load_dotenv() # Carga las variables de entorno desde .env
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -14,8 +18,22 @@ SECRET_KEY = os.environ.get(
     "SECRET_KEY",
     "django-insecure-!8659yl2gf6**0m*l05cuq1%maailzw$nu*x7wmt&+pix39evh",
 )
-DEBUG = True
-ALLOWED_HOSTS = []
+# En producción, DEBUG debe ser False. Se lee de una variable de entorno.
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+
+# Configuraciones de seguridad para producción
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 31536000  # 1 año
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
+# Lee los hosts permitidos de una variable de entorno.
+# En producción, debes poner aquí tu dominio, ej: 'www.misitio.com'
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
+
 
 AUTH_USER_MODEL = 'usuarios.User'
 
@@ -63,6 +81,7 @@ CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware', # Middleware de Whitenoise
     'django.middleware.gzip.GZipMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -93,11 +112,14 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'usaer_system.wsgi.application'
 
+# Configuración de base de datos usando dj-database-url
+# En producción, se usará la variable de entorno DATABASE_URL
+# ej: postgres://user:password@host:port/dbname
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        conn_max_age=600
+    )
 }
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -115,7 +137,8 @@ STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'
+# Almacenamiento de estáticos mejorado por Whitenoise
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

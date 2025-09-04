@@ -53,7 +53,7 @@ from documentos.models import Expediente  # Ajusta al nombre de tu modelo de exp
 # -----------------------------
 # Vistas basadas en clases para usuarios
 # -----------------------------
-@method_decorator(roles_permitidos(['ADMIN']), name='dispatch')
+@method_decorator(roles_permitidos([User.Role.ADMINISTRADOR.value, User.Role.SECRETARIO.value]), name='dispatch')
 class UserListView(LoginRequiredMixin, ListView):
     model = User
     template_name = 'usuarios/lista_usuarios.html'
@@ -96,7 +96,7 @@ class UserListView(LoginRequiredMixin, ListView):
         return ctx
 
 
-@method_decorator(roles_permitidos(['ADMIN', 'SECRETARIO']), name='dispatch')
+@method_decorator(roles_permitidos([User.Role.ADMINISTRADOR.value, User.Role.SECRETARIO.value]), name='dispatch')
 class UserCreateView(LoginRequiredMixin, CreateView):
     model = User
     form_class = UsuarioCreationForm
@@ -123,8 +123,8 @@ class UserCreateView(LoginRequiredMixin, CreateView):
         return ctx
 
 
-@method_decorator(roles_permitidos(['ADMIN', 'SECRETARIO']), name='dispatch')
-class UserUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
+@method_decorator(roles_permitidos([User.Role.ADMINISTRADOR.value, User.Role.SECRETARIO.value]), name='dispatch')
+class UserUpdateView(LoginRequiredMixin, UpdateView):
     model = User
     form_class = UsuarioChangeForm
     template_name = 'usuarios/formulario_usuario.html'
@@ -264,7 +264,8 @@ def dashboard(request):
     expedientes_base_qs = Expediente.objects.all()
     oficios_base_qs = Oficio.objects.all()
 
-    if user.role != User.Role.ADMINISTRADOR:
+    # Filtrar datos para roles que no son administradores
+    if user.role != User.Role.ADMINISTRADOR.value:
         permisos_base_qs = permisos_base_qs.filter(profesor=user)
         eventos_base_qs = eventos_base_qs.filter(Q(tipo='INSTITUCIONAL') | Q(tipo='PERSONAL', creado_por=user))
         incidencias_base_qs = incidencias_base_qs.filter(profesor=user)
@@ -294,8 +295,9 @@ def dashboard(request):
         'is_admin_dashboard': False
     }
 
-    if user.role == User.Role.ADMINISTRADOR:
-        context['is_admin_dashboard'] = True
+    # El dashboard de administrador muestra estadísticas globales
+    if user.role == User.Role.ADMINISTRADOR.value:
+        context['is_admin_dashboard'] = True # Esta bandera puede usarse en la plantilla para mostrar/ocultar secciones
         context.update({
             'total_alumnos': Alumno.objects.count(),
             'total_escuelas': Escuela.objects.count(),

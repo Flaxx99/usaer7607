@@ -90,19 +90,6 @@ class User(AbstractUser):
     nivel = models.CharField(_("Escolaridad"), max_length=4, choices=NivelEducativo.choices, blank=True)
     grado = models.CharField(_("Grado(s) que atiende"), max_length=30, blank=True)
 
-    class Puesto(models.TextChoices):
-        DIRECTOR = 'DIRECTOR', _('Director(a) de Escuela')
-        MAESTRO_APOYO = 'MAESTRO_APOYO', _('Maestro(a) de Apoyo')
-        TRABAJADOR_SOCIAL = 'TRAB_SOCIAL', _('Trabajador(a) Social')
-        PSICOLOGO = 'PSICOLOGO', _('Psicólogo(a)')
-        PSICOMOTRICIDAD = 'PSICOMOTRICIDAD', _('Maestro(a) de Psicomotricidad')
-        COMUNICACION = 'COMUNICACION', _('Maestro(a) de Comunicación')
-        TRABAJADOR_MANUAL = 'TRAB_MANUAL', _('Trabajador(a) Manual')
-        SECRETARIO = 'SECRETARIO', _('Secretario(a)')
-        ADMINISTRADOR = 'ADMIN', _('Administrador(a)')
-
-    puesto = models.CharField(_("Puesto"), max_length=20, choices=Puesto.choices, blank=True)
-
     class Situacion(models.TextChoices):
         BASE = 'BASE', _('Base')
         HORAS = 'HORAS', _('Por Horas')
@@ -166,11 +153,12 @@ class User(AbstractUser):
         return f"{name}, {self.nombre}" if self.nombre else name
 
     def save(self, *args, **kwargs):
-        if not kwargs.pop('skip_auto_role', False):
-            if self.is_superuser:
-                self.role = self.Role.ADMINISTRADOR
-        elif self.escuela and hasattr(self.escuela, 'director') and self.escuela.director == self:
+        skip_auto_role = kwargs.pop('skip_auto_role', False)
+        if not skip_auto_role and self.is_superuser:
+            self.role = self.Role.ADMINISTRADOR
+        elif self.escuela and self.escuela.director == self:
             self.role = self.Role.DIRECTOR
+
         super().save(*args, **kwargs)
 
     @property

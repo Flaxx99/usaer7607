@@ -32,12 +32,11 @@ def mostrar_checador(request):
 # Checar Asistencia (Público)
 # ----------------------------
 from django.views.decorators.http import require_POST
-
+@require_POST
 def checar_asistencia(request):
-    if request.method == 'POST':
-        form = AsistenciaCheckForm(request.POST)
-        if form.is_valid():
-            codigo = form.cleaned_data['numero_empleado'].strip()
+    form = AsistenciaCheckForm(request.POST)
+    if form.is_valid():
+        codigo = form.cleaned_data['numero_empleado'].strip()
         hoy = timezone.localdate()
         ahora = timezone.localtime()
 
@@ -91,7 +90,7 @@ def checar_asistencia(request):
 
         return redirect('login')
     else:
-        error_message = "Por favor, corrige los errores en el formulario de checador."
+        error_message = "Error en el formulario: "
         for field, errors in form.errors.items():
             for error in errors:
                 error_message += f" {field}: {error}"
@@ -108,7 +107,7 @@ def listar_asistencias(request):
     user = request.user
 
     # Mostrar todas si es ADMIN
-    if user.role == User.Role.ADMINISTRADOR:
+    if user.role == User.Role.ADMINISTRADOR.value:
         asistencias = Asistencia.objects.filter(fecha=hoy).select_related('profesor', 'escuela')
     else:
         asistencias = Asistencia.objects.filter(fecha=hoy, profesor=user).select_related('profesor', 'escuela')

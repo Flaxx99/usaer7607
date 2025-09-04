@@ -14,7 +14,7 @@ def roles_permitidos(roles):
         @login_required  # maneja el 'next' y la redirección al LOGIN_URL automáticamente
         def _wrapped(request, *args, **kwargs):
             if request.user.role not in roles:
-                return HttpResponseForbidden("No tienes permiso para acceder a esta página.")
+                raise PermissionDenied
             return view_func(request, *args, **kwargs)
         return _wrapped
     return decorator

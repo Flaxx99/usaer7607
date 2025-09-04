@@ -36,6 +36,8 @@ class Alumno(models.Model):
 
     # --- Datos académicos ---
     GRADOS = [(str(i), str(i)) for i in range(1, 7)]  # Temporal (1 al 6)
+    # TODO: Si los grados son dinámicos o dependen del nivel de la escuela,
+    # considera una solución más robusta (ej. un modelo para Grado, o un campo dinámico).
     grado = models.CharField("Grado", max_length=1, choices=GRADOS)
     grupo = models.CharField(
         "Grupo", 

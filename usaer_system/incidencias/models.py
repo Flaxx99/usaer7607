@@ -26,8 +26,16 @@ class Incidencia(models.Model):
         limit_choices_to={'role': User.Role.MAESTRO_APOYO},
         on_delete=models.SET_NULL,
         null=True,
-        verbose_name="Profesor reportado",
+        verbose_name="Profesor involucrado",
         related_name='incidencias_reportadas'
+    )
+    reportado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        verbose_name="Reportado por",
+        related_name='incidencias_creadas',
+        editable=False, # Se asigna automáticamente en la vista
+        null=True # Temporalmente nullable para la migración
     )
     titulo = models.CharField(
         "Título de la incidencia",

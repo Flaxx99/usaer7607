@@ -3,6 +3,7 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
 from alumnos.models import Alumno
 from .models import Expediente, OtroArchivo
+from usuarios.models import User
 from usaer_system.forms_utils import convertir_mayusculas
 from django.core.files.uploadedfile import UploadedFile
 from pathlib import Path
@@ -41,7 +42,7 @@ class ExpedienteForm(forms.ModelForm):
             self.fields['alumno'].disabled = True
         else:
             # en creación:
-            if user and (user.is_superuser or user.role in ['ADMIN','SECRETARIO']):
+            if user and (user.is_superuser or user.role in [User.Role.ADMINISTRADOR.value, User.Role.SECRETARIO.value]):
                 self.fields['alumno'].queryset = Alumno.objects.filter(expediente__isnull=True)
             elif user:
                 self.fields['alumno'].queryset = Alumno.objects.filter(

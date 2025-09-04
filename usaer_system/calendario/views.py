@@ -5,11 +5,14 @@ from django.http import HttpResponseForbidden, JsonResponse
 from django.core import serializers
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib.auth import get_user_model
 from .models import EventoCalendario
 from .forms import EventoForm
 from django.db import models
 from django.utils import timezone
 import logging
+
+User = get_user_model()
 
 logger = logging.getLogger(__name__)
 
@@ -89,8 +92,8 @@ class EventoCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         form.instance.creado_por = self.request.user
-        # Si no es admin o secretario, forzar tipo PERSONAL
-        if not (self.request.user.is_staff or getattr(self.request.user, 'rol', '') == 'SECRETARIO'):
+        # Si no es admin o secretario, forzar tipo a PERSONAL
+        if not (self.request.user.is_staff or self.request.user.role == User.Role.SECRETARIO.value):
             form.instance.tipo = 'PERSONAL'
         messages.success(self.request, "Evento creado correctamente.")
         return super().form_valid(form)
@@ -101,6 +104,7 @@ class EventoUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     form_class = EventoForm
     template_name = "calendario/evento_form.html"
     success_url = reverse_lazy("calendario:lista_eventos")
+    queryset = EventoCalendario.objects.select_related('creado_por')
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -113,30 +117,23 @@ class EventoUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
 
     def test_func(self):
         evento = self.get_object()
-        # Optimización: precargar 'creado_por' para evitar N+1 en test_func
-        if not hasattr(evento, '_prefetched_objects_cache') or 'creado_por' not in evento._prefetched_objects_cache:
-            evento = EventoCalendario.objects.select_related('creado_por').get(pk=evento.pk)
-
         user = self.request.user
         # Solo puede editar si lo creó o si es admin/secretario y el evento es institucional
         return evento.creado_por == user or (
-            evento.tipo == 'INSTITUCIONAL' and (user.is_staff or getattr(user, 'rol', '') == 'SECRETARIO')
+            evento.tipo == 'INSTITUCIONAL' and (user.is_staff or user.role == User.Role.SECRETARIO.value)
         )
 
 # ✅ 4. Eliminar evento (con mismas reglas que edición)
 class EventoDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = EventoCalendario
     success_url = reverse_lazy("calendario:lista_eventos")
+    queryset = EventoCalendario.objects.select_related('creado_por')
 
     def test_func(self):
         evento = self.get_object()
-        # Optimización: precargar 'creado_por' para evitar N+1 en test_func
-        if not hasattr(evento, '_prefetched_objects_cache') or 'creado_por' not in evento._prefetched_objects_cache:
-            evento = EventoCalendario.objects.select_related('creado_por').get(pk=evento.pk)
-
         user = self.request.user
         return evento.creado_por == user or (
-            evento.tipo == 'INSTITUCIONAL' and (user.is_staff or user.role == User.Role.SECRETARIO)
+            evento.tipo == 'INSTITUCIONAL' and (user.is_staff or user.role == User.Role.SECRETARIO.value)
         )
 
     def post(self, request, *args, **kwargs):

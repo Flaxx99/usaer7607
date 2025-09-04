@@ -3,19 +3,21 @@ from django.contrib.auth.decorators import login_required
 from django.contrib       import messages
 from django.urls          import reverse_lazy
 from django.views.generic import ListView, DeleteView
+from django.contrib.auth  import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.db.models     import Q
 
 from .forms import ExpedienteForm, OtroArchivoFormSet, OtroArchivoFormSetEdit
 from .models import Expediente
-from django.db.models import Q
+
+User = get_user_model()
 
 @login_required
 def subir_expediente(request):
-    from django.urls import reverse_lazy
     if request.user.role not in [
-        User.Role.MAESTRO_APOYO,
-        User.Role.SECRETARIO,
-        User.Role.ADMINISTRADOR,
+        User.Role.MAESTRO_APOYO.value,
+        User.Role.SECRETARIO.value,
+        User.Role.ADMINISTRADOR.value,
     ]:
         messages.error(request, "🚫 No tienes permiso para subir expedientes.")
         return redirect('documentos:lista_expedientes')
@@ -45,10 +47,14 @@ def subir_expediente(request):
 
 @login_required
 def editar_expediente(request, pk):
-    from django.urls import reverse_lazy
     expediente = get_object_or_404(Expediente, pk=pk)
+    user = request.user
+    
+    # --- AÑADIDO: Comprobación de permisos ---
+    if not (user.is_superuser or user == expediente.profesor or user.role in [User.Role.ADMINISTRADOR.value]):
+        messages.error(request, "🚫 No tienes permiso para editar este expediente.")
+        return redirect('documentos:lista_expedientes')
 
-    # … lógica de permisos …
 
     if request.method == 'POST':
         form    = ExpedienteForm(request.POST, request.FILES, instance=expediente, user=request.user)
@@ -79,7 +85,7 @@ class ExpedienteListView(LoginRequiredMixin, ListView):
         qs = super().get_queryset()
         user = self.request.user
         # filtro por permisos
-        if not (user.is_superuser or user.role in ['ADMIN','SECRETARIO']):
+        if not (user.is_superuser or user.role in [User.Role.ADMINISTRADOR.value]):
             qs = qs.filter(profesor=user)
 
         q = self.request.GET.get('q', '').strip()
@@ -105,4 +111,5 @@ class ExpedienteDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 
     def test_func(self):
         exp = self.get_object()
-        return (self.request.user == exp.profesor) or self.request.user.is_superuser
+        user = self.request.user
+        return (user.is_superuser or user == exp.profesor or user.role in [User.Role.ADMINISTRADOR.value])

@@ -22,11 +22,14 @@ class Command(BaseCommand):
 
                 if not Expediente.objects.filter(alumno_id=alumno_id).exists():
                     self.stdout.write(f'{self.style.NOTICE("Borrando carpeta huérfana:")} {ruta}')
-                    # eliminar todo dentro
-                    for root, dirs, files in os.walk(ruta, topdown=False):
-                        for f in files:
-                            os.remove(os.path.join(root, f))
-                        for d in dirs:
-                            os.rmdir(os.path.join(root, d))
-                    os.rmdir(ruta)
+                    try:
+                        # eliminar todo dentro
+                        for root, dirs, files in os.walk(ruta, topdown=False):
+                            for f in files:
+                                os.remove(os.path.join(root, f))
+                            for d in dirs:
+                                os.rmdir(os.path.join(root, d))
+                        os.rmdir(ruta)
+                    except OSError as e:
+                        self.stdout.write(self.style.ERROR(f"No se pudo eliminar {ruta}: {e}"))
         self.stdout.write(self.style.SUCCESS('Limpieza finalizada.'))
