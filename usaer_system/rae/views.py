@@ -20,10 +20,13 @@ from django.views.decorators.csrf import csrf_exempt
 from openpyxl import load_workbook
 from openpyxl.utils import get_column_letter
 
+from django.contrib.auth import get_user_model
 from .models import RAEAlumno, RegistroRAE, CicloEscolar 
 from alumnos.models import Alumno
 from escuelas.models import Escuela # Asegúrate de que este import sea correcto
 from .forms import RAEAlumnoForm
+
+User = get_user_model()
 
 logger = logging.getLogger(__name__)
 
@@ -189,7 +192,7 @@ class RegistroRAEListView(LoginRequiredMixin, ListView):
             messages.warning(self.request, str(e))
             return queryset.none()
 
-        roles_con_acceso_total = ['ADMIN', 'SECRETARIO']
+        roles_con_acceso_total = [User.Role.ADMINISTRADOR.value, User.Role.SECRETARIO.value]
         if not (user.is_superuser or user.role in roles_con_acceso_total):
             if hasattr(user, 'escuela') and user.escuela:
                 queryset = queryset.filter(escuela=user.escuela)
@@ -201,7 +204,7 @@ class RegistroRAEListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         # También adapta esta lógica para usar el rol en lugar de los grupos
-        roles_con_acceso_total = ['ADMIN', 'SECRETARIO']
+        roles_con_acceso_total = [User.Role.ADMINISTRADOR.value, User.Role.SECRETARIO.value]
         context['can_export_all'] = self.request.user.is_superuser or \
                                     self.request.user.role in roles_con_acceso_total
         return context
@@ -265,13 +268,13 @@ class ExportRAEExcelView(LoginRequiredMixin, View):
         ws['C80'] = ws['D14'].value
 
         # CAMBIO: Usamos una lista de roles con acceso total, consistente con settings.py
-        roles_con_acceso_total = ['ADMIN', 'SECRETARIO']
+        roles_con_acceso_total = [User.Role.ADMINISTRADOR.value, User.Role.SECRETARIO.value]
 
         # ************ INICIO DEL CAMBIO CLAVE PARA FILTRAR ALUMNOS ************
         qs = RAEAlumno.objects.filter(registro=registro)
 
         # Si el usuario NO es superusuario ni Secretario, filtra los RAEAlumno por el profesor del alumno
-        if not (request.user.is_superuser or request.user.groups.filter(name='Secretario').exists()):
+        if not (request.user.is_superuser or request.user.role in roles_con_acceso_total):
             qs = qs.filter(alumno__profesor=request.user) # <--- FILTRO DE ALUMNOS POR EL MAESTRO LOGUEADO
             logger.info(f"ExportRAEExcelView: Filtrando RAEAlumno por el profesor logueado ({request.user.get_full_name()}).")
         else:
@@ -408,7 +411,7 @@ class ExportRAEExcelView(LoginRequiredMixin, View):
 
 class ExportAllRAEExcelView(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
-        roles_con_acceso_total = ['ADMIN', 'SECRETARIO']
+        roles_con_acceso_total = [User.Role.ADMINISTRADOR.value, User.Role.SECRETARIO.value]
 
         if not (request.user.is_superuser or request.user.role in roles_con_acceso_total):
             return HttpResponse("No tienes permiso para realizar esta acción.", status=403)
@@ -617,7 +620,3 @@ class ExportAllRAEExcelView(LoginRequiredMixin, View):
         logger.info("Archivo 'Todos_los_Registros_RAE.xlsx' generado y listo para descarga.")
         return response
     
-
-
-
-

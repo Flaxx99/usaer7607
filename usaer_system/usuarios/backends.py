@@ -10,7 +10,7 @@ class EmailOrEmpleadoBackend(BaseBackend):
     def authenticate(self, request, username=None, password=None, **kwargs):
         try:
             user = UserModel.objects.get(
-                Q(email=username) | Q(numero_empleado=username)
+                Q(email=username.lower()) | Q(numero_empleado=username.upper())
             )
         except UserModel.DoesNotExist:
             return None

@@ -20,18 +20,19 @@ class EstadoFilter(admin.SimpleListFilter):
 @admin.register(Incidencia)
 class IncidenciaAdmin(admin.ModelAdmin):
     list_display = (
-        'id', 'titulo', 'escuela_link', 'profesor_link', 'estado_display',
+        'id', 'titulo', 'escuela_link', 'profesor_link', 'reportado_por_link', 'estado_display',
         'fecha_reporte', 'acciones'
     )
 
     list_filter = (EstadoFilter, 'fecha_reporte', 'escuela')
-    search_fields = ('titulo', 'descripcion', 'profesor__username', 'escuela__nombre')
+    search_fields = ('titulo', 'descripcion', 'profesor__username', 'profesor__first_name', 'profesor__last_name', 'escuela__nombre', 'reportado_por__email', 'reportado_por__first_name', 'reportado_por__last_name')
 
-    readonly_fields = ('fecha_reporte',)
+    readonly_fields = ('fecha_reporte', 'reportado_por',)
 
     fieldsets = (
         (_('Información básica'), {'fields': ('titulo', 'descripcion', 'estado')}),
-        (_('Reportante'), {'fields': ('profesor', 'escuela')}),
+        (_('Reportante'), {'fields': ('reportado_por', 'escuela')}),
+        (_('Profesor involucrado'), {'fields': ('profesor',)}),
         (_('Seguimiento'), {'fields': ('respuesta_admin',)}),
     )
 
@@ -57,7 +58,15 @@ class IncidenciaAdmin(admin.ModelAdmin):
             return format_html('<a href="{}">{}</a>', url, obj.profesor.get_full_name())
         return _("Sin profesor asignado")
 
-    profesor_link.short_description = _('Profesor')
+    profesor_link.short_description = _('Profesor involucrado')
+
+    def reportado_por_link(self, obj):
+        if obj.reportado_por:
+            url = reverse('admin:usuarios_user_change', args=[obj.reportado_por.id])
+            return format_html('<a href="{}">{}</a>', url, obj.reportado_por.get_full_name())
+        return _("Sin reportante")
+
+    reportado_por_link.short_description = _('Reportado por')
 
     def escuela_link(self, obj):
         url = reverse('admin:escuelas_escuela_change', args=[obj.escuela.id])

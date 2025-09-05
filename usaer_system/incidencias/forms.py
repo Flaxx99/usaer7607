@@ -18,10 +18,10 @@ class IncidenciaForm(forms.ModelForm):
         # Filtro dinámico si se pasa escuela
         if escuela:
             self.fields['profesor'].queryset = User.objects.filter(
-                escuela=escuela, role='MAESTRO_APOYO'
+                escuela=escuela, role=User.Role.MAESTRO_APOYO.value
             )
         else:
-            self.fields['profesor'].queryset = User.objects.filter(role='MAESTRO_APOYO')
+            self.fields['profesor'].queryset = User.objects.filter(role=User.Role.MAESTRO_APOYO.value)
 
         # Configuración de Crispy (sin botones)
         self.helper = FormHelper()

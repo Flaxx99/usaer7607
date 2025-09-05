@@ -153,6 +153,32 @@ document.addEventListener('DOMContentLoaded', () => {
   filtrarEscuelas();
   escSel.value   = "{{ request.POST.escuela|default:esc_ini }}";
   poblarGrados();
+
+  // --- Lógica para calcular la edad dinámicamente ---
+  const fechaNacimientoInput = document.getElementById('id_fecha_nacimiento');
+  const edadInput = document.getElementById('id_edad');
+
+  function calcularEdad() {
+    const fechaNacimientoStr = fechaNacimientoInput.value;
+    if (fechaNacimientoStr) {
+      const fechaNacimiento = new Date(fechaNacimientoStr);
+      const hoy = new Date();
+      let edad = hoy.getFullYear() - fechaNacimiento.getFullYear();
+      const mes = hoy.getMonth() - fechaNacimiento.getMonth();
+      if (mes < 0 || (mes === 0 && hoy.getDate() < fechaNacimiento.getDate())) {
+        edad--;
+      }
+      edadInput.value = edad;
+    } else {
+      edadInput.value = '';
+    }
+  }
+
+  // Calcular edad al cargar la página si ya hay una fecha
+  calcularEdad();
+
+  // Calcular edad cada vez que la fecha de nacimiento cambia
+  fechaNacimientoInput.addEventListener('change', calcularEdad);
 });
 </script>
 {% endblock %}

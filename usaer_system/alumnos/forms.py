@@ -38,3 +38,15 @@ class AlumnoForm(forms.ModelForm):
         self.fields['profesor'].queryset = (
             User.objects.all().order_by('last_name', 'first_name')
         )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        clasificacion = cleaned_data.get('clasificacion')
+        clasificacion_otro = cleaned_data.get('clasificacion_otro')
+
+        if clasificacion == 'OTRO' and not clasificacion_otro:
+            self.add_error('clasificacion_otro', "Este campo es requerido cuando la clasificación es 'Otro'.")
+        elif clasificacion != 'OTRO' and clasificacion_otro:
+            # Clear the field if not 'OTRO' to prevent storing irrelevant data
+            cleaned_data['clasificacion_otro'] = ''
+        return cleaned

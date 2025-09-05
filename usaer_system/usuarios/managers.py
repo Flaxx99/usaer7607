@@ -10,7 +10,8 @@ class CustomUserManager(BaseUserManager):
         if not numero_empleado:
             raise ValueError(_('El número de empleado es obligatorio'))
 
-        email = self.normalize_email(email)
+        email = self.normalize_email(email).lower()
+        numero_empleado = numero_empleado.upper()
         extra_fields.setdefault('is_active', True)
         user = self.model(email=email, numero_empleado=numero_empleado, **extra_fields)
         user.set_password(password)

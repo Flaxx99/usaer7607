@@ -17,11 +17,17 @@ def crear_incidencia(request):
     """
     Permite al director o al administrador crear y asignar una incidencia a un profesor
     """
+    if not request.user.escuela:
+        messages.error(request, "No puedes crear incidencias porque no tienes una escuela asignada.")
+        # Redirigir a una página segura, como el dashboard o la lista de incidencias
+        return redirect('incidencias:revisar_incidencias')
+
     if request.method == 'POST':
         form = IncidenciaForm(request.POST, escuela=request.user.escuela)
         if form.is_valid():
             incidencia = form.save(commit=False)
             incidencia.escuela = request.user.escuela
+            incidencia.reportado_por = request.user # Set the reporter
             incidencia.save()
             if incidencia.profesor:
                 messages.success(
@@ -49,9 +55,6 @@ def crear_incidencia(request):
 
 
 @login_required
-@roles_permitidos([
-    User.Role.ADMINISTRADOR,
-])
 def listar_incidencias(request):
     """
     Muestra al docente, maestro de apoyo o admin solo sus incidencias
@@ -84,7 +87,6 @@ def listar_incidencias(request):
     })
 
 @login_required
-@roles_permitidos([User.Role.ADMINISTRADOR, User.Role.DIRECTOR, User.Role.SECRETARIO])
 def detalle_incidencia(request, pk):
     from django.urls import reverse_lazy
     incidencia = get_object_or_404(Incidencia, pk=pk)
@@ -98,17 +100,30 @@ def detalle_incidencia(request, pk):
     })
 
 @login_required
-@roles_permitidos([User.Role.ADMINISTRADOR, User.Role.SECRETARIO])
 def revisar_incidencias(request):
     """
     Panel para que el director o admin revise todas las incidencias de su escuela
     """
+    # Un admin puede no tener escuela, pero debe poder ver todo.
+    # Un director debe tener escuela para ver las incidencias.
+    if request.user.role == User.Role.DIRECTOR.value and not request.user.escuela:
+        messages.error(request, "No puedes revisar incidencias porque no tienes una escuela asignada.")
+        return redirect('usuarios:dashboard')
+
     estado      = request.GET.get('estado', '')
     profesor_id = request.GET.get('profesor', '')
     query       = request.GET.get('q', '')
 
     from django.urls import reverse_lazy
-    incidencias = Incidencia.objects.filter(escuela=request.user.escuela)
+    
+    incidencias = Incidencia.objects.all()
+    # Si el usuario no es admin, filtrar por su escuela.
+    if not request.user.is_superuser and request.user.role != User.Role.ADMINISTRADOR.value:
+        if request.user.escuela:
+            incidencias = incidencias.filter(escuela=request.user.escuela)
+        else:
+            incidencias = Incidencia.objects.none()
+
     if estado:
         incidencias = incidencias.filter(estado=estado)
     if profesor_id:
@@ -125,10 +140,13 @@ def revisar_incidencias(request):
     pendientes = incidencias.filter(estado='PENDIENTE').count()
     resueltas = incidencias.filter(estado='RESUELTA').count()
 
-    profesores = User.objects.filter(
-        escuela=request.user.escuela,
-        role=User.Role.MAESTRO_APOYO
-    ).only('id', 'first_name', 'last_name')
+    profesores_qs = User.objects.filter(role=User.Role.MAESTRO_APOYO.value)
+    # Filtrar profesores por escuela solo si el usuario tiene una escuela asignada
+    if request.user.escuela:
+        profesores_qs = profesores_qs.filter(escuela=request.user.escuela)
+
+    profesores = profesores_qs.only('id', 'first_name', 'last_name')
+
 
     return render(request, 'incidencias/revisar.html', {
         'incidencias':       incidencias.order_by('-fecha_reporte'),
@@ -149,13 +167,21 @@ def revisar_incidencias(request):
 
 
 @login_required
-@roles_permitidos([User.Role.DIRECTOR, User.Role.ADMINISTRADOR])
 def editar_incidencia(request, pk):
     """
     Permite al director o admin editar una incidencia y cambiar su estado
     """
     from django.urls import reverse_lazy
-    incidencia = get_object_or_404(Incidencia, pk=pk, escuela=request.user.escuela)
+    # Un admin puede editar incidencias de cualquier escuela. Un director solo de la suya.
+    if request.user.role == User.Role.DIRECTOR.value and not request.user.escuela:
+        messages.error(request, "No puedes editar incidencias porque no tienes una escuela asignada.")
+        return redirect('incidencias:revisar_incidencias')
+    
+    qs = Incidencia.objects.all()
+    if request.user.role == User.Role.DIRECTOR.value:
+        qs = qs.filter(escuela=request.user.escuela)
+
+    incidencia = get_object_or_404(qs, pk=pk)
 
     if request.method == 'POST':
         form = IncidenciaForm(request.POST, instance=incidencia, escuela=request.user.escuela)
@@ -188,13 +214,21 @@ def editar_incidencia(request, pk):
 
 
 @login_required
-@roles_permitidos([User.Role.DIRECTOR, User.Role.ADMINISTRADOR])
 def resolver_incidencia(request, pk):
     """
     Vista para que el director o admin marque una incidencia como resuelta
     """
     from django.urls import reverse_lazy
-    incidencia = get_object_or_404(Incidencia, pk=pk, escuela=request.user.escuela)
+    # Un admin puede resolver incidencias de cualquier escuela. Un director solo de la suya.
+    if request.user.role == User.Role.DIRECTOR.value and not request.user.escuela:
+        messages.error(request, "No puedes resolver incidencias porque no tienes una escuela asignada.")
+        return redirect('incidencias:revisar_incidencias')
+    
+    qs = Incidencia.objects.all()
+    if request.user.role == User.Role.DIRECTOR.value:
+        qs = qs.filter(escuela=request.user.escuela)
+
+    incidencia = get_object_or_404(qs, pk=pk)
 
     if request.method == 'POST':
         incidencia.estado          = 'RESUELTA'
@@ -215,12 +249,20 @@ def resolver_incidencia(request, pk):
 
 
 @login_required
-@roles_permitidos([User.Role.DIRECTOR, User.Role.ADMINISTRADOR])
 def eliminar_incidencia(request, pk):
     """
     Elimina una incidencia directamente desde la lista.
     """
-    incidencia = get_object_or_404(Incidencia, pk=pk, escuela=request.user.escuela)
+    # Un admin puede eliminar incidencias de cualquier escuela. Un director solo de la suya.
+    if request.user.role == User.Role.DIRECTOR.value and not request.user.escuela:
+        messages.error(request, "No puedes eliminar incidencias porque no tienes una escuela asignada.")
+        return redirect('incidencias:revisar_incidencias')
+    
+    qs = Incidencia.objects.all()
+    if request.user.role == User.Role.DIRECTOR.value:
+        qs = qs.filter(escuela=request.user.escuela)
+
+    incidencia = get_object_or_404(qs, pk=pk)
     if request.method == 'POST':
         try:
             incidencia.delete()

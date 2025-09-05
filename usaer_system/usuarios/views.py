@@ -53,7 +53,7 @@ from documentos.models import Expediente  # Ajusta al nombre de tu modelo de exp
 # -----------------------------
 # Vistas basadas en clases para usuarios
 # -----------------------------
-@method_decorator(roles_permitidos(['ADMIN']), name='dispatch')
+@method_decorator(roles_permitidos([User.Role.ADMINISTRADOR.value, User.Role.SECRETARIO.value]), name='dispatch')
 class UserListView(LoginRequiredMixin, ListView):
     model = User
     template_name = 'usuarios/lista_usuarios.html'
@@ -96,7 +96,7 @@ class UserListView(LoginRequiredMixin, ListView):
         return ctx
 
 
-@method_decorator(roles_permitidos(['ADMIN', 'SECRETARIO']), name='dispatch')
+@method_decorator(roles_permitidos([User.Role.ADMINISTRADOR.value, User.Role.SECRETARIO.value]), name='dispatch')
 class UserCreateView(LoginRequiredMixin, CreateView):
     model = User
     form_class = UsuarioCreationForm
@@ -123,7 +123,7 @@ class UserCreateView(LoginRequiredMixin, CreateView):
         return ctx
 
 
-@method_decorator(roles_permitidos(['ADMIN', 'SECRETARIO']), name='dispatch')
+@method_decorator(roles_permitidos([User.Role.ADMINISTRADOR.value, User.Role.SECRETARIO.value]), name='dispatch')
 class UserUpdateView(LoginRequiredMixin, UpdateView):
     model = User
     form_class = UsuarioChangeForm
@@ -256,36 +256,59 @@ def redireccion_post_login(request):
 @login_required
 def dashboard(request):
     user = request.user
-
-    # Definir queryset base para permisos según el rol del usuario
-    permisos_base_qs = Permiso.objects.all()
-    if user.role != User.Role.ADMINISTRADOR:
-        permisos_base_qs = permisos_base_qs.filter(profesor=user)
-
-    # --- Consultas Optimizadas ---
-    ultimos_permisos = permisos_base_qs.select_related('profesor').order_by('-fecha_solicitud')[:5]
-    ultimas_incidencias = Incidencia.objects.select_related('profesor').order_by('-fecha_reporte')[:5]
-    ultimos_expedientes = Expediente.objects.select_related('alumno').order_by('-fecha_subida')[:5]
-    ultimos_avisos = Anuncio.objects.filter(
-        (Q(fecha_expiracion__gte=timezone.now()) | Q(fecha_expiracion__isnull=True)),
-        fecha_publicacion__lte=timezone.now()
-    ).select_related('autor').order_by('-fecha_publicacion')[:5]
-    
     context = {
-        'permisos_pendientes': permisos_base_qs.filter(estado='PENDIENTE').count(),
-        'incidencias_pendientes': Incidencia.objects.filter(estado='PENDIENTE').count(),
-        'ultimos_eventos': EventoCalendario.objects.order_by('-fecha_inicio')[:5],
-        'ultimos_permisos': ultimos_permisos,
-        'ultimas_incidencias': ultimas_incidencias,
-        'ultimos_expedientes': ultimos_expedientes,
-        'ultimos_oficios': Oficio.objects.order_by('-fecha_subida')[:5],
-        'ultimos_avisos': ultimos_avisos,
         'breadcrumbs': [],
         'current_page_title': 'Dashboard',
         'is_admin_dashboard': False
     }
 
-    if user.role == User.Role.ADMINISTRADOR:
+    # Lógica para Avisos
+    if user.has_perm('avisos.view_anuncio'):
+        ultimos_avisos = Anuncio.objects.filter(
+            (Q(fecha_expiracion__gte=timezone.now()) | Q(fecha_expiracion__isnull=True)),
+            fecha_publicacion__lte=timezone.now()
+        ).select_related('autor').order_by('-fecha_publicacion')[:5]
+        context['ultimos_avisos'] = ultimos_avisos
+
+    # Lógica para Permisos
+    if user.has_perm('permisos.view_permiso'):
+        permisos_qs = Permiso.objects.all()
+        if user.role != User.Role.ADMINISTRADOR.value:
+            permisos_qs = permisos_qs.filter(profesor=user)
+        context['permisos_pendientes'] = permisos_qs.filter(estado='PENDIENTE').count()
+        context['ultimos_permisos'] = permisos_qs.select_related('profesor').order_by('-fecha_solicitud')[:5]
+
+    # Lógica para Incidencias
+    if user.has_perm('incidencias.view_incidencia'):
+        incidencias_qs = Incidencia.objects.all()
+        if user.role != User.Role.ADMINISTRADOR.value:
+            incidencias_qs = incidencias_qs.filter(profesor=user)
+        context['incidencias_pendientes'] = incidencias_qs.filter(estado='PENDIENTE').count()
+        context['ultimas_incidencias'] = incidencias_qs.select_related('profesor').order_by('-fecha_reporte')[:5]
+
+    # Lógica para Calendario
+    if user.has_perm('calendario.view_eventocalendario'):
+        eventos_qs = EventoCalendario.objects.all()
+        if user.role != User.Role.ADMINISTRADOR.value:
+            eventos_qs = eventos_qs.filter(Q(tipo='INSTITUCIONAL') | Q(tipo='PERSONAL', creado_por=user))
+        context['ultimos_eventos'] = eventos_qs.order_by('-fecha_inicio')[:5]
+
+    # Lógica para Expedientes (Documentos)
+    if user.has_perm('documentos.view_expediente'):
+        expedientes_qs = Expediente.objects.all()
+        if user.role != User.Role.ADMINISTRADOR.value:
+            expedientes_qs = expedientes_qs.filter(alumno__profesor=user)
+        context['ultimos_expedientes'] = expedientes_qs.select_related('alumno').order_by('-fecha_subida')[:5]
+
+    # Lógica para Oficios
+    if user.has_perm('oficios.view_oficio'):
+        oficios_qs = Oficio.objects.all()
+        if user.role != User.Role.ADMINISTRADOR.value:
+            oficios_qs = oficios_qs.filter(subido_por=user)
+        context['ultimos_oficios'] = oficios_qs.order_by('-fecha_subida')[:5]
+
+    # Estadísticas para Administradores
+    if user.role == User.Role.ADMINISTRADOR.value:
         context['is_admin_dashboard'] = True
         context.update({
             'total_alumnos': Alumno.objects.count(),

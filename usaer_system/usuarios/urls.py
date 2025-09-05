@@ -13,8 +13,8 @@ urlpatterns = [
     path(
         '',
         roles_permitidos([
-            User.Role.ADMINISTRADOR,
-            User.Role.SECRETARIO,
+            User.Role.ADMINISTRADOR.value,
+            User.Role.SECRETARIO.value,
         ])(views.UserListView.as_view()),
         name='list'
     ),
@@ -23,8 +23,8 @@ urlpatterns = [
     path(
         'nuevo/',
         roles_permitidos([
-            User.Role.ADMINISTRADOR,
-            User.Role.SECRETARIO,
+            User.Role.ADMINISTRADOR.value,
+            User.Role.SECRETARIO.value,
         ])(views.UserCreateView.as_view()),
         name='create'
     ),
@@ -32,31 +32,31 @@ urlpatterns = [
     # Detalle, editar, eliminar
         path('<int:pk>/detail/',
         roles_permitidos([
-            User.Role.ADMINISTRADOR,
-            User.Role.SECRETARIO,
+            User.Role.ADMINISTRADOR.value,
+            User.Role.SECRETARIO.value,
         ])(views.UserDetailView.as_view()),
         name='detail'
     ),
     path('<int:pk>/editar/',
         roles_permitidos([
-            User.Role.ADMINISTRADOR,
-            User.Role.SECRETARIO,
+            User.Role.ADMINISTRADOR.value,
+            User.Role.SECRETARIO.value,
         ])(views.UserUpdateView.as_view()),
         name='update'
     ),
     path(
         '<int:pk>/eliminar/',
         roles_permitidos([
-            User.Role.ADMINISTRADOR,
-            User.Role.SECRETARIO,
+            User.Role.ADMINISTRADOR.value,
+            User.Role.SECRETARIO.value,
         ])(views.UserDeleteView.as_view()),
         name='delete'
     ),
     path(
         '<int:pk>/toggle-active/',
         roles_permitidos([
-            User.Role.ADMINISTRADOR,
-            User.Role.SECRETARIO,
+            User.Role.ADMINISTRADOR.value,
+            User.Role.SECRETARIO.value,
         ])(views.toggle_user_active),
         name='toggle_active'
     ),
