@@ -41,7 +41,6 @@ from alumnos.models import Alumno
 from incidencias.models import Incidencia
 from django.conf import settings
 from permisos.models import Permiso
-from escuelas.models import Escuela
 from calendario.models import EventoCalendario
 from oficios.models import Oficio
 from avisos.models import Anuncio
@@ -169,21 +168,22 @@ class UserDetailView(LoginRequiredMixin, DetailView):
         return context
 
 
+@method_decorator(roles_permitidos([User.Role.ADMINISTRADOR.value]), name='dispatch')
 class UserDeleteView(LoginRequiredMixin, DeleteView):
     model = User
     success_url = reverse_lazy('usuarios:list')
 
-    def post(self, request, *args, **kwargs):
-        return self.delete(request, *args, **kwargs)
-
     def delete(self, request, *args, **kwargs):
-        messages.success(request, _('Usuario eliminado exitosamente'))
-        return super().delete(request, *args, **kwargs)
+        response = super().delete(request, *args, **kwargs)
+        messages.success(self.request, _('Usuario eliminado exitosamente'))
+        return response
 
 
 # -----------------------------
 # Vistas de funciones para usuario individual y autenticación
 # -----------------------------
+@login_required
+@roles_permitidos([User.Role.ADMINISTRADOR.value, User.Role.SECRETARIO.value])
 def toggle_user_active(request, pk):
     user = get_object_or_404(User, pk=pk)
     user.activo = not user.activo
@@ -298,14 +298,14 @@ def dashboard(request):
         expedientes_qs = Expediente.objects.all()
         if user.role != User.Role.ADMINISTRADOR.value:
             expedientes_qs = expedientes_qs.filter(alumno__profesor=user)
-        context['ultimos_expedientes'] = expedientes_qs.select_related('alumno').order_by('-fecha_subida')[:5]
+        context['ultimos_expedientes'] = expedientes_qs.select_related('alumno', 'alumno__escuela').order_by('-fecha_subida')[:5]
 
     # Lógica para Oficios
     if user.has_perm('oficios.view_oficio'):
         oficios_qs = Oficio.objects.all()
         if user.role != User.Role.ADMINISTRADOR.value:
             oficios_qs = oficios_qs.filter(subido_por=user)
-        context['ultimos_oficios'] = oficios_qs.order_by('-fecha_subida')[:5]
+        context['ultimos_oficios'] = oficios_qs.select_related('subido_por').order_by('-fecha_subida')[:5]
 
     # Estadísticas para Administradores
     if user.role == User.Role.ADMINISTRADOR.value:
