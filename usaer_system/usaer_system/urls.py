@@ -30,7 +30,9 @@ urlpatterns = [
     path('oficios/', include('oficios.urls', namespace='oficios')),
     path('rac/', include('rac.urls', namespace='rac')),
     path('calendario/', include('calendario.urls', namespace='calendario')),
-    path('avisos/', include('avisos.urls', namespace='avisos')),
+    path('avisos/', include('avisos.urls')),
+    path('ciclos-escolares/', include('ciclos_escolares.urls')),
+    path('accounts/', include('django.contrib.auth.urls')),
     path('notificaciones/', include('notificaciones.urls', namespace='notificaciones')),
     path('rae/', include('rae.urls', namespace='rae')),
 

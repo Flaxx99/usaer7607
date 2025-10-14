@@ -2,6 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse
 from django.contrib import messages
 import csv
+from django.db import transaction
 
 from .models import Alumno, Escuela
 from .forms import AlumnoForm
@@ -165,72 +166,4 @@ def eliminar_alumno(request, pk):
             messages.error(request, f"Error inesperado al eliminar al alumno: {e}")
     return redirect('alumnos:listar_alumnos')
 
-def promover_alumnos(request):
-    from django.urls import reverse_lazy
 
-    if request.method == 'POST':
-        # Si el formulario de confirmación final fue enviado
-        if 'confirmed' in request.POST:
-            alumnos_activos = Alumno.objects.filter(activo=True)
-            promovidos_count = 0
-            graduados_count = 0
-
-            for alumno in alumnos_activos:
-                try:
-                    # TODO: Asegurarse de que alumno.grado siempre sea un string numérico válido.
-                    # Este try-except maneja casos donde grado no es convertible a int.
-                    grado_actual = int(alumno.grado)
-                    if grado_actual >= 6: # Graduados de 6to
-                        alumno.activo = False
-                        graduados_count += 1
-                    else:
-                        alumno.grado = str(grado_actual + 1)
-                        promovidos_count += 1
-                    
-                    alumno.grupo = '' # Limpiar el grupo para el nuevo ciclo
-                    alumno.save()
-                except (ValueError, TypeError):
-                    # Log the error or handle it more specifically if needed
-                    messages.warning(request, f"El alumno '{alumno.get_full_name()}' fue omitido porque su grado ('{alumno.grado}') no es un número válido.")
-                    continue
-            
-            messages.success(request, f'{promovidos_count} alumnos fueron promovidos. {graduados_count} alumnos fueron graduados y marcados como inactivos.')
-            return redirect('alumnos:listar_alumnos')
-
-        # Si es el primer POST (simulación)
-        else:
-            alumnos_activos = Alumno.objects.filter(activo=True)
-            alumnos_a_promover = []
-            alumnos_a_graduar = []
-
-            for alumno in alumnos_activos:
-                try:
-                    grado_actual = int(alumno.grado)
-                    if grado_actual >= 6:
-                        alumnos_a_graduar.append(alumno)
-                    else:
-                        alumnos_a_promover.append(alumno)
-                except (ValueError, TypeError):
-                    # No se muestra mensaje en la simulación, solo en la ejecución real.
-                    continue
-            
-            return render(request, 'alumnos/promover.html', {
-                'simulation_mode': True,
-                'alumnos_a_promover': alumnos_a_promover,
-                'alumnos_a_graduar': alumnos_a_graduar,
-                'breadcrumbs': [
-                    {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
-                    {'name': 'Gestión de Alumnos', 'url': reverse_lazy('alumnos:listar_alumnos')}
-                ],
-                'current_page_title': 'Confirmar Promoción de Alumnos'
-            })
-
-    # Si es GET (mostrar la advertencia inicial)
-    return render(request, 'alumnos/promover.html', {
-        'simulation_mode': False,
-        'breadcrumbs': [
-            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
-            {'name': 'Gestión de Alumnos', 'url': reverse_lazy('alumnos:listar_alumnos')}
-        ],
-        'current_page_title': 'Promover Alumnos al Siguiente Ciclo'
-    })

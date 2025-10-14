@@ -10,11 +10,7 @@
         <a href="{% url 'alumnos:crear_alumno' %}" class="btn btn-success">
             <i class="fas fa-user-plus me-2"></i>{% trans 'Nuevo Alumno' %}
         </a>
-        {% if request.user.role == 'ADMIN' or request.user.role == 'SECRETARIO' %}
-        <a href="{% url 'alumnos:promover_alumnos' %}" class="btn btn-warning">
-            <i class="fas fa-graduation-cap me-2"></i>{% trans 'Promover Alumnos' %}
-        </a>
-        {% endif %}
+
     </div>
 </div>
 

@@ -6,7 +6,7 @@ from django.contrib.auth import get_user_model
 
 from alumnos.models import Alumno
 from escuelas.models import Escuela
-from rae.models import CicloEscolar # <--- IMPORTADO
+from ciclos_escolares.models import CicloEscolar # <--- IMPORTADO
 
 User = get_user_model()
 
@@ -71,7 +71,6 @@ class RegistroRAC(models.Model):
         on_delete=models.PROTECT,
         related_name='racs',
         verbose_name='Ciclo Escolar',
-        null=True # <--- AÑADIDO TEMPORALMENTE
     )
 
     # Escuela regular y zona (se autorrellena)

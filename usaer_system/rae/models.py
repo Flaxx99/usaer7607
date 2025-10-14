@@ -7,53 +7,7 @@ from escuelas.models import Escuela
 from alumnos.models import Alumno
 from usuarios.models import User # Asegúrate de que tu modelo User esté en usuarios.models
 
-# Nuevo Modelo: CicloEscolar
-class CicloEscolar(models.Model):
-    nombre = models.CharField(max_length=100, unique=True)
-    fecha_inicio = models.DateField()
-    fecha_fin = models.DateField()
-    activo = models.BooleanField(default=True)
-
-    class Meta:
-        verbose_name = "Ciclo Escolar"
-        verbose_name_plural = "Ciclos Escolares"
-
-    def __str__(self):
-        return self.nombre
-
-    @classmethod
-    def get_current_or_next_cycle(cls, current_date=None):
-            if current_date is None:
-                current_date = date.today()
-
-            # Intenta encontrar un ciclo donde la fecha actual esté entre la fecha de inicio y fin.
-            current_cycle = cls.objects.filter(
-                fecha_inicio__lte=current_date,
-                fecha_fin__gte=current_date
-            ).order_by('-fecha_inicio').first() # Ordena por fecha para el caso de solapamientos (aunque no deberían haber con unique=True)
-
-            if current_cycle:
-                return current_cycle
-            else:
-                # Si no hay un ciclo activo, busca el próximo ciclo (que aún no ha comenzado)
-                next_cycle = cls.objects.filter(
-                    fecha_inicio__gt=current_date
-                ).order_by('fecha_inicio').first()
-                
-                if next_cycle:
-                    # Podrías decidir si quieres retornar el próximo ciclo aquí,
-                    # o si prefieres que se lance una excepción para forzar al admin a activar/crear uno.
-                    # Para la vista de captura, es mejor que se lance una excepción si no hay un ciclo activo.
-                    raise cls.DoesNotExist(
-                        f"No hay un Ciclo Escolar activo para la fecha actual ({current_date}). "
-                        f"El próximo ciclo encontrado es: '{next_cycle.nombre}' (inicia: {next_cycle.fecha_inicio}). "
-                        f"Por favor, asegúrate de que el ciclo escolar actual esté configurado correctamente."
-                    )
-                else:
-                    raise cls.DoesNotExist(
-                        f"No se encontró ningún Ciclo Escolar activo para la fecha actual ({current_date}), "
-                        f"ni futuros ciclos. Por favor, crea el próximo ciclo escolar."
-                    )
+from ciclos_escolares.models import CicloEscolar
 
 class RegistroRAE(models.Model):
     

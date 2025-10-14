@@ -18,7 +18,7 @@ from .forms import RegistroRACForm
 from .models import RegistroRAC
 from alumnos.models import Alumno
 from escuelas.models import Escuela
-from rae.views import get_current_ciclo_escolar_instance
+from ciclos_escolares.utils import get_current_ciclo_escolar_instance
 
 # --- Views for CRUD operations ---
 

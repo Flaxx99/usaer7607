@@ -1,15 +1,18 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib.auth import get_user_model
+from usuarios.decoradores import roles_permitidos
 from django.db.models import Q
 
 from .models import Escuela
 from .forms import EscuelaForm
 
+User = get_user_model()
+
 # Create your views here.
 
 from django.urls import reverse_lazy
-@staff_member_required
+@roles_permitidos([User.Role.ADMINISTRADOR.value, User.Role.SECRETARIO.value])
 def listar_escuelas(request):
     """
     Muestra el listado de todas las escuelas.
@@ -35,7 +38,7 @@ def listar_escuelas(request):
     })
 
 from django.urls import reverse_lazy
-@staff_member_required
+@roles_permitidos([User.Role.ADMINISTRADOR.value, User.Role.SECRETARIO.value])
 def crear_escuela(request):
     """
     Formulario para crear una nueva escuela.
@@ -61,7 +64,7 @@ def crear_escuela(request):
     })
 
 from django.urls import reverse_lazy
-@staff_member_required
+@roles_permitidos([User.Role.ADMINISTRADOR.value, User.Role.SECRETARIO.value])
 def editar_escuela(request, pk):
     """
     Formulario para editar una escuela existente.
@@ -87,7 +90,7 @@ def editar_escuela(request, pk):
         'current_page_title': f'Editar {escuela.nombre}'
     })
 
-@staff_member_required
+@roles_permitidos([User.Role.ADMINISTRADOR.value, User.Role.SECRETARIO.value])
 def eliminar_escuela(request, pk):
     """
     Elimina una escuela directamente desde la lista.

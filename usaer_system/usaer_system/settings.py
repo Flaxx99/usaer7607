@@ -69,6 +69,7 @@ INSTALLED_APPS = [
     'calendario',
     'avisos',
     'notificaciones',
+    'ciclos_escolares',
 ]
 
 ADMIN_FOR_MODELS = False 
@@ -164,6 +165,7 @@ ROLE_PERMISSIONS = {
         'create_user', 'list_users', 'edit_user', 'delete_user',
         'create_escuela', 'list_escuelas', 'edit_escuela', 'delete_escuela',
         'create_alumno', 'list_alumnos', 'edit_alumno', 'delete_alumno',
+        'list_ciclos_escolares', 'promover_alumnos',
         # RAE/RAC
         'ver_rac',
         'nuevo_rac',
@@ -184,6 +186,7 @@ ROLE_PERMISSIONS = {
     'SECRETARIO': [
         'create_user', 'list_users', 'edit_user', 'delete_user',
         'create_escuela', 'list_escuelas', 'edit_escuela', 'delete_escuela',
+        'list_ciclos_escolares', 'promover_alumnos',
         # RAE/RAC
         'ver_rac',
         'nuevo_rac',

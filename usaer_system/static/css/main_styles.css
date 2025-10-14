@@ -78,3 +78,7 @@ body {
 .card-header i:not([class*="text-"]) {
     color: #0dcaf0 !important; /* Default to info color if no text-* class */
 }
+
+.sidenav {
+    height: 100vh;
+}
