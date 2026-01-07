@@ -1,10 +1,16 @@
-
 from django.urls import path, include
-from . import views
+from rest_framework.routers import DefaultRouter
+from .views import AsistenciaViewSet, ChecadorView
 
 app_name = 'asistencias'
+
+router = DefaultRouter()
+router.register(r'', AsistenciaViewSet, basename='asistencias')
+
 urlpatterns = [
-    path('checador/', views.mostrar_checador, name='mostrar_checador'),
-    path('',        views.checar_asistencia, name='checar_asistencia'),
-    path('listado/',views.listar_asistencias, name='listar_asistencias'),
+    # Ruta pública para el kiosco (POST)
+    path('checar/', ChecadorView.as_view(), name='checar'),
+    
+    # Rutas privadas para el historial (GET)
+    path('', include(router.urls)),
 ]

@@ -1,10 +1,12 @@
-from django.urls import path
-from . import views
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import EscuelaViewSet
 
 app_name = 'escuelas'
+
+router = DefaultRouter()
+router.register(r'', EscuelaViewSet, basename='escuelas')
+
 urlpatterns = [
-    path('', views.listar_escuelas, name='listar_escuelas'),
-    path('nuevo/', views.crear_escuela, name='crear_escuela'),
-    path('<int:pk>/edit/', views.editar_escuela, name='editar_escuela'),
-    path('<int:pk>/delete/', views.eliminar_escuela, name='eliminar_escuela'),
+    path('', include(router.urls)),
 ]

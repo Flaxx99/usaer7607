@@ -1,247 +1,139 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib import messages
+from rest_framework import viewsets, filters, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from django.contrib.auth import get_user_model
 from django.utils import timezone
-from django.contrib.auth.decorators import login_required, permission_required
 from django.db.models import Q
-from django.utils.translation import gettext_lazy as _
 
 from .models import Permiso
-from .forms import SolicitudPermisoForm, GestionPermisoForm
+from .serializers import PermisoSerializer
+from .permissions import IsAdminDirectorOrOwner
 
+User = get_user_model()
 
-from django.urls import reverse_lazy
+class PermisoViewSet(viewsets.ModelViewSet):
+    serializer_class = PermisoSerializer
+    permission_classes = [IsAdminDirectorOrOwner]
+    
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['motivo', 'profesor__nombre', 'profesor__apellido_paterno']
+    ordering_fields = ['fecha_solicitud', 'fecha_inicio', 'estado']
+    ordering = ['-fecha_solicitud']
 
-@login_required
-def permisos_redirect(request):
-    if request.user.has_perm('permisos.gestionar_permisos'):
-        return redirect('permisos:gestionar')
-    else:
-        return redirect('permisos:mis_permisos')
+    def get_queryset(self):
+        """
+        Replica toda la lógica de filtrado de 'mis_permisos' y 'gestionar_permisos'.
+        """
+        user = self.request.user
+        queryset = Permiso.objects.select_related('profesor', 'escuela', 'administrador')
 
-@login_required
-def solicitar_permiso(request):
-    if request.method == 'POST':
-        form = SolicitudPermisoForm(request.POST, user=request.user)
-        if form.is_valid():
-            permiso = form.save(commit=False)
-            permiso.profesor = request.user
-            permiso.save()
-            messages.success(request, _("Solicitud registrada correctamente (N° {0})").format(permiso.id))
-            return redirect('permisos:mis_permisos')
-        messages.warning(request, _("Corrige los errores en el formulario"))
-    else:
-        form = SolicitudPermisoForm(initial={
-            'fecha_inicio': timezone.localdate(),
-            'fecha_fin': timezone.localdate()
-        }, user=request.user)
+        # --- 1. FILTRO BASE POR ROL ---
+        if user.is_superuser or user.role == User.Role.ADMINISTRADOR.value:
+            # Admin ve todo
+            pass
+        elif user.role == User.Role.DIRECTOR.value:
+            # Director ve solo su escuela
+            if user.escuela:
+                queryset = queryset.filter(escuela=user.escuela)
+            else:
+                return queryset.none()
+        else:
+            # Maestros ven solo lo suyo
+            queryset = queryset.filter(profesor=user)
 
-    return render(request, 'permisos/solicitar.html', {
-        'form': form,
-        'titulo': _('Nueva Solicitud de Permiso'),
-        'hoy': timezone.localdate().isoformat(),
-        'max_date': (timezone.localdate() + timezone.timedelta(days=365)).isoformat(),
-        'breadcrumbs': [
-            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
-            {'name': 'Mis Permisos', 'url': reverse_lazy('permisos:mis_permisos')}
-        ],
-        'current_page_title': _('Nueva Solicitud de Permiso')
-    })
+        # --- 2. FILTROS DINÁMICOS (Query Params) ---
+        # Estos replican tus 'request.GET.get(...)' originales
+        
+        # Filtro por Estado
+        estado = self.request.query_params.get('estado')
+        if estado:
+            queryset = queryset.filter(estado=estado)
 
+        # Filtro por Escuela (Solo para Admin)
+        escuela_id = self.request.query_params.get('escuela')
+        if escuela_id and (user.is_superuser or user.role == User.Role.ADMINISTRADOR.value):
+            queryset = queryset.filter(escuela__id=escuela_id)
 
-@login_required
-def editar_permiso(request, pk):
-    permiso = get_object_or_404(Permiso, pk=pk)
+        # Filtro por Profesor (Para Admin/Director)
+        profesor_id = self.request.query_params.get('profesor')
+        if profesor_id:
+            queryset = queryset.filter(profesor__id=profesor_id)
 
-    # Only allow editing if the permission is PENDING and belongs to the current user
-    # Or if the user has manage_permisos permission
-    if not request.user.has_perm('permisos.gestionar_permisos') and (permiso.profesor != request.user or permiso.estado != Permiso.Estado.PENDIENTE):
-        messages.error(request, _("No tienes permiso para editar esta solicitud o no se puede editar en su estado actual."))
-        return redirect('permisos:mis_permisos')
+        # Filtro por Año (Común en 'mis_permisos')
+        anio = self.request.query_params.get('anio') or self.request.query_params.get('año')
+        if anio:
+            queryset = queryset.filter(fecha_solicitud__year=anio)
 
-    if request.method == 'POST':
-        form = SolicitudPermisoForm(request.POST, instance=permiso, user=request.user)
-        if form.is_valid():
-            form.save()
-            messages.success(request, _("Solicitud de permiso actualizada correctamente."))
-            return redirect('permisos:mis_permisos')
-        messages.warning(request, _("Corrige los errores en el formulario."))
-    else:
-        form = SolicitudPermisoForm(instance=permiso, user=request.user)
+        # Filtro por Rango de Fechas (Común en 'gestionar_permisos')
+        fecha_desde = self.request.query_params.get('fecha_desde')
+        fecha_hasta = self.request.query_params.get('fecha_hasta')
+        if fecha_desde:
+            queryset = queryset.filter(fecha_solicitud__gte=fecha_desde)
+        if fecha_hasta:
+            queryset = queryset.filter(fecha_solicitud__lte=fecha_hasta)
 
-    return render(request, 'permisos/solicitar.html', { # Reusing solicitar.html template
-        'form': form,
-        'titulo': _('Editar Solicitud de Permiso N° {0}').format(permiso.id),
-        'hoy': timezone.localdate().isoformat(),
-        'max_date': (timezone.localdate() + timezone.timedelta(days=365)).isoformat(),
-        'breadcrumbs': [
-            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
-            {'name': 'Mis Permisos', 'url': reverse_lazy('permisos:mis_permisos')}
-        ],
-        'current_page_title': _('Editar Solicitud de Permiso N° {0}').format(permiso.id)
-    })
+        return queryset
 
+    def perform_create(self, serializer):
+        """
+        Asigna automáticamente el profesor y su escuela al crear.
+        """
+        user = self.request.user
+        escuela = user.escuela if user.escuela else None
+        serializer.save(profesor=user, escuela=escuela)
 
-@login_required
-def mis_permisos(request):
-    estado = request.GET.get('estado', '')
-    busqueda = request.GET.get('q', '')
-    año = request.GET.get('año', timezone.now().year)
+    @action(detail=True, methods=['post'])
+    def responder(self, request, pk=None):
+        """
+        Aprueba o Rechaza un permiso.
+        Payload: { "estado": "APROBADO", "respuesta_admin": "..." }
+        """
+        permiso = self.get_object()
+        
+        # Validar autoridad (Director/Admin)
+        roles_autoridad = [User.Role.ADMINISTRADOR.value, User.Role.DIRECTOR.value]
+        if request.user.role not in roles_autoridad and not request.user.is_superuser:
+            return Response({"detail": "No tienes permiso para responder."}, status=status.HTTP_403_FORBIDDEN)
 
-    from django.urls import reverse_lazy
-    permisos = Permiso.objects.filter(profesor=request.user)
+        estado = request.data.get('estado')
+        respuesta = request.data.get('respuesta_admin', '')
 
-    if estado:
-        permisos = permisos.filter(estado=estado)
-    if busqueda:
-        permisos = permisos.filter(
-            Q(motivo__icontains=busqueda) |
-            Q(tipo__icontains=busqueda) |
-            Q(respuesta_admin__icontains=busqueda)
-        )
-    if año:
-        permisos = permisos.filter(fecha_solicitud__year=año)
+        if estado not in [Permiso.Estado.APROBADO, Permiso.Estado.RECHAZADO]:
+             return Response({"detail": "Estado inválido."}, status=status.HTTP_400_BAD_REQUEST)
 
-    metricas = {
-        'total': permisos.count(),
-        'pendientes': permisos.filter(estado=Permiso.Estado.PENDIENTE).count(),
-        'aprobados': permisos.filter(estado=Permiso.Estado.APROBADO).count(),
-        'rechazados': permisos.filter(estado=Permiso.Estado.RECHAZADO).count()
-    }
+        if estado == Permiso.Estado.RECHAZADO and not respuesta:
+            return Response({"detail": "Debe justificar el rechazo."}, status=status.HTTP_400_BAD_REQUEST)
 
-    return render(request, 'permisos/mis_permisos.html', {
-        'permisos': permisos.order_by('-fecha_solicitud'),
-        'estados': Permiso.Estado.choices,
-        'estado_actual': estado,
-        'busqueda': busqueda,
-        'años': Permiso.objects.dates('fecha_solicitud', 'year'),
-        'año_actual': año,
-        'metricas': metricas,
-        'breadcrumbs': [
-            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')}
-        ],
-        'current_page_title': 'Mis Permisos'
-    })
+        permiso.estado = estado
+        permiso.respuesta_admin = respuesta.upper()
+        permiso.administrador = request.user
+        permiso.fecha_respuesta = timezone.now()
+        permiso.save()
 
+        return Response(self.get_serializer(permiso).data)
 
-@login_required
-@permission_required('permisos.gestionar_permisos')
-def gestionar_permisos(request):
-    estado = request.GET.get('estado', '') # Cambiado a cadena vacía por defecto
-    escuela_id = request.GET.get('escuela', '')
-    profesor_id = request.GET.get('profesor', '')
-    fecha_desde = request.GET.get('fecha_desde', '')
-    fecha_hasta = request.GET.get('fecha_hasta', '')
-
-    from django.urls import reverse_lazy
-    permisos = Permiso.objects.select_related('profesor', 'escuela', 'administrador')
-
-    if estado:
-        permisos = permisos.filter(estado=estado)
-    if escuela_id:
-        permisos = permisos.filter(escuela__id=escuela_id)
-    if profesor_id:
-        permisos = permisos.filter(profesor__id=profesor_id)
-    if fecha_desde:
-        permisos = permisos.filter(fecha_solicitud__gte=fecha_desde)
-    if fecha_hasta:
-        permisos = permisos.filter(fecha_solicitud__lte=fecha_hasta)
-
-    metricas = {
-        'total': permisos.count(),
-        'pendientes': permisos.filter(estado=Permiso.Estado.PENDIENTE).count(),
-        'ultima_semana': permisos.filter(
+    @action(detail=False, methods=['get'])
+    def metricas(self, request):
+        """
+        Endpoint especial para pintar las tarjetas del Dashboard.
+        Replica el diccionario 'metricas' de tu views.py original.
+        """
+        qs = self.get_queryset() # Reutilizamos filtros de rol/escuela
+        
+        total = qs.count()
+        pendientes = qs.filter(estado=Permiso.Estado.PENDIENTE).count()
+        aprobados = qs.filter(estado=Permiso.Estado.APROBADO).count()
+        rechazados = qs.filter(estado=Permiso.Estado.RECHAZADO).count()
+        
+        # Última semana (útil para administradores)
+        ultima_semana = qs.filter(
             fecha_solicitud__gte=timezone.now() - timezone.timedelta(days=7)
         ).count()
-    }
 
-    escuelas = permisos.values_list('escuela__id', 'escuela__nombre').distinct()
-    profesores = permisos.values_list(
-        'profesor__id', 'profesor__first_name', 'profesor__last_name'
-    ).distinct()
-
-    return render(request, 'permisos/gestionar.html', {
-        'permisos': permisos.order_by('-fecha_solicitud'),
-        'estados': Permiso.Estado.choices,
-        'estado_actual': estado,
-        'escuelas': escuelas,
-        'escuela_actual': escuela_id,
-        'profesores': profesores,
-        'profesor_actual': profesor_id,
-        'fecha_desde': fecha_desde,
-        'fecha_hasta': fecha_hasta,
-        'metricas': metricas,
-        'breadcrumbs': [
-            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')}
-        ],
-        'current_page_title': 'Gestionar Permisos'
-    })
-
-
-@login_required
-@permission_required('permisos.gestionar_permisos')
-def responder_permiso(request, pk):
-    from django.urls import reverse_lazy
-    permiso = get_object_or_404(Permiso.objects.select_related('profesor', 'escuela'), pk=pk)
-    permiso._current_user = request.user
-
-    form = GestionPermisoForm(request.POST or None, instance=permiso)
-    if request.method == 'POST':
-        if form.is_valid():
-            permiso = form.save()
-            mensaje = _("Permiso aprobado correctamente") if permiso.estado == Permiso.Estado.APROBADO                 else _("Permiso rechazado con éxito")
-            messages.success(request, mensaje)
-            return redirect('permisos:gestionar')
-        messages.warning(request, _("Verifica los errores en el formulario"))
-
-    return render(request, 'permisos/responder.html', {
-        'form': form,
-        'permiso': permiso,
-        'titulo': _('Gestionar Permiso N° {numero}').format(numero=permiso.id),
-        'duracion': permiso.duracion_dias,
-        'puede_editar': permiso.puede_aprobar,
-        'breadcrumbs': [
-            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
-            {'name': 'Gestionar Permisos', 'url': reverse_lazy('permisos:gestionar')}
-        ],
-        'current_page_title': _('Gestionar Permiso N° {numero}').format(numero=permiso.id)
-    })
-
-
-@login_required
-@permission_required('permisos.gestionar_permisos')
-def eliminar_permiso(request, pk):
-    permiso = get_object_or_404(Permiso, pk=pk)
-
-    if request.method == 'POST':
-        try:
-            permiso.delete()
-            messages.success(request, _("Solicitud eliminada permanentemente"))
-            return redirect('permisos:gestionar')
-        except Exception as e:
-            messages.error(request, _("Error al eliminar: {0}").format(e))
-    return redirect('permisos:gestionar')
-
-
-@login_required
-def detalle_permiso(request, pk):
-    from django.urls import reverse_lazy
-    permiso = get_object_or_404(
-        Permiso.objects.select_related('profesor', 'escuela', 'administrador'),
-        pk=pk
-    )
-
-    if not request.user.has_perm('permisos.gestionar_permisos') and permiso.profesor_id != request.user.id:
-        messages.error(request, _("No tienes permiso para ver esta solicitud"))
-        return redirect('usuarios:dashboard')
-
-    return render(request, 'permisos/detalle.html', {
-        'permiso': permiso,
-        'titulo': _('Detalles del Permiso N° {numero}').format(numero=permiso.id),
-        'duracion': permiso.duracion_dias,
-        'es_administrador': request.user.has_perm('permisos.gestionar_permisos'),
-        'breadcrumbs': [
-            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
-            {'name': 'Mis Permisos', 'url': reverse_lazy('permisos:mis_permisos')}
-        ],
-        'current_page_title': _('Detalles del Permiso N° {numero}').format(numero=permiso.id)
-    })
+        return Response({
+            "total": total,
+            "pendientes": pendientes,
+            "aprobados": aprobados,
+            "rechazados": rechazados,
+            "ultima_semana": ultima_semana
+        })

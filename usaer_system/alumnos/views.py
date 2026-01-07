@@ -1,169 +1,68 @@
-from django.shortcuts import render, get_object_or_404, redirect
-from django.http import HttpResponse
-from django.contrib import messages
-import csv
-from django.db import transaction
-
-from .models import Alumno, Escuela
-from .forms import AlumnoForm
-from django.db.models import Q, ProtectedError
+from rest_framework import viewsets, filters, status
+from rest_framework.response import Response
+from django.db.models import ProtectedError
 from django.contrib.auth import get_user_model
+
+from .models import Alumno
+from .serializers import AlumnoSerializer
+from .permissions import IsMaestroOAdmin
 
 User = get_user_model()
 
-def listar_alumnos(request):
-    user = request.user
-    query = request.GET.get("q", "").strip()
+class AlumnoViewSet(viewsets.ModelViewSet):
+    serializer_class = AlumnoSerializer
+    permission_classes = [IsMaestroOAdmin]  # <--- Seguridad Estricta
+    
+    # Configuración de búsqueda (Igual que tu variable 'q')
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['nombres', 'apellido_paterno', 'apellido_materno', 'curp']
+    ordering_fields = ['apellido_paterno', 'nombres']
+    ordering = ['apellido_paterno', 'nombres']
 
-    # Base queryset por rol
-    if user.role == User.Role.MAESTRO_APOYO.value:
-        alumnos = Alumno.objects.filter(profesor=user, activo=True)
-    elif user.role in [
-        User.Role.PSICOLOGO.value,
-        User.Role.TRABAJADOR_SOCIAL.value,
-        User.Role.COMUNICACION.value,
-        User.Role.PSICOMOTRICIDAD.value,
-        User.Role.SECRETARIO.value,
-        User.Role.ADMINISTRADOR.value,
-    ]:
-        alumnos = Alumno.objects.filter(activo=True)
-    else:
-        alumnos = Alumno.objects.none()
+    def get_queryset(self):
+        """
+        Lógica de filtrado según el rol (Admin ve todo, Maestro ve lo suyo).
+        """
+        user = self.request.user
+        
+        # Optimizamos con select_related para traer datos de escuela en 1 sola query
+        queryset = Alumno.objects.select_related('escuela', 'profesor')
 
-    # Filtro de búsqueda
-    if query:
-        alumnos = alumnos.filter(
-            Q(nombres__icontains=query) |
-            Q(apellido_paterno__icontains=query) |
-            Q(apellido_materno__icontains=query) |
-            Q(curp__icontains=query)
-        )
+        # Si es Superusuario, ve todo
+        if user.is_superuser:
+            return queryset
 
-    alumnos = alumnos.select_related('escuela').order_by('apellido_paterno', 'nombres')
+        # CASO 1: Maestro de Apoyo (Solo sus alumnos activos)
+        if user.role == User.Role.MAESTRO_APOYO.value:
+            return queryset.filter(profesor=user, activo=True)
 
-    from django.urls import reverse_lazy
-    return render(request, 'alumnos/listar.html', {
-        'alumnos': alumnos,
-        'breadcrumbs': [
-            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')}
-        ],
-        'current_page_title': 'Gestión de Alumnos'
-    })
+        # CASO 2: Administrador (Todos los activos)
+        if user.role == User.Role.ADMINISTRADOR.value:
+            return queryset.filter(activo=True)
 
-def detalle_alumno(request, pk):
-    from django.urls import reverse_lazy
-    alumno = get_object_or_404(Alumno.objects.select_related('escuela'), pk=pk)
-    return render(request, 'alumnos/detalle_alumno.html', {
-        'alumno': alumno,
-        'breadcrumbs': [
-            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
-            {'name': 'Gestión de Alumnos', 'url': reverse_lazy('alumnos:listar_alumnos')}
-        ],
-        'current_page_title': f'Detalle de {alumno.get_full_name}'
-    })
+        # Por defecto (seguridad extra), retorna vacío
+        return queryset.none()
 
-def crear_alumno(request):
-    """
-    Crea un nuevo alumno.
-    """
-    from django.urls import reverse_lazy
-    escuelas = Escuela.objects.all()
-    contexto = {
-        'titulo':    'Nuevo Alumno',
-        'form':      None,
-        'escuelas':  escuelas,
-        'nivel_ini': '',
-        'esc_ini':   '',
-        'grado_ini': '',
-        'breadcrumbs': [
-            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
-            {'name': 'Gestión de Alumnos', 'url': reverse_lazy('alumnos:listar_alumnos')}
-        ],
-        'current_page_title': 'Nuevo Alumno'
-    }
+    def perform_create(self, serializer):
+        """
+        Al crear, si es Maestro de Apoyo, se asigna automáticamente como profesor.
+        """
+        user = self.request.user
+        if user.role == User.Role.MAESTRO_APOYO.value:
+            serializer.save(profesor=user)
+        else:
+            serializer.save()
 
-    if request.method == 'POST':
-        form = AlumnoForm(request.POST)
-        if form.is_valid():
-            escuela_id = request.POST.get('escuela')
-            if not escuela_id:
-                messages.error(request, "Error: Debes seleccionar una escuela.")
-                # Vuelve a renderizar el formulario con el error
-                contexto['form'] = form
-                return render(request, 'alumnos/form.html', contexto)
-
-            obj = form.save(commit=False)
-            obj.escuela_id = escuela_id
-            obj.grado      = request.POST.get('grado')
-            obj.save()
-            messages.success(request, "Alumno creado correctamente.")
-            return redirect('alumnos:listar_alumnos')
-    else:
-        form = AlumnoForm()
-
-    contexto['form'] = form
-    return render(request, 'alumnos/form.html', contexto)
-
-
-
-
-def editar_alumno(request, pk):
-    """
-    Edita un alumno existente.
-    """
-    from django.urls import reverse_lazy
-    alumno   = get_object_or_404(Alumno.objects.select_related('escuela'), pk=pk)
-    escuelas = Escuela.objects.all()
-
-    contexto = {
-        'titulo':    'Editar Alumno',
-        'form':      None,
-        'escuelas':  escuelas,
-        'nivel_ini': alumno.escuela.nivel,
-        'esc_ini':   alumno.escuela_id,
-        'grado_ini': alumno.grado,
-        'breadcrumbs': [
-            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
-            {'name': 'Gestión de Alumnos', 'url': reverse_lazy('alumnos:listar_alumnos')},
-            {'name': f'Detalle de {alumno.get_full_name()}', 'url': reverse_lazy('alumnos:detalle_alumno', kwargs={'pk': alumno.pk})}
-        ],
-        'current_page_title': f'Editar {alumno.get_full_name()}'
-    }
-
-    if request.method == 'POST':
-        form = AlumnoForm(request.POST, instance=alumno)
-        if form.is_valid():
-            escuela_id = request.POST.get('escuela')
-            if not escuela_id:
-                messages.error(request, "Error: Debes seleccionar una escuela.")
-                contexto['form'] = form
-                return render(request, 'alumnos/form.html', contexto)
-
-            obj = form.save(commit=False)
-            obj.escuela_id = escuela_id
-            obj.grado      = request.POST.get('grado')
-            obj.save()
-            messages.success(request, "Alumno actualizado correctamente.")
-            return redirect('alumnos:listar_alumnos')
-    else:
-        form = AlumnoForm(instance=alumno)
-
-    contexto['form'] = form
-    return render(request, 'alumnos/form.html', contexto)
-
-def eliminar_alumno(request, pk):
-    """
-    Elimina un alumno directamente desde la lista.
-    """
-    alumno = get_object_or_404(Alumno, pk=pk)
-    if request.method == 'POST':
+    def destroy(self, request, *args, **kwargs):
+        """
+        Manejo de errores al eliminar (ProtectedError).
+        """
         try:
-            alumno.delete()
-            messages.success(request, f"Alumno ‘{alumno.nombres} {alumno.apellido_paterno}’ eliminado correctamente.")
+            instance = self.get_object()
+            self.perform_destroy(instance)
+            return Response(status=status.HTTP_204_NO_CONTENT)
         except ProtectedError:
-            messages.error(request, f"Error: El alumno ‘{alumno.nombres} {alumno.apellido_paterno}’ no puede ser eliminado porque tiene registros asociados (ej. expedientes, asistencias). Elimina primero esos registros.")
-        except Exception as e:
-            messages.error(request, f"Error inesperado al eliminar al alumno: {e}")
-    return redirect('alumnos:listar_alumnos')
-
-
+            return Response(
+                {"detail": "No se puede eliminar el alumno porque tiene registros asociados (ej. asistencias, expedientes)."},
+                status=status.HTTP_400_BAD_REQUEST
+            )

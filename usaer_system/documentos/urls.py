@@ -1,16 +1,12 @@
-from django.urls import path
-from .views import (
-    subir_expediente,
-    editar_expediente,
-    ExpedienteListView,
-    ExpedienteDeleteView,
-)
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import ExpedienteViewSet
 
 app_name = 'documentos'
 
+router = DefaultRouter()
+router.register(r'', ExpedienteViewSet, basename='documentos')
+
 urlpatterns = [
-    path('subir/', subir_expediente, name='subir_expediente'),
-    path('lista/', ExpedienteListView.as_view(), name='lista_expedientes'),
-    path('editar/<int:pk>/', editar_expediente, name='editar_expediente'),
-    path('<int:pk>/eliminar/', ExpedienteDeleteView.as_view(), name='eliminar_expediente'),
+    path('', include(router.urls)),
 ]

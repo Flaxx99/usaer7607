@@ -70,6 +70,10 @@ INSTALLED_APPS = [
     'avisos',
     'notificaciones',
     'ciclos_escolares',
+
+    #API
+    'rest_framework',
+    'corsheaders',
 ]
 
 ADMIN_FOR_MODELS = False 
@@ -81,6 +85,7 @@ CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware', # Middleware de Whitenoise
     'django.middleware.gzip.GZipMiddleware',
@@ -156,6 +161,10 @@ LOGOUT_REDIRECT_URL = '/'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+]
 
 
 # ------------------- PERMISOS POR ROL -------------------
