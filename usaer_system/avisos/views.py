@@ -1,109 +1,56 @@
-from django.shortcuts import render, get_object_or_404
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.urls import reverse_lazy
+# avisos/views.py
+from rest_framework import viewsets, permissions, filters
+from django.db.models import Q
 from django.utils import timezone
-from django.db import models
-from django.contrib import messages
-
 from .models import Anuncio
-from .forms import AnuncioForm
+from .serializers import AnuncioSerializer
 
-from django.views.decorators.cache import cache_page
+class IsOwnerOrReadOnly(permissions.BasePermission):
+    """
+    Permiso custom:
+    - Cualquiera logueado puede ver (GET).
+    - Solo el autor o un admin puede editar/borrar.
+    """
+    def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        return obj.autor == request.user or request.user.is_superuser
 
-# ... (resto de imports)
-
-
-class AnuncioListView(LoginRequiredMixin, ListView):
-    model = Anuncio
-    template_name = 'avisos/lista_anuncios.html'
-    context_object_name = 'anuncios'
-    paginate_by = 10
+class AnuncioViewSet(viewsets.ModelViewSet):
+    """
+    API para Tablón de Anuncios.
+    - Lista solo anuncios vigentes (públicos).
+    - El autor puede ver sus propios anuncios aunque hayan expirado.
+    """
+    queryset = Anuncio.objects.all()
+    serializer_class = AnuncioSerializer
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
+    
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['titulo', 'contenido']
+    ordering_fields = ['fecha_publicacion']
 
     def get_queryset(self):
-        # Solo mostrar anuncios activos (no expirados y ya publicados)
+        """
+        Replica la lógica de tu AnuncioListView:
+        Mostrar solo activos (no expirados + fecha_pub <= hoy).
+        EXCEPCIÓN: Si eres el autor o admin, ves todo (para poder editar/borrar).
+        """
+        user = self.request.user
+        now = timezone.now()
+
+        # Si el usuario quiere ver "sus" anuncios para gestionarlos, devolvemos todo
+        if self.action in ['update', 'partial_update', 'destroy'] or self.request.query_params.get('mis_anuncios'):
+            if user.is_superuser:
+                return Anuncio.objects.all()
+            return Anuncio.objects.filter(autor=user)
+
+        # Para el listado general (tablón), aplicamos el filtro de vigencia
         return Anuncio.objects.filter(
-            (models.Q(fecha_expiracion__gte=timezone.now()) | models.Q(fecha_expiracion__isnull=True)),
-            fecha_publicacion__lte=timezone.now()
+            (Q(fecha_expiracion__gte=now) | Q(fecha_expiracion__isnull=True)),
+            fecha_publicacion__lte=now
         ).order_by('-fecha_publicacion')
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['breadcrumbs'] = [
-            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')}
-        ]
-        context['current_page_title'] = 'Tablón de Anuncios'
-        return context
-
-def anuncio_detail(request, pk):
-    anuncio = get_object_or_404(Anuncio, pk=pk)
-    return render(request, 'avisos/detalle_anuncio.html', {
-        'anuncio': anuncio,
-        'breadcrumbs': [
-            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
-            {'name': 'Tablón de Anuncios', 'url': reverse_lazy('avisos:lista_anuncios')}
-        ],
-        'current_page_title': anuncio.titulo
-    })
-
-class AnuncioCreateView(LoginRequiredMixin, CreateView):
-    model = Anuncio
-    form_class = AnuncioForm
-    template_name = 'avisos/formulario_anuncio.html'
-    success_url = reverse_lazy('avisos:lista_anuncios')
-
-    def form_valid(self, form):
-        form.instance.autor = self.request.user
-        messages.success(self.request, "Anuncio creado exitosamente.")
-        return super().form_valid(form)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['breadcrumbs'] = [
-            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
-            {'name': 'Tablón de Anuncios', 'url': reverse_lazy('avisos:lista_anuncios')}
-        ]
-        context['current_page_title'] = 'Crear Nuevo Anuncio'
-        return context
-
-
-class AnuncioUpdateView(LoginRequiredMixin, UpdateView):
-    model = Anuncio
-    form_class = AnuncioForm
-    template_name = 'avisos/formulario_anuncio.html'
-    success_url = reverse_lazy('avisos:lista_anuncios')
-
-    def form_valid(self, form):
-        messages.success(self.request, "Anuncio actualizado exitosamente.")
-        return super().form_valid(form)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['breadcrumbs'] = [
-            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
-            {'name': 'Tablón de Anuncios', 'url': reverse_lazy('avisos:lista_anuncios')}
-        ]
-        context['current_page_title'] = 'Editar Anuncio'
-        return context
-
-
-class AnuncioDeleteView(LoginRequiredMixin, DeleteView):
-    model = Anuncio
-    template_name = 'avisos/confirm_delete_anuncio.html'
-    success_url = reverse_lazy('avisos:lista_anuncios')
-
-    def post(self, request, *args, **kwargs):
-        return self.delete(request, *args, **kwargs)
-
-    def delete(self, request, *args, **kwargs):
-        messages.success(self.request, "Anuncio eliminado exitosamente.")
-        return super().delete(request, *args, **kwargs)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['breadcrumbs'] = [
-            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
-            {'name': 'Tablón de Anuncios', 'url': reverse_lazy('avisos:lista_anuncios')}
-        ]
-        context['current_page_title'] = 'Eliminar Anuncio'
-        return context
+    def perform_create(self, serializer):
+        """Asigna automáticamente el autor al crear."""
+        serializer.save(autor=self.request.user)

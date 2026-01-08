@@ -1,89 +1,43 @@
-import os
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
-from django.views.decorators.http import require_http_methods
-from django.contrib import messages
+# oficios/views.py
+from rest_framework import viewsets, permissions, filters
+from rest_framework.parsers import MultiPartParser, FormParser
+from drf_yasg.utils import swagger_auto_schema 
+
 from .models import Oficio
-from .forms import OficioForm
+from .serializers import OficioSerializer
 
-from django.urls import reverse_lazy
-@login_required
-def lista_oficios(request):
-    oficios = Oficio.objects.all().order_by('-fecha_subida')
-    return render(request, 'oficios/lista.html', {
-        'oficios': oficios,
-        'breadcrumbs': [
-            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')}
-        ],
-        'current_page_title': 'Listado de Oficios'
-    })
+class OficioViewSet(viewsets.ModelViewSet):
+    queryset = Oficio.objects.all().select_related('subido_por').order_by('-fecha_subida')
+    serializer_class = OficioSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    # Habilitamos soporte para subir archivos
+    parser_classes = (MultiPartParser, FormParser)
+    
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['titulo', 'descripcion']
+    ordering_fields = ['fecha_subida', 'titulo']
 
-from django.urls import reverse_lazy
-@login_required
-def subir_oficio(request):
-    if request.method == 'POST':
-        form = OficioForm(request.POST, request.FILES)
-        if form.is_valid():
-            oficio = form.save(commit=False)
-            oficio.subido_por = request.user
-            oficio.save()
-            messages.success(request, "Oficio subido correctamente.")
-            return redirect('oficios:lista_oficios')
-    else:
-        form = OficioForm()
-    return render(request, 'oficios/subir.html', {
-        'form': form,
-        'breadcrumbs': [
-            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
-            {'name': 'Listado de Oficios', 'url': reverse_lazy('oficios:lista_oficios')}
-        ],
-        'current_page_title': 'Subir Oficio'
-    })
+    def perform_create(self, serializer):
+        # Asignamos automáticamente el usuario que sube el archivo
+        serializer.save(subido_por=self.request.user)
 
-from django.urls import reverse_lazy
-@login_required
-@require_http_methods(["GET", "POST"])
-def editar_oficio(request, pk):
-    oficio = get_object_or_404(Oficio, pk=pk)
-    archivo_anterior = oficio.archivo.name if oficio.archivo else None
+    def perform_update(self, serializer):
+        serializer.save()
 
-    if request.method == 'POST':
-        form = OficioForm(request.POST, request.FILES, instance=oficio)
-        if form.is_valid():
-            # Verificamos si se cargó un nuevo archivo
-            nuevo_archivo = request.FILES.get('archivo')
-            if nuevo_archivo and archivo_anterior:
-                if oficio.archivo.storage.exists(archivo_anterior):
-                    oficio.archivo.storage.delete(archivo_anterior)
-            form.save()
-            messages.success(request, "Oficio actualizado correctamente.")
-            return redirect('oficios:lista_oficios')
-    else:
-        form = OficioForm(instance=oficio)
-    return render(request, 'oficios/editar.html', {
-        'form': form,
-        'oficio': oficio,
-        'breadcrumbs': [
-            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
-            {'name': 'Listado de Oficios', 'url': reverse_lazy('oficios:lista_oficios')}
-        ],
-        'current_page_title': f'Editar Oficio: {oficio.titulo}'
-    })
+    # --- ZONA DE SEGURIDAD SWAGGER ---
+    # Sobrescribimos estos métodos y les ponemos 'auto_schema=None'
+    # para que Swagger NO intente inspeccionarlos y no explote con el archivo adjunto.
+    # La API sigue funcionando, solo que estos botones no saldrán en la documentación.
 
-from django.urls import reverse_lazy
-@login_required
-@require_http_methods(["GET", "POST"])
-def eliminar_oficio(request, pk):
-    oficio = get_object_or_404(Oficio, pk=pk)
-    if request.method == 'POST':
-        oficio.delete()
-        messages.success(request, "Oficio eliminado correctamente.")
-        return redirect('oficios:lista_oficios')
-    return render(request, 'oficios/confirmar_eliminacion.html', {
-        'oficio': oficio,
-        'breadcrumbs': [
-            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
-            {'name': 'Listado de Oficios', 'url': reverse_lazy('oficios:lista_oficios')}
-        ],
-        'current_page_title': f'Eliminar Oficio: {oficio.titulo}'
-    })
+    @swagger_auto_schema(auto_schema=None)
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
+    @swagger_auto_schema(auto_schema=None)
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+    @swagger_auto_schema(auto_schema=None)
+    def partial_update(self, request, *args, **kwargs):
+        return super().partial_update(request, *args, **kwargs)

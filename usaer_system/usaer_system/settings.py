@@ -74,6 +74,7 @@ INSTALLED_APPS = [
     #API
     'rest_framework',
     'corsheaders',
+    'drf_yasg'
 ]
 
 ADMIN_FOR_MODELS = False 
@@ -166,6 +167,26 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
 ]
 
+REST_FRAMEWORK = {
+    # Usaremos autenticación por Sesión (útil para el admin navegable) 
+    # y Basic (para pruebas rápidas). 
+    # Más adelante podemos agregar Tokens (JWT) para tu frontend en React/Vue.
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+    ],
+    # Por defecto, todo requiere estar logueado. 
+    # Nosotros abriremos endpoints específicos manualmente si es necesario.
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    # Configuración de paginación (clave para tablas grandes de alumnos/asistencias)
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10,
+    
+    # Formato de fecha (opcional, pero recomendado para estandarizar)
+    'DATETIME_FORMAT': "%Y-%m-%d %H:%M:%S",
+}
 
 # ------------------- PERMISOS POR ROL -------------------
 

@@ -1,9 +1,11 @@
+# documentos/views.py
 from rest_framework import viewsets, filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.db.models import Q
 from django.contrib.auth import get_user_model
+from drf_yasg.utils import swagger_auto_schema  # <--- Import necesario
 
 from .models import Expediente, OtroArchivo
 from .serializers import ExpedienteSerializer
@@ -60,7 +62,7 @@ class ExpedienteViewSet(viewsets.ModelViewSet):
         # Asignar profesor automáticamente
         serializer.save(profesor=self.request.user)
 
-    @action(detail=True, methods=['delete'], url_path='eliminar-archivo-extra/(?P<archivo_id>\d+)')
+    @action(detail=True, methods=['delete'], url_path=r'eliminar-archivo-extra/(?P<archivo_id>\d+)')
     def eliminar_archivo_extra(self, request, pk=None, archivo_id=None):
         """
         Permite borrar un archivo adjunto específico sin borrar todo el expediente.
@@ -72,3 +74,19 @@ class ExpedienteViewSet(viewsets.ModelViewSet):
             return Response(status=status.HTTP_204_NO_CONTENT)
         except OtroArchivo.DoesNotExist:
             return Response({"detail": "Archivo no encontrado."}, status=status.HTTP_404_NOT_FOUND)
+
+    # --- ZONA DE SEGURIDAD SWAGGER ---
+    # Ocultamos estos métodos de la documentación para evitar el error "FileField is supported only in formData"
+    # La API funciona igual, solo no aparecen estos botones en /swagger/
+
+    @swagger_auto_schema(auto_schema=None)
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
+    @swagger_auto_schema(auto_schema=None)
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+    @swagger_auto_schema(auto_schema=None)
+    def partial_update(self, request, *args, **kwargs):
+        return super().partial_update(request, *args, **kwargs)

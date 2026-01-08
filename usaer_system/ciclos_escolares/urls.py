@@ -1,12 +1,14 @@
-from django.urls import path
-from . import views
+# ciclos_escolares/urls.py
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import CicloEscolarViewSet, PromocionAlumnosView
 
-app_name = 'ciclos_escolares'
+router = DefaultRouter()
+router.register(r'', CicloEscolarViewSet, basename='ciclos')
 
 urlpatterns = [
-    path('', views.lista_ciclos, name='lista_ciclos'),
-    path('nuevo/', views.crear_ciclo, name='crear_ciclo'),
-    path('editar/<int:pk>/', views.editar_ciclo, name='editar_ciclo'),
-    path('eliminar/<int:pk>/', views.eliminar_ciclo, name='eliminar_ciclo'),
-    path('promover/', views.promover_alumnos, name='promover_alumnos'),
+    # Endpoint especial fuera del router
+    path('promover-alumnos/', PromocionAlumnosView.as_view(), name='promover_alumnos'),
+    
+    path('', include(router.urls)),
 ]

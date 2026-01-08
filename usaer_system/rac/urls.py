@@ -1,21 +1,17 @@
 # rac/urls.py
-
-from django.urls import path
-from .views import (
-    RegistroRACListView,
-    RegistroRACCreateView,
-    RegistroRACUpdateView,
-    ExportRACExcelView,
-    ExportAllRACExcelView,
-)
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import RegistroRACViewSet, ExportRACView, ExportAllRACView
 
 app_name = 'rac'
 
-urlpatterns = [
-    path('', RegistroRACListView.as_view(), name='registro_list'),
-    path('nuevo/', RegistroRACCreateView.as_view(), name='registro_create'),
-    path('<int:pk>/editar/', RegistroRACUpdateView.as_view(), name='registro_edit'),
-    path('exportar/', ExportRACExcelView.as_view(), name='registro_export'),
-    path('exportar-todo/', ExportAllRACExcelView.as_view(), name='export_all'),
+router = DefaultRouter()
+router.register(r'', RegistroRACViewSet, basename='registros')
 
+urlpatterns = [
+    # Mantenemos las rutas separadas como solicitaste
+    path('exportar/', ExportRACView.as_view(), name='exportar_excel'),
+    path('exportar-todo/', ExportAllRACView.as_view(), name='exportar_todo'),
+    
+    path('', include(router.urls)),
 ]

@@ -1,3 +1,4 @@
+# usuarios/serializers.py
 from rest_framework import serializers
 from django.contrib.auth import get_user_model, authenticate
 from django.utils.translation import gettext_lazy as _
@@ -6,9 +7,13 @@ from escuelas.models import Escuela
 User = get_user_model()
 
 class EscuelaSimpleSerializer(serializers.ModelSerializer):
+    """
+    Serializer ligero para mostrar info básica de la escuela en el perfil.
+    """
     class Meta:
         model = Escuela
-        fields = ['id', 'nombre', 'clave', 'nivel']
+        # CORRECCIÓN PARA SWAGGER: Usamos 'clave_estatal' en lugar de 'clave'
+        fields = ['id', 'nombre', 'clave_estatal', 'nivel', 'zona']
 
 class UserSerializer(serializers.ModelSerializer):
     """
@@ -17,6 +22,7 @@ class UserSerializer(serializers.ModelSerializer):
     escuela_detalle = EscuelaSimpleSerializer(source='escuela', read_only=True)
     nombre_completo = serializers.ReadOnlyField()
     antiguedad = serializers.ReadOnlyField()
+    
     # Campo de contraseña solo escritura para creación/edición
     password = serializers.CharField(write_only=True, required=False, style={'input_type': 'password'})
 
@@ -32,7 +38,7 @@ class UserSerializer(serializers.ModelSerializer):
             'fecha_ingreso', 'antiguedad', 'activo',
             'password' 
         ]
-        read_only_fields = ['fecha_ingreso', 'last_login', 'date_joined']
+        read_only_fields = ['fecha_ingreso', 'last_login', 'date_joined', 'antiguedad', 'nombre_completo']
 
     def create(self, validated_data):
         """Encripta la contraseña al crear"""
@@ -51,6 +57,19 @@ class UserSerializer(serializers.ModelSerializer):
             user.set_password(password)
             user.save()
         return user
+    
+    def validate(self, data):
+        """
+        Replica la lógica de convertir_mayusculas de tus forms.
+        Convierte campos de texto a mayúsculas, excepto email y password.
+        """
+        excluir = ['email', 'password', 'role', 'fecha_ingreso', 'telefono', 'celular']
+        
+        for field, value in data.items():
+            if field not in excluir and isinstance(value, str):
+                data[field] = value.upper()
+        
+        return data
 
 class LoginSerializer(serializers.Serializer):
     """

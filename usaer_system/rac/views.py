@@ -1,142 +1,31 @@
 # rac/views.py
-import json
 import os
-from datetime import date
 from io import BytesIO
-
 from openpyxl import load_workbook
+from datetime import date
 
-from django import forms
+from rest_framework import viewsets, permissions, filters, views, status
+from rest_framework.response import Response
+from django.http import HttpResponse
 from django.conf import settings
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import HttpResponse, Http404
-from django.urls import reverse_lazy
-from django.views.generic import ListView, CreateView, UpdateView, View
-from django.contrib import messages
+from django.contrib.auth import get_user_model
 
-from .forms import RegistroRACForm
 from .models import RegistroRAC
-from alumnos.models import Alumno
-from escuelas.models import Escuela
+from .serializers import RegistroRACSerializer
 from ciclos_escolares.utils import get_current_ciclo_escolar_instance
 
-# --- Views for CRUD operations ---
-
-class RegistroRACListView(LoginRequiredMixin, ListView):
-    model = RegistroRAC
-    template_name = 'rac/registro_list.html'
-    context_object_name = 'registros'
-    paginate_by = 20
-
-    def get_queryset(self):
-        qs = super().get_queryset().order_by('-fecha_registro')
-        user = self.request.user
-
-        try:
-            ciclo_actual = get_current_ciclo_escolar_instance()
-            qs = qs.filter(ciclo_escolar=ciclo_actual)
-        except Exception as e:
-            messages.warning(self.request, f"No se pudo determinar el ciclo escolar activo: {e}")
-            return RegistroRAC.objects.none()
-
-        if hasattr(user, 'role') and user.role == 'MAESTRO_APOYO':
-            qs = qs.filter(maestro_apoyo=user)
-        return qs
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['breadcrumbs'] = [
-            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')}
-        ]
-        context['current_page_title'] = 'Registros RAC'
-        roles_con_acceso_total = ['ADMIN', 'SECRETARIO']
-        context['can_export_all'] = self.request.user.is_superuser or self.request.user.role in roles_con_acceso_total
-        return context
-
-
-class RegistroRACCreateView(LoginRequiredMixin, CreateView):
-    model = RegistroRAC
-    form_class = RegistroRACForm
-    template_name = 'rac/registro_form.html'
-    success_url = reverse_lazy('rac:registro_list')
-
-    def get_form(self, form_class=None):
-        form = super().get_form(form_class)
-        user = self.request.user
-
-        if hasattr(user, 'role') and user.role == 'MAESTRO_APOYO':
-            form.fields['maestro_apoyo'].widget = forms.HiddenInput()
-            form.initial['maestro_apoyo'] = user.pk
-            qs = Alumno.objects.filter(profesor=user, activo=True)
-        else:
-            qs = Alumno.objects.filter(activo=True)
-
-        try:
-            ciclo_actual = get_current_ciclo_escolar_instance()
-            # Excluir alumnos que ya tienen un RAC en el ciclo actual
-            alumnos_con_rac_en_ciclo = RegistroRAC.objects.filter(ciclo_escolar=ciclo_actual).values_list('alumno_id', flat=True)
-            qs = qs.exclude(pk__in=alumnos_con_rac_en_ciclo)
-
-        except Exception as e:
-            messages.error(self.request, f"No se pudo determinar el ciclo escolar actual: {e}")
-            # No mostrar alumnos si no hay ciclo escolar
-            qs = Alumno.objects.none()
-
-        form.fields['alumno'].queryset = qs
-        return form
-
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        alumnos = list(Alumno.objects.values('id', 'curp', 'sexo', 'edad', 'grado', 'profesor_id'))
-        ctx['alumnos_data'] = json.dumps(alumnos)
-        escuelas = list(Escuela.objects.values('id', 'zona'))
-        ctx['escuelas_data'] = json.dumps(escuelas)
-        ctx['breadcrumbs'] = [
-            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
-            {'name': 'Registros RAC', 'url': reverse_lazy('rac:registro_list')}
-        ]
-        ctx['current_page_title'] = 'Nuevo Registro RAC'
-        return ctx
-
-    def form_valid(self, form):
-        try:
-            ciclo_actual = get_current_ciclo_escolar_instance()
-            form.instance.ciclo_escolar = ciclo_actual
-        except Exception as e:
-            messages.error(self.request, f"Error al obtener el ciclo escolar: {e}")
-            return self.form_invalid(form)
-
-        messages.success(self.request, "Registro RAC creado correctamente.")
-        return super().form_valid(form)
-
-
-class RegistroRACUpdateView(RegistroRACCreateView, UpdateView):
-    def get_form(self, form_class=None):
-        form = super().get_form(form_class)
-        if self.object and self.object.alumno:
-            qs = form.fields['alumno'].queryset
-            qs = qs | Alumno.objects.filter(pk=self.object.alumno.pk)
-            form.fields['alumno'].queryset = qs.distinct()
-        return form
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['current_page_title'] = f'Editar Registro RAC #{self.object.pk}'
-        return context
-
-    def form_valid(self, form):
-        messages.success(self.request, "Registro RAC actualizado correctamente.")
-        return super().form_valid(form)
-
-
-# --- Helper functions for Excel Export ---
+# --- FUNCIONES HELPER (Iguales que antes) ---
 
 def fill_rac_data(ws, registros):
     start_row = 3
     for i, reg in enumerate(registros, start=start_row):
         maestro_nombre_completo = ''
         if reg.maestro_apoyo:
-            maestro_nombre_completo = " ".join(filter(None, [reg.maestro_apoyo.nombre, reg.maestro_apoyo.apellido_paterno, reg.maestro_apoyo.apellido_materno]))
+            maestro_nombre_completo = " ".join(filter(None, [
+                reg.maestro_apoyo.nombre, 
+                reg.maestro_apoyo.apellido_paterno, 
+                reg.maestro_apoyo.apellido_materno
+            ]))
 
         grado_formateado = reg.grado
         if reg.alumno and reg.alumno.escuela:
@@ -159,13 +48,13 @@ def fill_rac_data(ws, registros):
         ws[f'O{i}'] = reg.alumno.sexo if reg.alumno else ''
         ws[f'P{i}'] = reg.edad
         ws[f'Q{i}'] = grado_formateado
+        
         ws[f'R{i}'] = reg.subclasificacion if reg.clasificacion == 'DISCAPACIDAD' else 'NA (NO APLICA)'
         ws[f'S{i}'] = reg.subclasificacion if reg.clasificacion == 'DIFICULTADES_SEVERAS' else 'NA (NO APLICA)'
         ws[f'T{i}'] = reg.subclasificacion if reg.clasificacion == 'TRASTORNOS' else 'NA (NO APLICA)'
         ws[f'U{i}'] = reg.subclasificacion if reg.clasificacion == 'APTITUDES_SOBRESALIENTES' else 'NA (NO APLICA)'
         ws[f'V{i}'] = reg.subclasificacion if reg.clasificacion == 'OTRO' else 'NA (NO APLICA)'
         ws[f'W{i}'] = reg.observaciones or ''
-
 
 def fill_statistics_data(ws, registros):
     cat_labels = [
@@ -178,7 +67,7 @@ def fill_statistics_data(ws, registros):
         ('AS Artística', 'ASA'), ('AS Psicomotriz', 'ASP'),
         ('AS Socioafectiva', 'ASS'),
         ('Otros', 'OTRO'),
-        ('Doble Excepcionalidad', 'DE'), # Nueva categoría
+        ('Doble Excepcionalidad', 'DE'),
     ]
     servicios = [('CAM Básico', 'CAM_BASICO'), ('CAM laboral', 'CAM_LABORAL'), ('USAER', 'USAER')]
 
@@ -192,27 +81,16 @@ def fill_statistics_data(ws, registros):
             ws.cell(row=row, column=col, value=h)
             ws.cell(row=row, column=col + 1, value=m)
 
-    # Definición de los tres bloques de tablas de resumen
     blocks = [
-        # Tabla 1: DISCAPACIDADES (incluye DS y Trastornos)
-        ('DISCAPACIDADES', cat_labels[0:14], 35), # DI a TEA
-        # Tabla 2: APTITUDES SOBRESALIENTES (incluye Doble Excepcionalidad)
-        ('APTITUDES SOBRESALIENTES', cat_labels[14:20], 43), # ASI a DE
-        # Tabla 3: OTRAS CONDICIONES
-        ('OTRAS CONDICIONES', [cat_labels[19]], 51), # Solo OTRO
+        ('DISCAPACIDADES', cat_labels[0:14], 35),
+        ('APTITUDES SOBRESALIENTES', cat_labels[14:20], 43),
+        ('OTRAS CONDICIONES', [cat_labels[19]], 51),
     ]
 
     for title, items, start_row_block in blocks:
-        # Limpiar celdas antes de escribir para evitar residuos de conteos anteriores
-        # Asumiendo que cada bloque tiene 4 filas de datos (Preescolar, Primaria, Secundaria, Total)
-        # y que cada item tiene 2 columnas (H, M)
         num_cols_per_item = 2
-        num_rows_data = 4 # Preescolar, Primaria, Secundaria, Total
-        
-        # Calcular el rango de columnas a limpiar para este bloque
-        # Empieza en la columna 3 (C) y va hasta 3 + (num_items * 2) - 1
-        # El total de columnas de datos es 2 (H/M) * num_items
-        max_col_to_clear = 3 + len(items) * num_cols_per_item -1
+        num_rows_data = 4
+        max_col_to_clear = 3 + len(items) * num_cols_per_item - 1
         
         for r_clear in range(start_row_block, start_row_block + num_rows_data):
             for c_clear in range(3, max_col_to_clear + 1):
@@ -227,8 +105,7 @@ def fill_statistics_data(ws, registros):
                 ws.cell(row=row, column=col, value=h)
                 ws.cell(row=row, column=col + 1, value=m)
 
-        # Calcular y escribir la fila TOTAL para cada bloque
-        total_row_block = start_row_block + 3 # Fila del TOTAL (Preescolar+Primaria+Secundaria)
+        total_row_block = start_row_block + 3
         for j, (label, code) in enumerate(items):
             col = 3 + j * 2
             total_h = registros.filter(subclasificacion=code, alumno__sexo='H').count()
@@ -236,98 +113,137 @@ def fill_statistics_data(ws, registros):
             ws.cell(row=total_row_block, column=col, value=total_h)
             ws.cell(row=total_row_block, column=col + 1, value=total_m)
 
-class BaseRACExportView(LoginRequiredMixin, View):
-    template_name = 'rac/static/excel_templates/rac_template_v2.xlsx'
-    
-    def get(self, request, *args, **kwargs):
-        template_path = settings.BASE_DIR / self.template_name
+
+# --- VISTAS DRF ---
+
+class RegistroRACViewSet(viewsets.ModelViewSet):
+    serializer_class = RegistroRACSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['alumno__nombres', 'alumno__curp', 'escuela_regular__nombre']
+    ordering_fields = ['fecha_registro', 'alumno__grado']
+
+    def get_queryset(self):
+        qs = RegistroRAC.objects.select_related('alumno', 'escuela_regular', 'maestro_apoyo')
+        user = self.request.user
+        try:
+            ciclo_actual = get_current_ciclo_escolar_instance()
+            qs = qs.filter(ciclo_escolar=ciclo_actual)
+        except Exception:
+            return RegistroRAC.objects.none()
+
+        if getattr(user, 'role', '') == 'MAESTRO_APOYO':
+            qs = qs.filter(maestro_apoyo=user)
+        return qs
+
+
+# --- CLASE BASE PARA EXPORTACIÓN (DRY) ---
+
+class BaseExportRACView(views.APIView):
+    """
+    Clase base abstracta que maneja la carga del template y la generación del Excel.
+    Las clases hijas solo deben implementar 'get_queryset' y 'get_filename'.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        raise NotImplementedError("Debes implementar get_queryset")
+
+    def get_filename(self):
+        raise NotImplementedError("Debes implementar get_filename")
+
+    def get(self, request):
+        # 1. Obtener datos
+        registros = self.get_queryset()
+        
+        # Si get_queryset devolvió una Response (error de permiso), retornarla directamente
+        if isinstance(registros, Response):
+            return registros
+
+        # 2. Cargar Plantilla
+        template_path = settings.BASE_DIR / 'rac/static/excel_templates/rac_template_v2.xlsx'
         if not os.path.exists(template_path):
-            return HttpResponse("Error: La plantilla de Excel no fue encontrada.", status=500)
+            return Response({"detail": "Plantilla no encontrada."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         try:
             wb = load_workbook(template_path)
-            ws_rac = wb['RAC']
-            ws_stats = wb['ESTADÍSTICA POBLACIÓN 2025']
-        except (KeyError, FileNotFoundError):
-            return HttpResponse("Error: El formato de la plantilla es incorrecto o faltan hojas.", status=500)
+            if 'RAC' in wb.sheetnames:
+                fill_rac_data(wb['RAC'], registros)
+            if 'ESTADÍSTICA POBLACIÓN 2025' in wb.sheetnames:
+                fill_statistics_data(wb['ESTADÍSTICA POBLACIÓN 2025'], registros)
+        except Exception as e:
+            return Response({"detail": f"Error procesando Excel: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        print("--- INICIANDO EXPORTACIÓN RAC ---")
-        print(f"Usuario: {request.user} (Rol: {getattr(request.user, 'role', 'N/A')})")
-
-        registros = self.get_queryset()
-        print(f"Registros encontrados: {registros.count()}")
-
-        fill_rac_data(ws_rac, registros)
-        fill_statistics_data(ws_stats, registros)
-
-        # Ajustar ancho de columnas
-        ws_rac.column_dimensions['O'].width = 5
-        ws_rac.column_dimensions['P'].width = 6
-
+        # 3. Generar Respuesta
         output = BytesIO()
         wb.save(output)
         output.seek(0)
-
-        filename = self.get_filename()
-        print(f"Nombre de archivo generado: {filename}")
-        print("--- FINALIZANDO EXPORTACIÓN RAC ---")
 
         response = HttpResponse(
             output.read(),
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
-        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        response['Content-Disposition'] = f'attachment; filename="{self.get_filename()}"'
         return response
 
-        output = BytesIO()
-        wb.save(output)
-        output.seek(0)
 
-        filename = self.get_filename()
-        print(f"Nombre de archivo generado: {filename}")
-        print("--- FINALIZANDO EXPORTACIÓN RAC ---")
+# --- VISTAS ESPECÍFICAS DE EXPORTACIÓN ---
 
-        response = HttpResponse(
-            output.read(),
-            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        )
-        response['Content-Disposition'] = f'attachment; filename="{filename}"'
-        return response
-
-    def get_queryset(self):
-        raise NotImplementedError("Subclasses must implement get_queryset.")
-
-    def get_filename(self):
-        raise NotImplementedError("Subclasses must implement get_filename.")
-
-
-class ExportRACExcelView(BaseRACExportView):
+class ExportRACView(BaseExportRACView):
+    """
+    Exporta solo los registros del usuario actual (Maestros) o todo si es Admin.
+    URL: /api/rac/exportar/
+    """
     def get_queryset(self):
         user = self.request.user
-        registros = RegistroRAC.objects.select_related(
+        qs = RegistroRAC.objects.select_related(
             'alumno__escuela', 'escuela_regular', 'escuela_basica', 'maestro_apoyo'
-        )
-        if hasattr(user, 'role') and user.role == 'MAESTRO_APOYO':
-            registros = registros.filter(maestro_apoyo=user)
+        ).order_by('alumno__apellido_paterno')
+
+        # Filtrar por ciclo actual (opcional, recomendado)
+        try:
+            ciclo = get_current_ciclo_escolar_instance()
+            qs = qs.filter(ciclo_escolar=ciclo)
+        except:
+            pass
+
+        if getattr(user, 'role', '') == 'MAESTRO_APOYO':
+            qs = qs.filter(maestro_apoyo=user)
         
-        return registros.order_by('alumno__apellido_paterno')
+        return qs
 
     def get_filename(self):
         user = self.request.user
         return f"RAC_{user.first_name}_{user.last_name}.xlsx"
 
 
-class ExportAllRACExcelView(BaseRACExportView):
-    def dispatch(self, request, *args, **kwargs):
-        roles_con_acceso_total = ['ADMIN', 'SECRETARIO']
-        if not (request.user.is_superuser or getattr(request.user, 'role', '') in roles_con_acceso_total):
-            return HttpResponse("No tienes permiso para realizar esta acción.", status=403)
-        return super().dispatch(request, *args, **kwargs)
-
+class ExportAllRACView(BaseExportRACView):
+    """
+    Exporta TODO el concentrado RAC. Solo para Admin/Secretario.
+    URL: /api/rac/exportar-todo/
+    """
     def get_queryset(self):
-        return RegistroRAC.objects.select_related(
+        user = self.request.user
+        roles_permitidos = ['ADMIN', 'SECRETARIO']
+        
+        # Verificación de permisos estricta
+        if not (user.is_superuser or getattr(user, 'role', '') in roles_permitidos):
+            return Response(
+                {"detail": "No tienes permiso para exportar el reporte global."}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        qs = RegistroRAC.objects.select_related(
             'alumno__escuela', 'escuela_regular', 'escuela_basica', 'maestro_apoyo'
         ).order_by('escuela_regular__nombre', 'alumno__grado')
+
+        try:
+            ciclo = get_current_ciclo_escolar_instance()
+            qs = qs.filter(ciclo_escolar=ciclo)
+        except:
+            pass
+            
+        return qs
 
     def get_filename(self):
         return f"RAC_COMPLETO_{date.today().strftime('%Y-%m-%d')}.xlsx"

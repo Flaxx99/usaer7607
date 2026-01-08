@@ -1,153 +1,118 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib import messages
-from django.urls import reverse_lazy
-from .models import CicloEscolar
-from .forms import CicloEscolarForm
-from alumnos.models import Alumno
+# ciclos_escolares/views.py
+from rest_framework import viewsets, status, views, permissions
+from rest_framework.response import Response
+from rest_framework.decorators import action
 from django.db import transaction
+from django.shortcuts import get_object_or_404
 
-def lista_ciclos(request):
-    ciclos = CicloEscolar.objects.all()
-    return render(request, 'ciclos_escolares/lista_ciclos.html', {
-        'ciclos': ciclos,
-        'breadcrumbs': [
-            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
-        ],
-        'current_page_title': 'Gestión de Ciclos Escolares'
-    })
+from .models import CicloEscolar
+from alumnos.models import Alumno
+from .serializers import CicloEscolarSerializer, PromocionPreviewSerializer
 
-def crear_ciclo(request):
-    if request.method == 'POST':
-        form = CicloEscolarForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Ciclo escolar creado correctamente.")
-            return redirect('ciclos_escolares:lista_ciclos')
-    else:
-        form = CicloEscolarForm()
-    return render(request, 'ciclos_escolares/form_ciclo.html', {
-        'form': form,
-        'breadcrumbs': [
-            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
-            {'name': 'Ciclos Escolares', 'url': reverse_lazy('ciclos_escolares:lista_ciclos')},
-        ],
-        'current_page_title': 'Nuevo Ciclo Escolar'
-    })
+class IsAdminUser(permissions.BasePermission):
+    """Solo administradores pueden tocar ciclos escolares."""
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.role == 'ADMIN'
 
-def editar_ciclo(request, pk):
-    ciclo = get_object_or_404(CicloEscolar, pk=pk)
-    if request.method == 'POST':
-        form = CicloEscolarForm(request.POST, instance=ciclo)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Ciclo escolar actualizado correctamente.")
-            return redirect('ciclos_escolares:lista_ciclos')
-    else:
-        form = CicloEscolarForm(instance=ciclo)
-    return render(request, 'ciclos_escolares/form_ciclo.html', {
-        'form': form,
-        'ciclo': ciclo,
-        'breadcrumbs': [
-            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
-            {'name': 'Ciclos Escolares', 'url': reverse_lazy('ciclos_escolares:lista_ciclos')},
-        ],
-        'current_page_title': f'Editar Ciclo: {ciclo.nombre}'
-    })
+class CicloEscolarViewSet(viewsets.ModelViewSet):
+    queryset = CicloEscolar.objects.all().order_by('-fecha_inicio')
+    serializer_class = CicloEscolarSerializer
+    permission_classes = [IsAdminUser] # Solo admin gestiona esto
 
-def eliminar_ciclo(request, pk):
-    ciclo = get_object_or_404(CicloEscolar, pk=pk)
-    if request.method == 'POST':
+    @action(detail=False, methods=['get'])
+    def activo(self, request):
+        """Endpoint rápido para obtener el ciclo actual: /api/ciclos/activo/"""
         try:
-            ciclo.delete()
-            messages.success(request, "Ciclo escolar eliminado correctamente.")
-        except Exception as e:
-            messages.error(request, f"No se puede eliminar el ciclo escolar: {e}")
-    return redirect('ciclos_escolares:lista_ciclos')
+            ciclo = CicloEscolar.objects.get(activo=True)
+            serializer = self.get_serializer(ciclo)
+            return Response(serializer.data)
+        except CicloEscolar.DoesNotExist:
+            return Response({"detail": "No hay ciclo activo configurado."}, status=404)
 
-def promover_alumnos(request):
-    if request.method == 'POST':
-        # Final confirmation submitted
-        if 'confirmed' in request.POST:
+
+class PromocionAlumnosView(views.APIView):
+    """
+    Gestiona la promoción masiva.
+    GET: Simulación (Preview).
+    POST: Ejecución Real (Commit).
+    """
+    permission_classes = [IsAdminUser]
+
+    def get_alumnos_data(self):
+        """Helper para calcular lógica de promoción sin guardar."""
+        alumnos_activos = Alumno.objects.filter(activo=True)
+        resultado = {
+            'promover': [],
+            'graduar': [],
+            'errores': []
+        }
+
+        for alumno in alumnos_activos:
             try:
-                with transaction.atomic():
-                    alumnos_activos = Alumno.objects.filter(activo=True)
-                    if not alumnos_activos.exists():
-                        messages.warning(request, "No hay alumnos activos para procesar.")
-                        return redirect('ciclos_escolares:lista_ciclos')
+                grado_actual = int(alumno.grado)
+                if grado_actual >= 6:
+                    resultado['graduar'].append(f"{alumno.nombre_completo} ({grado_actual}°)")
+                else:
+                    resultado['promover'].append(f"{alumno.nombre_completo} ({grado_actual}° -> {grado_actual + 1}°)")
+            except (ValueError, TypeError):
+                resultado['errores'].append(f"{alumno.nombre_completo}: Grado '{alumno.grado}' inválido")
+        
+        return resultado
 
-                    promovidos_count = 0
-                    graduados_count = 0
-                    errors = []
+    def get(self, request):
+        """
+        Simulación: Devuelve qué pasaría si ejecutas la promoción.
+        """
+        data = self.get_alumnos_data()
+        
+        response_data = {
+            'total_activos': Alumno.objects.filter(activo=True).count(),
+            'a_promover_count': len(data['promover']),
+            'a_graduar_count': len(data['graduar']),
+            'errores_count': len(data['errores']),
+            # Enviamos detalles para que el frontend muestre listas si quiere
+            'detalles_promover': data['promover'], 
+            'detalles_graduar': data['graduar'],
+            'detalles_errores': data['errores']
+        }
+        
+        serializer = PromocionPreviewSerializer(response_data)
+        return Response(serializer.data)
 
-                    for alumno in alumnos_activos:
-                        try:
-                            grado_actual = int(alumno.grado)
+    def post(self, request):
+        """
+        Ejecución: Aplica los cambios en la BD de forma atómica.
+        Requiere confirmar: { "confirmed": true }
+        """
+        if not request.data.get('confirmed'):
+            return Response({"detail": "Se requiere confirmar la acción."}, status=400)
 
-                            if grado_actual >= 6:
-                                alumno.activo = False
-                                alumno.save(update_fields=['activo'])
-                                graduados_count += 1
-                            else:
-                                nuevo_grado = str(grado_actual + 1)
-                                alumno.grado = nuevo_grado
-                                alumno.grupo = ''
-                                alumno.save(update_fields=['grado', 'grupo'])
-                                promovidos_count += 1
-                        except (ValueError, TypeError):
-                            errors.append(f"El alumno '{alumno.get_full_name()}' fue omitido porque su grado ('{alumno.grado}') no es un número válido.")
-
-                    if errors:
-                        for error in errors:
-                            messages.warning(request, error)
-
-                    # Deactivate the active cycle
-                    ciclo_activo = CicloEscolar.objects.filter(activo=True).first()
-                    if ciclo_activo:
-                        ciclo_activo.activo = False
-                        ciclo_activo.save(update_fields=['activo'])
-                        messages.info(request, f"El ciclo escolar '{ciclo_activo.nombre}' ha sido cerrado.")
-
-                    success_message = f'{promovidos_count} alumnos fueron promovidos. {graduados_count} alumnos fueron graduados y marcados como inactivos.'
-                    messages.success(request, success_message)
-
-            except Exception as e:
-                messages.error(request, f"Ocurrió un error inesperado durante el proceso de promoción: {e}")
-
-            return redirect('ciclos_escolares:lista_ciclos')
-
-        # Simulation step
-        else:
+        with transaction.atomic():
             alumnos_activos = Alumno.objects.filter(activo=True)
-            alumnos_a_promover = []
-            alumnos_a_graduar = []
-
+            promovidos = 0
+            graduados = 0
+            
             for alumno in alumnos_activos:
                 try:
                     grado_actual = int(alumno.grado)
                     if grado_actual >= 6:
-                        alumnos_a_graduar.append(alumno)
+                        alumno.activo = False
+                        graduados += 1
                     else:
-                        alumnos_a_promover.append(alumno)
+                        alumno.grado = str(grado_actual + 1)
+                        alumno.grupo = '' # Limpiamos grupo al cambiar de grado
+                        promovidos += 1
+                    
+                    alumno.save()
                 except (ValueError, TypeError):
-                    continue
-            
-            return render(request, 'ciclos_escolares/promover_alumnos.html', {
-                'simulation_mode': True,
-                'alumnos_a_promover': alumnos_a_promover,
-                'alumnos_a_graduar': alumnos_a_graduar,
-                'breadcrumbs': [
-                    {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
-                    {'name': 'Ciclos Escolares', 'url': reverse_lazy('ciclos_escolares:lista_ciclos')}
-                ],
-                'current_page_title': 'Confirmar Promoción de Alumnos'
-            })
+                    continue # Saltamos errores silenciosamente en el POST (ya se vieron en el GET)
 
-    # GET request
-    return render(request, 'ciclos_escolares/promover_alumnos.html', {
-        'simulation_mode': False,
-        'breadcrumbs': [
-            {'name': 'Inicio', 'url': reverse_lazy('usuarios:dashboard')},
-            {'name': 'Ciclos Escolares', 'url': reverse_lazy('ciclos_escolares:lista_ciclos')}
-        ],
-        'current_page_title': 'Promover Alumnos al Siguiente Ciclo'
-    })
+            # Desactivar ciclo actual
+            CicloEscolar.objects.filter(activo=True).update(activo=False)
+
+            return Response({
+                "status": "success",
+                "detail": f"Proceso finalizado. {promovidos} promovidos, {graduados} graduados.",
+                "promovidos": promovidos,
+                "graduados": graduados
+            })

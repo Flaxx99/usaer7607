@@ -24,3 +24,16 @@ class Oficio(models.Model):
         if self.archivo and self.archivo.storage.exists(self.archivo.name):
             self.archivo.delete(save=False)
         super().delete(*args, **kwargs)
+
+    
+    def save(self, *args, **kwargs):
+        # Si es una actualización (ya tiene PK)
+        if self.pk:
+            try:
+                old_instance = Oficio.objects.get(pk=self.pk)
+                # Si el archivo cambió y el viejo existe, bórralo
+                if old_instance.archivo and self.archivo != old_instance.archivo:
+                    old_instance.archivo.delete(save=False)
+            except Oficio.DoesNotExist:
+                pass # Es un create nuevo, no pasa nada
+        super().save(*args, **kwargs)
