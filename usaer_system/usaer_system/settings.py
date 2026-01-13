@@ -73,6 +73,7 @@ INSTALLED_APPS = [
 
     #API
     'rest_framework',
+    'rest_framework.authtoken',
     'corsheaders',
     'drf_yasg'
 ]
@@ -168,23 +169,25 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 REST_FRAMEWORK = {
-    # Usaremos autenticación por Sesión (útil para el admin navegable) 
-    # y Basic (para pruebas rápidas). 
-    # Más adelante podemos agregar Tokens (JWT) para tu frontend en React/Vue.
+    # PRIORIDAD DE AUTENTICACIÓN:
     'DEFAULT_AUTHENTICATION_CLASSES': [
+        # 1. Primero busca Token (Para React/Axios)
+        'rest_framework.authentication.TokenAuthentication',
+        
+        # 2. Si no hay token, busca Sesión (Para que TÚ uses el Admin/Swagger)
         'rest_framework.authentication.SessionAuthentication',
+        
+        # 3. Basic (Opcional, para pruebas rápidas en navegador)
         'rest_framework.authentication.BasicAuthentication',
     ],
-    # Por defecto, todo requiere estar logueado. 
-    # Nosotros abriremos endpoints específicos manualmente si es necesario.
+    
+    # PERMISOS POR DEFECTO:
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
-    # Configuración de paginación (clave para tablas grandes de alumnos/asistencias)
+    
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,
-    
-    # Formato de fecha (opcional, pero recomendado para estandarizar)
     'DATETIME_FORMAT': "%Y-%m-%d %H:%M:%S",
 }
 

@@ -11,9 +11,9 @@ User = get_user_model()
 
 class AlumnoViewSet(viewsets.ModelViewSet):
     serializer_class = AlumnoSerializer
-    permission_classes = [IsMaestroOAdmin]  # <--- Seguridad Estricta
+    permission_classes = [IsMaestroOAdmin]
     
-    # Configuración de búsqueda (Igual que tu variable 'q')
+    # Configuración de búsqueda
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['nombres', 'apellido_paterno', 'apellido_materno', 'curp']
     ordering_fields = ['apellido_paterno', 'nombres']
@@ -21,11 +21,11 @@ class AlumnoViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """
-        Lógica de filtrado según el rol (Admin ve todo, Maestro ve lo suyo).
+        Lógica de filtrado según el rol.
         """
         user = self.request.user
         
-        # Optimizamos con select_related para traer datos de escuela en 1 sola query
+        # Optimizamos consultas
         queryset = Alumno.objects.select_related('escuela', 'profesor')
 
         # Si es Superusuario, ve todo
@@ -36,27 +36,37 @@ class AlumnoViewSet(viewsets.ModelViewSet):
         if user.role == User.Role.MAESTRO_APOYO.value:
             return queryset.filter(profesor=user, activo=True)
 
-        # CASO 2: Administrador (Todos los activos)
-        if user.role == User.Role.ADMINISTRADOR.value:
+        # CASO 2: Administrador / Director (Todos los activos)
+        if user.role in [User.Role.ADMINISTRADOR.value, User.Role.DIRECTOR.value]:
             return queryset.filter(activo=True)
 
-        # Por defecto (seguridad extra), retorna vacío
+        # Por defecto retorna vacío
         return queryset.none()
 
     def perform_create(self, serializer):
         """
-        Al crear, si es Maestro de Apoyo, se asigna automáticamente como profesor.
+        Lógica de asignación de profesor:
+        1. Si el frontend manda un ID en 'profesor', se respeta (Admin asignando a Maestro).
+        2. Si no manda nada y el usuario es MAESTRO_APOYO, se auto-asigna.
         """
         user = self.request.user
-        if user.role == User.Role.MAESTRO_APOYO.value:
+        
+        # Obtenemos el dato crudo del request
+        profesor_id = self.request.data.get('profesor')
+
+        # Si viene un ID válido (no vacío ni nulo), guardamos tal cual
+        if profesor_id:
+            serializer.save()
+        
+        # Si no seleccionó nada y es Maestro, se asigna a sí mismo
+        elif user.role == User.Role.MAESTRO_APOYO.value:
             serializer.save(profesor=user)
+            
+        # Si es Admin y no seleccionó nada, se guarda sin profesor (o null)
         else:
             serializer.save()
 
     def destroy(self, request, *args, **kwargs):
-        """
-        Manejo de errores al eliminar (ProtectedError).
-        """
         try:
             instance = self.get_object()
             self.perform_destroy(instance)

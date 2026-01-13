@@ -36,9 +36,10 @@ class UserSerializer(serializers.ModelSerializer):
             'rfc', 'curp', 
             'nivel', 'grado', 'situacion',
             'fecha_ingreso', 'antiguedad', 'activo',
-            'password' 
+            'password',
+            'is_superuser'
         ]
-        read_only_fields = ['fecha_ingreso', 'last_login', 'date_joined', 'antiguedad', 'nombre_completo']
+        read_only_fields = ['fecha_ingreso', 'last_login', 'date_joined', 'antiguedad', 'nombre_completo', 'is_superuser']
 
     def create(self, validated_data):
         """Encripta la contraseña al crear"""

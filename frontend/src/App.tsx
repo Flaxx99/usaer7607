@@ -1,35 +1,35 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
-
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
+import MainLayout from './layouts/MainLayout';
+import ListaEscuelas from './pages/escuelas/ListaEscuelas';
+import ListaAlumnos from './pages/alumnos/ListaAlumnos';
+import ListaDocumentos from './pages/documentos/ListaDocumentos';
+import ListaUsuarios from './pages/usuarios/ListaUsuarios';
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <BrowserRouter>
+      <Routes>
+        {/* Ruta Pública (Login) */}
+        <Route path="/login" element={<Login />} />
+        
+        {/* Rutas Protegidas (Con Layout) */}
+        <Route element={<MainLayout />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/escuelas" element={<ListaEscuelas />} />
+          <Route path="/alumnos" element= {<ListaAlumnos/>}/>
+          <Route path="/documentos" element={<ListaDocumentos />} />
+          <Route path="/usuarios" element={<ListaUsuarios />} />
+
+
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Route>
+
+        {/* Redirección por defecto */}
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
+    </BrowserRouter>
+  );
 }
 
-export default App
+export default App;
