@@ -6,6 +6,10 @@ import ListaEscuelas from './pages/escuelas/ListaEscuelas';
 import ListaAlumnos from './pages/alumnos/ListaAlumnos';
 import ListaDocumentos from './pages/documentos/ListaDocumentos';
 import ListaUsuarios from './pages/usuarios/ListaUsuarios';
+import ListaCiclos from './pages/ciclos/ListaCiclos';
+import TablonAvisos from './pages/avisos/TablaAvisos';
+import GestionPermisos from './pages/permisos/GestionPermisos';
+
 function App() {
   return (
     <BrowserRouter>
@@ -20,6 +24,12 @@ function App() {
           <Route path="/alumnos" element= {<ListaAlumnos/>}/>
           <Route path="/documentos" element={<ListaDocumentos />} />
           <Route path="/usuarios" element={<ListaUsuarios />} />
+          <Route path="/ciclos" element={<ListaCiclos />} />
+          <Route path="/avisos" element={<TablonAvisos />} />
+          <Route path="/permisos" element={<GestionPermisos />} />
+
+
+
 
 
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

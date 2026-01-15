@@ -1,23 +1,28 @@
-# usuarios/views.py
 from rest_framework import viewsets, status, views, filters, generics
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import get_user_model, login, logout
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
 
-# Modelos externos (para el dashboard)
+# --- MODELOS ---
 from escuelas.models import Escuela
 from alumnos.models import Alumno
-from incidencias.models import Incidencia
-from permisos.models import Permiso
-from calendario.models import EventoCalendario
-from oficios.models import Oficio
 from avisos.models import Anuncio
-from documentos.models import Expediente
+from ciclos_escolares.models import CicloEscolar
+from permisos.models import Permiso 
+
+# Apps pendientes (Incidencias, etc.)
+try:
+    from incidencias.models import Incidencia
+    from calendario.models import EventoCalendario
+    from oficios.models import Oficio
+    from documentos.models import Expediente
+except ImportError:
+    pass
 
 from .serializers import UserSerializer, LoginSerializer, ChangePasswordSerializer
 
@@ -26,16 +31,8 @@ User = get_user_model()
 # --- VISTAS DE AUTENTICACIÓN ---
 
 class LoginView(generics.GenericAPIView):
-    """
-    Vista estandarizada para Login. Devuelve Token + Datos de Usuario.
-    """
-    # 1. Permite acceso a cualquiera (Público)
     permission_classes = [AllowAny]
-    
-    # 2. CORRECCIÓN CRÍTICA: Desactiva la autenticación automática (Session/CSRF)
-    # Esto evita el error 403 cuando React intenta entrar sin cookies.
     authentication_classes = [] 
-    
     serializer_class = LoginSerializer
 
     def post(self, request):
@@ -43,13 +40,8 @@ class LoginView(generics.GenericAPIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
         
-        # 1. Login de sesión (Opcional: útil para que funcione el Admin de Django en el navegador)
         login(request, user)
-        
-        # 2. Generar Token (Vital para React)
         token, created = Token.objects.get_or_create(user=user)
-        
-        # 3. Serializar usuario para devolver info completa al Frontend
         user_data = UserSerializer(user, context=self.get_serializer_context()).data
 
         return Response({
@@ -59,42 +51,28 @@ class LoginView(generics.GenericAPIView):
         })
 
 class LogoutView(views.APIView):
-    """
-    Cierra sesión (elimina cookie) y opcionalmente borra el token.
-    """
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        # Borrar token si existe (Cierra sesión en React)
         if hasattr(request.user, 'auth_token'):
             request.user.auth_token.delete()
-        
-        # Cerrar sesión django (Cierra sesión en Admin)
         logout(request)
         return Response({"detail": "Sesión cerrada correctamente."}, status=status.HTTP_200_OK)
 
 
-# --- VIEWSET DE USUARIOS (CRUD + ACCIONES) ---
+# --- VIEWSET DE USUARIOS (¡ESTO ES LO QUE FALTABA!) ---
 
 class UserViewSet(viewsets.ModelViewSet):
-    """
-    CRUD completo de usuarios con filtros personalizados.
-    """
     queryset = User.objects.all().select_related('escuela')
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated] 
     
-    # Filtros nativos de DRF (Búsqueda textual)
     filter_backends = [filters.SearchFilter]
     search_fields = ['numero_empleado', 'nombre', 'apellido_paterno', 'apellido_materno', 'email']
 
     def get_queryset(self):
-        """
-        Lógica de filtrado personalizada (rol, escuela, activo) + seguridad de acceso.
-        """
         qs = super().get_queryset()
 
-        # Filtros por Query Params (?role=MAESTRO&activo=true)
         role = self.request.query_params.get('role')
         escuela = self.request.query_params.get('escuela')
         activo = self.request.query_params.get('activo')
@@ -111,15 +89,12 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def me(self, request):
-        """Devuelve el perfil del usuario actual."""
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
 
     @action(detail=True, methods=['post'])
     def toggle_active(self, request, pk=None):
-        """Acción extra: Activar/Desactivar usuario rápidamente."""
         user = self.get_object()
-        # Evitar desactivarse a uno mismo por error
         if user == request.user:
             return Response({"error": "No puedes desactivar tu propia cuenta."}, status=400)
             
@@ -130,12 +105,10 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'], url_path='change-password')
     def change_password(self, request, pk=None):
-        """Cambio de contraseña administrativo o propio."""
         user = self.get_object()
         serializer = ChangePasswordSerializer(data=request.data)
         
         if serializer.is_valid():
-            # Validar password anterior si es necesario
             if not user.check_password(serializer.data.get("old_password")):
                 return Response({"old_password": ["Contraseña incorrecta."]}, status=400)
             
@@ -156,39 +129,81 @@ class DashboardView(views.APIView):
 
     def get(self, request):
         user = request.user
+        
+        # 1. Obtener Ciclo Activo
+        ciclo_nombre = "Sin Ciclo Activo"
+        try:
+            ciclo_actual = CicloEscolar.objects.filter(activo=True).first()
+            if ciclo_actual: ciclo_nombre = ciclo_actual.nombre
+        except NameError: pass
+
+        # Estructura base
         data = {
+            'ciclo_actual': ciclo_nombre,
             'ultimos_avisos': [],
             'permisos_pendientes': 0,
-            'ultimos_permisos': [],
             'incidencias_pendientes': 0,
-            'ultimas_incidencias': [],
-            'ultimos_eventos': [],
-            'ultimos_expedientes': [],
-            'ultimos_oficios': [],
-            'stats': {}
+            'stats': {},
+            'grafica_clasificacion': [],
+            'grafica_escuelas': []
         }
 
-        # 1. Avisos (Ejemplo mantenido)
-        if user.has_perm('avisos.view_anuncio'):
+        # 2. LOGICA PERMISOS PENDIENTES
+        try:
+            qs_permisos = Permiso.objects.filter(estado='PENDIENTE')
+
+            es_admin = user.role in ['ADMIN', 'ADMINISTRADOR'] or user.is_superuser
+            es_director = user.role == 'DIRECTOR'
+
+            if es_admin:
+                pass
+            elif es_director:
+                if user.escuela:
+                    qs_permisos = qs_permisos.filter(escuela=user.escuela)
+            else:
+                qs_permisos = qs_permisos.filter(profesor=user)
+
+            data['permisos_pendientes'] = qs_permisos.count()
+
+        except Exception as e:
+            print(f"Error contando permisos: {e}")
+
+        # 3. LOGICA AVISOS
+        try:
+            now = timezone.now()
             ultimos_avisos = Anuncio.objects.filter(
-                (Q(fecha_expiracion__gte=timezone.now()) | Q(fecha_expiracion__isnull=True)),
-                fecha_publicacion__lte=timezone.now()
+                (Q(fecha_expiracion__gte=now) | Q(fecha_expiracion__isnull=True)),
+                fecha_publicacion__lte=now
             ).select_related('autor').order_by('-fecha_publicacion')[:5]
             
             data['ultimos_avisos'] = [{
-                'id': a.id, 'titulo': a.titulo, 'contenido': a.contenido, 
-                'autor': a.autor.get_full_name(), 'fecha': a.fecha_publicacion
+                'id': a.id, 
+                'titulo': a.titulo, 
+                'contenido': a.contenido, 
+                'autor': a.autor.get_full_name() if hasattr(a.autor, 'get_full_name') else str(a.autor), 
+                'fecha': a.fecha_publicacion
             } for a in ultimos_avisos]
+        except Exception as e:
+            print(f"Error cargando avisos: {e}")
 
-        # ... (Aquí va el resto de tu lógica del Dashboard original) ...
-        # Se mantiene la estructura para que la rellenes con tus consultas específicas.
-        
-        # Ejemplo de estadísticas
-        if user.role == User.Role.ADMINISTRADOR.value:
+        # 4. ESTADÍSTICAS BÁSICAS
+        try:
             data['stats'] = {
-                'total_alumnos': Alumno.objects.count(),
+                'total_alumnos': Alumno.objects.filter(activo=True).count(),
                 'total_escuelas': Escuela.objects.count(),
-                'total_usuarios': User.objects.count(),
+                'total_usuarios': User.objects.filter(activo=True).count(),
+                'total_maestros': User.objects.filter(role='MAESTRO_APOYO', activo=True).count()
             }
+        except Exception as e:
+            data['stats'] = {'total_alumnos': 0, 'total_escuelas': 0, 'total_usuarios': 0}
+
+        # 5. GRÁFICAS
+        try:
+            alumnos_por_clasif = Alumno.objects.filter(activo=True).values('clasificacion').annotate(total=Count('id'))
+            data['grafica_clasificacion'] = list(alumnos_por_clasif)
+            
+            alumnos_por_escuela = Alumno.objects.filter(activo=True).values('escuela__nombre').annotate(total=Count('id')).order_by('-total')[:5]
+            data['grafica_escuelas'] = list(alumnos_por_escuela)
+        except Exception: pass
 
         return Response(data)
