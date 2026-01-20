@@ -19,6 +19,7 @@ class ChecadorView(views.APIView):
     Replica la lógica de 'checar_asistencia'.
     """
     permission_classes = [AllowAny] # ¡Importante! No requiere token
+    authentication_classes = []
 
     def post(self, request):
         serializer = ChecadorInputSerializer(data=request.data)

@@ -2,12 +2,12 @@ from rest_framework import serializers
 from .models import Incidencia
 
 class IncidenciaSerializer(serializers.ModelSerializer):
-    # Campos de lectura (ReadOnly) para mostrar nombres en lugar de IDs en el Frontend
+    # ReadOnly fields to show names instead of IDs in the Frontend
     escuela_nombre = serializers.ReadOnlyField(source='escuela.nombre')
     profesor_nombre = serializers.ReadOnlyField(source='profesor.get_full_name')
     reportado_por_nombre = serializers.ReadOnlyField(source='reportado_por.get_full_name')
     
-    # Formato de fecha legible (Ej: "2023-10-25 14:30")
+    # Readable date format (e.g., "2023-10-25 14:30")
     fecha_reporte = serializers.DateTimeField(format="%Y-%m-%d %H:%M", read_only=True)
     fecha_resolucion = serializers.DateTimeField(format="%Y-%m-%d %H:%M", read_only=True)
 
@@ -19,27 +19,28 @@ class IncidenciaSerializer(serializers.ModelSerializer):
             'descripcion', 
             'escuela', 
             'escuela_nombre',
-            'profesor',          # ID del profesor involucrado (Input)
-            'profesor_nombre',   # Nombre del profesor (Output)
-            'reportado_por',     # ID del creador (Output - manejado por backend)
+            'profesor',          # ID of the involved professor (Input)
+            'profesor_nombre',   # Name of the professor (Output)
+            'reportado_por',     # ID of the creator (Output - handled by backend)
             'reportado_por_nombre',
             'estado', 
             'respuesta_admin', 
             'fecha_reporte', 
             'fecha_resolucion'
         ]
-        # Estos campos NO se deben poder editar directamente desde la API
-        read_only_fields = ['reportado_por', 'fecha_resolucion', 'fecha_reporte']
+        # These fields MUST NOT be editable directly from the API
+        # Added 'escuela' here so the Admin doesn't need to send it manually
+        read_only_fields = ['reportado_por', 'fecha_resolucion', 'fecha_reporte', 'escuela']
 
     def validate(self, data):
         """
-        Replica la lógica de 'convertir_mayusculas' del forms.py original.
-        Convierte a MAYÚSCULAS el título, descripción y respuesta.
+        Replicates the logic of 'convertir_mayusculas'.
+        Converts title, description, and response to UPPERCASE.
         """
-        campos_texto = ['titulo', 'descripcion', 'respuesta_admin']
+        text_fields = ['titulo', 'descripcion', 'respuesta_admin']
         
-        for campo in campos_texto:
-            if campo in data and isinstance(data[campo], str):
-                data[campo] = data[campo].upper()
+        for field in text_fields:
+            if field in data and isinstance(data[field], str):
+                data[field] = data[field].upper()
         
         return data

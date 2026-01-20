@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from django.db.models import Q
 from django.contrib.auth import get_user_model
 from django.utils import timezone
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError # Imported ValidationError
 
 from .models import Incidencia
 from .serializers import IncidenciaSerializer
@@ -23,70 +23,85 @@ class IncidenciaViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """
-        Lógica de filtrado estricta basada en Roles y Escuela.
+        Strict filtering logic based on Roles and School.
         """
         user = self.request.user
         queryset = Incidencia.objects.select_related('escuela', 'profesor', 'reportado_por')
 
-        # 1. ADMINISTRADOR (o Superuser): Ve TODO de TODAS las escuelas
+        # 1. ADMINISTRATOR (or Superuser): Sees EVERYTHING from ALL schools
         if user.is_superuser or user.role == User.Role.ADMINISTRADOR.value:
             return queryset
 
-        # 2. DIRECTOR: Ve TODO, pero SOLO de SU escuela
+        # 2. DIRECTOR: Sees EVERYTHING, but ONLY from THEIR school
         if user.role == User.Role.DIRECTOR.value:
             if not user.escuela:
-                return queryset.none() # Seguridad: Director sin escuela no ve nada
+                return queryset.none() # Security: Director without school sees nothing
             return queryset.filter(escuela=user.escuela)
 
-        # 3. SECRETARIO (Si permitimos que liste): Solo su escuela
+        # 3. SECRETARY (If allowed to list): Only their school
         if user.role == User.Role.SECRETARIO.value:
              if not user.escuela:
                 return queryset.none()
              return queryset.filter(escuela=user.escuela)
 
-        # 4. MAESTRO APOYO / OTROS:
-        # Solo ven lo que ellos reportaron O donde ellos son el involucrado
+        # 4. SUPPORT TEACHER / OTHERS:
+        # Only see what they reported OR where they are the involved party
         return queryset.filter(
             Q(reportado_por=user) | Q(profesor=user)
         )
 
     def perform_create(self, serializer):
         """
-        Al crear:
-        1. Asigna 'reportado_por' al usuario actual.
-        2. Si el usuario tiene escuela (Director/Secretario/Maestro), FUERZA esa escuela.
+        On create:
+        1. Assigns 'reportado_por' to the current user.
+        2. Calculates the 'escuela':
+           - If User has a school -> Use User's school.
+           - If Admin (no school) -> Use the selected Professor's school.
         """
         user = self.request.user
         save_kwargs = {'reportado_por': user}
 
-        # Si el usuario tiene una escuela asignada, la incidencia DEBE ser de esa escuela
+        # Get the professor instance from the validated data to check their school
+        involved_professor = serializer.validated_data.get('profesor')
+
+        # Logic for School Assignment
         if user.escuela:
+            # Case A: Director/Teacher creating -> Use THEIR school
             save_kwargs['escuela'] = user.escuela
-        elif user.role != User.Role.ADMINISTRADOR.value:
-             # Si no tiene escuela y no es Admin, no debería poder crear (validación extra)
-             raise PermissionDenied("No tienes una escuela asignada para crear incidencias.")
+        
+        elif user.role == User.Role.ADMINISTRADOR.value or user.is_superuser:
+            # Case B: Admin creating -> Use the PROFESSOR'S school
+            if involved_professor and involved_professor.escuela:
+                save_kwargs['escuela'] = involved_professor.escuela
+            else:
+                # If the professor has no school, we cannot link the incidence
+                raise ValidationError({"escuela": "The selected professor does not have an assigned school. Cannot create incidence."})
+        
+        else:
+            # Case C: User without school and without permissions
+             raise PermissionDenied("You do not have an assigned school to create incidences.")
 
         serializer.save(**save_kwargs)
 
     @action(detail=True, methods=['post'])
     def resolver(self, request, pk=None):
         """
-        Resuelve la incidencia.
-        El get_object() ya aplicó el filtro de escuela, así que un Director
-        no podrá resolver incidencias de otra escuela por error.
+        Resolves the incidence.
+        get_object() already applied the school filter, so a Director
+        cannot resolve incidences from another school by mistake.
         """
         incidencia = self.get_object()
         
         if incidencia.estado == 'RESUELTA':
             return Response(
-                {"detail": "Esta incidencia ya se encuentra resuelta."},
+                {"detail": "This incidence is already resolved."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
         respuesta = request.data.get('respuesta_admin')
         if not respuesta:
             return Response(
-                {"detail": "Debes proporcionar una respuesta administrativa."},
+                {"detail": "You must provide an administrative response."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -95,6 +110,6 @@ class IncidenciaViewSet(viewsets.ModelViewSet):
         incidencia.fecha_resolucion = timezone.now()
         incidencia.save()
 
-        # Serializamos para devolver la respuesta actualizada
+        # Serialize to return updated response
         serializer = self.get_serializer(incidencia)
         return Response(serializer.data)

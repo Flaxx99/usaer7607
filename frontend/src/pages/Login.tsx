@@ -1,10 +1,8 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom'; // <--- Importamos Link
 import { useForm } from 'react-hook-form';
-import { User, Lock, Loader2, AlertCircle } from 'lucide-react';
+import { User, Lock, Loader2, AlertCircle, ArrowLeft } from 'lucide-react'; // <--- ArrowLeft opcional
 import client from '../api/client';
-// Asegúrate de tener este componente o usa uno simple
-import Swal from 'sweetalert2'; 
 
 const Login = () => {
   const [loading, setLoading] = useState(false);
@@ -18,19 +16,17 @@ const Login = () => {
     setErrorMsg('');
 
     try {
-      // 1. Petición al Backend
+      // 1. Backend Request
       const response = await client.post('/usuarios/auth/login/', data);
       
-      // 2. EXTRAER DATOS
-      // El backend devuelve: { token: "...", user: { ... } }
+      // 2. Extract Data
       const { token, user } = response.data;
 
-      // 3. GUARDAR EN LOCALSTORAGE (¡Aquí estaba el detalle!)
-      // Debe coincidir con lo que busca client.ts ('access_token')
+      // 3. Save to LocalStorage
       localStorage.setItem('access_token', token); 
       localStorage.setItem('user', JSON.stringify(user));
 
-      // 4. Redirigir
+      // 4. Redirect
       navigate('/dashboard');
       
     } catch (error: any) {
@@ -49,13 +45,13 @@ const Login = () => {
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
       <div className="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden">
         
-        {/* Encabezado */}
-        <div className="bg-primary p-8 text-center">
+        {/* Header */}
+        <div className="bg-primary p-8 text-center relative">
           <h1 className="text-3xl font-bold text-white mb-2">USAER 7607</h1>
           <p className="text-blue-100">Sistema de Gestión Escolar</p>
         </div>
 
-        {/* Formulario */}
+        {/* Form */}
         <div className="p-8">
           <h2 className="text-xl font-semibold text-text-main mb-6 text-center">Iniciar Sesión</h2>
 
@@ -68,7 +64,7 @@ const Login = () => {
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             
-            {/* Usuario */}
+            {/* Username */}
             <div className="space-y-1">
               <label className="text-sm font-medium text-text-secondary">Usuario o No. Empleado</label>
               <div className="relative">
@@ -83,7 +79,7 @@ const Login = () => {
               {errors.username && <span className="text-xs text-red-500">{errors.username.message as string}</span>}
             </div>
 
-            {/* Contraseña */}
+            {/* Password */}
             <div className="space-y-1">
               <label className="text-sm font-medium text-text-secondary">Contraseña</label>
               <div className="relative">
@@ -98,7 +94,7 @@ const Login = () => {
               {errors.password && <span className="text-xs text-red-500">{errors.password.message as string}</span>}
             </div>
 
-            {/* Botón */}
+            {/* Submit Button */}
             <button 
               type="submit" 
               disabled={loading}
@@ -113,6 +109,13 @@ const Login = () => {
                 'Acceder al Sistema'
               )}
             </button>
+
+            {/* --- ENLACE DE VOLVER AL KIOSCO --- */}
+            <div className="text-center pt-4 border-t border-slate-100 mt-6">
+                <Link to="/" className="text-sm text-slate-400 hover:text-primary transition-colors flex items-center justify-center gap-2">
+                    <ArrowLeft size={16} /> Volver al Checador de Asistencia
+                </Link>
+            </div>
 
           </form>
         </div>
