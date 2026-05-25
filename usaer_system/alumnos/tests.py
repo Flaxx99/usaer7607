@@ -1,13 +1,14 @@
-from django.test import TestCase
-from django.urls import reverse
 from django.contrib.auth import get_user_model
+from rest_framework.test import APITestCase, APIClient
+from django.urls import reverse
+
 from .models import Alumno
 from escuelas.models import Escuela
 
 User = get_user_model()
 
 
-class AlumnoViewsTest(TestCase):
+class AlumnoAPITests(APITestCase):
     def setUp(self):
         self.admin = User.objects.create_superuser(
             email="admin_alumnos@example.com", numero_empleado="admin_al", password="pass"
@@ -30,18 +31,21 @@ class AlumnoViewsTest(TestCase):
             grado="3",
             clasificacion="NINGUNO",
         )
+        self.client = APIClient()
 
     def test_maestro_ve_sus_alumnos(self):
-        self.client.login(email="maestro_alumnos@example.com", password="pass")
-        response = self.client.get(reverse("alumnos:listar_alumnos"))
+        self.client.force_authenticate(user=self.maestro)
+        url = reverse('alumnos:alumnos-list')
+        response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, self.alumno.nombres)
+        data = response.json()
+        assert any(item.get('nombres') == self.alumno.nombres for item in (data if isinstance(data, list) else data.get('results', [])))
 
     def test_maestro_no_ve_alumnos_de_otros(self):
         otro_maestro = User.objects.create_user(
             email="otro@example.com", numero_empleado="otro", password="pass"
         )
-        otro_alumno = Alumno.objects.create(
+        Alumno.objects.create(
             profesor=otro_maestro,
             escuela=self.escuela,
             apellido_paterno="Lopez",
@@ -52,19 +56,24 @@ class AlumnoViewsTest(TestCase):
             grado="4",
             clasificacion="NINGUNO",
         )
-        self.client.login(email="maestro_alumnos@example.com", password="pass")
-        response = self.client.get(reverse("alumnos:listar_alumnos"))
-        self.assertNotContains(response, otro_alumno.nombres)
+        self.client.force_authenticate(user=self.maestro)
+        url = reverse('alumnos:alumnos-list')
+        response = self.client.get(url)
+        data = response.json()
+        assert all(item.get('nombres') != 'Maria' for item in (data if isinstance(data, list) else data.get('results', [])))
 
     def test_admin_ve_todos_los_alumnos(self):
-        self.client.login(email="admin_alumnos@example.com", password="pass")
-        response = self.client.get(reverse("alumnos:listar_alumnos"))
+        self.client.force_authenticate(user=self.admin)
+        url = reverse('alumnos:alumnos-list')
+        response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, self.alumno.nombres)
+        data = response.json()
+        assert any(item.get('nombres') == self.alumno.nombres for item in (data if isinstance(data, list) else data.get('results', [])))
 
-    def test_crear_alumno(self):
-        self.client.login(email="admin_alumnos@example.com", password="pass")
-        form_data = {
+    def test_crear_alumno_via_api(self):
+        self.client.force_authenticate(user=self.admin)
+        url = reverse('alumnos:alumnos-list')
+        payload = {
             "profesor": self.maestro.pk,
             "escuela": self.escuela.pk,
             "apellido_paterno": "Garcia",
@@ -77,14 +86,13 @@ class AlumnoViewsTest(TestCase):
             "grupo": "A",
             "clasificacion": "NINGUNO",
         }
-        response = self.client.post(reverse("alumnos:crear_alumno"), data=form_data)
-        # La vista de creación es compleja, aquí solo verificamos que no falle
-        # y que el alumno se cree.
+        response = self.client.post(url, data=payload, format='json')
+        self.assertIn(response.status_code, [201, 200])
         self.assertTrue(Alumno.objects.filter(curp="GARLPE123456HOMBZZ").exists())
 
-    def test_eliminar_alumno(self):
-        self.client.login(email="admin_alumnos@example.com", password="pass")
-        url = reverse("alumnos:eliminar_alumno", args=[self.alumno.pk])
-        response = self.client.post(url)
-        self.assertEqual(response.status_code, 302)
+    def test_eliminar_alumno_via_api(self):
+        self.client.force_authenticate(user=self.admin)
+        url = reverse('alumnos:alumnos-detail', args=[self.alumno.pk])
+        response = self.client.delete(url)
+        self.assertIn(response.status_code, [204, 200])
         self.assertFalse(Alumno.objects.filter(pk=self.alumno.pk).exists())

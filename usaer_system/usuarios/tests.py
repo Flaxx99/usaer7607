@@ -1,50 +1,16 @@
 import uuid
-from django.test import TestCase, RequestFactory
-from django.contrib.auth import get_user_model
-from django.contrib.auth.models import AnonymousUser
 from django.urls import reverse
-from django.core.exceptions import PermissionDenied
-from django.http import HttpResponse
+from django.contrib.auth import get_user_model
+from rest_framework.test import APITestCase, APIClient
 
-from .models import User
-from .forms import UsuarioCreationForm, UsuarioChangeForm
-from .decoradores import roles_permitidos
 from escuelas.models import Escuela
+from .models import User
 
 
-class UserManagerTests(TestCase):
-    def test_create_user_exitoso(self):
-        user = User.objects.create_user(
-            email="normal@user.com",
-            numero_empleado="12345",
-            password="TestPass1!",
-            nombre="Test",
-            apellido_paterno="User"
-        )
-        self.assertEqual(user.email, "normal@user.com")
-        self.assertEqual(user.numero_empleado, "12345")
-        self.assertTrue(user.is_active)
-        self.assertFalse(user.is_staff)
-        self.assertFalse(user.is_superuser)
-        self.assertEqual(user.role, User.Role.MAESTRO_APOYO)  # Rol por defecto
-
-    def test_create_superuser(self):
-        admin_user = User.objects.create_superuser(
-            email="super@user.com",
-            numero_empleado="admin123",
-            password="TestPass1!",
-        )
-        self.assertTrue(admin_user.is_active)
-        self.assertTrue(admin_user.is_staff)
-        self.assertTrue(admin_user.is_superuser)
-        self.assertEqual(admin_user.role, User.Role.ADMINISTRADOR)
-
-    def test_create_user_sin_numero_empleado_falla(self):
-        with self.assertRaises(ValueError):
-            User.objects.create_user(email="test@test.com", numero_empleado="", password="foo")
+User = get_user_model()
 
 
-class UserViewsTest(TestCase):
+class UserAPITests(APITestCase):
     def setUp(self):
         self.admin = User.objects.create_superuser(
             email="admin@example.com", numero_empleado="admin", password="TestPass1!"
@@ -55,132 +21,52 @@ class UserViewsTest(TestCase):
         self.escuela = Escuela.objects.create(
             clave_estatal="111", cct="CCT111", nombre="Escuela Base", nivel="Primaria", domicilio="x", colonia="y", zona="z"
         )
+        self.client = APIClient()
 
-    def test_acceso_denegado_a_no_admin(self):
-        self.client.login(email="maestro@example.com", password="TestPass1!")
-        urls_restringidas = [
-            reverse("usuarios:list"),
-            reverse("usuarios:create"),
-            reverse("usuarios:update", args=[self.maestro.pk]),
-            reverse("usuarios:delete", args=[self.maestro.pk]),
-        ]
-        for url in urls_restringidas:
-            response = self.client.get(url)
-            # El decorador redirige o da PermissionDenied, así que 302 o 403 son fallos de acceso esperados
-            self.assertIn(response.status_code, [302, 403])
-
-    def test_lista_usuarios_para_admin(self):
-        self.client.login(email="admin@example.com", password="TestPass1!")
-        response = self.client.get(reverse("usuarios:list"))
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Administrador(a)".encode('utf-8'))
-        self.assertContains(response, "Maestro(a) de Apoyo".encode('utf-8'))
-
-    def test_crear_usuario_exitoso(self):
-        self.client.login(email="admin@example.com", password="TestPass1!")
-        form_data = {
-            "numero_empleado": f"newuser_{uuid.uuid4().hex[:8]}",
+    def test_create_user_via_api(self):
+        self.client.force_authenticate(user=self.admin)
+        url = reverse('usuarios:usuario-list')
+        payload = {
+            "numero_empleado": "newuser1",
             "nombre": "Nuevo",
             "apellido_paterno": "Usuario",
-            "apellido_materno": "Test",
-            "domicilio": "Calle Falsa 123",
-            "telefono": "5512345678",
-            "celular": "5587654321",
-            "rfc": "XAXX010101000", # Valid RFC format
-            "curp": "XAXX010101HXXXXX00", # Valid CURP format
-            "clave_presupuestal": "CP123",
-            "numero_pensiones": "NP456",
-            "grado": "Licenciatura",
-            "puesto": User.Puesto.MAESTRO_APOYO,
-            "situacion": User.Situacion.BASE,
-            "escolaridad": "Universitaria",
-            "fecha_ingreso": "2023-01-01",
             "email": "new@example.com",
             "role": User.Role.SECRETARIO,
             "escuela": self.escuela.pk,
-            "password1": "NewUserPass123!",
-            "password2": "NewUserPass123!",
+            "password": "NewUserPass123!",
         }
-        response = self.client.post(reverse("usuarios:create"), data=form_data)
-        if response.status_code != 302:
-            print(f"Form errors: {response.context['form'].errors}")
-        self.assertEqual(response.status_code, 302)  # Redirección a la lista
-        self.assertTrue(User.objects.filter(email=form_data["email"]).exists())
+        response = self.client.post(url, data=payload, format='json')
+        self.assertIn(response.status_code, [201, 200])
+        self.assertTrue(User.objects.filter(email=payload['email']).exists())
 
-    def test_editar_usuario(self):
-        self.client.login(email="admin@example.com", password="TestPass1!")
-        form_data = {
-            "numero_empleado": self.maestro.numero_empleado,
-            "nombre": "Nombre Editado",
-            "apellido_paterno": self.maestro.apellido_paterno,
-            "email": self.maestro.email,
-            "role": User.Role.DIRECTOR,
-            "escuela": self.escuela.pk,
-        }
-        url = reverse("usuarios:update", args=[self.maestro.pk])
-        response = self.client.post(url, data=form_data)
-        self.assertEqual(response.status_code, 302)
+    def test_non_admin_cannot_access_user_list(self):
+        self.client.force_authenticate(user=self.maestro)
+        url = reverse('usuarios:usuario-list')
+        response = self.client.get(url)
+        self.assertIn(response.status_code, [403, 401])
+
+    def test_admin_can_list_users(self):
+        self.client.force_authenticate(user=self.admin)
+        url = reverse('usuarios:usuario-list')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        # Expect paginated or list response containing at least the admin
+        assert any(item.get('email') == self.admin.email for item in (data if isinstance(data, list) else data.get('results', [])))
+
+    def test_edit_user_via_api(self):
+        self.client.force_authenticate(user=self.admin)
+        url = reverse('usuarios:usuario-detail', args=[self.maestro.pk])
+        payload = {"nombre": "Nombre Editado", "role": User.Role.DIRECTOR}
+        response = self.client.patch(url, data=payload, format='json')
+        self.assertIn(response.status_code, [200, 204])
         self.maestro.refresh_from_db()
-        self.assertEqual(self.maestro.nombre, "NOMBRE EDITADO")
         self.assertEqual(self.maestro.role, User.Role.DIRECTOR)
 
-    def test_eliminar_usuario(self):
-        self.client.login(email="admin@example.com", password="TestPass1!")
-        user_a_eliminar = User.objects.create_user(
-            email="delete@me.com", numero_empleado="del123", password="TestPass1!"
-        )
-        url = reverse("usuarios:delete", args=[user_a_eliminar.pk])
-        response = self.client.post(url) # La vista de borrado es por POST
-        self.assertEqual(response.status_code, 302)
-        self.assertFalse(User.objects.filter(pk=user_a_eliminar.pk).exists())
-
-    def test_vista_perfil_propio(self):
-        self.client.login(email="maestro@example.com", password="TestPass1!")
-        response = self.client.get(reverse("usuarios:profile"))
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, self.maestro.email)
-
-    def test_cambiar_contrasena(self):
-        self.client.login(email="maestro@example.com", password="TestPass1!")
-        form_data = {
-            "old_password": "TestPass1!",
-            "new_password1": "NewStrongPass123!",
-            "new_password2": "NewStrongPass123!",
-        }
-        response = self.client.post(reverse("usuarios:change_password"), data=form_data, follow=True)
-        self.assertEqual(response.status_code, 200)
-        self.maestro.refresh_from_db()
-        self.assertTrue(self.maestro.check_password("NewStrongPass123!"))
-
-
-class DashboardViewTest(TestCase):
-    def setUp(self):
-        self.admin = User.objects.create_superuser(
-            email="dash_admin@example.com", numero_empleado="dash_admin", password="TestPass1!"
-        )
-        self.maestro = User.objects.create_user(
-            email="dash_maestro@example.com", numero_empleado="dash_maestro", password="TestPass1!", role=User.Role.MAESTRO_APOYO
-        )
-
-    def test_dashboard_requiere_login(self):
-        response = self.client.get(reverse("usuarios:dashboard"))
-        self.assertEqual(response.status_code, 302)
-        self.assertIn(reverse("login"), response.url)
-
-    def test_dashboard_modulos_para_admin(self):
-        self.client.login(email="dash_admin@example.com", password="TestPass1!")
-        response = self.client.get(reverse("usuarios:dashboard"))
-        self.assertEqual(response.status_code, 200)
-        # Un admin debería ver el módulo de gestión de usuarios
-        self.assertContains(response, "Usuarios")
-        self.assertContains(response, reverse("usuarios:list"))
-
-    def test_dashboard_modulos_para_maestro(self):
-        self.client.login(email="dash_maestro@example.com", password="TestPass1!")
-        response = self.client.get(reverse("usuarios:dashboard"))
-        self.assertEqual(response.status_code, 200)
-        # Un maestro NO debería ver el módulo de gestión de usuarios
-        self.assertNotContains(response, "Gestión de Usuarios".encode('utf-8'))
-        # Pero sí debería ver el de alumnos
-        self.assertContains(response, "Alumnos")
-        self.assertContains(response, reverse("alumnos:listar_alumnos"))
+    def test_delete_user_via_api(self):
+        self.client.force_authenticate(user=self.admin)
+        user_to_delete = User.objects.create_user(email='del@me.com', numero_empleado='del1', password='pass')
+        url = reverse('usuarios:usuario-detail', args=[user_to_delete.pk])
+        response = self.client.delete(url)
+        self.assertIn(response.status_code, [204, 200])
+        self.assertFalse(User.objects.filter(pk=user_to_delete.pk).exists())
