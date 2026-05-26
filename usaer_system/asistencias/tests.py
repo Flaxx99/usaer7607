@@ -84,5 +84,7 @@ class AsistenciaAPITests(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         data = response.json()
-        assert any(item.get('profesor_nombre') == self.profesor.get_full_name() for item in (data if isinstance(data, list) else data.get('results', [])))
-        assert any(item.get('profesor_nombre') == otro_profesor.get_full_name() for item in (data if isinstance(data, list) else data.get('results', [])))
+        items = (data if isinstance(data, list) else data.get('results', []))
+        # serializer exposes profesor as user id
+        assert any(item.get('profesor') == self.profesor.pk for item in items)
+        assert any(item.get('profesor') == otro_profesor.pk for item in items)
