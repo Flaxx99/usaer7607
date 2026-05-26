@@ -53,7 +53,8 @@ class DocumentosAPITests(APITestCase):
         response = self.client.patch(url, data, format='multipart')
         self.assertIn(response.status_code, [200, 204])
         self.expediente.refresh_from_db()
-        self.assertEqual(self.expediente.observaciones, 'Observaciones actualizadas')
+        # El sistema normaliza observaciones a mayúsculas al guardar
+        self.assertEqual(self.expediente.observaciones, 'Observaciones actualizadas'.upper())
 
     def test_eliminar_expediente_maestro_propio(self):
         self.client.force_authenticate(user=self.maestro)
