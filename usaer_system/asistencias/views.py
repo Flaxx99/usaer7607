@@ -136,8 +136,7 @@ class AsistenciaViewSet(viewsets.ReadOnlyModelViewSet):
         if fecha_param:
             queryset = queryset.filter(fecha=fecha_param)
 
-        # Lógica de Roles
-        if user.role == User.Role.ADMINISTRADOR.value:
+        # Lógica de Roles: Admins (o superusers) ven todo; docentes ven sólo lo suyo
+        if getattr(user, 'is_superuser', False) or user.role == User.Role.ADMINISTRADOR.value:
             return queryset
-        else:
-            return queryset.filter(profesor=user)
+        return queryset.filter(profesor=user)
