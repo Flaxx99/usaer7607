@@ -1,12 +1,15 @@
 from rest_framework import viewsets, status, views, filters, generics
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import get_user_model, login, logout
 from django.db.models import Q, Count
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
+import logging
+
+logger = logging.getLogger(__name__)
 
 # --- MODELOS ---
 from escuelas.models import Escuela
@@ -24,7 +27,11 @@ try:
 except ImportError:
     pass
 
-from .serializers import UserSerializer, LoginSerializer, ChangePasswordSerializer
+from .models import CalendarEvent, SystemConfiguration
+from .serializers import (
+    UserSerializer, LoginSerializer, ChangePasswordSerializer, 
+    CalendarEventSerializer, SystemConfigurationSerializer
+)
 
 User = get_user_model()
 
@@ -65,7 +72,7 @@ class LogoutView(views.APIView):
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all().select_related('escuela')
     serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated] 
+    permission_classes = [IsAuthenticated]
     
     filter_backends = [filters.SearchFilter]
     search_fields = ['numero_empleado', 'nombre', 'apellido_paterno', 'apellido_materno', 'email']
@@ -86,6 +93,15 @@ class UserViewSet(viewsets.ModelViewSet):
             qs = qs.filter(activo=is_active)
             
         return qs.order_by('apellido_paterno', 'nombre')
+
+    def get_permissions(self):
+        """Only admins may list users; other actions require authentication.
+
+        This enforces that non-admin users cannot view the full user list.
+        """
+        if getattr(self, 'action', None) == 'list':
+            return [IsAuthenticated(), IsAdminUser()]
+        return [IsAuthenticated()]
 
     @action(detail=False, methods=['get'])
     def me(self, request):
@@ -130,14 +146,12 @@ class DashboardView(views.APIView):
     def get(self, request):
         user = request.user
         
-        # 1. Obtener Ciclo Activo
         ciclo_nombre = "Sin Ciclo Activo"
         try:
             ciclo_actual = CicloEscolar.objects.filter(activo=True).first()
             if ciclo_actual: ciclo_nombre = ciclo_actual.nombre
-        except NameError: pass
-
-        # Estructura base
+        except Exception: pass
+ 
         data = {
             'ciclo_actual': ciclo_nombre,
             'ultimos_avisos': [],
@@ -147,28 +161,22 @@ class DashboardView(views.APIView):
             'grafica_clasificacion': [],
             'grafica_escuelas': []
         }
-
-        # 2. LOGICA PERMISOS PENDIENTES
+ 
         try:
             qs_permisos = Permiso.objects.filter(estado='PENDIENTE')
-
             es_admin = user.role in ['ADMIN', 'ADMINISTRADOR'] or user.is_superuser
             es_director = user.role == 'DIRECTOR'
-
-            if es_admin:
-                pass
-            elif es_director:
-                if user.escuela:
+            if not es_admin:
+                if es_director and user.escuela:
                     qs_permisos = qs_permisos.filter(escuela=user.escuela)
-            else:
-                qs_permisos = qs_permisos.filter(profesor=user)
-
+                elif not es_director:
+                    qs_permisos = qs_permisos.filter(profesor=user)
+                else:
+                    qs_permisos = qs_permisos.none()
             data['permisos_pendientes'] = qs_permisos.count()
-
         except Exception as e:
-            print(f"Error contando permisos: {e}")
-
-        # 3. LOGICA AVISOS
+            logger.error(f"Error contando permisos: {e}")
+ 
         try:
             now = timezone.now()
             ultimos_avisos = Anuncio.objects.filter(
@@ -184,26 +192,75 @@ class DashboardView(views.APIView):
                 'fecha': a.fecha_publicacion
             } for a in ultimos_avisos]
         except Exception as e:
-            print(f"Error cargando avisos: {e}")
-
-        # 4. ESTADÍSTICAS BÁSICAS
+            logger.error(f"Error cargando avisos: {e}")
+ 
         try:
+            stats_alumnos_escuelas = Alumno.objects.filter(activo=True).aggregate(
+                total_alumnos=Count('id'),
+            )
+            total_escuelas = Escuela.objects.count()
+ 
+            stats_usuarios = User.objects.filter(activo=True).aggregate(
+                total_usuarios=Count('id'),
+                total_maestros=Count('id', filter=Q(role='MAESTRO_APOYO'))
+            )
+ 
             data['stats'] = {
-                'total_alumnos': Alumno.objects.filter(activo=True).count(),
-                'total_escuelas': Escuela.objects.count(),
-                'total_usuarios': User.objects.filter(activo=True).count(),
-                'total_maestros': User.objects.filter(role='MAESTRO_APOYO', activo=True).count()
+                'total_alumnos': stats_alumnos_escuelas['total_alumnos'] or 0,
+                'total_escuelas': total_escuelas,
+                'total_usuarios': stats_usuarios['total_usuarios'] or 0,
+                'total_maestros': stats_usuarios['total_maestros'] or 0
             }
         except Exception as e:
+            logger.error(f"Error en stats: {e}")
             data['stats'] = {'total_alumnos': 0, 'total_escuelas': 0, 'total_usuarios': 0}
-
-        # 5. GRÁFICAS
+ 
         try:
-            alumnos_por_clasif = Alumno.objects.filter(activo=True).values('clasificacion').annotate(total=Count('id'))
-            data['grafica_clasificacion'] = list(alumnos_por_clasif)
+            data['grafica_clasificacion'] = list(
+                Alumno.objects.filter(activo=True)
+                .values('clasificacion')
+                .annotate(total=Count('id'))
+                .order_by('-total')
+            )
             
-            alumnos_por_escuela = Alumno.objects.filter(activo=True).values('escuela__nombre').annotate(total=Count('id')).order_by('-total')[:5]
-            data['grafica_escuelas'] = list(alumnos_por_escuela)
-        except Exception: pass
-
+            data['grafica_escuelas'] = list(
+                Alumno.objects.filter(activo=True)
+                .values('escuela__nombre')
+                .annotate(total=Count('id'))
+                .order_by('-total')[:5]
+            )
+        except Exception as e:
+            logger.error(f"Error en gráficas: {e}")
+ 
         return Response(data)
+
+class CalendarEventViewSet(viewsets.ModelViewSet):
+    queryset = CalendarEvent.objects.all().select_related('created_by', 'assigned_to', 'alumno', 'escuela')
+    serializer_class = CalendarEventSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        qs = super().get_queryset()
+        user = self.request.user
+        
+        # Admin/Secretario ven todo
+        if user.is_superuser or user.role in ['ADMIN', 'SECRETARIO']:
+            return qs.order_by('start_time')
+        
+        # Docentes ven: lo que crearon, lo que les asignaron o eventos de sus alumnos/escuela
+        return qs.filter(
+            Q(created_by=user) | 
+            Q(assigned_to=user) | 
+            Q(alumno__profesor=user) | 
+            Q(escuela=user.escuela)
+        ).order_by('start_time')
+
+class SystemConfigurationViewSet(viewsets.ModelViewSet):
+    queryset = SystemConfiguration.objects.all()
+    serializer_class = SystemConfigurationSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        if not self.request.user.is_superuser and self.request.user.role != 'ADMIN':
+            return SystemConfiguration.objects.none()
+        return super().get_queryset()
