@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 from .models import Escuela
+from usuarios.admin_site import admin_site
 
 class NivelFilter(admin.SimpleListFilter):
     title = _('Nivel Educativo')
@@ -14,7 +15,6 @@ class NivelFilter(admin.SimpleListFilter):
             return queryset.filter(nivel=self.value())
         return queryset
 
-@admin.register(Escuela)
 class EscuelaAdmin(admin.ModelAdmin):
     list_display = (
         'clave_estatal', 'cct', 'nombre', 'nivel',
@@ -41,3 +41,5 @@ class EscuelaAdmin(admin.ModelAdmin):
             'fields': ('inspector', 'telefono_inspector', 'correo_inspector')
         }),
     )
+
+admin_site.register(Escuela, EscuelaAdmin)

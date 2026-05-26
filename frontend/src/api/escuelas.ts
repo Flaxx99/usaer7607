@@ -2,13 +2,17 @@
 import client from './client';
 import type { Escuela } from '../interfaces/escuela';
 
-// Obtener todas las escuelas
-export const getEscuelas = async (): Promise<Escuela[]> => {
-    // CORRECCIÓN 1: La URL es solo '/escuelas/' (el cliente ya agrega '/api')
-    const response = await client.get('/escuelas/');
+export interface PaginatedResponse<T> {
+    count: number;
+    next: string | null;
+    previous: string | null;
+    results: T[];
+}
+
+// Obtener todas las escuelas (soporta opcionalmente paginado o lote grande para select)
+export const getEscuelas = async (page_size = 1000, page = 1): Promise<Escuela[]> => {
+    const response = await client.get(`/escuelas/?page_size=${page_size}&page=${page}`);
     
-    // CORRECCIÓN 2: Manejo de paginación de Django
-    // Si Django devuelve { count: 10, results: [...] }, tomamos results.
     if (response.data.results) {
         return response.data.results;
     }
@@ -28,7 +32,6 @@ export const createEscuela = async (data: Partial<Escuela>): Promise<Escuela> =>
 };
 
 export const updateEscuela = async (data: Escuela): Promise<Escuela> => {
-    // Django espera PUT en /api/escuelas/{id}/
     const response = await client.put(`/escuelas/${data.id}/`, data);
     return response.data;
 };

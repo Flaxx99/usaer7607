@@ -1,30 +1,54 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { 
     Megaphone, Plus, Calendar, Edit2, Trash2, Clock, 
-    AlertCircle
+    AlertCircle, User, CheckCircle, XCircle, Search
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { 
+    Container, 
+    Stack, 
+    Paper, 
+    Title, 
+    Text, 
+    Button, 
+    Badge, 
+    Group, 
+    Avatar, 
+    Modal, 
+    TextInput, 
+    Textarea, 
+    SegmentedControl, 
+    ThemeIcon, 
+    Center, 
+    Loader, 
+    Box, 
+    Divider,
+    Grid,
+    ActionIcon,
+    Tooltip,
+    SimpleGrid
+} from '@mantine/core';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
+import { CardGridSkeleton } from '../../components/Skeletons';
 
 // API
 import { getAvisos, createAviso, updateAviso, deleteAviso } from '../../api/avisos';
 import type { Anuncio } from '../../interfaces/aviso';
 
-import Modal from '../../components/Modal';
-
 const TablonAvisos = () => {
-  // Estado: false = Tablón Público, true = Mis Avisos (Gestión)
   const [verMisAvisos, setVerMisAvisos] = useState(false);
-  
+  const [busqueda, setBusqueda] = useState('');
+  const busquedaDebounced = useDebouncedValue(busqueda, 300);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [avisoEditar, setAvisoEditar] = useState<Anuncio | null>(null);
 
+
   const queryClient = useQueryClient();
-  // CORRECCIÓN: Quitamos 'watch' y 'errors' que no se usaban
-  const { register, handleSubmit, reset } = useForm<Anuncio>();
+  const { register, handleSubmit, control, reset, formState: { errors } } = useForm<Anuncio>();
 
   // --- QUERY ---
   const { data: avisos, isLoading } = useQuery({
@@ -38,11 +62,11 @@ const TablonAvisos = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['avisos'] });
       cerrarModal();
-      Swal.fire('Publicado', 'El aviso ha sido creado y se enviarán notificaciones.', 'success');
+      Swal.fire('Publicado 📢', 'El aviso ha sido creado y se enviarán notificaciones al personal.', 'success');
     },
     onError: (err: any) => {
         const msg = err.response?.data?.fecha_expiracion || 'Revisa los datos.';
-        Swal.fire('Error', String(msg), 'error');
+        Swal.fire('Error ❌', String(msg), 'error');
     }
   });
 
@@ -51,16 +75,16 @@ const TablonAvisos = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['avisos'] });
       cerrarModal();
-      Swal.fire('Actualizado', 'Aviso modificado correctamente.', 'success');
+      Swal.fire('Actualizado ✏️', 'Aviso modificado correctamente.', 'success');
     },
-    onError: () => Swal.fire('Error', 'No se pudo actualizar.', 'error')
+    onError: () => Swal.fire('Error ❌', 'No se pudo actualizar.', 'error')
   });
 
   const deleteMutation = useMutation({
     mutationFn: deleteAviso,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['avisos'] });
-      Swal.fire('Eliminado', 'Aviso borrado.', 'success');
+      Swal.fire('Eliminado 🗑️', 'Aviso borrado del tablón.', 'success');
     }
   });
 
@@ -95,16 +119,12 @@ const TablonAvisos = () => {
   };
 
   const onSubmit = (data: Anuncio) => {
-    // 1. Clonamos los datos para no romper el formulario
     const envio = { ...data };
 
-    // 2. CORRECCIÓN: Si la fecha de expiración está vacía, enviamos null
     if (!envio.fecha_expiracion || String(envio.fecha_expiracion).trim() === '') {
         envio.fecha_expiracion = null;
     }
 
-    // 3. BLINDAJE: Django prefiere formato ISO completo. 
-    // Si el input manda "2024-01-01T12:00", le agregamos segundos ":00" por si acaso.
     if (envio.fecha_publicacion && envio.fecha_publicacion.length === 16) {
         envio.fecha_publicacion = `${envio.fecha_publicacion}:00`;
     }
@@ -113,7 +133,6 @@ const TablonAvisos = () => {
         envio.fecha_expiracion = `${envio.fecha_expiracion}:00`;
     }
 
-    // 4. Enviar a la mutación correspondiente
     if (avisoEditar) {
         updateMutation.mutate({ ...envio, id: avisoEditar.id });
     } else {
@@ -132,171 +151,294 @@ const TablonAvisos = () => {
 
   const formatDate = (dateStr: string) => {
     try {
-        // CORRECCIÓN: date-fns ya está instalado en el paso 1
         return format(new Date(dateStr), "d 'de' MMMM, h:mm a", { locale: es });
     } catch { return dateStr; }
   };
 
-  if (isLoading) return <div className="p-8 text-center text-primary">Cargando avisos...</div>;
+  const avisosFiltrados = useMemo(() => {
+    if (!avisos) return [];
+    return avisos.filter(aviso => {
+      const cumpleBusqueda = 
+        aviso.titulo.toLowerCase().includes(busquedaDebounced.toLowerCase()) ||
+        aviso.contenido.toLowerCase().includes(busquedaDebounced.toLowerCase());
+      return cumpleBusqueda;
+    });
+  }, [avisos, busquedaDebounced]);
+
+  if (isLoading) {
+      return (
+        <Container size="xl" py="md">
+          <CardGridSkeleton cols={6} />
+        </Container>
+      );
+  }
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      
-      {/* HEADER */}
-      <div className="flex flex-col md:flex-row justify-between gap-4 items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-text-main flex items-center gap-2">
-            <Megaphone className="text-primary" /> Tablón de Avisos
-          </h1>
-          <p className="text-text-secondary">Comunicados importantes de la USAER</p>
-        </div>
-        
-        <div className="flex gap-2 bg-slate-100 p-1 rounded-lg">
-            <button 
-                onClick={() => setVerMisAvisos(false)}
-                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${!verMisAvisos ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-            >
-                Tablón General
-            </button>
-            <button 
-                onClick={() => setVerMisAvisos(true)}
-                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${verMisAvisos ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-            >
-                Mis Publicaciones
-            </button>
-        </div>
-
-        <button onClick={handleOpenCreate} className="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-sm font-medium">
-          <Plus size={20} /> Crear Aviso
-        </button>
-      </div>
-
-      {/* LISTA DE AVISOS (GRID) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {avisos?.map((aviso) => (
-            <div 
-                key={aviso.id} 
-                className={`flex flex-col bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition-all ${
-                    !aviso.es_activo && verMisAvisos ? 'opacity-75 bg-slate-50 border-slate-200' : ''
-                }`}
-            >
-                {/* Header Tarjeta */}
-                <div className="p-5 border-b border-slate-50 flex justify-between items-start">
-                    <div>
-                        <div className="text-xs font-bold text-primary uppercase tracking-wider mb-1 flex items-center gap-1">
-                           <Calendar size={12}/> {formatDate(aviso.fecha_publicacion)}
-                        </div>
-                        <h3 className="font-bold text-lg text-slate-800 leading-snug">{aviso.titulo}</h3>
-                    </div>
-                    {/* Solo mostramos acciones si estamos en "Mis Avisos" */}
-                    {verMisAvisos && (
-                        <div className="flex gap-1">
-                            <button onClick={() => handleOpenEdit(aviso)} className="p-1.5 text-slate-400 hover:text-blue-600 rounded hover:bg-blue-50">
-                                <Edit2 size={16}/>
-                            </button>
-                            <button onClick={() => handleDelete(aviso.id)} className="p-1.5 text-slate-400 hover:text-red-600 rounded hover:bg-red-50">
-                                <Trash2 size={16}/>
-                            </button>
-                        </div>
-                    )}
-                </div>
-
-                {/* Contenido */}
-                <div className="p-5 flex-1">
-                    <p className="text-slate-600 text-sm whitespace-pre-wrap leading-relaxed">
-                        {aviso.contenido}
-                    </p>
-                </div>
-
-                {/* Footer */}
-                <div className="bg-slate-50/50 p-4 border-t border-slate-100 flex justify-between items-center text-xs">
-                    <div className="flex items-center gap-2 text-slate-500 font-medium">
-                        <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
-                            {aviso.autor_nombre.charAt(0)}
-                        </div>
-                        {aviso.autor_nombre}
-                    </div>
-
-                    {aviso.fecha_expiracion && (
-                        <div className={`flex items-center gap-1 ${!aviso.es_activo ? 'text-red-500 font-bold' : 'text-slate-400'}`}>
-                            <Clock size={12} />
-                            {aviso.es_activo 
-                                ? `Vence: ${formatDate(aviso.fecha_expiracion).split(',')[0]}` 
-                                : 'Expirado'
-                            }
-                        </div>
-                    )}
-                </div>
-            </div>
-        ))}
-
-        {avisos?.length === 0 && (
-            <div className="col-span-full text-center p-12 bg-white rounded-xl border border-dashed border-slate-300 text-slate-400">
-                <Megaphone size={48} className="mx-auto mb-2 opacity-50" />
-                <p>No hay avisos para mostrar en esta sección.</p>
-            </div>
-        )}
-      </div>
-
-      {/* --- MODAL --- */}
-      <Modal isOpen={isModalOpen} onClose={cerrarModal} title={avisoEditar ? "Editar Aviso" : "Nuevo Aviso"}>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <Container size="xl" py="md">
+        <Stack gap="xl">
             
-            <div>
-                <label className="block text-xs font-bold text-slate-500 mb-1">Título del Aviso *</label>
-                <input 
-                    {...register('titulo', { required: true })} 
-                    className="w-full border border-slate-300 rounded-lg p-2 text-sm focus:border-primary outline-none" 
-                    placeholder="Ej. Junta de Consejo Técnico"
-                />
-            </div>
+            {/* ========================================================================= */}
+            {/* CABECERA DEL TABLÓN */}
+            {/* ========================================================================= */}
+            <Paper p="lg" radius="lg" withBorder shadow="sm" bg="blue.0" style={{ borderLeft: '8px solid var(--mantine-color-blue-6)' }}>
+                <Group justify="space-between" align="center">
+                    <Group gap="md">
+                        <ThemeIcon size={52} radius="lg" color="blue" variant="filled">
+                            <Megaphone size={30} />
+                        </ThemeIcon>
+                        <div>
+                            <Title order={1} fw={900} lts={-0.5} style={{ fontSize: '1.8rem', lineHeight: 1.2 }}>
+                                Tablón de Avisos Oficial
+                            </Title>
+                            <Text size="sm" c="dimmed" fw={500}>
+                                Comunicados, circulares y anuncios importantes para todo el personal de la USAER 7607.
+                            </Text>
+                        </div>
+                    </Group>
+                    
+                    <Button 
+                        size="lg" 
+                        radius="md" 
+                        leftSection={<Plus size={22} />} 
+                        onClick={handleOpenCreate}
+                        color="blue"
+                        style={{ boxShadow: 'var(--mantine-shadow-md)' }}
+                    >
+                        Publicar Nuevo Aviso
+                    </Button>
+                </Group>
+            </Paper>
 
-            <div>
-                <label className="block text-xs font-bold text-slate-500 mb-1">Contenido *</label>
-                <textarea 
-                    {...register('contenido', { required: true })} 
-                    rows={5}
-                    className="w-full border border-slate-300 rounded-lg p-2 text-sm focus:border-primary outline-none resize-none" 
-                    placeholder="Escribe aquí los detalles del anuncio..."
-                />
-            </div>
+            {/* ========================================================================= */}
+            {/* CONTROLES DE NAVEGACIÓN Y BÚSQUEDA */}
+            <Paper p="md" radius="lg" withBorder shadow="xs">
+                <Stack gap="md">
+                    <Group gap="xs">
+                        <Filter size={16} className="text-blue-500" />
+                        <Text size="xs" fw={700} c="dimmed" tt="uppercase" lts={0.5}>Filtrar Tablón</Text>
+                    </Group>
+                    <Grid align="flex-end">
+                        <Grid.Col span={{ base: 12, md: 6 }}>
+                            <TextInput 
+                                size="md"
+                                label="Buscar Aviso"
+                                placeholder="Escribe el título o contenido..." 
+                                leftSection={<Search size={18} />}
+                                value={busqueda} 
+                                onChange={(e) => setBusqueda(e.target.value)}
+                            />
+                        </Grid.Col>
+                        <Grid.Col span={{ base: 12, md: 6 }}>
+                            <Stack gap={2}>
+                                <Text size="xs" fw={600} style={{ marginBottom: '3px' }}>Vista del Tablón</Text>
+                                <SegmentedControl
+                                    size="md"
+                                    value={verMisAvisos ? 'MIS' : 'GENERAL'}
+                                    onChange={(val) => setVerMisAvisos(val === 'MIS')}
+                                    data={[
+                                      { label: '📢 Tablón General', value: 'GENERAL' },
+                                      { label: '✏️ Mis Publicaciones', value: 'MIS' }
+                                    ]}
+                                    color="blue"
+                                    radius="md"
+                                    style={{ width: '100%' }}
+                                />
+                            </Stack>
+                        </Grid.Col>
+                    </Grid>
+                </Stack>
+            </Paper>
 
-            <div className="grid grid-cols-2 gap-4">
-                <div>
-                    <label className="block text-xs font-bold text-slate-500 mb-1">Fecha Publicación</label>
-                    <input 
-                        type="datetime-local" 
-                        {...register('fecha_publicacion', { required: true })} 
-                        className="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none" 
+
+            {/* ========================================================================= */}
+            {/* REJILLA DE AVISOS (DISEÑO TIPO OFICIO) */}
+            <Grid gutter="lg">
+                {avisosFiltrados?.map((aviso) => {
+
+                    const isExpired = !aviso.es_activo && aviso.fecha_expiracion;
+                    const isScheduled = new Date(aviso.fecha_publicacion) > new Date();
+
+                    return (
+                        <Grid.Col key={aviso.id} span={{ base: 12, md: 6, lg: 4 }}>
+                            <Paper 
+                                p="lg" 
+                                radius="lg" 
+                                withBorder 
+                                shadow="xs"
+                                style={{ 
+                                    borderLeft: `6px solid ${isExpired ? 'var(--mantine-color-gray-4)' : isScheduled ? 'var(--mantine-color-orange-4)' : 'var(--mantine-color-blue-6)'}`,
+                                    opacity: isExpired ? 0.7 : 1,
+                                    transition: 'all 0.2s ease',
+                                    position: 'relative',
+                                    overflow: 'hidden'
+                                }}
+                                className="hover:shadow-md"
+                            >
+                                {/* Sello de Estado */}
+                                <Box style={{ position: 'absolute', top: '12px', right: '12px' }}>
+                                    {isExpired ? (
+                                        <Badge color="gray" variant="filled" leftSection={<XCircle size={12} />}>Expirado</Badge>
+                                    ) : isScheduled ? (
+                                        <Badge color="orange" variant="filled" leftSection={<Clock size={12} />}>Programado</Badge>
+                                    ) : (
+                                        <Badge color="blue" variant="filled" leftSection={<CheckCircle size={12} />}>Activo</Badge>
+                                    )}
+                                </Box>
+
+                                <Stack gap="xs">
+                                    {/* Fecha y Título */}
+                                    <Box>
+                                        <Group gap="xs" mb={4}>
+                                            <Calendar size={14} className="text-blue-500" />
+                                            <Text size="xs" fw={700} c="dimmed" tt="uppercase">
+                                                {formatDate(aviso.fecha_publicacion)}
+                                            </Text>
+                                        </Group>
+                                        <Title order={3} fw={800} c="gray.8" style={{ fontSize: '1.2rem', lineHeight: 1.3 }}>
+                                            {aviso.titulo}
+                                        </Title>
+                                    </Box>
+
+                                    <Divider my="xs" />
+
+                                    {/* Contenido */}
+                                    <Text size="sm" c="gray.7" style={{ lineHeight: 1.6, minHeight: '80px' }}>
+                                        {aviso.contenido}
+                                    </Text>
+
+                                    {/* Footer: Autor y Acciones */}
+                                    <Group justify="space-between" align="flex-end" mt="auto" pt="md" style={{ borderTop: '1px solid var(--mantine-color-gray-1)' }}>
+                                        <Group gap="xs">
+                                            <Avatar color="blue" radius="xl" size="sm">
+                                                {aviso.autor_nombre.charAt(0)}
+                                            </Avatar>
+                                            <Stack gap={0}>
+                                                <Text size="xs" fw={700} c="gray.8">{aviso.autor_nombre}</Text>
+                                                <Text size="10px" c="dimmed">Autor del aviso</Text>
+                                            </Stack>
+                                        </Group>
+
+                                        {verMisAvisos && (
+                                            <Group gap={4}>
+                                                <Tooltip label="Editar aviso">
+                                                    <ActionIcon variant="light" color="blue" radius="md" onClick={() => handleOpenEdit(aviso)}>
+                                                        <Edit2 size={16} />
+                                                    </ActionIcon>
+                                                </Tooltip>
+                                                <Tooltip label="Eliminar aviso">
+                                                    <ActionIcon variant="light" color="red" radius="md" onClick={() => handleDelete(aviso.id)}>
+                                                        <Trash2 size={16} />
+                                                    </ActionIcon>
+                                                </Tooltip>
+                                            </Group>
+                                        )}
+                                    </Group>
+                                </Stack>
+                            </Paper>
+                        </Grid.Col>
+                    );
+                })}
+
+                {avisos?.length === 0 && (
+                    <Grid.Col span={12}>
+                        <Paper p="xl" withBorder radius="lg" bg="gray.0" ta="center">
+                          <Megaphone size={48} className="text-gray-400 mx-auto" style={{ marginBottom: '12px' }} />
+                          <Text fw={600} c="dimmed">No hay avisos publicados en esta sección.</Text>
+                        </Paper>
+                    </Grid.Col>
+                )}
+            </Grid>
+
+            {/* ========================================================================= */}
+            {/* --- MODAL CREAR/EDITAR AVISO (FORMULARIO ESCOLAR) --- */}
+            {/* ========================================================================= */}
+            <Modal 
+              opened={isModalOpen} 
+              onClose={cerrarModal} 
+              title={<Title order={3} fw={800}>📝 {avisoEditar ? "Editar Comunicado" : "Nuevo Comunicado Oficial"}</Title>}
+              size="lg"
+              radius="lg"
+              centered
+            >
+                <form onSubmit={handleSubmit(onSubmit)}>
+                  <Stack gap="md">
+                    <TextInput 
+                        label="Título del Aviso"
+                        placeholder="Ej. Suspensión de labores, Junta de Consejo..."
+                        required
+                        {...register('titulo', { required: "El título es obligatorio" })}
+                        error={errors.titulo?.message}
+                        size="md"
                     />
-                    <p className="text-[10px] text-slate-400 mt-1">Si es futura, se programará.</p>
-                </div>
-                <div>
-                    <label className="block text-xs font-bold text-slate-500 mb-1">Fecha Expiración (Opcional)</label>
-                    <input 
-                        type="datetime-local" 
-                        {...register('fecha_expiracion')} 
-                        className="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none" 
+
+                    <Textarea 
+                        label="Contenido del Comunicado"
+                        placeholder="Detalle la información relevante para el personal. Sea claro y conciso..."
+                        required
+                        rows={6}
+                        autosize
+                        minRows={4}
+                        {...register('contenido', { required: "El contenido es obligatorio" })}
+                        error={errors.contenido?.message}
+                        size="md"
                     />
-                    <p className="text-[10px] text-slate-400 mt-1">Se ocultará automáticamente.</p>
-                </div>
-            </div>
 
-            <div className="bg-blue-50 p-3 rounded-lg border border-blue-100 flex items-start gap-2 text-xs text-blue-800">
-                <AlertCircle size={14} className="mt-0.5 flex-shrink-0"/>
-                <p>Al publicar, se enviará una notificación a todos los usuarios activos del sistema.</p>
-            </div>
+                    <SimpleGrid cols={2} spacing="xs">
+                      <Controller
+                        name="fecha_publicacion"
+                        control={control}
+                        rules={{ required: "La fecha de publicación es requerida" }}
+                        render={({ field }) => (
+                            <TextInput 
+                                type="datetime-local"
+                                label="Fecha de Publicación"
+                                required
+                                value={field.value ? String(field.value) : ''}
+                                onChange={(e) => field.onChange(e.target.value)}
+                                error={errors.fecha_publicacion?.message}
+                                size="md"
+                            />
+                        )}
+                      />
+                      <Controller
+                        name="fecha_expiracion"
+                        control={control}
+                        render={({ field }) => (
+                            <TextInput 
+                                type="datetime-local"
+                                label="Fecha de Expiración (Opcional)"
+                                description="El aviso se ocultará automáticamente después de esta fecha."
+                                value={field.value ? String(field.value) : ''}
+                                onChange={(e) => field.onChange(e.target.value)}
+                                size="md"
+                            />
+                        )}
+                      />
+                    </SimpleGrid>
 
-            <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
-                <button type="button" onClick={cerrarModal} className="px-5 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium">Cancelar</button>
-                <button type="submit" className="bg-primary text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 shadow-sm">
-                    {avisoEditar ? 'Actualizar' : 'Publicar Aviso'}
-                </button>
-            </div>
-        </form>
-      </Modal>
+                    <Paper p="sm" bg="blue.0" withBorder radius="md">
+                        <Group gap="xs">
+                            <AlertCircle size={16} className="text-blue-600" />
+                            <Text size="xs" c="blue.8">
+                                Al publicar, se enviará una notificación automática a todos los usuarios activos del sistema.
+                            </Text>
+                        </Group>
+                    </Paper>
 
-    </div>
+                    <Group justify="flex-end" pt="md" style={{ borderTop: '1px solid var(--mantine-color-gray-2)' }}>
+                      <Button variant="subtle" color="gray" onClick={cerrarModal}>
+                        Cancelar
+                      </Button>
+                      <Button type="submit" color="blue" leftSection={<Megaphone size={18} />}>
+                        {avisoEditar ? 'Actualizar Aviso' : 'Publicar Comunicado'}
+                      </Button>
+                    </Group>
+                  </Stack>
+                </form>
+            </Modal>
+
+        </Stack>
+    </Container>
   );
 };
 

@@ -1,35 +1,85 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { 
-    Plus, Search, Users, Edit2, Trash2, GraduationCap, 
-    Save, School as SchoolIcon, Activity
+  Plus, Search, Users, Edit2, Trash2, GraduationCap, 
+  Save, School as SchoolIcon, Activity, Sparkles, Filter, RefreshCw
 } from 'lucide-react';
 import Swal from 'sweetalert2';
+import { 
+  Container, 
+  Grid, 
+  Paper, 
+   Title, 
+   Text, 
+   TextInput, 
+   Select, 
+   Button, 
+   Table, 
+   Badge, 
+   Group, 
+   Avatar, 
+   ActionIcon, 
+   Modal, 
+   Checkbox, 
+   Stack, 
+   Loader, 
+   Center,
+   SimpleGrid,
+   SegmentedControl,
+   Box,
+   Tooltip,
+   ThemeIcon,
+   Pagination
+ } from '@mantine/core';
+
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
+import { TableSkeleton } from '../../components/Skeletons';
 
 // API
 import { getAlumnos, createAlumno, updateAlumno, deleteAlumno } from '../../api/alumnos';
 import { getEscuelas } from '../../api/escuelas'; 
-import { getMaestros } from '../../api/usuarios'; // <--- IMPORTANTE
+import { getMaestros } from '../../api/usuarios';
 
 // INTERFACES
 import type { Alumno } from '../../interfaces/alumno';
 
-import Modal from '../../components/Modal';
+const CLASIFICACIONES_OPCIONES = [
+  { value: 'NINGUNO', label: 'NINGUNO (En evaluación)' },
+  { value: 'DISCAPACIDAD', label: 'DISCAPACIDAD' },
+  { value: 'DIFICULTADES_SEVERAS', label: 'DIFICULTADES SEVERAS' },
+  { value: 'TRASTORNOS', label: 'TRASTORNOS (TDAH, TEA...)' },
+  { value: 'APTITUDES_SOBRESALIENTES', label: 'APTITUDES SOBRESALIENTES' },
+  { value: 'OTRO', label: 'OTRO (Especifique)' }
+];
 
 const ListaAlumnos = () => {
   const [busqueda, setBusqueda] = useState('');
+  const busquedaDebounced = useDebouncedValue(busqueda, 300);
+  const [filtroEscuela, setFiltroEscuela] = useState<string | null>('TODAS');
+  const [filtroCondicion, setFiltroCondicion] = useState<string | null>('TODAS');
+  const [filtroEstado, setFiltroEstado] = useState<string>('ACTIVOS');
+  const [page, setPage] = useState(1);
+  
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [alumnoEditar, setAlumnoEditar] = useState<Alumno | null>(null);
   
   const queryClient = useQueryClient();
-  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<Alumno>();
+  const { register, handleSubmit, reset, watch, control, formState: { errors } } = useForm<Alumno>();
 
-  // 1. CARGA DE DATOS
-  const { data: alumnos, isLoading: loadingAlumnos } = useQuery({
-    queryKey: ['alumnos'],
-    queryFn: getAlumnos,
+  // Resetear a página 1 cuando cambia la búsqueda debounced
+  useEffect(() => {
+    setPage(1);
+  }, [busquedaDebounced]);
+
+  // 1. CARGA DE DATOS (TanStack Query)
+  const { data: paginatedAlumnos, isLoading: loadingAlumnos } = useQuery({
+    queryKey: ['alumnos', page, busquedaDebounced, filtroEscuela, filtroCondicion, filtroEstado],
+    queryFn: () => getAlumnos(page, busquedaDebounced, filtroEscuela || '', filtroCondicion || '', filtroEstado),
   });
+
+  const alumnos = paginatedAlumnos?.results || [];
+  const totalCount = paginatedAlumnos?.count || 0;
 
   const { data: escuelas } = useQuery({
     queryKey: ['escuelas'],
@@ -41,24 +91,35 @@ const ListaAlumnos = () => {
     queryFn: getMaestros,
   });
 
+  // Selectores para filtros en formato Mantine
+  const escuelasOpciones = useMemo(() => {
+    if (!escuelas) return [{ value: 'TODAS', label: '🏫 Todas las Escuelas' }];
+    return [
+      { value: 'TODAS', label: '🏫 Todas las Escuelas' },
+      ...escuelas.map(e => ({ value: String(e.id), label: `${e.nombre} (${e.nivel})` }))
+    ];
+  }, [escuelas]);
+
+  const condicionesOpciones = useMemo(() => {
+    return [
+      { value: 'TODAS', label: '🩺 Todas las Condiciones' },
+      ...CLASIFICACIONES_OPCIONES
+    ];
+  }, []);
+
   // --- LÓGICA DINÁMICA DE GRADOS ---
   const escuelaIdSeleccionada = watch('escuela');
 
   const gradosDisponibles = useMemo(() => {
-    if (!escuelas || !escuelaIdSeleccionada) return [1, 2, 3, 4, 5, 6]; 
-
+    if (!escuelas || !escuelaIdSeleccionada) return ['1', '2', '3', '4', '5', '6']; 
     const escuelaEncontrada = escuelas.find(e => e.id === Number(escuelaIdSeleccionada));
-    
-    if (!escuelaEncontrada) return [1, 2, 3, 4, 5, 6];
+    if (!escuelaEncontrada) return ['1', '2', '3', '4', '5', '6'];
 
     const nivel = escuelaEncontrada.nivel.toUpperCase();
-
-    if (nivel.includes('PREESCOLAR') || nivel.includes('KINDER')) {
-        return [1, 2, 3];
-    } else if (nivel.includes('SECUNDARIA') || nivel.includes('TELESECUNDARIA')) {
-        return [1, 2, 3];
+    if (nivel.includes('PREESCOLAR') || nivel.includes('KINDER') || nivel.includes('SECUNDARIA')) {
+        return ['1', '2', '3'];
     } else {
-        return [1, 2, 3, 4, 5, 6];
+        return ['1', '2', '3', '4', '5', '6'];
     }
   }, [escuelas, escuelaIdSeleccionada]);
 
@@ -68,9 +129,9 @@ const ListaAlumnos = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['alumnos'] });
       cerrarModal();
-      Swal.fire('Registrado', 'El alumno ha sido registrado.', 'success');
+      Swal.fire('¡Registrado!', 'El alumno ha sido dado de alta exitosamente.', 'success');
     },
-    onError: () => Swal.fire('Error', 'Revisa los datos (posible CURP duplicada).', 'error')
+    onError: () => Swal.fire('Error', 'Revisa los datos (posible CURP ya registrada).', 'error')
   });
 
   const updateMutation = useMutation({
@@ -78,18 +139,18 @@ const ListaAlumnos = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['alumnos'] });
       cerrarModal();
-      Swal.fire('Actualizado', 'Datos guardados correctamente.', 'success');
+      Swal.fire('¡Guardado!', 'Datos escolares actualizados.', 'success');
     },
-    onError: () => Swal.fire('Error', 'No se pudo actualizar.', 'error')
+    onError: () => Swal.fire('Error', 'No se pudo guardar la información.', 'error')
   });
 
   const deleteMutation = useMutation({
     mutationFn: deleteAlumno,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['alumnos'] });
-      Swal.fire('Eliminado', 'El registro ha sido borrado.', 'success');
+      Swal.fire('Eliminado', 'El alumno ha sido dado de baja de la USAER.', 'success');
     },
-    onError: () => Swal.fire('Error', 'No se puede eliminar (quizás tiene expedientes).', 'error')
+    onError: () => Swal.fire('Error', 'No se puede eliminar (registros vinculados).', 'error')
   });
 
   // --- FUNCIONES ---
@@ -97,6 +158,11 @@ const ListaAlumnos = () => {
     setIsModalOpen(false);
     setAlumnoEditar(null);
     reset();
+  };
+
+  const handleFilterChange = (setter: (val: any) => void, value: any) => {
+    setter(value);
+    setPage(1); // Reset to page 1 on filter change
   };
 
   const handleOpenCreate = () => {
@@ -120,19 +186,15 @@ const ListaAlumnos = () => {
   };
 
   const onSubmit = (data: Alumno) => {
-    // Conversiones a mayúsculas
     data.nombres = data.nombres.toUpperCase();
     data.apellido_paterno = data.apellido_paterno.toUpperCase();
     data.apellido_materno = data.apellido_materno ? data.apellido_materno.toUpperCase() : '';
     data.curp = data.curp.toUpperCase();
     data.grupo = data.grupo.toUpperCase();
 
-    // --- CORRECCIÓN TYPESCRIPT ---
-    // Verificamos si es null, undefined o cadena vacía ""
     if (!data.profesor || String(data.profesor) === "") {
         data.profesor = null; 
     } else {
-        // Aseguramos que sea número
         data.profesor = Number(data.profesor);
     }
 
@@ -145,294 +207,512 @@ const ListaAlumnos = () => {
 
   const handleDelete = (id: number) => {
     Swal.fire({
-      title: '¿Borrar alumno?', text: "Esta acción no se puede deshacer.", icon: 'warning',
-      showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Sí, borrar'
+      title: '¿Dar de baja alumno?', 
+      text: "Se mantendrá el expediente histórico pero el alumno saldrá de atención activa.", 
+      icon: 'warning',
+      showCancelButton: true, 
+      confirmButtonColor: '#d33', 
+      confirmButtonText: 'Sí, dar de baja'
     }).then((r) => { if (r.isConfirmed) deleteMutation.mutate(id); });
   };
 
-  const alumnosFiltrados = alumnos?.filter(a => 
-    a.nombres.toLowerCase().includes(busqueda.toLowerCase()) ||
-    a.apellido_paterno.toLowerCase().includes(busqueda.toLowerCase()) ||
-    a.curp.toLowerCase().includes(busqueda.toLowerCase())
-  );
-
+  // --- FILTRADO AVANZADO (Para maestros) ---
   const clasificacionActual = watch('clasificacion');
 
-  if (loadingAlumnos) return <div className="p-8 text-center text-primary">Cargando alumnos...</div>;
+  if (loadingAlumnos) {
+    return (
+      <Container size="xl" py="md">
+        <TableSkeleton rows={10} />
+      </Container>
+    );
+  }
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      
-      {/* HEADER */}
-      <div className="flex flex-col md:flex-row justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-text-main flex items-center gap-2">
-            <Users className="text-primary" /> Alumnado
-          </h1>
-          <p className="text-text-secondary">Gestión de alumnos en atención</p>
-        </div>
-        <button onClick={handleOpenCreate} className="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-sm font-medium">
-          <Plus size={20} /> Nuevo Alumno
-        </button>
-      </div>
-
-      {/* FILTROS */}
-      <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center gap-3">
-        <Search className="text-slate-400" size={20} />
-        <input 
-          type="text" placeholder="Buscar por nombre, apellido o CURP..." 
-          className="flex-1 bg-transparent outline-none"
-          value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
-        />
-      </div>
-
-      {/* TABLA */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-        <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-            <thead>
-                <tr className="bg-slate-50 border-b border-slate-200 text-text-secondary text-sm uppercase">
-                <th className="p-4 font-semibold">Alumno</th>
-                <th className="p-4 font-semibold">Escuela / Grado</th>
-                <th className="p-4 font-semibold">Diagnóstico</th>
-                <th className="p-4 font-semibold text-center">Estado</th>
-                <th className="p-4 font-semibold text-center">Acciones</th>
-                </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-                {alumnosFiltrados?.map((item) => (
-                <tr key={item.id} className="hover:bg-blue-50/50 group">
-                    <td className="p-4 align-top">
-                        <div className="font-bold text-text-main">
-                            {item.nombres} {item.apellido_paterno} {item.apellido_materno}
-                        </div>
-                        <div className="text-xs text-text-secondary mt-1 font-mono">
-                            {item.curp} • {item.sexo}
-                        </div>
-                        {/* Mostrar Profesor si está asignado explícitamente */}
-                        {item.profesor && (
-                            <div className="text-[10px] text-blue-600 mt-1 bg-blue-50 inline-block px-1 rounded border border-blue-100">
-                                Docente Asignado
-                            </div>
-                        )}
-                    </td>
-                    <td className="p-4 align-top">
-                        <div className="flex items-center gap-1.5 font-medium text-slate-700">
-                            <SchoolIcon size={14} className="text-slate-400" />
-                            {item.escuela_detalle?.nombre || `Escuela #${item.escuela}`}
-                        </div>
-                        <div className="text-sm text-text-secondary mt-1 pl-5">
-                            {item.grado}° "{item.grupo}"
-                        </div>
-                    </td>
-                    <td className="p-4 align-top">
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
-                            item.clasificacion === 'NINGUNO' ? 'bg-slate-100 text-slate-600 border-slate-200' :
-                            item.clasificacion === 'DISCAPACIDAD' ? 'bg-purple-50 text-purple-700 border-purple-100' :
-                            'bg-amber-50 text-amber-700 border-amber-100'
-                        }`}>
-                            {item.clasificacion.replace('_', ' ')}
-                        </span>
-                        {item.clasificacion_otro && (
-                            <div className="text-xs text-slate-500 mt-1 italic">
-                                "{item.clasificacion_otro}"
-                            </div>
-                        )}
-                    </td>
-                    <td className="p-4 text-center align-middle">
-                        {item.activo ? (
-                            <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">Activo</span>
-                        ) : (
-                            <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full font-medium">Baja</span>
-                        )}
-                    </td>
-                    <td className="p-4 text-center align-middle">
-                        <div className="flex justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={() => handleOpenEdit(item)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg">
-                                <Edit2 size={18} />
-                            </button>
-                            <button onClick={() => handleDelete(item.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg">
-                                <Trash2 size={18} />
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-                ))}
-            </tbody>
-            </table>
-        </div>
-        {alumnosFiltrados?.length === 0 && (
-            <div className="p-8 text-center text-text-secondary">
-                No se encontraron alumnos.
-            </div>
-        )}
-      </div>
-
-      {/* --- MODAL FORMULARIO --- */}
-      <Modal 
-        isOpen={isModalOpen} 
-        onClose={cerrarModal} 
-        title={alumnoEditar ? "Editar Alumno" : "Nuevo Alumno"}
-        maxWidth="max-w-4xl"
-      >
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <Container size="xl" py="md">
+      <Stack gap="xl">
+        
+        {/* ========================================================================= */}
+        {/* CABECERA CON ESTILO ESCOLAR Y BOTÓN DE ACCIÓN GIGANTE */}
+        {/* ========================================================================= */}
+        <Paper p="lg" radius="lg" withBorder shadow="sm" bg="blue.0" style={{ borderLeft: '8px solid var(--mantine-color-blue-6)' }}>
+          <Group justify="space-between" align="center">
+            <Group gap="md">
+              <ThemeIcon size={52} radius="lg" color="blue" variant="filled">
+                <Users size={30} />
+              </ThemeIcon>
+              <div>
+                <Title order={1} fw={900} lts={-0.5} style={{ fontSize: '1.8rem', lineHeight: 1.2 }}>
+                  Control de Alumnos
+                </Title>
+                <Text size="sm" c="dimmed" fw={500}>
+                  Lista oficial y expedientes de estudiantes atendidos por la USAER 7607
+                </Text>
+              </div>
+            </Group>
             
-            {/* SECCIÓN 1: DATOS PERSONALES */}
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-4">
-                <h3 className="text-sm font-bold text-primary border-b border-blue-200 pb-2 flex items-center gap-2">
-                    <Users size={16} /> Datos Personales
-                </h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-                    <div className="md:col-span-4 flex flex-col gap-1">
-                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Nombre(s)</label>
-                        <input {...register('nombres', { required: true })} className="w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all bg-white" placeholder="Ej. LUIS ANGEL" />
-                    </div>
-                    <div className="md:col-span-4 flex flex-col gap-1">
-                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Apellido Paterno</label>
-                        <input {...register('apellido_paterno', { required: true })} className="w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all bg-white" placeholder="Ej. VIDAL" />
-                    </div>
-                    <div className="md:col-span-4 flex flex-col gap-1">
-                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Apellido Materno</label>
-                        <input {...register('apellido_materno')} className="w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all bg-white" placeholder="Ej. BUSTAMANTE" />
-                    </div>
-                </div>
+            <Button 
+              size="lg" 
+              radius="md" 
+              leftSection={<Plus size={22} />} 
+              onClick={handleOpenCreate}
+              color="blue"
+              style={{ boxShadow: 'var(--mantine-shadow-md)' }}
+            >
+              Nuevo Ingreso Alumno
+            </Button>
+          </Group>
+        </Paper>
 
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-                    <div className="md:col-span-6 flex flex-col gap-1">
-                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">CURP</label>
-                        <input {...register('curp', { required: true, minLength: 18, maxLength: 18 })} className="w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all bg-white uppercase font-mono" placeholder="18 CARACTERES" />
-                        {errors.curp && <span className="text-xs text-red-500">CURP inválida</span>}
-                    </div>
-                    <div className="md:col-span-3 flex flex-col gap-1">
-                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Fecha Nacimiento</label>
-                        <input type="date" {...register('fecha_nacimiento')} className="w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all bg-white" />
-                    </div>
-                    <div className="md:col-span-3 flex flex-col gap-1">
-                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Sexo</label>
-                        <select {...register('sexo')} className="w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all bg-white">
-                            <option value="H">Hombre</option>
-                            <option value="M">Mujer</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
+        {/* ========================================================================= */}
+        {/* PANEL DE BÚSQUEDA Y FILTRADO ULTRA-ACCESIBLE */}
+        {/* ========================================================================= */}
+        <Paper p="md" radius="lg" withBorder shadow="xs">
+          <Stack gap="md">
+            <Group gap="xs">
+              <Filter size={16} className="text-blue-500" />
+              <Text size="xs" fw={700} c="dimmed" tt="uppercase" lts={0.5}>Filtros de Búsqueda Rápida</Text>
+            </Group>
+            
+            <Grid align="flex-end">
+              <Grid.Col span={{ base: 12, md: 4 }}>
+                <TextInput 
+                  size="md"
+                  label="Buscar Alumno"
+                  placeholder="Escribe Apellido, Nombre o CURP..." 
+                  leftSection={<Search size={18} />}
+                  value={busqueda} 
+                  onChange={(e) => setBusqueda(e.target.value)}
+                />
+              </Grid.Col>
+              
+               <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+                 <Select
+                   size="md"
+                   label="Filtrar por Escuela"
+                   data={escuelasOpciones}
+                   value={filtroEscuela}
+                   onChange={(val) => handleFilterChange(setFiltroEscuela, val)}
+                   searchable
+                 />
+               </Grid.Col>
 
-            {/* SECCIÓN NUEVA: ASIGNACIÓN DE DOCENTE */}
-            {/* Se muestra para todos, pero es especialmente útil para Admins/Directores */}
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-4">
-                <h3 className="text-sm font-bold text-primary border-b border-blue-200 pb-2 flex items-center gap-2">
-                    <Users size={16} /> Asignación de Docente
-                </h3>
-                <div>
-                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Maestro Responsable</label>
-                    <select 
-                        {...register('profesor')} 
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all bg-white"
-                    >
-                        <option value="">-- Asignación Automática / Sin Asignar --</option>
-                        {maestros?.map(m => (
-                            <option key={m.id} value={m.id}>
-                                {m.nombre} {m.apellido_paterno} ({m.email})
-                            </option>
-                        ))}
-                    </select>
-                    <p className="text-[10px] text-slate-400 mt-1">
-                        * Dejar vacío para asignación automática al usuario actual (si aplica).
-                    </p>
-                </div>
-            </div>
+               <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+                 <Select
+                   size="md"
+                   label="Filtrar por Diagnóstico"
+                   data={condicionesOpciones}
+                   value={filtroCondicion}
+                   onChange={(val) => handleFilterChange(setFiltroCondicion, val)}
+                   searchable
+                 />
+               </Grid.Col>
 
-            {/* SECCIÓN 2: DATOS ESCOLARES */}
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-4">
-                <h3 className="text-sm font-bold text-primary border-b border-blue-200 pb-2 flex items-center gap-2">
-                    <GraduationCap size={16} /> Datos Escolares
-                </h3>
-                
-                <div className="flex flex-col gap-1">
-                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Escuela de Procedencia</label>
-                    <select 
-                        {...register('escuela', { required: "Selecciona una escuela" })} 
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all bg-white"
-                    >
-                        <option value="">-- Seleccionar Escuela --</option>
-                        {escuelas?.map(esc => (
-                            <option key={esc.id} value={esc.id}>
-                                {esc.nombre} ({esc.nivel})
-                            </option>
-                        ))}
-                    </select>
-                    {errors.escuela && <span className="text-xs text-red-500">Este campo es requerido</span>}
-                </div>
+               <Grid.Col span={{ base: 12, md: 2 }}>
+                 <Stack gap={2}>
+                   <Text size="xs" fw={600} style={{ marginBottom: '3px' }}>Estado</Text>
+                   <SegmentedControl
+                     size="sm"
+                     value={filtroEstado}
+                     onChange={(val) => handleFilterChange(setFiltroEstado, val)}
+                     data={[
+                       { label: 'Activos', value: 'ACTIVOS' },
+                       { label: 'Bajas', value: 'BAJAS' },
+                       { label: 'Todos', value: 'TODOS' }
+                     ]}
+                     color="blue"
+                     radius="md"
+                   />
+                 </Stack>
+               </Grid.Col>
 
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="flex flex-col gap-1">
-                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Grado</label>
-                        <select 
-                            {...register('grado')} 
-                            className="w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all bg-white"
+            </Grid>
+          </Stack>
+        </Paper>
+
+        {/* ========================================================================= */}
+        {/* TABLA DE ALUMNOS CON BOTONES GRANDES Y VISIBLES (UX ACCESIBLE) */}
+        {/* ========================================================================= */}
+        <Paper radius="lg" withBorder shadow="xs" style={{ overflow: 'hidden' }}>
+          <Table.ScrollContainer minWidth={800}>
+            <Table highlightOnHover verticalSpacing="md" horizontalSpacing="md">
+              <Table.Thead bg="gray.0">
+                <Table.Tr>
+                  <Table.Th fw={800} style={{ fontSize: '0.85rem' }}>Estudiante / CURP</Table.Th>
+                  <Table.Th fw={800} style={{ fontSize: '0.85rem' }}>Escuela de Procedencia</Table.Th>
+                  <Table.Th fw={800} style={{ fontSize: '0.85rem' }}>Diagnóstico / Condición</Table.Th>
+                  <Table.Th fw={800} style={{ fontSize: '0.85rem' }} ta="center">Estatus</Table.Th>
+                  <Table.Th fw={800} style={{ fontSize: '0.85rem' }} ta="center">Acciones del Maestro</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+               <Table.Tbody>
+                 {alumnos.map((item) => (
+                   <Table.Tr key={item.id}>
+
+                    
+                    {/* COLUMNA 1: ALUMNO */}
+                    <Table.Td>
+                      <Group gap="sm">
+                        <Avatar color={item.sexo === 'H' ? 'blue' : 'grape'} radius="xl" size="md">
+                          {item.nombres.charAt(0)}
+                        </Avatar>
+                        <div>
+                          <Text fw={800} size="md" c="gray.8">
+                            {item.nombres} {item.apellido_paterno} {item.apellido_materno}
+                          </Text>
+                          <Group gap={6} mt={2}>
+                            <Badge size="xs" variant="light" color="gray" fontStyle="mono">{item.curp}</Badge>
+                            <Badge size="xs" variant="light" color={item.sexo === 'H' ? 'blue' : 'grape'}>
+                              {item.sexo === 'H' ? 'Niño' : 'Niña'}
+                            </Badge>
+                          </Group>
+                        </div>
+                      </Group>
+                    </Table.Td>
+
+                    {/* COLUMNA 2: ESCUELA */}
+                    <Table.Td>
+                      <Group gap="xs">
+                        <SchoolIcon size={16} className="text-blue-500" />
+                        <div>
+                          <Text fw={700} size="sm" c="gray.8">
+                            {item.escuela_detalle?.nombre || `Escuela #${item.escuela}`}
+                          </Text>
+                          <Text size="xs" c="dimmed">
+                            {item.grado}° Grado • Grupo "{item.grupo}"
+                          </Text>
+                        </div>
+                      </Group>
+                    </Table.Td>
+
+                    {/* COLUMNA 3: DIAGNÓSTICO */}
+                    <Table.Td>
+                      <Stack gap={4}>
+                        <Badge 
+                          size="md" 
+                          variant="light" 
+                          color={
+                            item.clasificacion === 'NINGUNO' ? 'gray' :
+                            item.clasificacion === 'DISCAPACIDAD' ? 'violet' :
+                            item.clasificacion === 'DIFICULTADES_SEVERAS' ? 'orange' :
+                            item.clasificacion === 'TRASTORNOS' ? 'red' : 'teal'
+                          }
+                          radius="sm"
                         >
-                            {gradosDisponibles.map(g => (
-                                <option key={g} value={g}>{g}° Grado</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="flex flex-col gap-1">
-                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Grupo</label>
-                        <input {...register('grupo', { required: true })} className="w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all bg-white uppercase text-center font-bold" placeholder="A" maxLength={2} />
-                    </div>
-                </div>
-            </div>
+                          {item.clasificacion.replace('_', ' ')}
+                        </Badge>
+                        {item.clasificacion_otro && (
+                          <Text size="xs" c="dimmed" fs="italic" pl={4}>
+                            "{item.clasificacion_otro}"
+                          </Text>
+                        )}
+                      </Stack>
+                    </Table.Td>
 
-            {/* SECCIÓN 3: CLASIFICACIÓN USAER */}
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-4">
-                <h3 className="text-sm font-bold text-primary border-b border-blue-200 pb-2 flex items-center gap-2">
-                    <Activity size={16} /> Clasificación USAER
-                </h3>
+                    {/* COLUMNA 4: ESTATUS */}
+                    <Table.Td ta="center">
+                      <Badge size="md" variant="filled" color={item.activo ? 'green' : 'red'}>
+                        {item.activo ? 'Activo' : 'Baja'}
+                      </Badge>
+                    </Table.Td>
+
+                    {/* COLUMNA 5: ACCIONES (GRANDES, VISIBLES, TÁCTILES) */}
+                    <Table.Td>
+                      <Group gap="xs" justify="center">
+                        <Tooltip label="Editar datos del alumno" position="top">
+                          <Button 
+                            size="xs" 
+                            variant="light" 
+                            color="blue" 
+                            leftSection={<Edit2 size={14} />}
+                            onClick={() => handleOpenEdit(item)}
+                            radius="md"
+                          >
+                            Editar
+                          </Button>
+                        </Tooltip>
+                        
+                        <Tooltip label="Dar de baja de USAER" position="top">
+                          <Button 
+                            size="xs" 
+                            variant="light" 
+                            color="red" 
+                            leftSection={<Trash2 size={14} />}
+                            onClick={() => handleDelete(item.id)}
+                            radius="md"
+                          >
+                            Baja
+                          </Button>
+                        </Tooltip>
+                      </Group>
+                    </Table.Td>
+
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
+           </Table.ScrollContainer>
+           
+           {alumnos.length === 0 && (
+             <Box p="xl" style={{ textAlign: 'center' }}>
+               <Text size="md" c="dimmed" fw={500}>
+                 🔍 No encontramos alumnos que coincidan con los filtros aplicados.
+               </Text>
+             </Box>
+           )}
+         </Paper>
+         
+         <Group justify="center" py="md">
+           <Pagination 
+             total={Math.ceil(totalCount / 10)} 
+             value={page} 
+             onChange={setPage} 
+             color="blue" 
+             radius="md" 
+             size="md" 
+             siblings={2} 
+             boundaries={1} 
+           />
+         </Group>
+
+         {/* ========================================================================= */}
+
+        {/* MODAL FORMULARIO DE ALUMNOS (DISEÑO ESCOLAR, AMPLIO Y CLARO) */}
+        {/* ========================================================================= */}
+        <Modal 
+          opened={isModalOpen} 
+          onClose={cerrarModal} 
+          title={
+            <Group gap="xs">
+              <Sparkles size={20} className="text-yellow-500" />
+              <Title order={3} fw={800}>
+                {alumnoEditar ? "Modificar Ficha de Alumno" : "Inscripción de Nuevo Alumno"}
+              </Title>
+            </Group>
+          }
+          size="lg"
+          radius="lg"
+          centered
+        >
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <Stack gap="lg">
+              
+              {/* SECCIÓN 1: DATOS PERSONALES */}
+              <Paper p="md" radius="md" withBorder bg="gray.0">
+                <Text size="sm" fw={800} c="blue" mb="md" style={{ borderBottom: '2px solid var(--mantine-color-blue-1)', pb: '4px' }}>
+                  🍎 1. Datos Personales del Niño/a
+                </Text>
                 
-                <div className="flex flex-col gap-1">
-                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Condición / Diagnóstico</label>
-                    <select {...register('clasificacion')} className="w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all bg-white">
-                        <option value="NINGUNO">NINGUNO (En proceso de evaluación)</option>
-                        <option value="DISCAPACIDAD">DISCAPACIDAD</option>
-                        <option value="DIFICULTADES_SEVERAS">DIFICULTADES SEVERAS DE APRENDIZAJE</option>
-                        <option value="TRASTORNOS">TRASTORNOS (TDAH, TEA...)</option>
-                        <option value="APTITUDES_SOBRESALIENTES">APTITUDES SOBRESALIENTES</option>
-                        <option value="OTRO">OTRO</option>
-                    </select>
-                </div>
+                <Stack gap="sm">
+                  <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="xs">
+                    <TextInput 
+                      label="Nombre(s)" 
+                      placeholder="Ej. LUIS ANGEL" 
+                      required
+                      {...register('nombres', { required: "El nombre es obligatorio" })}
+                      error={errors.nombres?.message}
+                    />
+                    <TextInput 
+                      label="Apellido Paterno" 
+                      placeholder="Ej. VIDAL" 
+                      required
+                      {...register('apellido_paterno', { required: "El apellido es obligatorio" })}
+                      error={errors.apellido_paterno?.message}
+                    />
+                    <TextInput 
+                      label="Apellido Materno" 
+                      placeholder="Ej. BUSTAMANTE" 
+                      {...register('apellido_materno')}
+                    />
+                  </SimpleGrid>
 
-                {clasificacionActual === 'OTRO' && (
-                    <div className="flex flex-col gap-1 animate-fade-in-down">
-                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Especifique condición:</label>
-                        <input {...register('clasificacion_otro', { required: true })} className="w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all bg-white" placeholder="Detalle la condición..." />
-                    </div>
-                )}
+                  <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="xs">
+                    <TextInput 
+                      label="CURP" 
+                      placeholder="18 CARACTERES" 
+                      required
+                      {...register('curp', { 
+                        required: "La CURP es obligatoria", 
+                        minLength: { value: 18, message: "Debe tener 18 caracteres" },
+                        maxLength: { value: 18, message: "Debe tener 18 caracteres" }
+                      })}
+                      error={errors.curp?.message}
+                      style={{ textTransform: 'uppercase', fontFamily: 'monospace' }}
+                    />
+                    
+                    <TextInput 
+                      type="date"
+                      label="Fecha de Nacimiento" 
+                      {...register('fecha_nacimiento')}
+                    />
 
-                <div className="flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
-                    <input type="checkbox" {...register('activo')} id="activoCheck" className="w-5 h-5 text-primary rounded focus:ring-primary cursor-pointer" />
-                    <label htmlFor="activoCheck" className="text-sm font-medium text-slate-700 cursor-pointer select-none">
-                        Alumno Activo (En atención actual)
-                    </label>
-                </div>
-            </div>
+                    <Controller
+                      name="sexo"
+                      control={control}
+                      defaultValue="H"
+                      render={({ field }) => (
+                        <Select
+                          label="Sexo"
+                          data={[
+                            { value: 'H', label: 'Niño (Hombre)' },
+                            { value: 'M', label: 'Niña (Mujer)' }
+                          ]}
+                          value={field.value}
+                          onChange={field.onChange}
+                        />
+                      )}
+                    />
+                  </SimpleGrid>
+                </Stack>
+              </Paper>
 
-            {/* BOTONES */}
-            <div className="pt-2 flex justify-end gap-3 border-t border-slate-100 mt-4">
-                <button type="button" onClick={cerrarModal} className="px-5 py-2.5 text-slate-600 hover:bg-slate-100 rounded-lg font-medium transition-colors">Cancelar</button>
-                <button 
-                    type="submit" 
-                    disabled={createMutation.isPending || updateMutation.isPending} 
-                    className="bg-primary text-white px-6 py-2.5 rounded-lg flex items-center gap-2 font-medium shadow-md shadow-blue-200 hover:bg-blue-700 hover:shadow-lg transition-all active:scale-95"
+              {/* SECCIÓN 2: ASIGNACIÓN DE DOCENTE */}
+              <Paper p="md" radius="md" withBorder bg="gray.0">
+                <Text size="sm" fw={800} c="blue" mb="md" style={{ borderBottom: '2px solid var(--mantine-color-blue-1)', pb: '4px' }}>
+                  🧑‍🏫 2. Maestro/a de Apoyo USAER
+                </Text>
+                
+                <Controller
+                  name="profesor"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      label="Maestro Responsable"
+                      placeholder="Seleccione el maestro de apoyo"
+                      data={maestros?.map(m => ({ value: String(m.id), label: `${m.nombre} ${m.apellido_paterno} (${m.email})` })) || []}
+                      value={field.value ? String(field.value) : ''}
+                      onChange={(val) => field.onChange(val ? Number(val) : null)}
+                      searchable
+                      clearable
+                    />
+                  )}
+                />
+                <Text size="10px" c="dimmed" mt={4}>
+                  * Deja vacío para asignación automática al docente que está realizando la captura actual.
+                </Text>
+              </Paper>
+
+              {/* SECCIÓN 3: DATOS ESCOLARES */}
+              <Paper p="md" radius="md" withBorder bg="gray.0">
+                <Text size="sm" fw={800} c="blue" mb="md" style={{ borderBottom: '2px solid var(--mantine-color-blue-1)', pb: '4px' }}>
+                  🏫 3. Escuela Regular y Ubicación Grado/Grupo
+                </Text>
+                
+                <Stack gap="sm">
+                  <Controller
+                    name="escuela"
+                    control={control}
+                    rules={{ required: "La escuela es obligatoria" }}
+                    render={({ field }) => (
+                      <Select
+                        label="Escuela Regular de Procedencia"
+                        placeholder="Busca la escuela..."
+                        data={escuelas?.map(e => ({ value: String(e.id), label: `${e.nombre} (${e.nivel})` })) || []}
+                        value={field.value ? String(field.value) : ''}
+                        onChange={(val) => field.onChange(val ? Number(val) : undefined)}
+                        searchable
+                        required
+                        error={errors.escuela?.message}
+                      />
+                    )}
+                  />
+
+                  <SimpleGrid cols={2} spacing="xs">
+                    <Controller
+                      name="grado"
+                      control={control}
+                      defaultValue="1"
+                      render={({ field }) => (
+                        <Select
+                          label="Grado Escolar"
+                          data={gradosDisponibles.map(g => ({ value: g, label: `${g}° Grado` }))}
+                          value={String(field.value)}
+                          onChange={field.onChange}
+                        />
+                      )}
+                    />
+                    <TextInput 
+                      label="Grupo" 
+                      placeholder="Ej. A" 
+                      required
+                      {...register('grupo', { required: "El grupo es obligatorio" })}
+                      error={errors.grupo?.message}
+                      style={{ textTransform: 'uppercase', textAlign: 'center' }}
+                    />
+                  </SimpleGrid>
+                </Stack>
+              </Paper>
+
+              {/* SECCIÓN 4: CLASIFICACIÓN USAER */}
+              <Paper p="md" radius="md" withBorder bg="gray.0">
+                <Text size="sm" fw={800} c="blue" mb="md" style={{ borderBottom: '2px solid var(--mantine-color-blue-1)', pb: '4px' }}>
+                  🩺 4. Clasificación y Diagnóstico Especializado
+                </Text>
+                
+                <Stack gap="sm">
+                  <Controller
+                    name="clasificacion"
+                    control={control}
+                    defaultValue="NINGUNO"
+                    render={({ field }) => (
+                      <Select
+                        label="Condición / Diagnóstico Principal"
+                        data={CLASIFICACIONES_OPCIONES}
+                        value={field.value}
+                        onChange={field.onChange}
+                      />
+                    )}
+                  />
+
+                  {clasificacionActual === 'OTRO' && (
+                    <TextInput 
+                      label="Especifique condición:" 
+                      placeholder="Ej. Trastorno motor fino..."
+                      required
+                      {...register('clasificacion_otro', { required: "Debe especificar la condición si selecciona OTRO" })}
+                      error={errors.clasificacion_otro?.message}
+                    />
+                  )}
+
+                  <Box p="sm" style={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid var(--mantine-color-gray-3)' }}>
+                    <Controller
+                      name="activo"
+                      control={control}
+                      defaultValue={true}
+                      render={({ field }) => (
+                        <Checkbox
+                          size="md"
+                          label="Atención Activa (El alumno está recibiendo apoyo actualmente)"
+                          checked={field.value}
+                          onChange={(e) => field.onChange(e.currentTarget.checked)}
+                        />
+                      )}
+                    />
+                  </Box>
+                </Stack>
+              </Paper>
+
+              {/* BOTONES DE ACCIÓN */}
+              <Group justify="flex-end" pt="md" style={{ borderTop: '1px solid var(--mantine-color-gray-2)' }}>
+                <Button variant="subtle" color="gray" onClick={cerrarModal} size="md">
+                  Cancelar
+                </Button>
+                <Button 
+                  type="submit" 
+                  loading={createMutation.isPending || updateMutation.isPending} 
+                  color="blue"
+                  size="md"
+                  leftSection={<Save size={18} />}
                 >
-                    <Save size={18} /> 
-                    {createMutation.isPending || updateMutation.isPending ? 'Guardando...' : 'Guardar Datos'}
-                </button>
-            </div>
-        </form>
-      </Modal>
+                  Guardar Ficha Escolar
+                </Button>
+              </Group>
 
-    </div>
+            </Stack>
+          </form>
+        </Modal>
+
+      </Stack>
+    </Container>
   );
 };
 

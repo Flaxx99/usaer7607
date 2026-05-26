@@ -204,7 +204,7 @@ class ExportRACView(BaseExportRACView):
         try:
             ciclo = get_current_ciclo_escolar_instance()
             qs = qs.filter(ciclo_escolar=ciclo)
-        except:
+        except Exception:
             pass
 
         if getattr(user, 'role', '') == 'MAESTRO_APOYO':
@@ -214,7 +214,9 @@ class ExportRACView(BaseExportRACView):
 
     def get_filename(self):
         user = self.request.user
-        return f"RAC_{user.first_name}_{user.last_name}.xlsx"
+        nombre = getattr(user, 'nombre', '') or user.first_name
+        apellido = getattr(user, 'apellido_paterno', '') or user.last_name
+        return f"RAC_{nombre}_{apellido}.xlsx".replace(" ", "_")
 
 
 class ExportAllRACView(BaseExportRACView):
@@ -240,7 +242,7 @@ class ExportAllRACView(BaseExportRACView):
         try:
             ciclo = get_current_ciclo_escolar_instance()
             qs = qs.filter(ciclo_escolar=ciclo)
-        except:
+        except Exception:
             pass
             
         return qs

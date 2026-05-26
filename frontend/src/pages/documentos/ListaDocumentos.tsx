@@ -3,11 +3,38 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { 
     Plus, Search, FolderOpen, Edit2, Trash2, 
-    FileText, Save, Paperclip, X, UploadCloud
+    FileText, Save, Paperclip, X, UploadCloud, AlertCircle
 } from 'lucide-react';
 import Swal from 'sweetalert2';
+import { 
+    Container, 
+    Stack, 
+    Paper, 
+    Title, 
+    Text, 
+    Button, 
+    Badge, 
+    Group, 
+    Avatar, 
+    Modal, 
+    TextInput, 
+    Select, 
+    ThemeIcon, 
+    Center, 
+    Loader, 
+    Box, 
+    Divider,
+    Grid,
+    ActionIcon,
+    Tooltip,
+    Textarea,
+    FileInput,
+    List,
+    rem
+} from '@mantine/core';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
+import { CardGridSkeleton } from '../../components/Skeletons';
 
-// IMPORTACIONES CORREGIDAS
 import { 
     getDocumentos, createDocumento, updateDocumento, 
     deleteDocumento, deleteArchivoExtra 
@@ -15,40 +42,36 @@ import {
 import { getAlumnos } from '../../api/alumnos';
 import type { Expediente } from '../../interfaces/documentos';
 
-import Modal from '../../components/Modal';
-
 const ListaDocumentos = () => {
   const [busqueda, setBusqueda] = useState('');
+  const busquedaDebounced = useDebouncedValue(busqueda, 300);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [docEditar, setDocEditar] = useState<Expediente | null>(null);
   
-  // Estado para archivos extra NUEVOS
   const [extrasTemp, setExtrasTemp] = useState<{file: File, descripcion: string}[]>([]);
   const [tempDesc, setTempDesc] = useState('');
 
   const queryClient = useQueryClient();
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<Expediente>();
+  const { register, handleSubmit, reset, control, formState: { errors } } = useForm<Expediente>();
 
-  // --- QUERIES ---
-  const { data: documentos, isLoading } = useQuery({
+  const { data: documentos, isLoading: loadingDocs } = useQuery({
     queryKey: ['documentos'],
     queryFn: getDocumentos,
   });
 
-  const { data: alumnos } = useQuery({
+  const { data: alumnos, isLoading: loadingAlumnos } = useQuery({
     queryKey: ['alumnos'],
     queryFn: getAlumnos,
   });
 
-  // --- MUTACIONES ---
   const createMutation = useMutation({
     mutationFn: createDocumento,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documentos'] });
       cerrarModal();
-      Swal.fire('Guardado', 'Expediente creado correctamente', 'success');
+      Swal.fire('¡Guardado! 📂', 'Expediente creado correctamente', 'success');
     },
-    onError: () => Swal.fire('Error', 'No se pudo crear el expediente', 'error')
+    onError: () => Swal.fire('Error ❌', 'No se pudo crear el expediente', 'error')
   });
 
   const updateMutation = useMutation({
@@ -56,16 +79,16 @@ const ListaDocumentos = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documentos'] });
       cerrarModal();
-      Swal.fire('Actualizado', 'Expediente actualizado', 'success');
+      Swal.fire('¡Actualizado! ✏️', 'Expediente actualizado', 'success');
     },
-    onError: () => Swal.fire('Error', 'No se pudo actualizar', 'error')
+    onError: () => Swal.fire('Error ❌', 'No se pudo actualizar', 'error')
   });
 
   const deleteMutation = useMutation({
     mutationFn: deleteDocumento,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documentos'] });
-      Swal.fire('Eliminado', 'Expediente borrado', 'success');
+      Swal.fire('¡Eliminado! 🗑️', 'Expediente borrado', 'success');
     }
   });
 
@@ -80,7 +103,6 @@ const ListaDocumentos = () => {
     }
   });
 
-  // --- FUNCIONES ---
   const cerrarModal = () => {
     setIsModalOpen(false);
     setDocEditar(null);
@@ -106,7 +128,7 @@ const ListaDocumentos = () => {
   const onAddExtraFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
         const file = e.target.files[0];
-        setExtrasTemp([...extrasTemp, { file, descripcion: tempDesc }]);
+        setExtrasTemp([...extrasTemp, { file, descripcion: tempDesc || file.name }]);
         setTempDesc('');
         e.target.value = '';
     }
@@ -147,228 +169,363 @@ const ListaDocumentos = () => {
   };
 
   const documentosFiltrados = documentos?.filter(e => 
-    e.alumno_nombre?.toLowerCase().includes(busqueda.toLowerCase()) || 
-    e.profesor_nombre?.toLowerCase().includes(busqueda.toLowerCase())
+    e.alumno_nombre?.toLowerCase().includes(busquedaDebounced.toLowerCase()) || 
+    e.profesor_nombre?.toLowerCase().includes(busquedaDebounced.toLowerCase())
   );
 
-  if (isLoading) return <div className="p-8 text-center text-primary">Cargando documentos...</div>;
+  const isLoading = loadingDocs || loadingAlumnos;
+
+  if (isLoading) {
+      return (
+        <Container size="xl" py="md">
+          <CardGridSkeleton cols={9} />
+        </Container>
+      );
+  }
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      
-      {/* HEADER */}
-      <div className="flex flex-col md:flex-row justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-text-main flex items-center gap-2">
-            <FolderOpen className="text-primary" /> Documentos y Expedientes
-          </h1>
-          <p className="text-text-secondary">Gestión de archivos por alumno</p>
-        </div>
-        <button onClick={handleOpenCreate} className="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-sm font-medium">
-          <Plus size={20} /> Nuevo Expediente
-        </button>
-      </div>
-
-      {/* FILTROS */}
-      <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center gap-3">
-        <Search className="text-slate-400" size={20} />
-        <input 
-          type="text" placeholder="Buscar por alumno o profesor..." 
-          className="flex-1 bg-transparent outline-none"
-          value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
-        />
-      </div>
-
-      {/* GRID */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {documentosFiltrados?.map((doc) => (
-          <div key={doc.id} className="bg-white rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow p-5 flex flex-col">
+    <Container size="xl" py="md">
+        <Stack gap="xl">
             
-            <div className="flex justify-between items-start mb-3">
-                <div>
-                    <h3 className="font-bold text-lg text-text-main">{doc.alumno_nombre}</h3>
-                    <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
-                        Prof. {doc.profesor_nombre}
-                    </span>
-                </div>
-                <div className="flex gap-1">
-                    <button onClick={() => handleOpenEdit(doc)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg"><Edit2 size={18} /></button>
-                    <button onClick={() => handleDelete(doc.id)} className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg"><Trash2 size={18} /></button>
-                </div>
-            </div>
+            {/* ========================================================================= */}
+            {/* CABECERA */}
+            {/* ========================================================================= */}
+            <Paper p="lg" radius="lg" withBorder shadow="sm" bg="blue.0" style={{ borderLeft: '8px solid var(--mantine-color-blue-6)' }}>
+                <Group justify="space-between" align="center">
+                    <Group gap="md">
+                        <ThemeIcon size={52} radius="lg" color="blue" variant="filled">
+                            <FolderOpen size={30} />
+                        </ThemeIcon>
+                        <div>
+                            <Title order={1} fw={900} lts={-0.5} style={{ fontSize: '1.8rem', lineHeight: 1.2 }}>
+                                Documentos y Expedientes
+                            </Title>
+                            <Text size="sm" c="dimmed" fw={500}>
+                                Gestión de archivos psicopedagógicos y planes de intervención por alumno.
+                            </Text>
+                        </div>
+                    </Group>
+                    
+                    <Button 
+                        size="lg" 
+                        radius="md" 
+                        leftSection={<Plus size={22} />} 
+                        onClick={handleOpenCreate}
+                        color="blue"
+                        style={{ boxShadow: 'var(--mantine-shadow-md)' }}
+                    >
+                        Nuevo Expediente
+                    </Button>
+                </Group>
+            </Paper>
 
-            <div className="space-y-2 mb-4 flex-1">
-                <div className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Documentos Base</div>
-                
-                <div className={`flex items-center gap-2 text-sm p-2 rounded-lg ${doc.informe_deteccion ? 'bg-green-50 text-green-700' : 'bg-slate-50 text-slate-400'}`}>
-                    <FileText size={16} />
-                    <span className="truncate flex-1">Detección Inicial</span>
-                    {doc.informe_deteccion && (
-                        <a href={doc.informe_deteccion as string} target="_blank" rel="noreferrer" className="text-green-600 hover:underline text-xs font-bold">VER</a>
-                    )}
-                </div>
+            {/* ========================================================================= */}
+            {/* BUSCADOR */}
+            {/* ========================================================================= */}
+            <Paper p="md" radius="lg" withBorder shadow="xs">
+                <TextInput 
+                    size="md"
+                    label="Buscar Expediente"
+                    placeholder="Escribe el nombre del alumno o profesor..." 
+                    leftSection={<Search size={18} />}
+                    value={busqueda} 
+                    onChange={(e) => setBusqueda(e.target.value)}
+                />
+            </Paper>
 
-                <div className={`flex items-center gap-2 text-sm p-2 rounded-lg ${doc.informe_psicopedagogico ? 'bg-blue-50 text-blue-700' : 'bg-slate-50 text-slate-400'}`}>
-                    <FileText size={16} />
-                    <span className="truncate flex-1">Inf. Psicopedagógico</span>
-                    {doc.informe_psicopedagogico && (
-                        <a href={doc.informe_psicopedagogico as string} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline text-xs font-bold">VER</a>
-                    )}
-                </div>
+            {/* ========================================================================= */}
+            {/* GRID DE EXPEDIENTES */}
+            {/* ========================================================================= */}
+            <Grid gutter="lg">
+                {documentosFiltrados?.map((doc) => {
+                    const docsCount = [doc.informe_deteccion, doc.informe_psicopedagogico, doc.plan_intervencion].filter(Boolean).length;
+                    const totalDocs = 3;
+                    const progressColor = docsCount === totalDocs ? 'green' : docsCount > 0 ? 'orange' : 'gray';
 
-                <div className={`flex items-center gap-2 text-sm p-2 rounded-lg ${doc.plan_intervencion ? 'bg-purple-50 text-purple-700' : 'bg-slate-50 text-slate-400'}`}>
-                    <FileText size={16} />
-                    <span className="truncate flex-1">Plan Intervención</span>
-                    {doc.plan_intervencion && (
-                        <a href={doc.plan_intervencion as string} target="_blank" rel="noreferrer" className="text-purple-600 hover:underline text-xs font-bold">VER</a>
-                    )}
-                </div>
-            </div>
+                    return (
+                    <Grid.Col key={doc.id} span={{ base: 12, md: 6, lg: 4 }}>
+                        <Paper 
+                            p="lg" 
+                            radius="lg" 
+                            withBorder 
+                            shadow="xs"
+                            style={{ 
+                                borderLeft: `6px solid var(--mantine-color-${progressColor}-6)`,
+                                transition: 'all 0.2s ease',
+                            }}
+                        >
+                            <Stack gap="xs">
+                                {/* Alumno y Profesor */}
+                                <Group justify="space-between" align="flex-start">
+                                    <div>
+                                        <Title order={3} fw={800} c="gray.8" style={{ fontSize: '1.2rem', lineHeight: 1.3 }}>
+                                            {doc.alumno_nombre}
+                                        </Title>
+                                        <Text size="sm" c="dimmed" fw={500}>
+                                            Prof. {doc.profesor_nombre}
+                                        </Text>
+                                    </div>
+                                    <Badge color={progressColor} variant="light" size="lg" fw={700}>
+                                        {docsCount}/{totalDocs} Docs
+                                    </Badge>
+                                </Group>
 
-            <div className="border-t border-slate-100 pt-3 flex items-center justify-between text-sm text-slate-500">
-                <div className="flex items-center gap-1">
-                    <Paperclip size={14} />
-                    <span>{doc.otros_archivos?.length || 0} Anexos</span>
-                </div>
-                <div className="text-xs">{doc.fecha_subida ? new Date(doc.fecha_subida).toLocaleDateString() : ''}</div>
-            </div>
+                                <Divider my="xs" />
 
-          </div>
-        ))}
-      </div>
+                                {/* Estado de Documentos Base */}
+                                <Stack gap="xs">
+                                    <DocStatus 
+                                        label="Informe de Detección" 
+                                        hasFile={!!doc.informe_deteccion} 
+                                        url={doc.informe_deteccion as string} 
+                                    />
+                                    <DocStatus 
+                                        label="Informe Psicopedagógico" 
+                                        hasFile={!!doc.informe_psicopedagogico} 
+                                        url={doc.informe_psicopedagogico as string} 
+                                    />
+                                    <DocStatus 
+                                        label="Plan de Intervención" 
+                                        hasFile={!!doc.plan_intervencion} 
+                                        url={doc.plan_intervencion as string} 
+                                    />
+                                </Stack>
 
-      {documentosFiltrados?.length === 0 && (
-         <div className="p-10 text-center text-slate-400 italic">No hay documentos registrados.</div>
-      )}
+                                {/* Anexos y Fecha */}
+                                <Group justify="space-between" mt="md" pt="md" style={{ borderTop: '1px solid var(--mantine-color-gray-1)' }}>
+                                    <Group gap="xs">
+                                        <Paperclip size={16} className="text-gray-500" />
+                                        <Text size="sm" c="dimmed" fw={600}>
+                                            {doc.otros_archivos?.length || 0} Anexos
+                                        </Text>
+                                    </Group>
+                                    <Group gap="xs">
+                                        <Tooltip label="Editar expediente">
+                                            <ActionIcon 
+                                                variant="light" 
+                                                color="blue" 
+                                                size="lg" 
+                                                radius="md"
+                                                onClick={() => handleOpenEdit(doc)}
+                                            >
+                                                <Edit2 size={18} />
+                                            </ActionIcon>
+                                        </Tooltip>
+                                        <Tooltip label="Eliminar expediente">
+                                            <ActionIcon 
+                                                variant="light" 
+                                                color="red" 
+                                                size="lg" 
+                                                radius="md"
+                                                onClick={() => handleDelete(doc.id)}
+                                            >
+                                                <Trash2 size={18} />
+                                            </ActionIcon>
+                                        </Tooltip>
+                                    </Group>
+                                </Group>
+                            </Stack>
+                        </Paper>
+                    </Grid.Col>
+                )})}
 
-
-      {/* --- MODAL --- */}
-      <Modal isOpen={isModalOpen} onClose={cerrarModal} title={docEditar ? "Editar Expediente" : "Nuevo Expediente"} maxWidth="max-w-4xl">
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            
-            {/* 1. SELECCIÓN DE ALUMNO */}
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                <label className="block text-sm font-bold text-slate-700 mb-1">Alumno</label>
-                <select 
-                    {...register('alumno', { required: "Selecciona un alumno" })}
-                    disabled={!!docEditar} 
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white disabled:bg-slate-200 outline-none focus:border-primary"
-                >
-                    <option value="">-- Seleccionar --</option>
-                    {alumnos?.map(a => (
-                        <option key={a.id} value={a.id}>{a.nombres} {a.apellido_paterno} {a.apellido_materno}</option>
-                    ))}
-                </select>
-                {errors.alumno && <span className="text-red-500 text-xs">Requerido</span>}
-            </div>
-
-            {/* 2. ARCHIVOS PRINCIPALES */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 border border-dashed border-slate-300 rounded-xl hover:bg-slate-50 transition-colors">
-                    <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Informe Detección</label>
-                    <input type="file" {...register('informe_deteccion')} className="text-sm w-full file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100" />
-                    {docEditar?.informe_deteccion && <p className="text-xs text-green-600 mt-2 font-medium">✓ Archivo cargado</p>}
-                </div>
-
-                <div className="p-4 border border-dashed border-slate-300 rounded-xl hover:bg-slate-50 transition-colors">
-                    <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Inf. Psicopedagógico</label>
-                    <input type="file" {...register('informe_psicopedagogico')} className="text-sm w-full file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
-                    {docEditar?.informe_psicopedagogico && <p className="text-xs text-blue-600 mt-2 font-medium">✓ Archivo cargado</p>}
-                </div>
-
-                <div className="p-4 border border-dashed border-slate-300 rounded-xl hover:bg-slate-50 transition-colors">
-                    <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Plan Intervención</label>
-                    <input type="file" {...register('plan_intervencion')} className="text-sm w-full file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100" />
-                    {docEditar?.plan_intervencion && <p className="text-xs text-purple-600 mt-2 font-medium">✓ Archivo cargado</p>}
-                </div>
-            </div>
-
-            {/* 3. OBSERVACIONES */}
-            <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">Observaciones</label>
-                <textarea {...register('observaciones')} rows={2} className="w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary/20" placeholder="Notas adicionales..." />
-            </div>
-
-            {/* 4. ANEXOS / EXTRAS */}
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                <h3 className="text-sm font-bold text-primary mb-3 flex items-center gap-2">
-                    <Paperclip size={16} /> Archivos Anexos (Extras)
-                </h3>
-
-                {/* Lista Existentes */}
-                {docEditar && docEditar.otros_archivos && docEditar.otros_archivos.length > 0 && (
-                    <div className="mb-4 space-y-2">
-                        <p className="text-xs text-slate-400 uppercase font-bold">Archivos Guardados:</p>
-                        {docEditar.otros_archivos.map(archivo => (
-                            <div key={archivo.id} className="flex items-center justify-between bg-white p-2 rounded border border-slate-200 text-sm">
-                                <div className="flex items-center gap-2 overflow-hidden">
-                                    <FileText size={14} className="text-slate-400 shrink-0"/>
-                                    <a href={archivo.url_archivo || '#'} target="_blank" rel="noreferrer" className="truncate text-blue-600 hover:underline font-medium">
-                                        {archivo.nombre_archivo}
-                                    </a>
-                                    <span className="text-slate-400 text-xs italic">- {archivo.descripcion || 'Sin descripción'}</span>
-                                </div>
-                                <button type="button" onClick={() => handleDeleteExtraReal(archivo.id)} className="text-red-500 hover:bg-red-50 p-1 rounded transition-colors">
-                                    <X size={16} />
-                                </button>
-                            </div>
-                        ))}
-                    </div>
+                {documentosFiltrados?.length === 0 && (
+                    <Grid.Col span={12}>
+                        <Paper p="xl" withBorder radius="lg" bg="gray.0" ta="center">
+                          <FolderOpen size={48} className="text-gray-400 mx-auto" style={{ marginBottom: '12px' }} />
+                          <Text fw={600} c="dimmed">No se encontraron expedientes con ese criterio de búsqueda.</Text>
+                        </Paper>
+                    </Grid.Col>
                 )}
+            </Grid>
 
-                {/* Subir Nuevos */}
-                <div className="bg-white p-3 rounded-lg border border-slate-200">
-                    <p className="text-xs text-slate-400 uppercase font-bold mb-2">Agregar Nuevo Anexo:</p>
-                    <div className="flex gap-2 mb-2">
-                        <input 
-                            type="text" 
-                            placeholder="Descripción (ej. Entrevista padres)" 
-                            className="flex-1 border border-slate-300 rounded px-2 py-1 text-sm outline-none focus:border-primary"
-                            value={tempDesc}
-                            onChange={(e) => setTempDesc(e.target.value)}
+            {/* ========================================================================= */}
+            {/* --- MODAL CREAR/EDITAR EXPEDIENTE --- */}
+            {/* ========================================================================= */}
+            <Modal 
+              opened={isModalOpen} 
+              onClose={cerrarModal} 
+              title={<Title order={3} fw={800}>📂 {docEditar ? "Editar Expediente" : "Nuevo Expediente"}</Title>}
+              size="lg"
+              radius="lg"
+              centered
+            >
+                <form onSubmit={handleSubmit(onSubmit)}>
+                  <Stack gap="md">
+                    {/* 1. SELECCIÓN DE ALUMNO */}
+                    <Paper p="sm" bg="blue.0" withBorder radius="md">
+                        <Select
+                            label="Alumno"
+                            placeholder="Selecciona un alumno"
+                            data={alumnos?.map(a => ({ 
+                                value: String(a.id), 
+                                label: `${a.nombres} ${a.apellido_paterno} ${a.apellido_materno}` 
+                            })) || []}
+                            disabled={!!docEditar}
+                            required
+                            {...register('alumno', { required: "Selecciona un alumno" })}
+                            error={errors.alumno?.message}
+                            size="md"
                         />
-                        <div className="relative">
-                            <input 
-                                type="file" 
-                                id="file-extra" 
-                                className="hidden" 
-                                onChange={onAddExtraFile} 
+                    </Paper>
+
+                    <Divider label="Documentos Base" labelPosition="center" />
+
+                    {/* 2. ARCHIVOS PRINCIPALES */}
+                    <Grid gutter="md">
+                        <Grid.Col span={6}>
+                            <FileInput 
+                                label="Informe de Detección"
+                                placeholder="Seleccionar archivo..."
+                                leftSection={<FileText size={16} />}
+                                accept=".pdf,.doc,.docx"
+                                {...register('informe_deteccion')}
+                                size="md"
                             />
-                            <label htmlFor="file-extra" className="cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded text-sm flex items-center gap-1 font-medium transition-colors">
-                                <UploadCloud size={16} /> Seleccionar
-                            </label>
-                        </div>
-                    </div>
+                            {docEditar?.informe_deteccion && (
+                                <Text size="xs" c="green.6" fw={600} mt={4}>✓ Archivo cargado previamente</Text>
+                            )}
+                        </Grid.Col>
+                        <Grid.Col span={6}>
+                            <FileInput 
+                                label="Informe Psicopedagógico"
+                                placeholder="Seleccionar archivo..."
+                                leftSection={<FileText size={16} />}
+                                accept=".pdf,.doc,.docx"
+                                {...register('informe_psicopedagogico')}
+                                size="md"
+                            />
+                            {docEditar?.informe_psicopedagogico && (
+                                <Text size="xs" c="green.6" fw={600} mt={4}>✓ Archivo cargado previamente</Text>
+                            )}
+                        </Grid.Col>
+                        <Grid.Col span={6}>
+                            <FileInput 
+                                label="Plan de Intervención"
+                                placeholder="Seleccionar archivo..."
+                                leftSection={<FileText size={16} />}
+                                accept=".pdf,.doc,.docx"
+                                {...register('plan_intervencion')}
+                                size="md"
+                            />
+                            {docEditar?.plan_intervencion && (
+                                <Text size="xs" c="green.6" fw={600} mt={4}>✓ Archivo cargado previamente</Text>
+                            )}
+                        </Grid.Col>
+                    </Grid>
 
-                    {extrasTemp.length > 0 && (
-                        <div className="space-y-1 mt-2">
-                            {extrasTemp.map((item, idx) => (
-                                <div key={idx} className="flex items-center justify-between text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded">
-                                    <span>{item.file.name} <span className="opacity-70">({item.descripcion})</span></span>
-                                    <button type="button" onClick={() => onRemoveExtraTemp(idx)} className="hover:text-red-600"><X size={14}/></button>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            </div>
+                    {/* 3. OBSERVACIONES */}
+                    <Textarea 
+                        label="Observaciones"
+                        placeholder="Notas adicionales sobre el expediente..."
+                        {...register('observaciones')}
+                        size="md"
+                        minRows={2}
+                    />
 
-            {/* BOTONES */}
-            <div className="pt-4 flex justify-end gap-3 border-t border-slate-100">
-                <button type="button" onClick={cerrarModal} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium transition-colors">Cancelar</button>
-                <button 
-                    type="submit" 
-                    disabled={createMutation.isPending || updateMutation.isPending} 
-                    className="bg-primary text-white px-6 py-2 rounded-lg flex items-center gap-2 font-medium hover:bg-blue-700 transition-colors shadow-sm"
-                >
-                    <Save size={18} /> Guardar
-                </button>
-            </div>
+                    <Divider label="Archivos Anexos" labelPosition="center" />
 
-        </form>
-      </Modal>
+                    {/* 4. ANEXOS / EXTRAS */}
+                    <Paper p="sm" bg="gray.0" withBorder radius="md">
+                        <Stack gap="sm">
+                            {/* Lista Existentes */}
+                            {docEditar && docEditar.otros_archivos && docEditar.otros_archivos.length > 0 && (
+                                <Box>
+                                    <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb={4}>Archivos Guardados:</Text>
+                                    <List spacing="xs" size="sm" center>
+                                        {docEditar.otros_archivos.map(archivo => (
+                                            <List.Item 
+                                                key={archivo.id}
+                                                icon={<FileText size={16} color="var(--mantine-color-blue-6)" />}
+                                                style={{ 
+                                                    background: 'white', 
+                                                    padding: '8px', 
+                                                    borderRadius: 'var(--mantine-radius-sm)',
+                                                    border: '1px solid var(--mantine-color-gray-2)'
+                                                }}
+                                            >
+                                                <Group justify="space-between" w="100%">
+                                                    <a href={archivo.url_archivo || '#'} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline font-medium">
+                                                        {archivo.nombre_archivo}
+                                                    </a>
+                                                    <Group gap="xs">
+                                                        <Text size="xs" c="dimmed">{archivo.descripcion || 'Sin descripción'}</Text>
+                                                        <ActionIcon 
+                                                            variant="subtle" 
+                                                            color="red" 
+                                                            size="sm"
+                                                            onClick={() => handleDeleteExtraReal(archivo.id)}
+                                                        >
+                                                            <X size={14} />
+                                                        </ActionIcon>
+                                                    </Group>
+                                                </Group>
+                                            </List.Item>
+                                        ))}
+                                    </List>
+                                </Box>
+                            )}
 
-    </div>
+                            {/* Subir Nuevos */}
+                            <Box>
+                                <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb={4}>Agregar Nuevo Anexo:</Text>
+                                <Group gap="xs" align="flex-end">
+                                    <TextInput 
+                                        placeholder="Descripción (ej. Entrevista padres)"
+                                        value={tempDesc}
+                                        onChange={(e) => setTempDesc(e.target.value)}
+                                        style={{ flex: 1 }}
+                                        size="md"
+                                    />
+                                    <input 
+                                        type="file" 
+                                        id="file-extra" 
+                                        className="hidden" 
+                                        onChange={onAddExtraFile} 
+                                    />
+                                    <label htmlFor="file-extra" className="cursor-pointer bg-blue-100 hover:bg-blue-200 text-blue-700 px-4 py-2 rounded-md text-sm flex items-center gap-1 font-medium transition-colors" style={{ height: '36px' }}>
+                                        <UploadCloud size={16} /> Seleccionar
+                                    </label>
+                                </Group>
+
+                                {extrasTemp.length > 0 && (
+                                    <Stack gap="xs" mt="sm">
+                                        {extrasTemp.map((item, idx) => (
+                                            <Group key={idx} justify="space-between" p="xs" bg="blue.0" radius="md">
+                                                <Text size="sm" fw={600} c="blue.7">
+                                                    {item.file.name} <Text component="span" size="xs" c="blue.6">({item.descripcion})</Text>
+                                                </Text>
+                                                <ActionIcon 
+                                                    variant="subtle" 
+                                                    color="red" 
+                                                    size="sm"
+                                                    onClick={() => onRemoveExtraTemp(idx)}
+                                                >
+                                                    <X size={16} />
+                                                </ActionIcon>
+                                            </Group>
+                                        ))}
+                                    </Stack>
+                                )}
+                            </Box>
+                        </Stack>
+                    </Paper>
+
+                    {/* BOTONES */}
+                    <Group justify="flex-end" pt="md" style={{ borderTop: '1px solid var(--mantine-color-gray-2)' }}>
+                      <Button variant="subtle" color="gray" onClick={cerrarModal}>
+                        Cancelar
+                      </Button>
+                      <Button type="submit" color="blue" leftSection={<Save size={18} />}>
+                        {docEditar ? 'Guardar Cambios' : 'Registrar Expediente'}
+                      </Button>
+                    </Group>
+                  </Stack>
+                </form>
+            </Modal>
+
+        </Stack>
+    </Container>
   );
 };
 

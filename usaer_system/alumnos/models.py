@@ -3,6 +3,7 @@
 from django.db import models
 from django.conf import settings
 from escuelas.models import Escuela
+from ciclos_escolares.models import CicloEscolar
 from datetime import date
 
 class Alumno(models.Model):
@@ -45,7 +46,14 @@ class Alumno(models.Model):
         blank=True,
         help_text="Ejemplo: A, B, C"
     )
-
+    last_promotion_cycle = models.ForeignKey(
+        CicloEscolar,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Último ciclo de promoción",
+        related_name='alumnos_promovidos'
+    )
     # --- Clasificación especial ---
     activo = models.BooleanField(default=True, verbose_name="¿Está activo?")
     CLASIFICACION_CHOICES = [

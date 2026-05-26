@@ -37,7 +37,12 @@ export const previewPromocion = async (): Promise<PromocionPreview> => {
 
 // 2. Ejecución Real (POST)
 export const ejecutarPromocion = async (): Promise<any> => {
-    // CORRECCIÓN: Enviamos el flag "confirmed" que pide tu vista de Django
     const response = await client.post('/ciclos/promover-alumnos/', { confirmed: true });
+    return response.data;
+};
+
+// 3. Estado de la tarea (GET)
+export const getPromocionStatus = async (taskId: string): Promise<any> => {
+    const response = await client.get(`/ciclos/promocion/status/${taskId}/`);
     return response.data;
 };

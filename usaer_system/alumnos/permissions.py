@@ -21,6 +21,8 @@ class IsMaestroOAdmin(permissions.BasePermission):
         roles_admitidos = [
             User.Role.MAESTRO_APOYO.value,
             User.Role.ADMINISTRADOR.value,
+            User.Role.DIRECTOR.value,
+            User.Role.SECRETARIO.value,
         ]
 
         # 3. Validación

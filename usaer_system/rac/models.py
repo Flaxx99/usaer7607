@@ -123,24 +123,28 @@ class RegistroRAC(models.Model):
     sup_especial_cct = models.CharField(
         "CCT Supervisión",
         max_length=20,
-        default='08FUA0041G'
+        blank=True,
+        null=True
     )
     sup_especial_zona = models.CharField(
         "Zona Supervisión",
         max_length=10,
-        default='22'
+        blank=True,
+        null=True
     )
 
-    # Centro de Educación Especial (constantes)
+    # Centro de Educación Especial (se llenan dinámicamente o vía config)
     centro_cct = models.CharField(
         "CCT Centro Educación Especial",
         max_length=20,
-        default='08FUA0093E'
+        blank=True,
+        null=True
     )
     centro_nombre = models.CharField(
         "Nombre Centro Educación Especial",
         max_length=200,
-        default='USAER 7607'
+        blank=True,
+        null=True
     )
     maestro_apoyo = models.ForeignKey(
         User,
@@ -177,6 +181,22 @@ class RegistroRAC(models.Model):
         verbose_name_plural = "Registros RAC"
         unique_together = ('alumno', 'ciclo_escolar')
         ordering = ['-fecha_registro']
+
+    def save(self, *args, **kwargs):
+        from usuarios.models import SystemConfiguration
+        config = SystemConfiguration.objects.first()
+        
+        if config:
+            if not self.centro_cct:
+                self.centro_cct = config.centro_cct
+            if not self.centro_nombre:
+                self.centro_nombre = config.centro_nombre
+            if not self.sup_especial_cct:
+                self.sup_especial_cct = config.sup_especial_cct
+            if not self.sup_especial_zona:
+                self.sup_especial_zona = config.sup_especial_zona
+                
+        super().save(*args, **kwargs)
 
     def clean(self):
         super().clean()

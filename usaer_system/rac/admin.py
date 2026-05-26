@@ -1,9 +1,9 @@
 # rac/admin.py
 
 from django.contrib import admin
-from .models import RegistroRAC # ¡Importa tu modelo RegistroRAC!
+from .models import RegistroRAC
+from usuarios.admin_site import admin_site
 
-@admin.register(RegistroRAC)
 class RegistroRACAdmin(admin.ModelAdmin):
     # Los campos que se mostrarán en la vista de lista del administrador.
     # Estos son los datos más importantes que quieres ver de un vistazo.
@@ -116,3 +116,5 @@ class RegistroRACAdmin(admin.ModelAdmin):
     # Puedes agregar otras opciones como:
     # list_per_page = 20 # Número de elementos por página en la vista de lista
     # raw_id_fields = ('alumno',) # Si prefieres un campo de texto con ID en lugar de autocomplete_fields
+
+admin_site.register(RegistroRAC, RegistroRACAdmin)

@@ -10,5 +10,5 @@ class UsuariosConfig(AppConfig):
     verbose_name = _('Gestión de Usuarios')
 
     def ready(self):
-       pass
+        import usuarios.signals
 

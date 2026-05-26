@@ -1,11 +1,37 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useForm } from 'react-hook-form';
-import { Plus, Search, School, Edit2, Trash2, MapPin, Save, AlertTriangle } from 'lucide-react';
+import { useForm, Controller } from 'react-hook-form';
+import { Plus, Search, School, Edit2, Trash2, MapPin, Save, AlertTriangle, Phone, Mail } from 'lucide-react';
+import Swal from 'sweetalert2';
+import { 
+    Container, 
+    Stack, 
+    Paper, 
+    Title, 
+    Text, 
+    Button, 
+    Badge, 
+    Group, 
+    Avatar, 
+    Modal, 
+    TextInput, 
+    Select, 
+    ThemeIcon, 
+    Center, 
+    Loader, 
+    Box, 
+    Divider,
+    Grid,
+    ActionIcon,
+    Tooltip,
+    SegmentedControl,
+    SimpleGrid
+} from '@mantine/core';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
+import { CardGridSkeleton } from '../../components/Skeletons';
+
 import { getEscuelas, deleteEscuela, createEscuela, updateEscuela } from '../../api/escuelas';
 import type { Escuela } from '../../interfaces/escuela';
-import Modal from '../../components/Modal';
-import Swal from 'sweetalert2';
 
 // Función auxiliar para convertir "PRIMARIA" -> "Primaria"
 const toTitleCase = (str: string) => {
@@ -13,13 +39,21 @@ const toTitleCase = (str: string) => {
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 };
 
+const NIVELES_OPCIONES = [
+  { value: 'Primaria', label: '🏫 Primaria' },
+  { value: 'Preescolar', label: '🧸 Preescolar' },
+  { value: 'Secundaria', label: '🎓 Secundaria' },
+  { value: 'Telesecundaria', label: '📡 Telesecundaria' },
+];
+
 const ListaEscuelas = () => {
   const [busqueda, setBusqueda] = useState('');
+  const busquedaDebounced = useDebouncedValue(busqueda, 300);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [escuelaEditar, setEscuelaEditar] = useState<Escuela | null>(null);
   
   const queryClient = useQueryClient();
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<Escuela>();
+  const { register, handleSubmit, control, reset, formState: { errors } } = useForm<Escuela>();
 
   // Queries & Mutations
   const { data: escuelas, isLoading, isError } = useQuery({
@@ -32,7 +66,7 @@ const ListaEscuelas = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['escuelas'] });
       cerrarModal();
-      Swal.fire('¡Creada!', 'La escuela se registró correctamente.', 'success');
+      Swal.fire('¡Creada! 🏫', 'La escuela se registró correctamente en el sistema.', 'success');
     },
     onError: (error: any) => manejarError(error)
   });
@@ -42,7 +76,7 @@ const ListaEscuelas = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['escuelas'] });
       cerrarModal();
-      Swal.fire('¡Actualizada!', 'Los datos han sido guardados.', 'success');
+      Swal.fire('¡Actualizada! ✏️', 'Los datos de la escuela han sido guardados.', 'success');
     },
     onError: (error: any) => manejarError(error)
   });
@@ -51,9 +85,9 @@ const ListaEscuelas = () => {
     mutationFn: deleteEscuela,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['escuelas'] });
-      Swal.fire('¡Eliminado!', 'La escuela ha sido eliminada.', 'success');
+      Swal.fire('¡Eliminada! 🗑️', 'La escuela ha sido dada de baja del sistema.', 'success');
     },
-    onError: () => Swal.fire('Error', 'No se pudo eliminar.', 'error')
+    onError: () => Swal.fire('Error ❌', 'No se pudo eliminar (posiblemente tiene alumnos asignados).', 'error')
   });
 
   const manejarError = (error: any) => {
@@ -65,7 +99,7 @@ const ListaEscuelas = () => {
         const errorMsg = data[campo];
         mensaje = `${campo.toUpperCase()}: ${errorMsg}`;
     }
-    Swal.fire('Error al guardar', mensaje, 'error');
+    Swal.fire('Error al guardar ❌', mensaje, 'error');
   };
 
   const cerrarModal = () => {
@@ -77,7 +111,7 @@ const ListaEscuelas = () => {
   const handleOpenCreate = () => {
     setEscuelaEditar(null);
     reset({
-        nivel: 'Primaria', // Valor válido para Django
+        nivel: 'Primaria',
         zona: '', clave_estatal: '', cct: '', nombre: '', domicilio: '', colonia: ''
     });
     setIsModalOpen(true);
@@ -85,13 +119,10 @@ const ListaEscuelas = () => {
 
   const handleOpenEdit = (escuela: Escuela) => {
     setEscuelaEditar(escuela);
-    
-    // TRUCO: Convertimos el nivel que viene de la BD (PRIMARIA) a lo que espera el select (Primaria)
     const datosParaFormulario = {
         ...escuela,
-        nivel: toTitleCase(escuela.nivel) // "PRIMARIA" -> "Primaria"
+        nivel: toTitleCase(escuela.nivel)
     };
-    
     reset(datosParaFormulario);
     setIsModalOpen(true);
   };
@@ -106,7 +137,9 @@ const ListaEscuelas = () => {
 
   const handleDelete = (id: number) => {
     Swal.fire({
-      title: '¿Estás seguro?', text: "Se borrará permanentemente", icon: 'warning',
+      title: '¿Eliminar escuela?', 
+      text: "Esta acción es irreversible. Asegúrate de que no tenga alumnos activos.", 
+      icon: 'warning',
       showCancelButton: true, confirmButtonColor: '#d33', cancelButtonColor: '#3085d6', confirmButtonText: 'Sí, borrar'
     }).then((result) => {
       if (result.isConfirmed) deleteMutation.mutate(id);
@@ -114,158 +147,276 @@ const ListaEscuelas = () => {
   };
 
   const escuelasFiltradas = escuelas?.filter(escuela => 
-    escuela.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-    escuela.clave_estatal.toLowerCase().includes(busqueda.toLowerCase()) ||
-    escuela.cct.toLowerCase().includes(busqueda.toLowerCase())
+    escuela.nombre.toLowerCase().includes(busquedaDebounced.toLowerCase()) ||
+    escuela.clave_estatal.toLowerCase().includes(busquedaDebounced.toLowerCase()) ||
+    escuela.cct.toLowerCase().includes(busquedaDebounced.toLowerCase())
   );
 
-  if (isLoading) return <div className="p-8 flex justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>;
-  if (isError) return <div className="p-8 text-center text-red-500">Error al cargar datos.</div>;
+  if (isLoading) {
+      return (
+        <Container size="xl" py="md">
+          <CardGridSkeleton cols={6} />
+        </Container>
+      );
+      );
+  }
+  if (isError) return <Center h="50vh"><Text c="red">Error al cargar datos del servidor.</Text></Center>;
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      
-      {/* HEADER */}
-      <div className="flex flex-col md:flex-row justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-text-main flex items-center gap-2">
-            <School className="text-primary" /> Escuelas
-          </h1>
-          <p className="text-text-secondary">Administra los centros de trabajo</p>
-        </div>
-        <button onClick={handleOpenCreate} className="bg-primary hover:bg-primary-hover text-white px-4 py-2.5 rounded-lg flex items-center gap-2 font-medium shadow-sm transition-all active:scale-95">
-          <Plus size={20} /> Nueva Escuela
-        </button>
-      </div>
-
-      {/* FILTROS */}
-      <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center gap-3">
-        <Search className="text-slate-400" size={20} />
-        <input 
-          type="text" placeholder="Buscar por nombre, CCT o clave..." className="flex-1 bg-transparent outline-none"
-          value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
-        />
-      </div>
-
-      {/* TABLA */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-slate-50 border-b border-slate-200 text-text-secondary text-sm uppercase">
-              <th className="p-4 font-semibold">CCT / Nivel</th>
-              <th className="p-4 font-semibold">Nombre</th>
-              <th className="p-4 font-semibold hidden md:table-cell">Ubicación</th>
-              <th className="p-4 font-semibold text-center">Acciones</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {escuelasFiltradas?.map((escuela) => (
-              <tr key={escuela.id} className="hover:bg-blue-50/50 group">
-                <td className="p-4 align-top">
-                    <div className="font-bold text-text-main font-mono">{escuela.cct}</div>
-                    <span className="inline-block mt-1 text-xs px-2 py-0.5 rounded-full font-semibold border bg-slate-100 text-slate-600 border-slate-200 capitalize">
-                        {escuela.nivel.toLowerCase()}
-                    </span>
-                </td>
-                <td className="p-4 align-top">
-                    <div className="font-medium text-lg text-primary">{escuela.nombre}</div>
-                    <div className="text-sm text-text-secondary mt-1">
-                        Zona: <span className="font-semibold text-slate-700">{escuela.zona}</span>
-                    </div>
-                </td>
-                <td className="p-4 hidden md:table-cell align-top">
-                    <div className="flex items-start gap-1.5 text-sm text-text-secondary">
-                        <MapPin size={16} className="mt-0.5 text-slate-400 shrink-0" />
-                        <div className="flex flex-col">
-                            <span className="font-medium text-text-main">{escuela.domicilio}</span>
-                            <span className="text-xs text-slate-500">{escuela.colonia}</span>
-                        </div>
-                    </div>
-                </td>
-                <td className="p-4 text-center align-middle">
-                    <div className="flex justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => handleOpenEdit(escuela)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Editar">
-                            <Edit2 size={18} />
-                        </button>
-                        <button onClick={() => handleDelete(escuela.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Eliminar">
-                            <Trash2 size={18} />
-                        </button>
-                    </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* --- MODAL --- */}
-      <Modal isOpen={isModalOpen} onClose={cerrarModal} title={escuelaEditar ? "Editar Escuela" : "Nueva Escuela"}>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <Container size="xl" py="md">
+        <Stack gap="xl">
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label className="block text-sm font-medium text-text-secondary mb-1">Clave Estatal</label>
-                    <input {...register('clave_estatal', { required: "Requerido" })} className="w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-primary focus:ring-2 focus:ring-blue-100 transition-all" />
-                    {errors.clave_estatal && <span className="text-red-500 text-xs">{errors.clave_estatal.message}</span>}
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-text-secondary mb-1">CCT</label>
-                    <input {...register('cct', { required: "Requerido" })} className="w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-primary focus:ring-2 focus:ring-blue-100 transition-all" />
-                    {errors.cct && <span className="text-red-500 text-xs">{errors.cct.message}</span>}
-                </div>
-            </div>
+            {/* ========================================================================= */}
+            {/* CABECERA DEL DIRECTORIO */}
+            {/* ========================================================================= */}
+            <Paper p="lg" radius="lg" withBorder shadow="sm" bg="blue.0" style={{ borderLeft: '8px solid var(--mantine-color-blue-6)' }}>
+                <Group justify="space-between" align="center">
+                    <Group gap="md">
+                        <ThemeIcon size={52} radius="lg" color="blue" variant="filled">
+                            <School size={30} />
+                        </ThemeIcon>
+                        <div>
+                            <Title order={1} fw={900} lts={-0.5} style={{ fontSize: '1.8rem', lineHeight: 1.2 }}>
+                                Directorio de Escuelas
+                            </Title>
+                            <Text size="sm" c="dimmed" fw={500}>
+                                Administra los centros de trabajo y escuelas regulares vinculadas a la USAER 7607.
+                            </Text>
+                        </div>
+                    </Group>
+                    
+                    <Button 
+                        size="lg" 
+                        radius="md" 
+                        leftSection={<Plus size={22} />} 
+                        onClick={handleOpenCreate}
+                        color="blue"
+                        style={{ boxShadow: 'var(--mantine-shadow-md)' }}
+                    >
+                        Registrar Nueva Escuela
+                    </Button>
+                </Group>
+            </Paper>
 
-            <div>
-                <label className="block text-sm font-medium text-text-secondary mb-1">Nombre de la Escuela</label>
-                <input {...register('nombre', { required: "Requerido" })} className="w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-primary focus:ring-2 focus:ring-blue-100 transition-all" />
-            </div>
+            {/* ========================================================================= */}
+            {/* BUSCADOR GIGANTE */}
+            {/* ========================================================================= */}
+            <Paper p="md" radius="lg" withBorder shadow="xs">
+                <TextInput 
+                    size="md"
+                    label="Buscar Escuela"
+                    placeholder="Escribe el nombre, CCT o Clave Estatal..." 
+                    leftSection={<Search size={18} />}
+                    value={busqueda} 
+                    onChange={(e) => setBusqueda(e.target.value)}
+                />
+            </Paper>
 
-            <div className="grid grid-cols-2 gap-4">
-                <div>
-                    <label className="block text-sm font-medium text-text-secondary mb-1">Nivel</label>
-                    {/* CAMBIO: Values en Title Case (lo que Django acepta como input) */}
-                    <select {...register('nivel')} className="w-full border border-slate-300 rounded-lg px-3 py-2 outline-none bg-white">
-                        <option value="Primaria">Primaria</option>
-                        <option value="Preescolar">Preescolar</option>
-                        <option value="Secundaria">Secundaria</option>
-                    </select>
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-text-secondary mb-1">Zona</label>
-                    <input {...register('zona', { required: "Requerido" })} className="w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-primary" />
-                </div>
-            </div>
+            {/* ========================================================================= */}
+            {/* REJILLA DE ESCUELAS (DISEÑO TIPO TARJETA) */}
+            {/* ========================================================================= */}
+            <Grid gutter="lg">
+                {escuelasFiltradas?.map((escuela) => (
+                    <Grid.Col key={escuela.id} span={{ base: 12, md: 6, lg: 4 }}>
+                        <Paper 
+                            p="lg" 
+                            radius="lg" 
+                            withBorder 
+                            shadow="xs"
+                            style={{ 
+                                borderLeft: `6px solid var(--mantine-color-blue-6)`,
+                                transition: 'all 0.2s ease',
+                                position: 'relative'
+                            }}
+                            className="hover:shadow-md"
+                        >
+                            <Stack gap="xs">
+                                {/* CCT y Nivel */}
+                                <Group justify="space-between" align="flex-start">
+                                    <Badge color="gray" variant="light" size="md" fw={700} style={{ fontFamily: 'monospace' }}>
+                                        CCT: {escuela.cct}
+                                    </Badge>
+                                    <Badge 
+                                        color={escuela.nivel.includes('PRIMARIA') ? 'blue' : escuela.nivel.includes('PREESCOLAR') ? 'orange' : 'teal'} 
+                                        variant="light" 
+                                        size="md"
+                                    >
+                                        {toTitleCase(escuela.nivel)}
+                                    </Badge>
+                                </Group>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label className="block text-sm font-medium text-text-secondary mb-1">Domicilio</label>
-                    <input {...register('domicilio', { required: "Requerido" })} className="w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-primary" />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-text-secondary mb-1">Colonia</label>
-                    <input {...register('colonia', { required: "Requerido" })} className="w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-primary" />
-                </div>
-            </div>
+                                {/* Nombre */}
+                                <Title order={3} fw={800} c="gray.8" style={{ fontSize: '1.2rem', lineHeight: 1.3 }}>
+                                    {escuela.nombre}
+                                </Title>
 
-            <div className="bg-yellow-50 p-3 rounded-lg flex gap-2 items-start text-xs text-yellow-700">
-                <AlertTriangle size={16} className="shrink-0 mt-0.5" />
-                <p>El turno y los datos del director no son obligatorios en este paso.</p>
-            </div>
+                                <Divider my="xs" />
 
-            <div className="pt-4 flex justify-end gap-3">
-                <button type="button" onClick={cerrarModal} className="px-4 py-2 text-text-secondary hover:bg-slate-100 rounded-lg font-medium">Cancelar</button>
-                <button 
-                    type="submit" 
-                    disabled={createMutation.isPending || updateMutation.isPending} 
-                    className="bg-primary text-white px-6 py-2 rounded-lg flex items-center gap-2 font-medium"
-                >
-                    {(createMutation.isPending || updateMutation.isPending) ? 'Guardando...' : <><Save size={18} /> Guardar</>}
-                </button>
-            </div>
-        </form>
-      </Modal>
+                                {/* Ubicación */}
+                                <Stack gap={4}>
+                                    <Group gap="xs">
+                                        <MapPin size={16} className="text-blue-500" />
+                                        <Text size="sm" c="gray.7" fw={600}>{escuela.domicilio}</Text>
+                                    </Group>
+                                    <Group gap="xs">
+                                        <Box w={22} /> {/* Spacer para alinear */}
+                                        <Text size="sm" c="dimmed">Col. {escuela.colonia} • Zona {escuela.zona}</Text>
+                                    </Group>
+                                </Stack>
 
-    </div>
+                                {/* Acciones */}
+                                <Group justify="flex-end" mt="md" pt="md" style={{ borderTop: '1px solid var(--mantine-color-gray-1)' }}>
+                                    <Tooltip label="Editar datos de la escuela">
+                                        <Button 
+                                            variant="light" 
+                                            color="blue" 
+                                            size="xs" 
+                                            leftSection={<Edit2 size={14} />}
+                                            onClick={() => handleOpenEdit(escuela)}
+                                        >
+                                            Editar
+                                        </Button>
+                                    </Tooltip>
+                                    <Tooltip label="Eliminar escuela">
+                                        <Button 
+                                            variant="light" 
+                                            color="red" 
+                                            size="xs" 
+                                            leftSection={<Trash2 size={14} />}
+                                            onClick={() => handleDelete(escuela.id)}
+                                        >
+                                            Eliminar
+                                        </Button>
+                                    </Tooltip>
+                                </Group>
+                            </Stack>
+                        </Paper>
+                    </Grid.Col>
+                ))}
+
+                {escuelasFiltradas?.length === 0 && (
+                    <Grid.Col span={12}>
+                        <Paper p="xl" withBorder radius="lg" bg="gray.0" ta="center">
+                          <School size={48} className="text-gray-400 mx-auto" style={{ marginBottom: '12px' }} />
+                          <Text fw={600} c="dimmed">No se encontraron escuelas con ese criterio de búsqueda.</Text>
+                        </Paper>
+                    </Grid.Col>
+                )}
+            </Grid>
+
+            {/* ========================================================================= */}
+            {/* --- MODAL CREAR/EDITAR ESCUELA (FORMULARIO ESCOLAR) --- */}
+            {/* ========================================================================= */}
+            <Modal 
+              opened={isModalOpen} 
+              onClose={cerrarModal} 
+              title={<Title order={3} fw={800}>🏫 {escuelaEditar ? "Editar Escuela" : "Registrar Nueva Escuela"}</Title>}
+              size="lg"
+              radius="lg"
+              centered
+            >
+                <form onSubmit={handleSubmit(onSubmit)}>
+                  <Stack gap="md">
+                    <TextInput 
+                        label="Nombre de la Escuela"
+                        placeholder="Ej. Benito Juárez, Sor Juana Inés..."
+                        required
+                        {...register('nombre', { required: "El nombre es obligatorio" })}
+                        error={errors.nombre?.message}
+                        size="md"
+                    />
+
+                    <SimpleGrid cols={2} spacing="xs">
+                      <TextInput 
+                        label="Clave de Centro de Trabajo (CCT)"
+                        placeholder="10 caracteres"
+                        required
+                        {...register('cct', { required: "El CCT es obligatorio" })}
+                        error={errors.cct?.message}
+                        size="md"
+                        style={{ textTransform: 'uppercase', fontFamily: 'monospace' }}
+                      />
+                      <TextInput 
+                        label="Clave Estatal"
+                        placeholder="Código del estado"
+                        required
+                        {...register('clave_estatal', { required: "La clave estatal es obligatoria" })}
+                        error={errors.clave_estatal?.message}
+                        size="md"
+                      />
+                    </SimpleGrid>
+
+                    <SimpleGrid cols={2} spacing="xs">
+                        <Controller
+                            name="nivel"
+                            control={control}
+                            rules={{ required: "El nivel es obligatorio" }}
+                            render={({ field }) => (
+                                <Select
+                                    label="Nivel Educativo"
+                                    placeholder="Selecciona el nivel"
+                                    data={NIVELES_OPCIONES}
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                    required
+                                    size="md"
+                                />
+                            )}
+                        />
+                        <TextInput 
+                            label="Zona Escolar"
+                            placeholder="Número de zona"
+                            required
+                            {...register('zona', { required: "La zona es obligatoria" })}
+                            error={errors.zona?.message}
+                            size="md"
+                        />
+                    </SimpleGrid>
+
+                    <Divider label="Ubicación Física" labelPosition="center" />
+
+                    <SimpleGrid cols={2} spacing="xs">
+                        <TextInput 
+                            label="Domicilio Completo"
+                            placeholder="Calle y número exterior"
+                            required
+                            {...register('domicilio', { required: "El domicilio es obligatorio" })}
+                            error={errors.domicilio?.message}
+                            size="md"
+                        />
+                        <TextInput 
+                            label="Colonia"
+                            placeholder="Nombre de la colonia"
+                            required
+                            {...register('colonia', { required: "La colonia es obligatoria" })}
+                            error={errors.colonia?.message}
+                            size="md"
+                        />
+                    </SimpleGrid>
+
+                    <Paper p="sm" bg="blue.0" withBorder radius="md">
+                        <Group gap="xs">
+                            <AlertTriangle size={16} className="text-blue-600" />
+                            <Text size="xs" c="blue.8">
+                                Los datos del director y turno se pueden configurar más adelante en el perfil de la escuela.
+                            </Text>
+                        </Group>
+                    </Paper>
+
+                    <Group justify="flex-end" pt="md" style={{ borderTop: '1px solid var(--mantine-color-gray-2)' }}>
+                      <Button variant="subtle" color="gray" onClick={cerrarModal}>
+                        Cancelar
+                      </Button>
+                      <Button type="submit" color="blue" leftSection={<Save size={18} />}>
+                        {escuelaEditar ? 'Guardar Cambios' : 'Registrar Escuela'}
+                      </Button>
+                    </Group>
+                  </Stack>
+                </form>
+            </Modal>
+
+        </Stack>
+    </Container>
   );
 };
 

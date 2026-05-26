@@ -12,14 +12,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 LOG_DIR = BASE_DIR / 'logs'
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 
-# Retrieve secret key from environment for production. A fallback key is
-# provided for development environments.
-SECRET_KEY = os.environ.get(
-    "SECRET_KEY",
-    "django-insecure-!8659yl2gf6**0m*l05cuq1%maailzw$nu*x7wmt&+pix39evh",
-)
 # En producción, DEBUG debe ser False. Se lee de una variable de entorno.
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+
+# Retrieve secret key from environment for production.
+SECRET_KEY = os.environ.get("SECRET_KEY")
+if not SECRET_KEY and DEBUG:
+    # Solo permitimos una clave insegura si estamos en modo DEBUG
+    SECRET_KEY = "django-insecure-fallback-for-dev-only"
+elif not SECRET_KEY:
+    raise RuntimeError("SECRET_KEY environment variable is required in production!")
 
 # Configuraciones de seguridad para producción
 if not DEBUG:
@@ -79,9 +81,7 @@ INSTALLED_APPS = [
 ]
 
 ADMIN_FOR_MODELS = False 
-SILENCED_SYSTEM_CHECKS = [
-    'admin.E039', # Silencia el error sobre autocomplete_fields que no encuentra un admin registrado
-]
+SILENCED_SYSTEM_CHECKS = []
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
@@ -186,9 +186,10 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ],
     
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'DEFAULT_PAGINATION_CLASS': 'usaer_system.pagination.FlexiblePageNumberPagination',
     'PAGE_SIZE': 10,
     'DATETIME_FORMAT': "%Y-%m-%d %H:%M:%S",
+    'EXCEPTION_HANDLER': 'usaer_system.exceptions.custom_exception_handler',
 }
 
 # ------------------- PERMISOS POR ROL -------------------

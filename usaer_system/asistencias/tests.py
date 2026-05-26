@@ -71,7 +71,8 @@ class AsistenciaAPITests(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         data = response.json()
-        assert any(item.get('profesor') == self.profesor.get_full_name() for item in (data if isinstance(data, list) else data.get('results', [])))
+        # Serializer exposes profesor_nombre
+        assert any(item.get('profesor_nombre') == self.profesor.get_full_name() for item in (data if isinstance(data, list) else data.get('results', [])))
 
     def test_listar_asistencias_admin(self):
         Asistencia.objects.create(profesor=self.profesor, escuela=self.escuela, fecha=timezone.localdate(), presente=True, hora_entrada=timezone.localtime().time())
@@ -83,5 +84,5 @@ class AsistenciaAPITests(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         data = response.json()
-        assert any(item.get('profesor') == self.profesor.get_full_name() for item in (data if isinstance(data, list) else data.get('results', [])))
-        assert any(item.get('profesor') == otro_profesor.get_full_name() for item in (data if isinstance(data, list) else data.get('results', [])))
+        assert any(item.get('profesor_nombre') == self.profesor.get_full_name() for item in (data if isinstance(data, list) else data.get('results', [])))
+        assert any(item.get('profesor_nombre') == otro_profesor.get_full_name() for item in (data if isinstance(data, list) else data.get('results', [])))

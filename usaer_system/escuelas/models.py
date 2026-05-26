@@ -1,10 +1,11 @@
 from django.db import models
+from django.conf import settings
 
 class Escuela(models.Model):
     CLAVE_NIVELES = [
-    ('Preescolar', 'PREESCOLAR'),
-    ('Primaria', 'PRIMARIA'),
-    ('Secundaria', 'SECUNDARIA'),
+        ('PREESCOLAR', 'Preescolar'),
+        ('PRIMARIA', 'Primaria'),
+        ('SECUNDARIA', 'Secundaria'),
     ]   
 
     clave_estatal = models.CharField("Clave estatal", max_length=10, unique=True)
@@ -21,7 +22,14 @@ class Escuela(models.Model):
     telefono_inspector = models.CharField("Teléfono del inspector", max_length=20, blank=True)
     correo_inspector = models.EmailField("Correo del inspector", blank=True)
 
-    director = models.CharField("Nombre del director/a", max_length=100, blank=True)
+    director = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='escuelas_dirigidas',
+        verbose_name="Director(a)"
+    )
     celular_director = models.CharField("Celular del director", max_length=20, blank=True)
     correo_director = models.EmailField("Correo del director", blank=True)
 

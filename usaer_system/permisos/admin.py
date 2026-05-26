@@ -3,7 +3,7 @@ from django.utils.translation import gettext_lazy as _
 from django.utils.html import format_html
 from django.urls import reverse
 from .models import Permiso
-
+from usuarios.admin_site import admin_site
 
 class EstadoFilter(admin.SimpleListFilter):
     title = _('Estado')
@@ -31,7 +31,6 @@ class TipoFilter(admin.SimpleListFilter):
         return queryset
 
 
-@admin.register(Permiso)
 class PermisoAdmin(admin.ModelAdmin):
     list_display = (
         'id',
@@ -111,3 +110,5 @@ class PermisoAdmin(admin.ModelAdmin):
             return format_html('<a href="{}">{}</a>', url, obj.escuela.nombre)
         return _("Sin escuela asignada")
     escuela_link.short_description = _('Escuela')
+
+admin_site.register(Permiso, PermisoAdmin)

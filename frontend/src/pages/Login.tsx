@@ -1,126 +1,139 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom'; // <--- Importamos Link
+import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { User, Lock, Loader2, AlertCircle, ArrowLeft } from 'lucide-react'; // <--- ArrowLeft opcional
+import { User, Lock, Loader2, ArrowLeft } from 'lucide-react';
+import { 
+  Container, 
+  Paper, 
+  Title, 
+  Text, 
+  TextInput, 
+  PasswordInput, 
+  Button, 
+  Stack, 
+  Box, 
+  Center,
+  Anchor
+} from '@mantine/core';
+import { notifications } from '@mantine/notifications';
 import client from '../api/client';
 
 const Login = () => {
   const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
   const navigate = useNavigate();
   
   const { register, handleSubmit, formState: { errors } } = useForm();
 
   const onSubmit = async (data: any) => {
     setLoading(true);
-    setErrorMsg('');
 
     try {
-      // 1. Backend Request
       const response = await client.post('/usuarios/auth/login/', data);
-      
-      // 2. Extract Data
       const { token, user } = response.data;
 
-      // 3. Save to LocalStorage
       localStorage.setItem('access_token', token); 
       localStorage.setItem('user', JSON.stringify(user));
 
-      // 4. Redirect
+      notifications.show({
+        title: 'Bienvenido',
+        message: `Hola ${user.first_name}, has ingresado correctamente.`,
+        color: 'green',
+      });
+
       navigate('/dashboard');
       
     } catch (error: any) {
       console.error(error);
-      if (error.response?.status === 400) {
-        setErrorMsg('Credenciales incorrectas. Verifique su usuario y contraseña.');
-      } else {
-        setErrorMsg('Error de conexión. Intente más tarde.');
-      }
+      const message = error.response?.status === 400 
+        ? 'Credenciales incorrectas. Verifique su usuario y contraseña.' 
+        : 'Error de conexión. Intente más tarde.';
+
+      notifications.show({
+        title: 'Error de acceso',
+        message: message,
+        color: 'red',
+      });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden">
-        
-        {/* Header */}
-        <div className="bg-primary p-8 text-center relative">
-          <h1 className="text-3xl font-bold text-white mb-2">USAER 7607</h1>
-          <p className="text-blue-100">Sistema de Gestión Escolar</p>
-        </div>
+    <Center style={{ height: '100vh', backgroundColor: 'var(--mantine-color-gray-0)' }}>
+      <Container size={420} w="100%">
+        <Paper radius="md" withBorder shadow="xl" p={0} overflow="hidden">
+          
+          {/* Header con color primario */}
+          <Box 
+            p="xl" 
+            style={{ 
+              backgroundColor: 'var(--mantine-color-blue-filled)', 
+              color: 'white', 
+              textAlign: 'center' 
+            }}
+          >
+            <Title order={2} fw={800} style={{ fontSize: '1.5rem', marginBottom: '4px' }}>
+              USAER 7607
+            </Title>
+            <Text size="sm" opacity={0.9}>
+              Sistema de Gestión Escolar
+            </Text>
+          </Box>
 
-        {/* Form */}
-        <div className="p-8">
-          <h2 className="text-xl font-semibold text-text-main mb-6 text-center">Iniciar Sesión</h2>
+          {/* Formulario */}
+          <Box p="xl">
+            <Title order={3} ta="center" mb="lg" fw={600}>
+              Iniciar Sesión
+            </Title>
 
-          {errorMsg && (
-            <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg flex items-center gap-2">
-              <AlertCircle size={16} />
-              {errorMsg}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-            
-            {/* Username */}
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-text-secondary">Usuario o No. Empleado</label>
-              <div className="relative">
-                <User className="absolute left-3 top-3 text-slate-400" size={20} />
-                <input 
-                  {...register('username', { required: "El usuario es obligatorio" })}
-                  type="text" 
-                  className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+            <form onSubmit={handleSubmit(onSubmit)}>
+              <Stack gap="md">
+                
+                <TextInput
+                  label="Usuario o No. Empleado"
                   placeholder="Ingrese su usuario"
+                  leftSection={<User size={16} />}
+                  {...register('username', { required: "El usuario es obligatorio" })}
+                  error={errors.username?.message as string}
                 />
-              </div>
-              {errors.username && <span className="text-xs text-red-500">{errors.username.message as string}</span>}
-            </div>
 
-            {/* Password */}
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-text-secondary">Contraseña</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-3 text-slate-400" size={20} />
-                <input 
-                  {...register('password', { required: "La contraseña es obligatoria" })}
-                  type="password" 
-                  className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                <PasswordInput
+                  label="Contraseña"
                   placeholder="••••••••"
+                  leftSection={<Lock size={16} />}
+                  {...register('password', { required: "La contraseña es obligatoria" })}
+                  error={errors.password?.message as string}
                 />
-              </div>
-              {errors.password && <span className="text-xs text-red-500">{errors.password.message as string}</span>}
-            </div>
 
-            {/* Submit Button */}
-            <button 
-              type="submit" 
-              disabled={loading}
-              className="w-full bg-primary hover:bg-primary-hover text-white font-semibold py-3 rounded-lg transition-all active:scale-95 flex justify-center items-center gap-2"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="animate-spin" size={20} />
-                  Entrando...
-                </>
-              ) : (
-                'Acceder al Sistema'
-              )}
-            </button>
+                <Button 
+                  type="submit" 
+                  loading={loading}
+                  fullWidth 
+                  size="md" 
+                  radius="md"
+                  leftSection={loading ? <Loader2 className="animate-spin" size={18} /> : null}
+                >
+                  Acceder al Sistema
+                </Button>
 
-            {/* --- ENLACE DE VOLVER AL KIOSCO --- */}
-            <div className="text-center pt-4 border-t border-slate-100 mt-6">
-                <Link to="/" className="text-sm text-slate-400 hover:text-primary transition-colors flex items-center justify-center gap-2">
-                    <ArrowLeft size={16} /> Volver al Checador de Asistencia
-                </Link>
-            </div>
-
-          </form>
-        </div>
-      </div>
-    </div>
+                <Box ta="center" pt="md" style={{ borderTop: '1px solid var(--mantine-color-gray-2)' }}>
+                  <Anchor 
+                    component={Link} 
+                    to="/" 
+                    size="sm" 
+                    color="gray" 
+                    fw={500}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                  >
+                    <ArrowLeft size={14} /> Volver al Checador de Asistencia
+                  </Anchor>
+                </Box>
+              </Stack>
+            </form>
+          </Box>
+        </Paper>
+      </Container>
+    </Center>
   );
 };
 

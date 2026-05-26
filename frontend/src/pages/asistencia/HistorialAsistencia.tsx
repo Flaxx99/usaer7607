@@ -2,9 +2,29 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Clock, Calendar, MapPin, Search } from 'lucide-react';
 import { getHistorialAsistencia } from '../../api/asistencia';
+import { 
+    Container, 
+    Stack, 
+    Paper, 
+    Title, 
+    Text, 
+    Badge, 
+    Group, 
+    ThemeIcon, 
+    Center, 
+    Loader, 
+    Table, 
+    ScrollArea,
+    rem,
+    TextInput,
+    Box
+} from '@mantine/core';
+import { DatePickerInput, DatesProvider } from '@mantine/dates';
+import 'dayjs/locale/es';
+import { TableSkeleton } from '../../components/Skeletons';
 
 const HistorialAsistencia = () => {
-    const [fechaFiltro, setFechaFiltro] = useState('');
+    const [fechaFiltro, setFechaFiltro] = useState<string | null>(null);
 
     const { data: asistencias, isLoading } = useQuery({
         queryKey: ['asistencias', fechaFiltro],
@@ -12,73 +32,118 @@ const HistorialAsistencia = () => {
     });
 
     return (
-        <div className="space-y-6 animate-fade-in">
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-text-main flex items-center gap-2">
-                        <Clock className="text-primary" /> Historial de Asistencia
-                    </h1>
-                    <p className="text-text-secondary">Consulta tus registros de entrada y salida.</p>
-                </div>
-                
-                {/* Filtro Fecha */}
-                <div className="flex items-center gap-2 bg-white p-2 rounded-lg border border-slate-200 shadow-sm">
-                    <Calendar size={18} className="text-slate-400" />
-                    <input 
-                        type="date" 
-                        className="outline-none text-sm text-slate-600"
-                        onChange={(e) => setFechaFiltro(e.target.value)}
-                    />
-                </div>
-            </div>
+        <DatesProvider settings={{ locale: 'es' }}>
+            <Container size="xl" py="md">
+                <Stack gap="xl">
+                    
+                    {/* ========================================================================= */}
+                    {/* CABECERA */}
+                    {/* ========================================================================= */}
+                    <Paper p="lg" radius="lg" withBorder shadow="sm" bg="blue.0" style={{ borderLeft: '8px solid var(--mantine-color-blue-6)' }}>
+                        <Group justify="space-between" align="center" wrap="wrap" gap="md">
+                            <Group gap="md">
+                                <ThemeIcon size={52} radius="lg" color="blue" variant="filled">
+                                    <Clock size={30} />
+                                </ThemeIcon>
+                                <div>
+                                    <Title order={1} fw={900} lts={-0.5} style={{ fontSize: '1.8rem', lineHeight: 1.2 }}>
+                                        Historial de Asistencia
+                                    </Title>
+                                    <Text size="sm" c="dimmed" fw={500}>
+                                        Consulta tus registros de entrada y salida.
+                                    </Text>
+                                </div>
+                            </Group>
+                            
+                            {/* Filtro Fecha */}
+                            <Box w={{ base: '100%', sm: 'auto' }}>
+                                <DatePickerInput
+                                    placeholder="Filtrar por fecha"
+                                    leftSection={<Calendar size={16} />}
+                                    value={fechaFiltro ? new Date(fechaFiltro) : null}
+                                    onChange={(val) => setFechaFiltro(val ? val.toISOString().split('T')[0] : null)}
+                                    clearable
+                                    size="md"
+                                    locale="es"
+                                    valueFormat="DD [de] MMMM [de] YYYY"
+                                    style={{ minWidth: '220px' }}
+                                />
+                            </Box>
+                        </Group>
+                    </Paper>
 
-            {/* Tabla */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-                <table className="w-full text-left border-collapse">
-                    <thead className="bg-slate-50 text-slate-500 text-xs uppercase font-bold">
-                        <tr>
-                            <th className="p-4">Fecha</th>
-                            <th className="p-4">Escuela</th>
-                            <th className="p-4 text-center">Entrada</th>
-                            <th className="p-4 text-center">Salida</th>
-                            <th className="p-4 text-center">Estado</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 text-sm text-slate-700">
+                    {/* ========================================================================= */}
+                    {/* TABLA DE ASISTENCIA */}
+                    {/* ========================================================================= */}
+                    <Paper radius="lg" withBorder shadow="xs" overflow="hidden">
                         {isLoading ? (
-                            <tr><td colSpan={5} className="p-8 text-center">Cargando...</td></tr>
-                        ) : asistencias?.map((asis) => (
-                            <tr key={asis.id} className="hover:bg-slate-50 transition-colors">
-                                <td className="p-4 font-medium">{asis.fecha}</td>
-                                <td className="p-4">
-                                    <div className="flex items-center gap-2">
-                                        <MapPin size={14} className="text-slate-400" />
-                                        {asis.escuela_nombre}
-                                    </div>
-                                    <span className="text-xs text-slate-400 block ml-6">{asis.profesor_nombre}</span>
-                                </td>
-                                <td className="p-4 text-center font-mono text-emerald-600 font-bold bg-emerald-50/50 rounded">
-                                    {asis.hora_entrada}
-                                </td>
-                                <td className="p-4 text-center font-mono text-blue-600 font-bold">
-                                    {asis.hora_salida || '--:--'}
-                                </td>
-                                <td className="p-4 text-center">
-                                    {asis.hora_salida ? (
-                                        <span className="px-2 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-bold">COMPLETO</span>
-                                    ) : (
-                                        <span className="px-2 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold animate-pulse">EN CURSO</span>
-                                    )}
-                                </td>
-                            </tr>
-                        ))}
-                        {asistencias?.length === 0 && (
-                            <tr><td colSpan={5} className="p-8 text-center text-slate-400">No hay registros.</td></tr>
+                            <TableSkeleton rows={10} />
+                        ) : (
+                            <ScrollArea>
+                                <Table striped highlightOnHover horizontalSpacing="md" verticalSpacing="sm" fontSize="md">
+                                    <Table.Thead bg="gray.0">
+                                        <Table.Tr>
+                                            <Table.Th>Fecha</Table.H>
+                                            <Table.Th>Escuela / Profesor</Table.Th>
+                                            <Table.Th ta="center">Entrada</Table.Th>
+                                            <Table.Th ta="center">Salida</Table.Th>
+                                            <Table.Th ta="center">Estado</Table.Th>
+                                        </Table.Tr>
+                                    </Table.Thead>
+                                    <Table.Tbody>
+                                        {asistencias?.map((asis) => (
+                                            <Table.Tr key={asis.id}>
+                                                <Table.Td>
+                                                    <Text fw={700} size="sm" c="gray.8">{asis.fecha}</Text>
+                                                </Table.Td>
+                                                <Table.Td>
+                                                    <Group gap="xs">
+                                                        <MapPin size={14} color="var(--mantine-color-gray-5)" />
+                                                        <Text size="sm" c="gray.7" fw={500}>{asis.escuela_nombre}</Text>
+                                                    </Group>
+                                                    <Text size="xs" c="dimmed" ml="lg">{asis.profesor_nombre}</Text>
+                                                </Table.Td>
+                                                <Table.Td ta="center">
+                                                    <Text size="sm" fw={700} c="green.7" style={{ fontFamily: 'monospace' }}>
+                                                        {asis.hora_entrada}
+                                                    </Text>
+                                                </Table.Td>
+                                                <Table.Td ta="center">
+                                                    <Text size="sm" fw={700} c="blue.7" style={{ fontFamily: 'monospace' }}>
+                                                        {asis.hora_salida || '--:--'}
+                                                    </Text>
+                                                </Table.Td>
+                                                <Table.Td ta="center">
+                                                    {asis.hora_salida ? (
+                                                        <Badge color="gray" variant="light" size="md" fw={700}>
+                                                            COMPLETO
+                                                        </Badge>
+                                                    ) : (
+                                                        <Badge color="orange" variant="light" size="md" fw={700}>
+                                                            EN CURSO
+                                                        </Badge>
+                                                    )}
+                                                </Table.Td>
+                                            </Table.Tr>
+                                        ))}
+                                    </Table.Tbody>
+                                </Table>
+                            </ScrollArea>
                         )}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+                        
+                        {!isLoading && asistencias?.length === 0 && (
+                            <Center py="xl">
+                                <Stack align="center">
+                                    <Clock size={48} color="var(--mantine-color-gray-4)" />
+                                    <Text fw={600} c="dimmed">No hay registros de asistencia para este periodo.</Text>
+                                </Stack>
+                            </Center>
+                        )}
+                    </Paper>
+
+                </Stack>
+            </Container>
+        </DatesProvider>
     );
 };
 

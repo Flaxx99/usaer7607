@@ -10,6 +10,8 @@ from .serializers import AsistenciaSerializer, ChecadorInputSerializer
 
 User = get_user_model()
 
+from rest_framework.throttling import AnonRateThrottle
+
 # ---------------------------------------------------------
 # 1. VISTA DEL CHECADOR (PÚBLICA)
 # ---------------------------------------------------------
@@ -19,7 +21,8 @@ class ChecadorView(views.APIView):
     Replica la lógica de 'checar_asistencia'.
     """
     permission_classes = [AllowAny] # ¡Importante! No requiere token
-    authentication_classes = []
+    authentication_classes = [] 
+    throttle_classes = [AnonRateThrottle] # Protege contra brute force
 
     def post(self, request):
         serializer = ChecadorInputSerializer(data=request.data)

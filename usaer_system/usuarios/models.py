@@ -5,6 +5,26 @@ from django.core.validators import RegexValidator
 from escuelas.models import Escuela
 from .managers import CustomUserManager
 
+class SystemConfiguration(models.Model):
+    centro_nombre = models.CharField(_("Nombre del Centro (USAER)"), max_length=200, default="USAER 7607")
+    centro_cct = models.CharField(_("CCT del Centro"), max_length=20, default="08FUA0093E")
+    director_responsable = models.CharField(_("Nombre del Director Responsable"), max_length=200, default="Nubia Idaly Solis Mendias")
+    sup_especial_cct = models.CharField(_("CCT Supervisión Especial"), max_length=20, default="08FUA0041G")
+    sup_especial_zona = models.CharField(_("Zona Supervisión Especial"), max_length=10, default="22")
+    ubicacion_centro = models.CharField(_("Ubicación del Centro (Ciudad)"), max_length=200, default="Juan Aldama, Chihuahua")
+
+    class Meta:
+        verbose_name = _('Configuración del Sistema')
+        verbose_name_plural = _('Configuraciones del Sistema')
+
+    def __str__(self):
+        return f"Configuración de {self.centro_nombre}"
+
+    def save(self, *args, **kwargs):
+        if not self.pk and SystemConfiguration.objects.exists():
+            return
+        super().save(*args, **kwargs)
+
 class User(AbstractUser):
     username = None  # ✅ Se elimina el campo username
     email = models.EmailField(
@@ -147,18 +167,13 @@ class User(AbstractUser):
     def __str__(self):
         return self.get_full_name() or self.email or self.numero_empleado or "Usuario"
 
+# ... (keep User class)
     def get_full_name(self):
         parts = [self.apellido_paterno, self.apellido_materno]
         name = ', '.join(filter(None, parts))
         return f"{name}, {self.nombre}" if self.nombre else name
 
     def save(self, *args, **kwargs):
-        skip_auto_role = kwargs.pop('skip_auto_role', False)
-        if not skip_auto_role and self.is_superuser:
-            self.role = self.Role.ADMINISTRADOR
-        elif self.escuela and self.escuela.director == self:
-            self.role = self.Role.DIRECTOR
-
         super().save(*args, **kwargs)
 
     @property
@@ -174,3 +189,68 @@ class User(AbstractUser):
                 (today.month, today.day) < (self.fecha_ingreso.month, self.fecha_ingreso.day)
             )
         return None
+
+class CalendarEvent(models.Model):
+    class EventType(models.TextChoices):
+        EVALUACION = 'EVALUACION', _('Evaluación Psicopedagógica')
+        REUNION = 'REUNION', _('Reunión con Padres')
+        VISITA = 'VISITA', _('Visita a Escuela')
+        TAREA = 'TAREA', _('Tarea Administrativa')
+        OTRO = 'OTRO', _('Otro')
+
+    class EventStatus(models.TextChoices):
+        PENDIENTE = 'PENDIENTE', _('Pendiente')
+        COMPLETADO = 'COMPLETADO', _('Completado')
+        CANCELADO = 'CANCELADO', _('Cancelado')
+
+    class Priority(models.TextChoices):
+        BAJA = 'BAJA', _('Baja')
+        MEDIA = 'MEDIA', _('Media')
+        ALTA = 'ALTA', _('Alta')
+
+    title = models.CharField(_("Título"), max_length=200)
+    description = models.TextField(_("Descripción"), blank=True)
+    start_time = models.DateTimeField(_("Inicio"))
+    end_time = models.DateTimeField(_("Fin"))
+    event_type = models.CharField(_("Tipo de evento"), max_length=20, choices=EventType.choices, default=EventType.OTRO)
+    status = models.CharField(_("Estado"), max_length=20, choices=EventStatus.choices, default=EventStatus.PENDIENTE)
+    priority = models.CharField(_("Prioridad"), max_length=20, choices=Priority.choices, default=Priority.MEDIA)
+    
+    created_by = models.ForeignKey(
+        User, 
+        on_delete=models.CASCADE, 
+        related_name='events_created',
+        verbose_name=_("Creado por")
+    )
+    assigned_to = models.ForeignKey(
+        User, 
+        on_delete=models.CASCADE, 
+        related_name='events_assigned',
+        verbose_name=_("Asignado a")
+    )
+    
+    alumno = models.ForeignKey(
+        'alumnos.Alumno', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        verbose_name=_("Alumno relacionado")
+    )
+    escuela = models.ForeignKey(
+        'escuelas.Escuela', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        verbose_name=_("Escuela relacionada")
+    )
+    
+    color = models.CharField(_("Color del evento"), max_length=7, default='#3B82F6')
+
+    class Meta:
+        verbose_name = _('Evento/Tarea de Calendario')
+        verbose_name_plural = _('Eventos/Tareas de Calendario')
+        ordering = ['start_time']
+
+    def __str__(self):
+        return f"[{self.get_status_display()}] {self.title} - {self.start_time.strftime('%d/%m/%Y %H:%M')}"
+

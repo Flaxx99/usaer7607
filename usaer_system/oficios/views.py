@@ -1,15 +1,15 @@
-# oficios/views.py
 from rest_framework import viewsets, permissions, filters
 from rest_framework.parsers import MultiPartParser, FormParser
 from drf_yasg.utils import swagger_auto_schema 
 
 from .models import Oficio
 from .serializers import OficioSerializer
+from .permissions import IsAdminOrSecretarioOrReadOnly
 
 class OficioViewSet(viewsets.ModelViewSet):
     queryset = Oficio.objects.all().select_related('subido_por').order_by('-fecha_subida')
     serializer_class = OficioSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAdminOrSecretarioOrReadOnly]
     
     # Habilitamos soporte para subir archivos
     parser_classes = (MultiPartParser, FormParser)

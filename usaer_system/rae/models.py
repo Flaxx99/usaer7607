@@ -27,6 +27,7 @@ class RegistroRAE(models.Model):
         settings.AUTH_USER_MODEL, # Usa settings.AUTH_USER_MODEL para referenciar tu modelo de usuario personalizado
         on_delete=models.SET_NULL,
         null=True,
+        related_name='registros_rae_creados',
         verbose_name="Creado por"
     )
     fecha_creacion = models.DateTimeField(auto_now_add=True)
@@ -54,12 +55,14 @@ class RAEAlumno(models.Model):
     alumno = models.ForeignKey( # CAMBIADO: De OneToOneField a ForeignKey
         Alumno,
         on_delete=models.PROTECT,
+        related_name='rae_detalles',
         verbose_name="Alumno atendido"
     )
     capturado_por = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
+        related_name='rae_alumnos_capturados',
         verbose_name="Docente de apoyo"
     )
 

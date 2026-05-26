@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.utils import timezone
+from django.db.models import Q
 from .models import Permiso
 
 class PermisoSerializer(serializers.ModelSerializer):
@@ -37,13 +38,13 @@ class PermisoSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         """
-        Validaciones conjuntas (fechas y mayúsculas).
+        Validaciones conjuntas (fechas, mayúsculas y solapamiento).
         """
         # 1. Conversión a Mayúsculas (Replica forms.py)
         if 'motivo' in data and isinstance(data['motivo'], str):
             data['motivo'] = data['motivo'].upper()
         
-        # 2. Validaciones de Fecha (Solo si estamos creando o actualizando fechas)
+        # 2. Validaciones de Fecha
         fecha_inicio = data.get('fecha_inicio') or self.instance.fecha_inicio if self.instance else data.get('fecha_inicio')
         fecha_fin = data.get('fecha_fin') or self.instance.fecha_fin if self.instance else data.get('fecha_fin')
 
@@ -51,9 +52,28 @@ class PermisoSerializer(serializers.ModelSerializer):
             # A. Fecha fin no puede ser menor a inicio
             if fecha_fin < fecha_inicio:
                 raise serializers.ValidationError({"fecha_fin": "La fecha de fin no puede ser anterior a la fecha de inicio."})
-
+            
             # B. Duración máxima de 30 días
             if (fecha_fin - fecha_inicio).days > 30:
                 raise serializers.ValidationError("No se pueden solicitar más de 30 días de permiso consecutivos.")
+
+            # C. PROTECCIÓN DE IDEMPOTENCIA: Verificar solapamiento de fechas
+            # Buscamos permisos del mismo profesor que se solapen con el rango solicitado
+            # y que no sean el propio permiso que estamos editando.
+            profesor = data.get('profesor') or (self.instance.profesor if self.instance else None)
+            if profesor:
+                overlap_filter = Q(profesor=profesor) & (
+                    Q(estado__in=['PENDIENTE', 'APROBADO'])
+                ) & (
+                    Q(fecha_inicio__lte=fecha_fin) & Q(fecha_fin__gte=fecha_inicio)
+                )
+                
+                if self.instance:
+                    overlap_filter &= ~Q(pk=self.instance.pk)
+                
+                if Permiso.objects.filter(overlap_filter).exists():
+                    raise serializers.ValidationError(
+                        "Ya existe una solicitud de permiso (aprobada o pendiente) que coincide con estas fechas."
+                    )
 
         return data

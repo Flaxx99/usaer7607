@@ -3,6 +3,7 @@ from django.utils.translation import gettext_lazy as _
 from django.utils.html import format_html
 from .models import Alumno
 from django.urls import reverse
+from usuarios.admin_site import admin_site
 
 class SexoFilter(admin.SimpleListFilter):
     title = _('Sexo')
@@ -28,7 +29,6 @@ class ClasificacionFilter(admin.SimpleListFilter):
             return queryset.filter(clasificacion=self.value())
         return queryset
 
-@admin.register(Alumno)
 class AlumnoAdmin(admin.ModelAdmin):
     list_display = (
         'apellido_paterno', 'apellido_materno', 'nombres', 'curp',
@@ -84,3 +84,5 @@ class AlumnoAdmin(admin.ModelAdmin):
         return format_html('<a href="{}">{}</a>', url, obj.escuela.nombre)
 
     escuela_link.short_description = _('Escuela')
+
+admin_site.register(Alumno, AlumnoAdmin)

@@ -11,7 +11,7 @@ class Notificacion(models.Model):
     mensaje = models.TextField()
     leida = models.BooleanField(default=False)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
-    url = models.URLField(max_length=500, blank=True, null=True)
+    url = models.CharField(max_length=500, blank=True, null=True)
 
     class Meta:
         verbose_name = "Notificación"

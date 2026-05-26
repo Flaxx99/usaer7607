@@ -12,6 +12,9 @@ from django.http import HttpResponse
 from django.conf import settings
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
+from usuarios.models import SystemConfiguration
+
+# ... (rest of imports)
 
 from .models import RegistroRAE, RAEAlumno
 from .serializers import RegistroRAESerializer, RAEAlumnoSerializer, BulkRAESaveSerializer
@@ -177,6 +180,7 @@ class ExportRAEView(views.APIView):
         registro_id = pk
         try:
             registro = get_object_or_404(RegistroRAE.objects.select_related('escuela', 'ciclo_escolar'), pk=registro_id)
+            config = SystemConfiguration.objects.first()
         except Exception as e:
             return Response({"detail": str(e)}, status=404)
 
@@ -188,9 +192,9 @@ class ExportRAEView(views.APIView):
             wb = load_workbook(template_path)
             ws = wb["Sheet1"]
         except Exception as e:
-            return Response({"detail": f"Error cargando plantilla: {e}"}, status=500)
+            return Response({"detail": f"Error cargando plantilla: {e}", "status": 500})
 
-        # --- LLENADO DE DATOS (Tu lógica original) ---
+        # --- LLENADO DE DATOS DINÁMICOS ---
         ws['D6'] = registro.escuela.nombre
         ws['AC6'] = registro.escuela.get_nivel_display() if hasattr(registro.escuela, 'get_nivel_display') else registro.escuela.nivel
         ws['D8'] = registro.escuela.zona if hasattr(registro.escuela, 'zona') else ''
@@ -199,12 +203,13 @@ class ExportRAEView(views.APIView):
         ws['AC8'] = registro.ciclo_escolar.nombre
         ws['D10'] = registro.escuela.domicilio if hasattr(registro.escuela, 'domicilio') else ''
         
-        ws['D12'] = "USAER 7607"
-        ws['R12'] = "08FUA0093E"
-        ws['D14'] = "Nubia Idaly Solis Mendias"
+        ws['D12'] = config.centro_nombre if config else "USAER 7607"
+        ws['R12'] = config.centro_cct if config else "08FUA0093E"
+        ws['D14'] = config.director_responsable if config else "S/N"
         ws['AG14'] = registro.docente_hombres
         ws['AO14'] = registro.docente_mujeres
         ws['C80'] = ws['D14'].value
+
 
         roles_totales = ['ADMIN', 'SECRETARIO']
         qs = RAEAlumno.objects.filter(registro=registro)
@@ -282,7 +287,7 @@ class ExportRAEView(views.APIView):
         wb.save(output)
         output.seek(0)
 
-        filename = f"Reporte_RAE_{registro.escuela.nombre}.xlsx"
+        filename = f"Reporte_RAE_{registro.escuela.nombre}_{registro.ciclo_escolar.nombre}.xlsx"
         response = HttpResponse(output.read(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
         return response
@@ -290,20 +295,131 @@ class ExportRAEView(views.APIView):
 
 class ExportAllRAEView(views.APIView):
     """
-    Exporta TODOS los registros (multi-hoja).
+    Exporta TODOS los registros RAE (multi-hoja).
+    Cada escuela obtiene su propia hoja con datos completos:
+    encabezado, totales por categoría, filas de alumnos y pie.
     URL: /rae/exportar_todo_excel/
     """
     permission_classes = [permissions.IsAuthenticated]
+
+    # Mapa de columnas para las condiciones de cada alumno (reutilizado por fila)
+    COL_MAP_CONDITIONS = {
+        'ceg': 'H', 'bv': 'I', 'so': 'J', 'hp': 'K', 'scg': 'L', 'dmo': 'M',
+        'di': 'N', 'dme': 'O', 'psicosocial': 'P', 'dm': 'Q',
+        'dsc': 'R', 'dsco': 'S', 'dsa': 'T',
+        'tea': 'U', 'tda': 'V',
+        'asi': 'W', 'asc': 'X', 'ass': 'Y', 'asa': 'Z', 'asp': 'AA',
+        'ot': 'AB',
+        'psicologia': 'AC', 'comunicacion': 'AD', 'psicomotricidad': 'AE',
+        'trabajo_social': 'AF', 'aprendizaje': 'AG',
+        'nuevo_ingreso': 'AI', 'subsecuente': 'AJ',
+        'diagnostico': 'AL', 'educativo': 'AM', 'deteccion': 'AN',
+        'psicopedagogico': 'AO', 'plan': 'AP', 'modelo': 'AQ',
+    }
+
+    def _llenar_encabezado(self, ws, escuela, registro, config):
+        """Llena el encabezado de una hoja RAE con datos de escuela y registro."""
+        ws['D6'] = escuela.nombre
+        ws['AC6'] = escuela.get_nivel_display() if hasattr(escuela, 'get_nivel_display') else escuela.nivel
+        ws['D8'] = escuela.zona if hasattr(escuela, 'zona') else ''
+        ws['H8'] = escuela.clave_estatal if hasattr(escuela, 'clave_estatal') else ''
+        ws['R8'] = escuela.cct
+        ws['AC8'] = registro.ciclo_escolar.nombre
+        ws['D10'] = escuela.domicilio if hasattr(escuela, 'domicilio') else ''
+        
+        ws['D12'] = config.centro_nombre if config else "USAER 7607"
+        ws['R12'] = config.centro_cct if config else "08FUA0093E"
+        ws['D14'] = config.director_responsable if config else "S/N"
+        ws['AG14'] = registro.docente_hombres
+        ws['AO14'] = registro.docente_mujeres
+        ws['C80'] = ws['D14'].value
+
+        ws['K80'] = escuela.director if escuela.director else "Nombre no disponible"
+
+    def _calcular_totales(self, ws, qs):
+        """Calcula y escribe los totales de aptitudes, discapacidad y otras condiciones."""
+        # --- Aptitudes Sobresalientes ---
+        aptitudes_q = Q()
+        for f in ['asi', 'asc', 'ass', 'asa', 'asp']:
+            aptitudes_q |= Q(**{f: True})
+
+        total_as_h = qs.filter(aptitudes_q, genero='H').count()
+        total_as_m = qs.filter(aptitudes_q, genero='M').count()
+        ws['AE11'] = total_as_h
+        ws['AF11'] = total_as_m
+        ws['AG11'] = total_as_h + total_as_m
+
+        # --- Discapacidad ---
+        disc_q = Q()
+        for f in ['ceg', 'bv', 'so', 'hp', 'scg', 'dmo', 'di', 'dme', 'psicosocial', 'dm']:
+            disc_q |= Q(**{f: True})
+
+        total_disc_h = qs.filter(disc_q, genero='H').count()
+        total_disc_m = qs.filter(disc_q, genero='M').count()
+        ws['AJ11'] = total_disc_h
+        ws['AK11'] = total_disc_m
+        ws['AL11'] = total_disc_h + total_disc_m
+
+        # --- Otras condiciones ---
+        otras_q = Q()
+        for f in ['ot', 'dsc', 'dsco', 'dsa', 'tea', 'tda']:
+            otras_q |= Q(**{f: True})
+
+        total_otras_h = qs.filter(otras_q, genero='H').count()
+        total_otras_m = qs.filter(otras_q, genero='M').count()
+        ws['AP11'] = total_otras_h
+        ws['AQ11'] = total_otras_m
+        ws['AR11'] = total_otras_h + total_otras_m
+
+    def _llenar_filas_alumnos(self, ws, qs):
+        """Llena las filas de datos de alumnos (desde fila 19)."""
+        start_row = 19
+        current_row = start_row
+        alumno_num = 1
+
+        # Limpiar filas previas (rango de 50 filas)
+        for r_clear in range(start_row, start_row + 50):
+            for c_clear in range(1, 45):
+                if c_clear != 2:  # Columna B se mantiene para numeración
+                    ws.cell(row=r_clear, column=c_clear).value = None
+
+        for rae_alumno in qs:
+            ws[f'B{current_row}'] = alumno_num
+            ws[f'C{current_row}'] = rae_alumno.alumno.get_full_name() if rae_alumno.alumno else ''
+            ws[f'D{current_row}'] = rae_alumno.genero or ''
+            ws[f'E{current_row}'] = rae_alumno.alumno.edad if rae_alumno.alumno else ''
+            ws[f'F{current_row}'] = rae_alumno.grado or ''
+            ws[f'G{current_row}'] = rae_alumno.curp or ''
+
+            # Marcar condiciones con 'X'
+            for field, col in self.COL_MAP_CONDITIONS.items():
+                if getattr(rae_alumno, field, False):
+                    ws[f'{col}{current_row}'] = 'X'
+
+            # Docente responsable
+            if rae_alumno.alumno and rae_alumno.alumno.profesor:
+                ws[f'AR{current_row}'] = rae_alumno.alumno.profesor.get_full_name()
+
+            current_row += 1
+            alumno_num += 1
+
+    def _llenar_pie(self, ws, config):
+        """Llena el pie de la hoja (fecha y lugar)."""
+        ws['C76'] = config.ubicacion_centro if config else "Juan Aldama, Chihuahua"
+        ws['N76'] = date.today().strftime("%d/%m/%Y")
 
     def get(self, request):
         roles_totales = ['ADMIN', 'SECRETARIO']
         if not (request.user.is_superuser or getattr(request.user, 'role', '') in roles_totales):
             return Response({"detail": "No tienes permiso."}, status=403)
+        
+        config = SystemConfiguration.objects.first()
 
         try:
             ciclo = get_current_ciclo_escolar_instance()
         except Exception as e:
             return Response({"detail": str(e)}, status=400)
+
 
         template_path = os.path.join(settings.BASE_DIR, 'rae', 'static', 'excel_templates', 'rae_template.xlsx')
         if not os.path.exists(template_path):
@@ -313,7 +429,7 @@ class ExportAllRAEView(views.APIView):
             master_workbook = load_workbook(template_path)
             template_sheet = master_workbook["Sheet1"]
         except Exception as e:
-            return Response({"detail": str(e)}, status=500)
+            return Response({"detail": f"Error cargando plantilla: {e}"}, status=500)
 
         registros = RegistroRAE.objects.filter(ciclo_escolar=ciclo).select_related(
             'escuela', 'ciclo_escolar'
@@ -328,38 +444,27 @@ class ExportAllRAEView(views.APIView):
             clean_name = "".join(c for c in sheet_name_base if c.isalnum() or c in [' ', '_']).replace(' ', '_')
             new_sheet.title = clean_name[:31]
 
-            # Copiar lógica de llenado (Resumida para brevedad, es IDÉNTICA a ExportRAEView)
-            # ... (Aquí va la lógica de llenado de celdas para new_sheet) ...
-            # NOTA: Para no hacer este código gigante, debes copiar el bloque de 
-            # llenado de celdas de ExportRAEView y aplicarlo a 'new_sheet' en lugar de 'ws'.
-            # Las coordenadas (D6, AC6...) son las mismas.
-            
-            # --- PEGA AQUÍ LA LÓGICA DE LLENADO DE DATOS USANDO 'new_sheet' ---
             escuela = registro.escuela
-            new_sheet['D6'] = escuela.nombre
-            new_sheet['AC6'] = escuela.get_nivel_display() if hasattr(escuela, 'get_nivel_display') else escuela.nivel
-            new_sheet['D8'] = escuela.zona if hasattr(escuela, 'zona') else ''
-            new_sheet['H8'] = escuela.clave_estatal if hasattr(escuela, 'clave_estatal') else ''
-            new_sheet['R8'] = escuela.cct
-            new_sheet['AC8'] = registro.ciclo_escolar.nombre
-            new_sheet['D10'] = escuela.domicilio if hasattr(escuela, 'domicilio') else ''
-            
-            new_sheet['D12'] = "USAER 7607"
-            new_sheet['R12'] = "08FUA0093E"
-            new_sheet['D14'] = "Nubia Idaly Solis Mendias"
-            new_sheet['C80'] = new_sheet['D14'].value
-            new_sheet['AG14'] = registro.docente_hombres
-            new_sheet['AO14'] = registro.docente_mujeres
-            
-            new_sheet['K80'] = escuela.director if escuela.director else "Nombre no disponible"
 
-            qs = registro.detalles_alumnos.all().order_by('alumno__grado', 'alumno__grupo', 'alumno__apellido_paterno')
-            
-            # ... (Copia aquí los cálculos de totales AE11, AJ11, etc usando 'new_sheet') ...
-            # ... (Copia aquí el bucle de alumnos llenando las filas 19+ usando 'new_sheet') ...
-            
-            # (Fin de lógica pegada)
+            # 1. Encabezado
+            self._llenar_encabezado(new_sheet, escuela, registro, config)
 
+            # 2. Queryset de alumnos para esta hoja
+            qs = registro.detalles_alumnos.all().order_by(
+                'alumno__grado', 'alumno__grupo',
+                'alumno__apellido_paterno', 'alumno__nombres'
+            ).select_related('alumno__profesor')
+
+            # 3. Totales
+            self._calcular_totales(new_sheet, qs)
+
+            # 4. Filas de alumnos
+            self._llenar_filas_alumnos(new_sheet, qs)
+
+            # 5. Pie
+            self._llenar_pie(new_sheet, config)
+
+        # Eliminar la hoja plantilla original
         if "Sheet1" in master_workbook.sheetnames:
             master_workbook.remove(master_workbook["Sheet1"])
 
@@ -367,6 +472,9 @@ class ExportAllRAEView(views.APIView):
         master_workbook.save(output)
         output.seek(0)
 
-        response = HttpResponse(output.read(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response = HttpResponse(
+            output.read(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
         response['Content-Disposition'] = 'attachment; filename=Todos_los_Registros_RAE.xlsx'
         return response

@@ -1,4 +1,4 @@
-from rest_framework import viewsets, filters, status
+from rest_framework import viewsets, filters, status, serializers
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
@@ -79,7 +79,11 @@ class PermisoViewSet(viewsets.ModelViewSet):
         Asigna automáticamente el profesor y su escuela al crear.
         """
         user = self.request.user
-        escuela = user.escuela if user.escuela else None
+        escuela = getattr(user, 'escuela', None)
+        if not escuela:
+            raise serializers.ValidationError(
+                {"detail": "No tienes una escuela asignada en tu perfil. No puedes solicitar permisos."}
+            )
         serializer.save(profesor=user, escuela=escuela)
 
     @action(detail=True, methods=['post'])
@@ -90,10 +94,18 @@ class PermisoViewSet(viewsets.ModelViewSet):
         """
         permiso = self.get_object()
         
+        # VALIDACIÓN DE IDEMPOTENCIA: Solo se puede responder a permisos PENDIENTES
+        if permiso.estado != Permiso.Estado.PENDIENTE:
+            return Response(
+                {"detail": f"Este permiso ya ha sido gestionado y se encuentra en estado {permiso.get_estado_display()}. No se puede modificar."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         # Validar autoridad (Director/Admin)
         roles_autoridad = [User.Role.ADMINISTRADOR.value, User.Role.DIRECTOR.value]
         if request.user.role not in roles_autoridad and not request.user.is_superuser:
             return Response({"detail": "No tienes permiso para responder."}, status=status.HTTP_403_FORBIDDEN)
+
 
         estado = request.data.get('estado')
         respuesta = request.data.get('respuesta_admin', '')

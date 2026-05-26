@@ -1,6 +1,23 @@
 # documentos/serializers.py
 from rest_framework import serializers
 from .models import Expediente, OtroArchivo
+from pathlib import Path
+
+EXTENSIONES_PERMITIDAS = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png', '.xlsx', '.xls']
+TAMANO_MAXIMO = 50 * 1024 * 1024  # 50 MB
+
+
+def validar_archivo(archivo):
+    """Valida extensión y tamaño de un archivo subido."""
+    if not archivo:
+        return
+    ext = Path(archivo.name).suffix.lower()
+    if ext not in EXTENSIONES_PERMITIDAS:
+        raise serializers.ValidationError(
+            f"Extensión no permitida: {archivo.name}. Permitidas: {', '.join(EXTENSIONES_PERMITIDAS)}"
+        )
+    if archivo.size > TAMANO_MAXIMO:
+        raise serializers.ValidationError(f"{archivo.name} excede el límite de 50MB.")
 
 class OtroArchivoSerializer(serializers.ModelSerializer):
     # Definimos explícitamente los campos calculados para que DRF sepa cómo llenarlos
@@ -11,6 +28,10 @@ class OtroArchivoSerializer(serializers.ModelSerializer):
         model = OtroArchivo
         fields = ['id', 'archivo', 'descripcion', 'url_archivo', 'nombre_archivo']
         read_only_fields = ['id']
+
+    def validate_archivo(self, value):
+        validar_archivo(value)
+        return value
 
     def get_url_archivo(self, obj):
         if obj.archivo:
@@ -53,6 +74,25 @@ class ExpedienteSerializer(serializers.ModelSerializer):
         model = Expediente
         fields = '__all__'
         read_only_fields = ['profesor', 'fecha_subida', 'otros_archivos']
+
+    def validate(self, data):
+        """Valida extensiones y tamaño de archivos subidos."""
+        # Validar los 3 archivos principales del expediente
+        for field in ['informe_deteccion', 'informe_psicopedagogico', 'plan_intervencion']:
+            archivo = data.get(field)
+            if archivo:
+                validar_archivo(archivo)
+
+        # Validar archivos extra
+        archivos_extra = data.get('nuevos_archivos_extra', [])
+        for archivo in archivos_extra:
+            validar_archivo(archivo)
+
+        # Mayúsculas en observaciones (como el original)
+        if 'observaciones' in data and isinstance(data['observaciones'], str):
+            data['observaciones'] = data['observaciones'].upper()
+
+        return data
 
     def create(self, validated_data):
         # 1. Sacamos los datos que no son del modelo Expediente

@@ -1,13 +1,12 @@
 from django.contrib import admin
 from .models import CicloEscolar, RegistroRAE, RAEAlumno # Importa tus modelos
+from usuarios.admin_site import admin_site
 
-@admin.register(CicloEscolar)
 class CicloEscolarAdmin(admin.ModelAdmin):
     list_display = ('nombre', 'fecha_inicio', 'fecha_fin', 'activo')
     list_filter = ('activo',)
     search_fields = ('nombre',)
 
-@admin.register(RegistroRAE)
 class RegistroRAEAdmin(admin.ModelAdmin):
     list_display = ('escuela', 'ciclo_escolar', 'creado_por', 'fecha_creacion', 'docente_hombres', 'docente_mujeres')
     list_filter = ('escuela', 'ciclo_escolar', 'creado_por')
@@ -15,7 +14,6 @@ class RegistroRAEAdmin(admin.ModelAdmin):
     # Si quieres que los detalles de los alumnos aparezcan directamente en el formulario de RegistroRAE:
     # inlines = [RAEAlumnoInline] # Necesitarías definir RAEAlumnoInline primero
 
-@admin.register(RAEAlumno)
 class RAEAlumnoAdmin(admin.ModelAdmin):
     list_display = ('alumno', 'registro', 'curp', 'genero', 'edad', 'grado', 'capturado_por')
     list_filter = ('registro__escuela', 'registro__ciclo_escolar', 'genero', 'grado', 'capturado_por')
@@ -26,3 +24,7 @@ class RAEAlumnoAdmin(admin.ModelAdmin):
 # class RAEAlumnoInline(admin.TabularInline): # O admin.StackedInline
 #     model = RAEAlumno
 #     extra = 1 # Número de formularios extra para agregar
+
+admin_site.register(CicloEscolar, CicloEscolarAdmin)
+admin_site.register(RegistroRAE, RegistroRAEAdmin)
+admin_site.register(RAEAlumno, RAEAlumnoAdmin)

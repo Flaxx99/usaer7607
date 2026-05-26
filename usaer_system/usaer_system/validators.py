@@ -4,8 +4,8 @@ from django.utils.translation import gettext as _
 
 class CustomPasswordValidator:
     def validate(self, password, user=None):
-        if len(password) < 5:
-            raise ValidationError(_("La contraseña debe tener al menos 5 caracteres."))
+        if len(password) < 8:
+            raise ValidationError(_("La contraseña debe tener al menos 8 caracteres."))
 
         if not re.search(r'[A-Z]', password):
             raise ValidationError(_("La contraseña debe contener al menos una letra mayúscula."))
