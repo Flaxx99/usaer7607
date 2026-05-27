@@ -3,7 +3,7 @@
 import os
 import openpyxl
 from io import BytesIO
-from datetime import date
+from datetime import date, timedelta
 
 from django.urls import reverse
 from django.conf import settings
@@ -13,6 +13,7 @@ from django.contrib.auth import get_user_model
 from rest_framework.test import APITestCase, APIClient
 
 from escuelas.models import Escuela
+from ciclos_escolares.models import CicloEscolar
 from alumnos.models import Alumno
 from .models import RegistroRAC
 
@@ -22,6 +23,14 @@ User = get_user_model()
 
 class RegistroRACModelTest(APITestCase):
     def setUp(self):
+        # create a ciclo escolar required by RegistroRAC.ciclo_escolar (NOT NULL)
+        self.ciclo = CicloEscolar.objects.create(
+            nombre=f"{date.today().year}-{date.today().year+1}",
+            fecha_inicio=date.today() - timedelta(days=1),
+            fecha_fin=date.today() + timedelta(days=365),
+            activo=True,
+        )
+
         self.escuela = Escuela.objects.create(
             clave_estatal="E7", cct="CCT7", nombre="Escuela RAC", nivel="Primaria",
             domicilio="Dir", colonia="Col", zona="Z7"
@@ -44,6 +53,7 @@ class RegistroRACModelTest(APITestCase):
         )
         self.registro = RegistroRAC.objects.create(
             alumno=self.alumno,
+            ciclo_escolar=self.ciclo,
             escuela_regular=self.escuela,
             zona_regular="Z7",
             curp="PERGJU123456HOMBXX",
@@ -68,6 +78,14 @@ class RegistroRACModelTest(APITestCase):
 class RegistroRACViewsTest(APITestCase):
     def setUp(self):
         self.client = APIClient()
+        # create ciclo escolar for view tests
+        self.ciclo = CicloEscolar.objects.create(
+            nombre=f"{date.today().year}-{date.today().year+1}",
+            fecha_inicio=date.today() - timedelta(days=1),
+            fecha_fin=date.today() + timedelta(days=365),
+            activo=True,
+        )
+
         self.escuela = Escuela.objects.create(
             clave_estatal="E8", cct="CCT8", nombre="Escuela RAC Views", nivel="Primaria",
             domicilio="Dir", colonia="Col", zona="Z8"
@@ -94,6 +112,7 @@ class RegistroRACViewsTest(APITestCase):
         )
         self.registro = RegistroRAC.objects.create(
             alumno=self.alumno,
+            ciclo_escolar=self.ciclo,
             escuela_regular=self.escuela,
             zona_regular="Z8",
             curp="PERGJU123456HOMBXX",
@@ -208,10 +227,18 @@ class RACExportTest(APITestCase):
         self.student2_t1 = Alumno.objects.create(nombres="Maria", apellido_paterno="Gomez", sexo="M", profesor=self.teacher1, escuela=self.school1, edad=9, curp="CURP2")
         self.student1_t2 = Alumno.objects.create(nombres="Pedro", apellido_paterno="Lopez", sexo="H", profesor=self.teacher2, escuela=self.school2, edad=10, curp="CURP3")
 
+        # create ciclo escolar for RAC records
+        self.ciclo = CicloEscolar.objects.create(
+            nombre=f"{date.today().year}-{date.today().year+1}",
+            fecha_inicio=date.today() - timedelta(days=1),
+            fecha_fin=date.today() + timedelta(days=365),
+            activo=True,
+        )
+
         # Crear registros RAC
-        self.rac1 = RegistroRAC.objects.create(alumno=self.student1_t1, maestro_apoyo=self.teacher1, escuela_regular=self.school1, escuela_basica=self.school1, clasificacion='DISCAPACIDAD', subclasificacion='DI', service_type='USAER')
-        self.rac2 = RegistroRAC.objects.create(alumno=self.student2_t1, maestro_apoyo=self.teacher1, escuela_regular=self.school1, escuela_basica=self.school1, clasificacion='APTITUDES_SOBRESALIENTES', subclasificacion='ASI', service_type='USAER')
-        self.rac3 = RegistroRAC.objects.create(alumno=self.student1_t2, maestro_apoyo=self.teacher2, escuela_regular=self.school2, escuela_basica=self.school2, clasificacion='TRASTORNOS', subclasificacion='TDAH', service_type='USAER')
+        self.rac1 = RegistroRAC.objects.create(alumno=self.student1_t1, maestro_apoyo=self.teacher1, escuela_regular=self.school1, escuela_basica=self.school1, ciclo_escolar=self.ciclo, clasificacion='DISCAPACIDAD', subclasificacion='DI', service_type='USAER')
+        self.rac2 = RegistroRAC.objects.create(alumno=self.student2_t1, maestro_apoyo=self.teacher1, escuela_regular=self.school1, escuela_basica=self.school1, ciclo_escolar=self.ciclo, clasificacion='APTITUDES_SOBRESALIENTES', subclasificacion='ASI', service_type='USAER')
+        self.rac3 = RegistroRAC.objects.create(alumno=self.student1_t2, maestro_apoyo=self.teacher2, escuela_regular=self.school2, escuela_basica=self.school2, ciclo_escolar=self.ciclo, clasificacion='TRASTORNOS', subclasificacion='TDAH', service_type='USAER')
 
     def get_test_template(self):
         wb = openpyxl.Workbook()
@@ -315,4 +342,3 @@ class RACExportTest(APITestCase):
         response = self.client.get(reverse('rac:registros-list'))
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "Exportar Todo a Excel")
-
