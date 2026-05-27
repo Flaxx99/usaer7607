@@ -109,7 +109,7 @@ class RegistroRACViewsTest(APITestCase):
 
     def test_lista_registros_maestro(self):
         self.client.force_authenticate(self.maestro)
-        response = self.client.get(reverse("rac:registro_list"))
+        response = self.client.get(reverse("rac:registros-list"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.alumno.nombres)
 
@@ -146,7 +146,8 @@ class RegistroRACViewsTest(APITestCase):
             "subclasificacion": "DSA",
             "observaciones": "",
         }
-        response = self.client.post(reverse("rac:registro_create"), data=form_data)
+        # Creation via DRF router -> POST to registros-list
+        response = self.client.post(reverse("rac:registros-list"), data=form_data)
         # legacy views may redirect on success
         self.assertIn(response.status_code, (200, 302))
         self.assertTrue(RegistroRAC.objects.filter(alumno=alumno_nuevo).exists())
@@ -172,7 +173,8 @@ class RegistroRACViewsTest(APITestCase):
             "subclasificacion": "DMO", # Cambiamos la subclasificación
             "observaciones": "Observaciones editadas",
         }
-        response = self.client.post(reverse("rac:registro_edit", args=[self.registro.pk]), data=form_data)
+        # Edit via DRF router -> PATCH/PUT to registros-detail
+        response = self.client.post(reverse("rac:registros-detail", args=[self.registro.pk]), data=form_data)
         self.assertIn(response.status_code, (200, 302))
         self.registro.refresh_from_db()
         self.assertEqual(self.registro.subclasificacion, "DMO")
@@ -180,7 +182,7 @@ class RegistroRACViewsTest(APITestCase):
 
     def test_exportar_rac_excel(self):
         self.client.force_authenticate(self.admin)
-        response = self.client.get(reverse("rac:registro_export"))
+        response = self.client.get(reverse("rac:exportar_excel"))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response['Content-Type'], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
         # Content-Disposition may include filename; just assert presence
@@ -223,30 +225,30 @@ class RACExportTest(APITestCase):
     def test_export_rac_excel_view_for_teacher(self):
         """Prueba que un maestro exporte sus registros y el contenido sea correcto."""
         self.client.force_authenticate(self.teacher1)
-        response = self.client.get(reverse('rac:registro_export'), HTTP_IS_TEST='True')
+        response = self.client.get(reverse('rac:exportar_excel'), HTTP_IS_TEST='True')
         self.assertEqual(response.status_code, 200)
 
     def test_export_all_rac_excel_view_for_admin(self):
         """Prueba que el admin exporte todos los registros y el contenido sea correcto."""
         self.client.force_authenticate(self.admin_user)
-        response = self.client.get(reverse('rac:export_all'), HTTP_IS_TEST='True')
+        response = self.client.get(reverse('rac:exportar_todo'), HTTP_IS_TEST='True')
         self.assertEqual(response.status_code, 200)
 
     def test_export_all_permission_denied_for_teacher(self):
         """Prueba que un maestro no pueda acceder a la exportación total."""
         self.client.force_authenticate(self.teacher1)
-        response = self.client.get(reverse('rac:export_all'))
+        response = self.client.get(reverse('rac:exportar_todo'))
         self.assertEqual(response.status_code, 403)
 
     def test_export_all_button_visibility(self):
         """Prueba la visibilidad del botón de exportar todo según el rol."""
         self.client.force_authenticate(self.admin_user)
-        response = self.client.get(reverse('rac:registro_list'))
+        response = self.client.get(reverse('rac:registros-list'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Exportar Todo a Excel")
 
         self.client.force_authenticate(self.teacher1)
-        response = self.client.get(reverse('rac:registro_list'))
+        response = self.client.get(reverse('rac:registros-list'))
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "Exportar Todo a Excel")
 
