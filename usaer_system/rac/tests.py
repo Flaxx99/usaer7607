@@ -253,11 +253,11 @@ class RACExportTest(APITestCase):
         self.assertNotContains(response, "Exportar Todo a Excel")
 
 
-class RACExportTest(TestCase):
+class RACExportTest(APITestCase):
 
     def setUp(self):
         '''Set up data for each test.'''
-        self.client = Client()
+        self.client = APIClient()
         # Crear usuarios
         self.admin_user = User.objects.create_user(email='admin@test.com', numero_empleado='123', password='password', role='ADMIN', first_name='Admin', last_name='User')
         self.teacher1 = User.objects.create_user(email='teacher1@test.com', numero_empleado='456', password='password', role='MAESTRO_APOYO', first_name='Maestro', last_name='Uno')
@@ -288,33 +288,31 @@ class RACExportTest(TestCase):
 
     def test_export_rac_excel_view_for_teacher(self):
         '''Prueba que un maestro exporte sus registros y el contenido sea correcto.'''
-        self.client.login(email='teacher1@test.com', password='password')
-        response = self.client.get(reverse('rac:registro_export'), HTTP_IS_TEST='True')
+        self.client.force_authenticate(self.teacher1)
+        response = self.client.get(reverse('rac:exportar_excel'), HTTP_IS_TEST='True')
         self.assertEqual(response.status_code, 200)
 
     def test_export_all_rac_excel_view_for_admin(self):
         '''Prueba que el admin exporte todos los registros y el contenido sea correcto.'''
-        self.client.login(email='admin@test.com', password='password')
-        response = self.client.get(reverse('rac:export_all'), HTTP_IS_TEST='True')
+        self.client.force_authenticate(self.admin_user)
+        response = self.client.get(reverse('rac:exportar_todo'), HTTP_IS_TEST='True')
         self.assertEqual(response.status_code, 200)
 
     def test_export_all_permission_denied_for_teacher(self):
         '''Prueba que un maestro no pueda acceder a la exportación total.'''
-        self.client.login(email='teacher1@test.com', password='password')
-        response = self.client.get(reverse('rac:export_all'))
+        self.client.force_authenticate(self.teacher1)
+        response = self.client.get(reverse('rac:exportar_todo'))
         self.assertEqual(response.status_code, 403)
 
     def test_export_all_button_visibility(self):
         '''Prueba la visibilidad del botón de exportar todo según el rol.'''
-        self.client.login(email='admin@test.com', password='password')
-        response = self.client.get(reverse('rac:registro_list'))
+        self.client.force_authenticate(self.admin_user)
+        response = self.client.get(reverse('rac:registros-list'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Exportar Todo a Excel")
 
-        self.client.logout()
-        self.client.login(email='teacher1@test.com', password='password')
-        response = self.client.get(reverse('rac:registro_list'))
+        self.client.force_authenticate(self.teacher1)
+        response = self.client.get(reverse('rac:registros-list'))
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "Exportar Todo a Excel")
-
 
