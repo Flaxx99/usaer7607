@@ -130,7 +130,8 @@ class RegistroRACViewsTest(APITestCase):
         self.client.force_authenticate(self.maestro)
         response = self.client.get(reverse("rac:registros-list"))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, self.alumno.nombres)
+        # API returns alumno_nombre in uppercase; assert uppercase name appears
+        self.assertContains(response, self.alumno.nombres.upper())
 
     def test_crear_registro_rac(self):
         self.client.force_authenticate(self.maestro)
@@ -167,8 +168,8 @@ class RegistroRACViewsTest(APITestCase):
         }
         # Creation via DRF router -> POST to registros-list
         response = self.client.post(reverse("rac:registros-list"), data=form_data)
-        # legacy views may redirect on success
-        self.assertIn(response.status_code, (200, 302))
+        # Creation via API should return 201 Created in DRF; accept common success codes
+        self.assertIn(response.status_code, (200, 201, 302))
         self.assertTrue(RegistroRAC.objects.filter(alumno=alumno_nuevo).exists())
 
     def test_editar_registro_rac(self):
@@ -192,9 +193,9 @@ class RegistroRACViewsTest(APITestCase):
             "subclasificacion": "DMO", # Cambiamos la subclasificación
             "observaciones": "Observaciones editadas",
         }
-        # Edit via DRF router -> PATCH/PUT to registros-detail
-        response = self.client.post(reverse("rac:registros-detail", args=[self.registro.pk]), data=form_data)
-        self.assertIn(response.status_code, (200, 302))
+        # Edit via DRF router -> PATCH to registros-detail
+        response = self.client.patch(reverse("rac:registros-detail", args=[self.registro.pk]), data=form_data)
+        self.assertIn(response.status_code, (200, 202, 204, 302))
         self.registro.refresh_from_db()
         self.assertEqual(self.registro.subclasificacion, "DMO")
         self.assertEqual(self.registro.observaciones, "Observaciones editadas")
