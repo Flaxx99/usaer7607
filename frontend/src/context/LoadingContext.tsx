@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { LoadingOverlay } from '@mantine/core';
+import { useUiStore } from '../stores/ui';
 
 interface LoadingContextType {
   isLoading: boolean;
@@ -11,19 +11,26 @@ const LoadingContext = createContext<LoadingContextType | undefined>(undefined);
 
 export const LoadingProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false);
+  const setGlobalLoading = useUiStore((s) => s.setGlobalLoading);
 
-  const showLoading = () => setIsLoading(true);
-  const hideLoading = () => setIsLoading(false);
+  const showLoading = () => {
+    setIsLoading(true);
+    setGlobalLoading(true);
+  };
+
+  const hideLoading = () => {
+    setIsLoading(false);
+    setGlobalLoading(false);
+  };
 
   return (
     <LoadingContext.Provider value={{ isLoading, showLoading, hideLoading }}>
       {children}
-      <LoadingOverlay 
-        visible={isLoading} 
-        zIndex={1000} 
-        overlayProps={{ blur: 2 }} 
-        variant="striped"
-      />
+      {isLoading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-base-200/60 backdrop-blur-sm">
+          <span className="loading loading-spinner loading-lg text-primary" />
+        </div>
+      )}
     </LoadingContext.Provider>
   );
 };

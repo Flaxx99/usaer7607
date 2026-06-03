@@ -1,6 +1,6 @@
 // src/api/client.ts
 import axios from 'axios';
-import { notifications } from '@mantine/notifications';
+import { toast } from 'sonner';
 
 const client = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -29,11 +29,9 @@ client.interceptors.response.use(
       if (status === 401) {
         // SESIÓN EXPIRADA
         localStorage.clear();
-        notifications.show({
-            title: 'Sesión Expirada',
-            message: 'Tu sesión ha terminado. Por favor, ingresa nuevamente.',
-            color: 'red',
-            autoClose: 3000,
+        toast.error('Sesión Expirada', {
+          description: 'Tu sesión ha terminado. Por favor, ingresa nuevamente.',
+          duration: 3000,
         });
         // Forzamos la redirección al login
         window.location.href = '/login';
@@ -41,11 +39,9 @@ client.interceptors.response.use(
 
       if (status === 403) {
         // ACCESO DENEGADO (ROL INSUFICIENTE)
-        notifications.show({
-            title: 'Acceso Denegado',
-            message: 'No tienes los permisos necesarios para realizar esta acción.',
-            color: 'orange',
-            autoClose: 4000,
+        toast.warning('Acceso Denegado', {
+          description: 'No tienes los permisos necesarios para realizar esta acción.',
+          duration: 4000,
         });
       }
     }

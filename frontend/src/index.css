@@ -1,41 +1,79 @@
 @import "tailwindcss";
+@plugin "daisyui";
 
-@theme {
-  /* Definimos nuestros colores semánticos */
-  
-  /* Color principal (Brand) */
-  --color-primary: var(--color-blue-600);
-  --color-primary-hover: var(--color-blue-700);
-  
-  /* Fondos */
-  --color-background: var(--color-slate-50);
-  --color-surface: #ffffff;
-  
-  /* Textos */
-  --color-text-main: var(--color-slate-800);
-  --color-text-secondary: var(--color-slate-500);
-  
-  /* Estados */
-  --color-success: var(--color-emerald-600);
-  --color-danger: var(--color-rose-600);
-  --color-warning: var(--color-amber-500);
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+@import "@fontsource/inter/700.css";
+
+/* ─── TEMA USAER CHIHUAHUA ─── */
+@plugin "daisyui/theme" {
+  name: "usaer";
+  default: true;
+  preferscolor: "light";
+  /* Paleta institucional (placeholder — ajustar con el usuario) */
+  --color-primary: #1e40af;
+  --color-primary-content: #ffffff;
+  --color-secondary: #059669;
+  --color-secondary-content: #ffffff;
+  --color-accent: #f59e0b;
+  --color-accent-content: #000000;
+  --color-neutral: #374151;
+  --color-neutral-content: #ffffff;
+  --color-base-100: #ffffff;
+  --color-base-200: #f8fafc;
+  --color-base-300: #e2e8f0;
+  --color-base-content: #1e293b;
+  --color-info: #3b82f6;
+  --color-info-content: #ffffff;
+  --color-success: #10b981;
+  --color-success-content: #ffffff;
+  --color-warning: #f59e0b;
+  --color-warning-content: #000000;
+  --color-error: #ef4444;
+  --color-error-content: #ffffff;
+  --radius-selector: 0.5rem;
+  --radius-field: 0.5rem;
+  --radius-box: 0.75rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
 }
 
-/* Estilos base para mejorar legibilidad en gente mayor */
+@theme {
+  --color-primary: var(--color-primary);
+  --color-primary-hover: #1e3a8a;
+  --color-background: var(--color-base-200);
+  --color-surface: var(--color-base-100);
+  --color-text-main: var(--color-base-content);
+  --color-text-secondary: #64748b;
+  --color-success: var(--color-success);
+  --color-danger: var(--color-error);
+  --color-warning: var(--color-warning);
+}
+
 @layer base {
   html {
-    /* Un tamaño de fuente base ligeramente mayor ayuda mucho */
-    font-size: 16px; 
+    font-size: 16px;
     color: var(--color-text-main);
     background-color: var(--color-background);
+    font-family: "Inter", system-ui, Avenir, Helvetica, Arial, sans-serif;
   }
 
   h1, h2, h3 {
     font-weight: 700;
-    letter-spacing: -0.025em; /* Tight */
+    letter-spacing: -0.025em;
   }
 
   input {
     @apply outline-none transition-all duration-200;
   }
+
+  /* Ajustes DaisyUI para profes — más grande, más claro */
+  .btn { @apply min-h-11 text-base; }
+  .table { @apply text-base; }
+  .card { @apply shadow-md; }
+  .badge { @apply text-sm; }
 }

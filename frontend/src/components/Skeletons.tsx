@@ -1,127 +1,99 @@
-import { Skeleton, Stack, Group, Paper, Box, rem } from '@mantine/core';
-
 /**
  * PageSkeleton
  * Consistent loading skeleton for full-page content areas.
- * Shows a header block + multiple content rows.
  */
 export function PageSkeleton({ rows = 5 }: { rows?: number }) {
   return (
-    <Stack gap="xl">
+    <div className="flex flex-col gap-6">
       {/* Header skeleton */}
-      <Paper p="lg" radius="lg" withBorder shadow="sm">
-        <Group justify="space-between" align="center">
-          <Group gap="md">
-            <Skeleton height={52} width={52} radius="lg" circle />
-            <Stack gap={4}>
-              <Skeleton height={28} width={220} radius="md" />
-              <Skeleton height={14} width={180} radius="md" />
-            </Stack>
-          </Group>
-          <Skeleton height={36} width={180} radius="md" />
-        </Group>
-      </Paper>
+      <div className="card bg-base-100 shadow-sm">
+        <div className="card-body p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="skeleton w-13 h-13 rounded-full" />
+              <div className="flex flex-col gap-1">
+                <div className="skeleton h-7 w-56" />
+                <div className="skeleton h-4 w-44" />
+              </div>
+            </div>
+            <div className="skeleton h-9 w-44" />
+          </div>
+        </div>
+      </div>
 
       {/* Filter/Search skeleton */}
-      <Paper p="md" radius="lg" withBorder shadow="xs">
-        <Skeleton height={36} width="100%" radius="md" />
-      </Paper>
+      <div className="card bg-base-100 shadow-xs">
+        <div className="card-body p-4">
+          <div className="skeleton h-9 w-full" />
+        </div>
+      </div>
 
       {/* Content rows skeleton */}
-      <Paper radius="lg" withBorder shadow="xs" p="md">
-        <Stack gap="md">
-          {Array.from({ length: rows }).map((_, i) => (
-            <Group key={i} justify="space-between" align="center">
-              <Group gap="sm">
-                <Skeleton height={36} width={36} radius="xl" circle />
-                <Stack gap={4}>
-                  <Skeleton height={16} width={160} radius="md" />
-                  <Skeleton height={12} width={100} radius="md" />
-                </Stack>
-              </Group>
-              <Skeleton height={16} width={80} radius="md" />
-              <Skeleton height={16} width={60} radius="md" />
-              <Group gap="xs">
-                <Skeleton height={28} width={64} radius="md" />
-                <Skeleton height={28} width={64} radius="md" />
-              </Group>
-            </Group>
-          ))}
-        </Stack>
-      </Paper>
-    </Stack>
-  );
-}
-
-/**
- * CardGridSkeleton
- * Skeleton for card-grid layouts (escuelas, documentos, etc.)
- */
-export function CardGridSkeleton({ cols = 6 }: { cols?: number }) {
-  return (
-    <div style={{
-      display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-      gap: 'var(--mantine-spacing-lg)'
-    }}>
-      {Array.from({ length: cols }).map((_, i) => (
-        <Paper key={i} p="lg" radius="lg" withBorder shadow="xs">
-          <Stack gap="xs">
-            <Group justify="space-between">
-              <Skeleton height={20} width={80} radius="md" />
-              <Skeleton height={20} width={60} radius="md" />
-            </Group>
-            <Skeleton height={24} width="80%" radius="md" />
-            <Skeleton height={1} width="100%" my="xs" />
-            <Skeleton height={14} width="90%" radius="md" />
-            <Skeleton height={14} width="70%" radius="md" />
-            <Group justify="flex-end" mt="md">
-              <Skeleton height={28} width={64} radius="md" />
-              <Skeleton height={28} width={64} radius="md" />
-            </Group>
-          </Stack>
-        </Paper>
-      ))}
+      <div className="card bg-base-100 shadow-xs">
+        <div className="card-body p-4">
+          <div className="flex flex-col gap-4">
+            {Array.from({ length: rows }).map((_, i) => (
+              <div key={i} className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="skeleton w-9 h-9 rounded-full shrink-0" />
+                  <div className="flex flex-col gap-1">
+                    <div className="skeleton h-4 w-40" />
+                    <div className="skeleton h-3 w-24" />
+                  </div>
+                </div>
+                <div className="skeleton h-4 w-20" />
+                <div className="skeleton h-4 w-16" />
+                <div className="flex gap-1">
+                  <div className="skeleton h-7 w-16" />
+                  <div className="skeleton h-7 w-16" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
 
 /**
  * TableSkeleton
- * Skeleton for table-based layouts (alumnos, usuarios, etc.)
+ * Skeleton for table-based layouts.
  */
 export function TableSkeleton({ rows = 5 }: { rows?: number }) {
   return (
-    <Paper radius="lg" withBorder shadow="xs" p="md">
-      <Stack gap="md">
-        {/* Header row */}
-        <Group justify="space-between">
-          <Skeleton height={14} width={120} radius="md" />
-          <Skeleton height={14} width={100} radius="md" />
-          <Skeleton height={14} width={80} radius="md" />
-          <Skeleton height={14} width={60} radius="md" />
-          <Skeleton height={14} width={100} radius="md" />
-        </Group>
-        {/* Data rows */}
-        {Array.from({ length: rows }).map((_, i) => (
-          <Group key={i} justify="space-between" align="center" style={{ borderTop: '1px solid var(--mantine-color-gray-1)', paddingTop: 'var(--mantine-spacing-sm)' }}>
-            <Group gap="sm">
-              <Skeleton height={36} width={36} radius="xl" circle />
-              <Stack gap={2}>
-                <Skeleton height={16} width={140} radius="md" />
-                <Skeleton height={12} width={90} radius="md" />
-              </Stack>
-            </Group>
-            <Skeleton height={14} width={100} radius="md" />
-            <Skeleton height={20} width={80} radius="md" />
-            <Skeleton height={20} width={50} radius="md" />
-            <Group gap="xs">
-              <Skeleton height={28} width={64} radius="md" />
-              <Skeleton height={28} width={64} radius="md" />
-            </Group>
-          </Group>
-        ))}
-      </Stack>
-    </Paper>
+    <div className="card bg-base-100 shadow-xs">
+      <div className="card-body p-4">
+        <div className="flex flex-col gap-4">
+          {/* Header row */}
+          <div className="flex justify-between opacity-60">
+            <div className="skeleton h-4 w-32" />
+            <div className="skeleton h-4 w-24" />
+            <div className="skeleton h-4 w-20" />
+            <div className="skeleton h-4 w-16" />
+            <div className="skeleton h-4 w-24" />
+          </div>
+          {/* Data rows */}
+          {Array.from({ length: rows }).map((_, i) => (
+            <div key={i} className="flex items-center justify-between border-t border-base-200 pt-3">
+              <div className="flex items-center gap-2">
+                <div className="skeleton w-9 h-9 rounded-full shrink-0" />
+                <div className="flex flex-col gap-0.5">
+                  <div className="skeleton h-4 w-36" />
+                  <div className="skeleton h-3 w-24" />
+                </div>
+              </div>
+              <div className="skeleton h-4 w-24" />
+              <div className="skeleton h-5 w-20" />
+              <div className="skeleton h-5 w-14" />
+              <div className="flex gap-1">
+                <div className="skeleton h-7 w-16" />
+                <div className="skeleton h-7 w-16" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }

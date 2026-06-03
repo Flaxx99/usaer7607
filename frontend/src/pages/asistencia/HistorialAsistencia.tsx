@@ -83,7 +83,7 @@ const HistorialAsistencia = () => {
                                 <Table striped highlightOnHover horizontalSpacing="md" verticalSpacing="sm" fontSize="md">
                                     <Table.Thead bg="gray.0">
                                         <Table.Tr>
-                                            <Table.Th>Fecha</Table.H>
+                                            <Table.Th>Fecha</Table.Th>
                                             <Table.Th>Escuela / Profesor</Table.Th>
                                             <Table.Th ta="center">Entrada</Table.Th>
                                             <Table.Th ta="center">Salida</Table.Th>

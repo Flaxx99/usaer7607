@@ -1,25 +1,13 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { User, Lock, Loader2, ArrowLeft } from 'lucide-react';
-import { 
-  Container, 
-  Paper, 
-  Title, 
-  Text, 
-  TextInput, 
-  PasswordInput, 
-  Button, 
-  Stack, 
-  Box, 
-  Center,
-  Anchor
-} from '@mantine/core';
-import { notifications } from '@mantine/notifications';
+import { User, Lock, Loader2, ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { toast } from 'sonner';
 import client from '../api/client';
 
 const Login = () => {
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   
   const { register, handleSubmit, formState: { errors } } = useForm();
@@ -34,24 +22,19 @@ const Login = () => {
       localStorage.setItem('access_token', token); 
       localStorage.setItem('user', JSON.stringify(user));
 
-      notifications.show({
-        title: 'Bienvenido',
-        message: `Hola ${user.first_name}, has ingresado correctamente.`,
-        color: 'green',
+      toast.success('Bienvenido', {
+        description: `Hola ${user.first_name}, has ingresado correctamente.`,
       });
 
       navigate('/dashboard');
       
     } catch (error: any) {
-      console.error(error);
       const message = error.response?.status === 400 
         ? 'Credenciales incorrectas. Verifique su usuario y contraseña.' 
         : 'Error de conexión. Intente más tarde.';
 
-      notifications.show({
-        title: 'Error de acceso',
-        message: message,
-        color: 'red',
+      toast.error('Error de acceso', {
+        description: message,
       });
     } finally {
       setLoading(false);
@@ -59,81 +42,87 @@ const Login = () => {
   };
 
   return (
-    <Center style={{ height: '100vh', backgroundColor: 'var(--mantine-color-gray-0)' }}>
-      <Container size={420} w="100%">
-        <Paper radius="md" withBorder shadow="xl" p={0} overflow="hidden">
-          
+    <div className="min-h-screen bg-base-200 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <div className="card bg-base-100 shadow-xl overflow-hidden">
           {/* Header con color primario */}
-          <Box 
-            p="xl" 
-            style={{ 
-              backgroundColor: 'var(--mantine-color-blue-filled)', 
-              color: 'white', 
-              textAlign: 'center' 
-            }}
-          >
-            <Title order={2} fw={800} style={{ fontSize: '1.5rem', marginBottom: '4px' }}>
+          <div className="bg-primary text-primary-content p-8 text-center">
+            <h2 className="text-2xl font-extrabold mb-1">
               USAER 7607
-            </Title>
-            <Text size="sm" opacity={0.9}>
-              Sistema de Gestión Escolar
-            </Text>
-          </Box>
+            </h2>
+            <p className="text-sm opacity-90">
+              Sistema de Gesti&oacute;n Escolar
+            </p>
+          </div>
 
           {/* Formulario */}
-          <Box p="xl">
-            <Title order={3} ta="center" mb="lg" fw={600}>
-              Iniciar Sesión
-            </Title>
+          <div className="card-body">
+            <h3 className="card-title justify-center text-xl mb-4">
+              Iniciar Sesi&oacute;n
+            </h3>
 
-            <form onSubmit={handleSubmit(onSubmit)}>
-              <Stack gap="md">
-                
-                <TextInput
-                  label="Usuario o No. Empleado"
-                  placeholder="Ingrese su usuario"
-                  leftSection={<User size={16} />}
-                  {...register('username', { required: "El usuario es obligatorio" })}
-                  error={errors.username?.message as string}
-                />
+            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+              <fieldset className="fieldset">
+                <legend className="fieldset-legend">Usuario o No. Empleado</legend>
+                <div className="input validator w-full">
+                  <User className="w-4 h-4 opacity-60" />
+                  <input
+                    type="text"
+                    placeholder="Ingrese su usuario"
+                    {...register('username', { required: "El usuario es obligatorio" })}
+                  />
+                </div>
+                {errors.username && (
+                  <span className="fieldset-label text-error text-xs">{errors.username.message as string}</span>
+                )}
+              </fieldset>
 
-                <PasswordInput
-                  label="Contraseña"
-                  placeholder="••••••••"
-                  leftSection={<Lock size={16} />}
-                  {...register('password', { required: "La contraseña es obligatoria" })}
-                  error={errors.password?.message as string}
-                />
-
-                <Button 
-                  type="submit" 
-                  loading={loading}
-                  fullWidth 
-                  size="md" 
-                  radius="md"
-                  leftSection={loading ? <Loader2 className="animate-spin" size={18} /> : null}
-                >
-                  Acceder al Sistema
-                </Button>
-
-                <Box ta="center" pt="md" style={{ borderTop: '1px solid var(--mantine-color-gray-2)' }}>
-                  <Anchor 
-                    component={Link} 
-                    to="/" 
-                    size="sm" 
-                    color="gray" 
-                    fw={500}
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+              <fieldset className="fieldset">
+                <legend className="fieldset-legend">Contrase&ntilde;a</legend>
+                <div className="input validator w-full">
+                  <Lock className="w-4 h-4 opacity-60" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    {...register('password', { required: "La contraseña es obligatoria" })}
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-xs"
+                    onClick={() => setShowPassword(!showPassword)}
+                    tabIndex={-1}
                   >
-                    <ArrowLeft size={14} /> Volver al Checador de Asistencia
-                  </Anchor>
-                </Box>
-              </Stack>
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                {errors.password && (
+                  <span className="fieldset-label text-error text-xs">{errors.password.message as string}</span>
+                )}
+              </fieldset>
+
+              <button
+                type="submit"
+                className="btn btn-primary mt-2"
+                disabled={loading}
+              >
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                {loading ? 'Ingresando...' : 'Acceder al Sistema'}
+              </button>
+
+              <div className="divider" />
+
+              <Link
+                to="/"
+                className="link link-hover text-sm flex items-center justify-center gap-2 text-base-content/60"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                Volver al Checador de Asistencia
+              </Link>
             </form>
-          </Box>
-        </Paper>
-      </Container>
-    </Center>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 
