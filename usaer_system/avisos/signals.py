@@ -1,9 +1,10 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.conf import settings
-from .models import Anuncio
 from notificaciones.models import Notificacion
-from usuarios.models import User # Assuming your custom User model is here
+from usuarios.models import User  # Assuming your custom User model is here
+
+from .models import Anuncio
+
 
 @receiver(post_save, sender=Anuncio)
 def create_notification_on_anuncio_save(sender, instance, created, **kwargs):
@@ -18,7 +19,7 @@ def create_notification_on_anuncio_save(sender, instance, created, **kwargs):
                 Notificacion.objects.create(
                     usuario=user,
                     mensaje=f"Nuevo aviso: {instance.titulo}",
-                    url=f"/avisos/{instance.id}/", # Assuming a detail view for Anuncio
+                    url=f"/avisos/{instance.id}/",  # Assuming a detail view for Anuncio
                 )
 
         # Create a notification for the author (admin) if they are not already a recipient
@@ -26,7 +27,7 @@ def create_notification_on_anuncio_save(sender, instance, created, **kwargs):
         if instance.autor.is_active:
             Notificacion.objects.create(
                 usuario=instance.autor,
-                mensaje=f"Tu aviso \"{instance.titulo}\" ha sido publicado.",
+                mensaje=f'Tu aviso "{instance.titulo}" ha sido publicado.',
                 url=f"/avisos/{instance.id}/",
-                leida=True # Mark as read for the author, as they just published it
+                leida=True,  # Mark as read for the author, as they just published it
             )

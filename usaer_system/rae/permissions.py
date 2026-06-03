@@ -1,6 +1,6 @@
 # rae/permissions.py
-from rest_framework import permissions
 from django.contrib.auth import get_user_model
+from rest_framework import permissions
 
 User = get_user_model()
 
@@ -22,7 +22,7 @@ class RAEPermission(permissions.BasePermission):
         if user.role in roles_gestion or user.is_superuser:
             return True
 
-        if hasattr(user, 'escuela') and user.escuela:
+        if hasattr(user, "escuela") and user.escuela:
             return obj.escuela_id == user.escuela_id
 
         return False

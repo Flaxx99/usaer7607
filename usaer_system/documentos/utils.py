@@ -1,5 +1,5 @@
-from usuarios.models import User
 from usaer_system.settings import ROLE_PERMISSIONS
+
 
 def tiene_permiso(user, permiso):
     if user.is_superuser:

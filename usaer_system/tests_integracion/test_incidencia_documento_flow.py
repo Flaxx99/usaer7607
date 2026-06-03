@@ -9,15 +9,14 @@ Flujo:
 """
 
 from django.urls import reverse
+from documentos.models import Expediente
+from incidencias.models import Incidencia
 from rest_framework import status
 
 from .base import BaseIntegrationTest
-from incidencias.models import Incidencia
-from documentos.models import Expediente
 
 
 class IncidenciaDocumentoFlowTest(BaseIntegrationTest):
-
     def test_admin_crea_incidencia_y_expediente(self):
         """Admin crea una incidencia y un expediente para el mismo alumno."""
         self._auth(self.admin)
@@ -32,8 +31,7 @@ class IncidenciaDocumentoFlowTest(BaseIntegrationTest):
             "reportado_por": self.admin.pk,
         }
         inc_response = self.client.post(inc_url, inc_data, format="json")
-        self.assertIn(inc_response.status_code,
-                      [status.HTTP_201_CREATED, status.HTTP_200_OK])
+        self.assertIn(inc_response.status_code, [status.HTTP_201_CREATED, status.HTTP_200_OK])
 
         # 2. Crear expediente para el alumno (usa MultiPartParser)
         exp_url = reverse("documentos:documentos-list")
@@ -42,13 +40,10 @@ class IncidenciaDocumentoFlowTest(BaseIntegrationTest):
             "observaciones": "Expediente de seguimiento de conducta.",
         }
         exp_response = self.client.post(exp_url, exp_data, format="multipart")
-        self.assertIn(exp_response.status_code,
-                      [status.HTTP_201_CREATED, status.HTTP_200_OK])
+        self.assertIn(exp_response.status_code, [status.HTTP_201_CREATED, status.HTTP_200_OK])
 
-        self.assertTrue(Incidencia.objects.filter(
-            titulo="PROBLEMA DE CONDUCTA EN AULA").exists())
-        self.assertTrue(Expediente.objects.filter(
-            alumno=self.alumno).exists())
+        self.assertTrue(Incidencia.objects.filter(titulo="PROBLEMA DE CONDUCTA EN AULA").exists())
+        self.assertTrue(Expediente.objects.filter(alumno=self.alumno).exists())
 
     def test_admin_resuelve_incidencia(self):
         """Admin resuelve una incidencia existente."""
@@ -61,15 +56,13 @@ class IncidenciaDocumentoFlowTest(BaseIntegrationTest):
         )
 
         self._auth(self.admin)
-        url = reverse("incidencias:incidencias-detail",
-                       args=[incidencia.pk])
+        url = reverse("incidencias:incidencias-detail", args=[incidencia.pk])
         data = {
             "estado": "RESUELTA",
             "respuesta_admin": "Se tomó acción correctiva.",
         }
         response = self.client.patch(url, data, format="json")
-        self.assertIn(response.status_code,
-                      [status.HTTP_200_OK, status.HTTP_204_NO_CONTENT])
+        self.assertIn(response.status_code, [status.HTTP_200_OK, status.HTTP_204_NO_CONTENT])
 
         incidencia.refresh_from_db()
         self.assertEqual(incidencia.estado, "RESUELTA")

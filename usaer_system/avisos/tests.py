@@ -1,11 +1,12 @@
 """Tests for Avisos app — migrated to DRF APITestCase."""
 
-from django.urls import reverse
-from django.contrib.auth import get_user_model
-from django.utils import timezone
 from datetime import timedelta
-from rest_framework.test import APITestCase, APIClient
+
+from django.contrib.auth import get_user_model
+from django.urls import reverse
+from django.utils import timezone
 from rest_framework import status
+from rest_framework.test import APIClient, APITestCase
 
 from .models import Anuncio
 
@@ -22,14 +23,14 @@ class AnuncioModelTest(APITestCase):
             contenido="Contenido activo",
             fecha_publicacion=timezone.now() - timedelta(days=1),
             fecha_expiracion=timezone.now() + timedelta(days=1),
-            autor=self.user
+            autor=self.user,
         )
         self.anuncio_expirado = Anuncio.objects.create(
             titulo="Aviso Expirado",
             contenido="Contenido expirado",
             fecha_publicacion=timezone.now() - timedelta(days=10),
             fecha_expiracion=timezone.now() - timedelta(days=1),
-            autor=self.user
+            autor=self.user,
         )
 
     def test_anuncio_str(self):
@@ -46,7 +47,7 @@ class AnuncioModelTest(APITestCase):
             titulo="Aviso Futuro",
             contenido="Contenido futuro",
             fecha_publicacion=timezone.now() + timedelta(days=1),
-            autor=self.user
+            autor=self.user,
         )
         self.assertFalse(anuncio_futuro.is_active())
 
@@ -58,12 +59,13 @@ class AnuncioViewsTest(APITestCase):
             email="admin_aviso@example.com", numero_empleado="admin_av", password="pass"
         )
         self.maestro = User.objects.create_user(
-            email="maestro_aviso@example.com", numero_empleado="maestro_av", password="pass", role=User.Role.MAESTRO_APOYO
+            email="maestro_aviso@example.com",
+            numero_empleado="maestro_av",
+            password="pass",
+            role=User.Role.MAESTRO_APOYO,
         )
         self.anuncio = Anuncio.objects.create(
-            titulo="Aviso Base",
-            contenido="Contenido Base",
-            autor=self.admin
+            titulo="Aviso Base", contenido="Contenido Base", autor=self.admin
         )
 
     def test_lista_anuncios(self):
@@ -81,7 +83,7 @@ class AnuncioViewsTest(APITestCase):
             "contenido": "Contenido del nuevo aviso",
             "fecha_expiracion": (timezone.now() + timedelta(days=7)).isoformat(),
         }
-        response = self.client.post(url, data=payload, format='json')
+        response = self.client.post(url, data=payload, format="json")
         self.assertIn(response.status_code, [status.HTTP_201_CREATED, status.HTTP_200_OK])
         self.assertTrue(Anuncio.objects.filter(titulo="Nuevo Aviso").exists())
 
@@ -92,7 +94,7 @@ class AnuncioViewsTest(APITestCase):
             "titulo": "Aviso Maestro",
             "contenido": "No debería poder crear esto",
         }
-        response = self.client.post(url, data=payload, format='json')
+        response = self.client.post(url, data=payload, format="json")
         # Now it should be forbidden
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
@@ -103,7 +105,7 @@ class AnuncioViewsTest(APITestCase):
             "titulo": "Aviso Editado",
             "contenido": "Contenido editado",
         }
-        response = self.client.patch(url, data=payload, format='json')
+        response = self.client.patch(url, data=payload, format="json")
         self.assertIn(response.status_code, [status.HTTP_200_OK, status.HTTP_204_NO_CONTENT])
         self.anuncio.refresh_from_db()
         self.assertEqual(self.anuncio.titulo, "Aviso Editado")

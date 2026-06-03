@@ -1,10 +1,11 @@
 # usuarios/backends.py
 
-from django.contrib.auth.backends import BaseBackend
 from django.contrib.auth import get_user_model
+from django.contrib.auth.backends import BaseBackend
 from django.db.models import Q
 
 UserModel = get_user_model()
+
 
 class EmailOrEmpleadoBackend(BaseBackend):
     def authenticate(self, request, username=None, password=None, **kwargs):
@@ -28,4 +29,4 @@ class EmailOrEmpleadoBackend(BaseBackend):
             return None
 
     def user_can_authenticate(self, user):
-        return getattr(user, 'is_active', False)
+        return getattr(user, "is_active", False)

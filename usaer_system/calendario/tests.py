@@ -1,11 +1,12 @@
 """Tests for Calendario app — migrated to DRF APITestCase."""
 
-from django.urls import reverse
-from django.contrib.auth import get_user_model
-from django.utils import timezone
 from datetime import timedelta
-from rest_framework.test import APITestCase, APIClient
+
+from django.contrib.auth import get_user_model
+from django.urls import reverse
+from django.utils import timezone
 from rest_framework import status
+from rest_framework.test import APIClient, APITestCase
 
 from .models import EventoCalendario
 
@@ -22,7 +23,7 @@ class EventoCalendarioModelTest(APITestCase):
             fecha_inicio=timezone.now(),
             fecha_fin=timezone.now() + timedelta(hours=1),
             creado_por=self.user,
-            tipo="PERSONAL"
+            tipo="PERSONAL",
         )
 
     def test_evento_creation(self):
@@ -43,22 +44,25 @@ class EventoCalendarioViewsTest(APITestCase):
             email="viewadmin@example.com", numero_empleado="ADM002", password="pass"
         )
         self.secretario = User.objects.create_user(
-            email="viewsec@example.com", numero_empleado="SEC001", password="pass", role=User.Role.SECRETARIO
+            email="viewsec@example.com",
+            numero_empleado="SEC001",
+            password="pass",
+            role=User.Role.SECRETARIO,
         )
-        
+
         self.evento_personal_user = EventoCalendario.objects.create(
             titulo="Mi Evento Personal",
             fecha_inicio=timezone.now(),
             fecha_fin=timezone.now() + timedelta(hours=1),
             creado_por=self.user,
-            tipo="PERSONAL"
+            tipo="PERSONAL",
         )
         self.evento_institucional = EventoCalendario.objects.create(
             titulo="Evento Institucional",
             fecha_inicio=timezone.now(),
             fecha_fin=timezone.now() + timedelta(hours=2),
             creado_por=self.admin,
-            tipo="INSTITUCIONAL"
+            tipo="INSTITUCIONAL",
         )
 
     def test_lista_eventos_user(self):
@@ -67,9 +71,13 @@ class EventoCalendarioViewsTest(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.json()
-        results = data if isinstance(data, list) else data.get('results', [])
-        self.assertTrue(any(item.get('titulo') == self.evento_personal_user.titulo for item in results))
-        self.assertTrue(any(item.get('titulo') == self.evento_institucional.titulo for item in results))
+        results = data if isinstance(data, list) else data.get("results", [])
+        self.assertTrue(
+            any(item.get("titulo") == self.evento_personal_user.titulo for item in results)
+        )
+        self.assertTrue(
+            any(item.get("titulo") == self.evento_institucional.titulo for item in results)
+        )
 
     def test_crear_evento_user_personal(self):
         self.client.force_authenticate(user=self.user)
@@ -80,9 +88,13 @@ class EventoCalendarioViewsTest(APITestCase):
             "fecha_fin": (timezone.now() + timedelta(hours=1)).isoformat(),
             "tipo": "PERSONAL",
         }
-        response = self.client.post(url, data=payload, format='json')
+        response = self.client.post(url, data=payload, format="json")
         self.assertIn(response.status_code, [status.HTTP_201_CREATED, status.HTTP_200_OK])
-        self.assertTrue(EventoCalendario.objects.filter(titulo="Nuevo Evento User", creado_por=self.user, tipo="PERSONAL").exists())
+        self.assertTrue(
+            EventoCalendario.objects.filter(
+                titulo="Nuevo Evento User", creado_por=self.user, tipo="PERSONAL"
+            ).exists()
+        )
 
     def test_crear_evento_admin_institucional(self):
         self.client.force_authenticate(user=self.admin)
@@ -93,9 +105,13 @@ class EventoCalendarioViewsTest(APITestCase):
             "fecha_fin": (timezone.now() + timedelta(hours=1)).isoformat(),
             "tipo": "INSTITUCIONAL",
         }
-        response = self.client.post(url, data=payload, format='json')
+        response = self.client.post(url, data=payload, format="json")
         self.assertIn(response.status_code, [status.HTTP_201_CREATED, status.HTTP_200_OK])
-        self.assertTrue(EventoCalendario.objects.filter(titulo="Nuevo Evento Admin", creado_por=self.admin, tipo="INSTITUCIONAL").exists())
+        self.assertTrue(
+            EventoCalendario.objects.filter(
+                titulo="Nuevo Evento Admin", creado_por=self.admin, tipo="INSTITUCIONAL"
+            ).exists()
+        )
 
     def test_crear_evento_maestro_fuerza_personal(self):
         self.client.force_authenticate(user=self.user)
@@ -106,12 +122,19 @@ class EventoCalendarioViewsTest(APITestCase):
             "fecha_fin": (timezone.now() + timedelta(hours=1)).isoformat(),
             "tipo": "INSTITUCIONAL",
         }
-        response = self.client.post(url, data=payload, format='json')
+        response = self.client.post(url, data=payload, format="json")
         self.assertIn(response.status_code, [status.HTTP_201_CREATED, status.HTTP_200_OK])
         # Should be forced to PERSONAL
-        self.assertTrue(EventoCalendario.objects.filter(titulo="Evento Intento Institucional", tipo="PERSONAL").exists())
-        self.assertFalse(EventoCalendario.objects.filter(titulo="Evento Intento Institucional", tipo="INSTITUCIONAL").exists())
-
+        self.assertTrue(
+            EventoCalendario.objects.filter(
+                titulo="Evento Intento Institucional", tipo="PERSONAL"
+            ).exists()
+        )
+        self.assertFalse(
+            EventoCalendario.objects.filter(
+                titulo="Evento Intento Institucional", tipo="INSTITUCIONAL"
+            ).exists()
+        )
 
     def test_detalle_evento_personal_propio(self):
         self.client.force_authenticate(user=self.user)
@@ -140,7 +163,7 @@ class EventoCalendarioViewsTest(APITestCase):
             "fecha_fin": self.evento_personal_user.fecha_fin.isoformat(),
             "tipo": "PERSONAL",
         }
-        response = self.client.patch(url, data=payload, format='json')
+        response = self.client.patch(url, data=payload, format="json")
         self.assertIn(response.status_code, [status.HTTP_200_OK, status.HTTP_204_NO_CONTENT])
         self.evento_personal_user.refresh_from_db()
         self.assertEqual(self.evento_personal_user.titulo, "Evento Editado")

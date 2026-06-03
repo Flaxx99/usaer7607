@@ -1,74 +1,59 @@
 # incidencias/models.py
 
-from django.db import models
 from django.conf import settings
-from django.core.validators import MinValueValidator, MaxValueValidator
+from django.contrib.auth import get_user_model
+from django.db import models
 from django.utils import timezone
 from escuelas.models import Escuela
-from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
+
 class Incidencia(models.Model):
     ESTADOS = [
-        ('PENDIENTE', 'Pendiente'),
-        ('RESUELTA',  'Resuelta'),
+        ("PENDIENTE", "Pendiente"),
+        ("RESUELTA", "Resuelta"),
     ]
 
     escuela = models.ForeignKey(
-        Escuela,
-        on_delete=models.CASCADE,
-        verbose_name="Escuela",
-        related_name='incidencias'
+        Escuela, on_delete=models.CASCADE, verbose_name="Escuela", related_name="incidencias"
     )
     profesor = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        limit_choices_to={'role': User.Role.MAESTRO_APOYO},
+        limit_choices_to={"role": User.Role.MAESTRO_APOYO},
         on_delete=models.SET_NULL,
         null=True,
         verbose_name="Profesor involucrado",
-        related_name='incidencias_reportadas'
+        related_name="incidencias_reportadas",
     )
     reportado_por = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         verbose_name="Reportado por",
-        related_name='incidencias_creadas',
-        editable=False, # Se asigna automáticamente en la vista
-        null=True # Temporalmente nullable para la migración
+        related_name="incidencias_creadas",
+        editable=False,  # Se asigna automáticamente en la vista
+        null=True,  # Temporalmente nullable para la migración
     )
     titulo = models.CharField(
-        "Título de la incidencia",
-        max_length=100,
-        help_text="Descripción breve del problema"
+        "Título de la incidencia", max_length=100, help_text="Descripción breve del problema"
     )
     descripcion = models.TextField(
-        "Descripción detallada",
-        help_text="Explica con detalle la incidencia"
+        "Descripción detallada", help_text="Explica con detalle la incidencia"
     )
-    fecha_reporte = models.DateTimeField(
-        "Fecha de reporte",
-        auto_now_add=True
-    )
-    estado = models.CharField(
-        "Estado",
-        max_length=10,
-        choices=ESTADOS,
-        default='PENDIENTE'
-    )
+    fecha_reporte = models.DateTimeField("Fecha de reporte", auto_now_add=True)
+    estado = models.CharField("Estado", max_length=10, choices=ESTADOS, default="PENDIENTE")
     respuesta_admin = models.TextField(
         "Respuesta de dirección",
         blank=True,
         null=True,
-        help_text="Comentarios de la dirección sobre la solución"
+        help_text="Comentarios de la dirección sobre la solución",
     )
     fecha_resolucion = models.DateTimeField(null=True, blank=True)
-
 
     class Meta:
         verbose_name = "Incidencia"
         verbose_name_plural = "Incidencias"
-        ordering = ['-fecha_reporte']
+        ordering = ["-fecha_reporte"]
         permissions = [
             ("can_resolve_incidence", "Puede resolver incidencias"),
         ]
@@ -78,11 +63,11 @@ class Incidencia(models.Model):
 
     def save(self, *args, **kwargs):
         # Si marcamos como resuelta y no hay fecha_resolucion, la ponemos ahora
-        if self.estado == 'RESUELTA' and not self.fecha_resolucion:
+        if self.estado == "RESUELTA" and not self.fecha_resolucion:
             self.fecha_resolucion = timezone.now()
         super().save(*args, **kwargs)
 
     @property
     def puede_cerrar(self):
         """Sólo puede resolverse si aún está pendiente."""
-        return self.estado == 'PENDIENTE'
+        return self.estado == "PENDIENTE"

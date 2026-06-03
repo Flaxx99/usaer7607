@@ -7,16 +7,15 @@ Flujo:
 3. Verifica que el ciclo se cierra.
 """
 
+from alumnos.models import Alumno
+from ciclos_escolares.models import CicloEscolar
 from django.urls import reverse
 from rest_framework import status
 
 from .base import BaseIntegrationTest
-from alumnos.models import Alumno
-from ciclos_escolares.models import CicloEscolar
 
 
 class CicloPromocionFlowTest(BaseIntegrationTest):
-
     def test_admin_ejecuta_promocion_completa(self):
         """Admin ejecuta promoción: preview → commit → verifica cambios."""
         self._auth(self.admin)

@@ -1,6 +1,5 @@
 from rest_framework.views import exception_handler
-from rest_framework.response import Response
-from rest_framework import status
+
 
 def custom_exception_handler(exc, context):
     """
@@ -19,16 +18,16 @@ def custom_exception_handler(exc, context):
         # Si el error es de validación (400), el formato es un diccionario de campos
         if isinstance(original_data, dict):
             # Verificamos si hay una llave 'detail' (error general)
-            if 'detail' in original_data:
-                message = original_data['detail']
+            if "detail" in original_data:
+                message = original_data["detail"]
                 # Si hay otros campos aparte de 'detail', son errores de validación
                 if len(original_data) > 1:
-                    errors = {k: v for k, v in original_data.items() if k != 'detail'}
+                    errors = {k: v for k, v in original_data.items() if k != "detail"}
             else:
                 # Es un error de validación pura (campos)
                 message = "Error de validación en los datos enviados."
                 errors = original_data
-            
+
             # Intentamos generar un código de error basado en el status
             code = f"ERROR_{response.status_code}"
         else:

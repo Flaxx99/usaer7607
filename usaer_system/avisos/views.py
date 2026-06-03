@@ -1,9 +1,11 @@
 # avisos/views.py
-from rest_framework import viewsets, permissions, filters
 from django.db.models import Q
 from django.utils import timezone
+from rest_framework import filters, permissions, viewsets
+
 from .models import Anuncio
 from .serializers import AnuncioSerializer
+
 
 class IsOwnerOrReadOnly(permissions.BasePermission):
     """
@@ -12,19 +14,23 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
     - Crear (POST): Solo Admin o Secretario.
     - Editar/Borrar (PUT/DELETE): Solo el autor o un admin.
     """
+
     def has_permission(self, request, view):
         if not request.user.is_authenticated:
             return False
         if request.method in permissions.SAFE_METHODS:
             return True
         # Solo Admin o Secretario pueden crear anuncios
-        return (request.user.is_superuser or 
-                getattr(request.user, 'role', '') in ['ADMIN', 'SECRETARIO'])
+        return request.user.is_superuser or getattr(request.user, "role", "") in [
+            "ADMIN",
+            "SECRETARIO",
+        ]
 
     def has_object_permission(self, request, view, obj):
         if request.method in permissions.SAFE_METHODS:
             return True
         return obj.autor == request.user or request.user.is_superuser
+
 
 class AnuncioViewSet(viewsets.ModelViewSet):
     """
@@ -32,13 +38,14 @@ class AnuncioViewSet(viewsets.ModelViewSet):
     - Lista solo anuncios vigentes (públicos).
     - El autor puede ver sus propios anuncios aunque hayan expirado.
     """
+
     queryset = Anuncio.objects.all()
     serializer_class = AnuncioSerializer
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
-    
+
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['titulo', 'contenido']
-    ordering_fields = ['fecha_publicacion']
+    search_fields = ["titulo", "contenido"]
+    ordering_fields = ["fecha_publicacion"]
 
     def get_queryset(self):
         """
@@ -50,7 +57,9 @@ class AnuncioViewSet(viewsets.ModelViewSet):
         now = timezone.now()
 
         # Si el usuario quiere ver "sus" anuncios para gestionarlos, devolvemos todo
-        if self.action in ['update', 'partial_update', 'destroy'] or self.request.query_params.get('mis_anuncios'):
+        if self.action in ["update", "partial_update", "destroy"] or self.request.query_params.get(
+            "mis_anuncios"
+        ):
             if user.is_superuser:
                 return Anuncio.objects.all()
             return Anuncio.objects.filter(autor=user)
@@ -58,8 +67,8 @@ class AnuncioViewSet(viewsets.ModelViewSet):
         # Para el listado general (tablón), aplicamos el filtro de vigencia
         return Anuncio.objects.filter(
             (Q(fecha_expiracion__gte=now) | Q(fecha_expiracion__isnull=True)),
-            fecha_publicacion__lte=now
-        ).order_by('-fecha_publicacion')
+            fecha_publicacion__lte=now,
+        ).order_by("-fecha_publicacion")
 
     def perform_create(self, serializer):
         """Asigna automáticamente el autor al crear."""

@@ -4,18 +4,17 @@ test_exports.py — Validación de exportaciones Excel.
 Verifica que los archivos Excel generados contengan datos reales.
 """
 
-import openpyxl
 from io import BytesIO
 
+import openpyxl
 from django.urls import reverse
+from rac.models import RegistroRAC
 from rest_framework import status
 
 from .base import BaseIntegrationTest
-from rac.models import RegistroRAC
 
 
 class ExportTest(BaseIntegrationTest):
-
     def test_export_rac_excel_tiene_datos(self):
         """Admin exporta RAC y el Excel contiene datos del alumno."""
         RegistroRAC.objects.create(
@@ -38,8 +37,7 @@ class ExportTest(BaseIntegrationTest):
         ws = wb["RAC"]
         found = False
         for row in ws.iter_rows(values_only=True):
-            if any(self.alumno.apellido_paterno in str(cell or "")
-                   for cell in row):
+            if any(self.alumno.apellido_paterno in str(cell or "") for cell in row):
                 found = True
                 break
         self.assertTrue(found, "El Excel exportado debe contener datos del alumno")
@@ -63,8 +61,7 @@ class ExportTest(BaseIntegrationTest):
         ws = wb["Sheet1"]
         found = False
         for row in ws.iter_rows(values_only=True):
-            if any(nombre_completo in str(cell or "").upper()
-                   for cell in row):
+            if any(nombre_completo in str(cell or "").upper() for cell in row):
                 found = True
                 break
         self.assertTrue(found, "El Excel exportado debe contener el nombre completo del alumno")

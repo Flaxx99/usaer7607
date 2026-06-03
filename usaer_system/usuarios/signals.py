@@ -1,6 +1,8 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+
 from .models import User
+
 
 @receiver(post_save, sender=User)
 def set_user_role_on_save(sender, instance, created, **kwargs):
@@ -14,7 +16,7 @@ def set_user_role_on_save(sender, instance, created, **kwargs):
             instance.role = User.Role.ADMINISTRADOR
         elif instance.escuela and instance.escuela.director == instance:
             instance.role = User.Role.DIRECTOR
-        
+
         # Solo guardamos si hubo un cambio para evitar recursión infinita
         # Usamos update() para no disparar el signal de nuevo
         # o simplemente guardamos el campo específico

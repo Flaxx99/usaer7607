@@ -1,9 +1,10 @@
-import os
-from django.db import models
 from django.conf import settings
+from django.db import models
+
 
 def ruta_archivo_oficio(instance, filename):
-    return f'oficios/{filename}'
+    return f"oficios/{filename}"
+
 
 class Oficio(models.Model):
     titulo = models.CharField("Título del oficio", max_length=255)
@@ -11,10 +12,7 @@ class Oficio(models.Model):
     archivo = models.FileField(upload_to=ruta_archivo_oficio, verbose_name="Archivo")
     fecha_subida = models.DateTimeField(auto_now_add=True)
     subido_por = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        verbose_name="Subido por"
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, verbose_name="Subido por"
     )
 
     def __str__(self):
@@ -25,7 +23,6 @@ class Oficio(models.Model):
             self.archivo.delete(save=False)
         super().delete(*args, **kwargs)
 
-    
     def save(self, *args, **kwargs):
         # Si es una actualización (ya tiene PK)
         if self.pk:
@@ -35,5 +32,5 @@ class Oficio(models.Model):
                 if old_instance.archivo and self.archivo != old_instance.archivo:
                     old_instance.archivo.delete(save=False)
             except Oficio.DoesNotExist:
-                pass # Es un create nuevo, no pasa nada
+                pass  # Es un create nuevo, no pasa nada
         super().save(*args, **kwargs)

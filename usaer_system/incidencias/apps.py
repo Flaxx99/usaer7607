@@ -2,8 +2,8 @@ from django.apps import AppConfig
 
 
 class IncidenciasConfig(AppConfig):
-    default_auto_field = 'django.db.models.BigAutoField'
-    name = 'incidencias'
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "incidencias"
 
     def ready(self):
         import incidencias.signals  # noqa

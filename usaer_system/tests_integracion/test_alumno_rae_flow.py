@@ -13,7 +13,6 @@ from .base import BaseIntegrationTest
 
 
 class AlumnoRAEFlowTest(BaseIntegrationTest):
-
     def test_maestro_inicia_captura_rae(self):
         """Maestro inicia captura RAE y obtiene su lista de alumnos."""
         self._auth(self.maestro)
@@ -35,10 +34,7 @@ class AlumnoRAEFlowTest(BaseIntegrationTest):
         bulk_url = reverse("rae:guardar_rae_bulk")
         payload = {
             "registro_id": registro_id,
-            "alumnos": [
-                {"id": a["id"], "di": True, "psicologia": True}
-                for a in alumnos_data
-            ],
+            "alumnos": [{"id": a["id"], "di": True, "psicologia": True} for a in alumnos_data],
         }
         response = self.client.post(bulk_url, payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)

@@ -1,0 +1,63 @@
+# Pre-commit hooks para USAER 7607
+# Instalar: pre-commit install
+# Correr manual: pre-commit run --all-files
+
+exclude: >
+    (?x)^(
+        .idea/|
+        frontend/|
+        node_modules/|
+        usaer_system/static/|
+        usaer_system/staticfiles/|
+        build\.sh|
+        README\.md|
+        \.gitignore
+    )
+
+repos:
+  # ─────────────────────────────────────────────
+  # 1. Ganchos universales (formato, sintaxis)
+  # ─────────────────────────────────────────────
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-toml
+      - id: check-added-large-files
+        args: [--maxkb=500]
+      - id: detect-private-key
+
+  # ─────────────────────────────────────────────
+  # 2. Ruff: linter + formateador
+  # ─────────────────────────────────────────────
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    # Ruff version debe coincidir con el instalado
+    rev: v0.15.12
+    hooks:
+      # Lint con corrección automática
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+        types_or: [python, pyi]
+      # Formateo
+      - id: ruff-format
+        types_or: [python, pyi]
+
+  # ─────────────────────────────────────────────
+  # 3. Bandit: seguridad estática
+  # ─────────────────────────────────────────────
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.9.4
+    hooks:
+      - id: bandit
+        args:
+          - -x
+          - "**/tests*,**/migrations/*,**/tests_integracion/*,**/scripts/*,**/management/*"
+          - -s
+          - B101,B105,B106,B107,B110,B112,B311
+        # B101: assert (común en tests)
+        # B105-B107: hardcoded passwords (común en test fixtures)
+        # B110/B112: try/except pass/continue
+        # B311: random (común en management commands de test data)

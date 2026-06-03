@@ -1,6 +1,6 @@
 # rac/permissions.py
-from rest_framework import permissions
 from django.contrib.auth import get_user_model
+from rest_framework import permissions
 
 User = get_user_model()
 
@@ -27,7 +27,7 @@ class RACPermission(permissions.BasePermission):
             return obj.maestro_apoyo == user
 
         # Para roles itinerantes, director, etc.: coincidencia por escuela
-        if hasattr(user, 'escuela') and user.escuela:
+        if hasattr(user, "escuela") and user.escuela:
             return obj.alumno.escuela_id == user.escuela_id
 
         return False

@@ -1,7 +1,8 @@
-from rest_framework import permissions
 from django.contrib.auth import get_user_model
+from rest_framework import permissions
 
 User = get_user_model()
+
 
 class IsAdminOrSecretarioOrReadOnly(permissions.BasePermission):
     """
@@ -20,6 +21,5 @@ class IsAdminOrSecretarioOrReadOnly(permissions.BasePermission):
             return True
 
         # Roles con permiso de escritura
-        roles_escritura = ['ADMIN', 'SECRETARIO']
-        return (request.user.is_superuser or 
-                getattr(request.user, 'role', '') in roles_escritura)
+        roles_escritura = ["ADMIN", "SECRETARIO"]
+        return request.user.is_superuser or getattr(request.user, "role", "") in roles_escritura

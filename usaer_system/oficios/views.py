@@ -1,22 +1,23 @@
-from rest_framework import viewsets, permissions, filters
-from rest_framework.parsers import MultiPartParser, FormParser
-from drf_yasg.utils import swagger_auto_schema 
+from drf_yasg.utils import swagger_auto_schema
+from rest_framework import filters, viewsets
+from rest_framework.parsers import FormParser, MultiPartParser
 
 from .models import Oficio
-from .serializers import OficioSerializer
 from .permissions import IsAdminOrSecretarioOrReadOnly
+from .serializers import OficioSerializer
+
 
 class OficioViewSet(viewsets.ModelViewSet):
-    queryset = Oficio.objects.all().select_related('subido_por').order_by('-fecha_subida')
+    queryset = Oficio.objects.all().select_related("subido_por").order_by("-fecha_subida")
     serializer_class = OficioSerializer
     permission_classes = [IsAdminOrSecretarioOrReadOnly]
-    
+
     # Habilitamos soporte para subir archivos
     parser_classes = (MultiPartParser, FormParser)
-    
+
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['titulo', 'descripcion']
-    ordering_fields = ['fecha_subida', 'titulo']
+    search_fields = ["titulo", "descripcion"]
+    ordering_fields = ["fecha_subida", "titulo"]
 
     def perform_create(self, serializer):
         # Asignamos automáticamente el usuario que sube el archivo

@@ -1,12 +1,13 @@
-from django.db import models
 from django.conf import settings
+from django.db import models
+
 
 class Escuela(models.Model):
     CLAVE_NIVELES = [
-        ('PREESCOLAR', 'Preescolar'),
-        ('PRIMARIA', 'Primaria'),
-        ('SECUNDARIA', 'Secundaria'),
-    ]   
+        ("PREESCOLAR", "Preescolar"),
+        ("PRIMARIA", "Primaria"),
+        ("SECUNDARIA", "Secundaria"),
+    ]
 
     clave_estatal = models.CharField("Clave estatal", max_length=10, unique=True)
     cct = models.CharField("Clave de Centro de Trabajo (CCT)", max_length=20, unique=True)
@@ -27,8 +28,8 @@ class Escuela(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='escuelas_dirigidas',
-        verbose_name="Director(a)"
+        related_name="escuelas_dirigidas",
+        verbose_name="Director(a)",
     )
     celular_director = models.CharField("Celular del director", max_length=20, blank=True)
     correo_director = models.EmailField("Correo del director", blank=True)

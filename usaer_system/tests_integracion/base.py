@@ -12,16 +12,12 @@ Provee una clase base `BaseIntegrationTest` con setUpClass que crea:
 
 from datetime import date, timedelta
 
-from django.urls import reverse
-from django.contrib.auth import get_user_model
-from django.utils import timezone
-
-from rest_framework.test import APITestCase, APIClient
-from rest_framework.authtoken.models import Token
-
-from escuelas.models import Escuela
-from ciclos_escolares.models import CicloEscolar
 from alumnos.models import Alumno
+from ciclos_escolares.models import CicloEscolar
+from django.contrib.auth import get_user_model
+from escuelas.models import Escuela
+from rest_framework.authtoken.models import Token
+from rest_framework.test import APIClient, APITestCase
 
 User = get_user_model()
 

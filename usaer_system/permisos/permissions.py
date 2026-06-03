@@ -1,7 +1,8 @@
-from rest_framework import permissions
 from django.contrib.auth import get_user_model
+from rest_framework import permissions
 
 User = get_user_model()
+
 
 class IsAdminDirectorOrOwner(permissions.BasePermission):
     """
@@ -27,8 +28,8 @@ class IsAdminDirectorOrOwner(permissions.BasePermission):
         # 2. Dueño del permiso
         if obj.profesor == user:
             # Solo puede borrar o editar si está PENDIENTE
-            if request.method in ['PUT', 'PATCH', 'DELETE']:
-                return obj.estado == 'PENDIENTE'
-            return True # GET permitido siempre
+            if request.method in ["PUT", "PATCH", "DELETE"]:
+                return obj.estado == "PENDIENTE"
+            return True  # GET permitido siempre
 
         return False

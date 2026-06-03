@@ -1,0 +1,70 @@
+[project]
+name = "usaer7607"
+description = "Sistema de Gestión USAER 7607"
+requires-python = ">=3.12"
+
+[tool.ruff]
+# Target Python 3.14 — permite usar sintaxis moderna (match, type, etc.)
+target-version = "py314"
+line-length = 100
+
+# Excluir migraciones autogeneradas y entornos virtuales
+exclude = [
+    "**/migrations/",
+    ".git/",
+    "__pycache__/",
+    "node_modules/",
+    "venv/",
+    ".idea/",
+    "frontend/",
+    "usaer_system/static/",
+    "usaer_system/staticfiles/",
+    "usaer_system/templates/",
+    "build.sh",
+    "README.md",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "F",    # pyflakes
+    "I",    # isort
+    "N",    # pep8-naming
+    "W",    # pycodestyle warnings
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "SIM",  # flake8-simplify
+    "ARG",  # flake8-unused-arguments
+]
+ignore = [
+    "B904",   # raise-without-from-inside-except — Django idioms
+    "E501",   # line-too-long — Ruff format lo maneja
+    "SIM108", # use ternary — a veces if/else es más legible
+    "B008",   # function-call-in-default-argument — común en Django Field.default
+    "ARG001", # unused-function-argument — señales Django requieren sender, kwargs
+    "ARG002", # unused-method-argument — admin/DRF requieren request, view aunque no se usen
+    "SIM105", # suppress-context-manager — try/except/pass es más explícito
+    "SIM103", # return-condition-directly — if/return/True es más legible
+    "SIM102", # collapsible-if — ifs anidados son más legibles
+]
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests*" = ["B", "ARG", "N"]
+"**/admin.py" = ["N", "ARG"]
+"**/settings*" = ["E501"]
+"**/management/**" = ["B", "ARG"]
+"**/signals.py" = ["ARG", "B"]
+"**/serializers.py" = ["ARG"]
+"**/usuarios/views.py" = ["E402", "F401"]
+"**/debug_*.py" = ["E402"]
+"**/migrations/*" = ["E501", "N", "UP"]
+"**/populate_data.py" = ["B", "F841", "B007"]
+"delete_migration_entry.py" = ["E402"]
+"**/asistencias/views.py" = ["E402"]
+"**/rac/views.py" = ["B007"]
+
+[tool.ruff.format]
+# Ruff format es compatible con Black, pero con nuestras reglas
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"

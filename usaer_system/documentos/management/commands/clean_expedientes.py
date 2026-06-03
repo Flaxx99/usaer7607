@@ -1,27 +1,30 @@
 import os
-from django.core.management.base import BaseCommand
+
 from django.conf import settings
+from django.core.management.base import BaseCommand
+
 from documentos.models import Expediente
 
+
 class Command(BaseCommand):
-    help = 'Elimina carpetas de media/expedientes/alumno_X sin expediente en BD'
+    help = "Elimina carpetas de media/expedientes/alumno_X sin expediente en BD"
 
     def handle(self, *args, **options):
-        base = os.path.join(settings.MEDIA_ROOT, 'expedientes')
+        base = os.path.join(settings.MEDIA_ROOT, "expedientes")
         if not os.path.isdir(base):
-            self.stdout.write(self.style.WARNING(f'No existe {base}'))
+            self.stdout.write(self.style.WARNING(f"No existe {base}"))
             return
 
         for nombre in os.listdir(base):
             ruta = os.path.join(base, nombre)
-            if os.path.isdir(ruta) and nombre.startswith('alumno_'):
+            if os.path.isdir(ruta) and nombre.startswith("alumno_"):
                 try:
-                    alumno_id = int(nombre.split('_')[1])
-                except (IndexError, ValueError):
+                    alumno_id = int(nombre.split("_")[1])
+                except IndexError, ValueError:
                     continue
 
                 if not Expediente.objects.filter(alumno_id=alumno_id).exists():
-                    self.stdout.write(f'{self.style.NOTICE("Borrando carpeta huérfana:")} {ruta}')
+                    self.stdout.write(f"{self.style.NOTICE('Borrando carpeta huérfana:')} {ruta}")
                     try:
                         # eliminar todo dentro
                         for root, dirs, files in os.walk(ruta, topdown=False):
@@ -32,4 +35,4 @@ class Command(BaseCommand):
                         os.rmdir(ruta)
                     except OSError as e:
                         self.stdout.write(self.style.ERROR(f"No se pudo eliminar {ruta}: {e}"))
-        self.stdout.write(self.style.SUCCESS('Limpieza finalizada.'))
+        self.stdout.write(self.style.SUCCESS("Limpieza finalizada."))

@@ -1,7 +1,8 @@
-from rest_framework import permissions
 from django.contrib.auth import get_user_model
+from rest_framework import permissions
 
 User = get_user_model()
+
 
 class IncidenciaPermission(permissions.BasePermission):
     """
@@ -19,7 +20,7 @@ class IncidenciaPermission(permissions.BasePermission):
             return False
 
         # 2. Permisos globales (Listar y Crear)
-        if view.action == 'create':
+        if view.action == "create":
             roles_crear = [User.Role.ADMINISTRADOR.value, User.Role.DIRECTOR.value]
             return request.user.role in roles_crear or request.user.is_superuser
 
@@ -34,14 +35,14 @@ class IncidenciaPermission(permissions.BasePermission):
         # ADMIN y DIRECTOR tienen acceso total a todo (menos resolver para Director si somos estrictos)
         if user.role in roles_admin_dir or user.is_superuser:
             # Caso especial: RESOLVER solo Admin (según tu ruta resolver_incidencia)
-            if view.action == 'resolver':
+            if view.action == "resolver":
                 return user.role == User.Role.ADMINISTRADOR.value or user.is_superuser
             return True
 
         # MAESTRO DE APOYO (Solo lectura y solo si es SU incidencia)
         if user.role == User.Role.MAESTRO_APOYO.value:
-            if request.method in permissions.SAFE_METHODS: # GET
+            if request.method in permissions.SAFE_METHODS:  # GET
                 return obj.profesor == user
-            return False # No puede editar ni borrar
+            return False  # No puede editar ni borrar
 
         return False

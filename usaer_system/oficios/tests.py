@@ -1,11 +1,12 @@
 """Tests for Oficios app — expanded coverage for RBAC, File handling, and Search."""
 
 import os
-from django.urls import reverse
+
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
-from rest_framework.test import APITestCase, APIClient
+from django.urls import reverse
 from rest_framework import status
+from rest_framework.test import APIClient, APITestCase
 
 from .models import Oficio
 
@@ -21,7 +22,7 @@ class OficioModelTest(APITestCase):
             titulo="Oficio de Prueba",
             descripcion="Descripción del oficio",
             archivo=SimpleUploadedFile("test_oficio.pdf", b"file_content"),
-            subido_por=self.user
+            subido_por=self.user,
         )
 
     def tearDown(self):
@@ -49,6 +50,7 @@ class OficioModelTest(APITestCase):
         self.assertFalse(os.path.exists(old_file_path))
         self.assertTrue(os.path.exists(self.oficio.archivo.path))
 
+
 class OficioViewsTest(APITestCase):
     def setUp(self):
         self.client = APIClient()
@@ -58,17 +60,23 @@ class OficioViewsTest(APITestCase):
         )
         # Secretario to perform write operations
         self.secretario = User.objects.create_user(
-            email="sec_oficio@example.com", numero_empleado="sec_of", password="pass", role=User.Role.SECRETARIO
+            email="sec_oficio@example.com",
+            numero_empleado="sec_of",
+            password="pass",
+            role=User.Role.SECRETARIO,
         )
         # Regular user for read-only checks
         self.user = User.objects.create_user(
-            email="view_oficio@example.com", numero_empleado="EMP006", password="pass", role=User.Role.MAESTRO_APOYO
+            email="view_oficio@example.com",
+            numero_empleado="EMP006",
+            password="pass",
+            role=User.Role.MAESTRO_APOYO,
         )
         self.oficio = Oficio.objects.create(
             titulo="Oficio Existente",
             descripcion="Descripción existente",
             archivo=SimpleUploadedFile("existing_oficio.pdf", b"existing_content"),
-            subido_por=self.user
+            subido_por=self.user,
         )
 
     def tearDown(self):
@@ -91,7 +99,7 @@ class OficioViewsTest(APITestCase):
             "descripcion": "Descripción del nuevo oficio",
             "archivo": SimpleUploadedFile("new_oficio_admin.pdf", b"new_content"),
         }
-        response = self.client.post(url, data=form_data, format='multipart')
+        response = self.client.post(url, data=form_data, format="multipart")
         self.assertIn(response.status_code, [status.HTTP_201_CREATED, status.HTTP_200_OK])
         self.assertTrue(Oficio.objects.filter(titulo="Nuevo Oficio Admin").exists())
 
@@ -103,7 +111,7 @@ class OficioViewsTest(APITestCase):
             "descripcion": "Descripción del nuevo oficio",
             "archivo": SimpleUploadedFile("new_oficio_sec.pdf", b"new_content"),
         }
-        response = self.client.post(url, data=form_data, format='multipart')
+        response = self.client.post(url, data=form_data, format="multipart")
         self.assertIn(response.status_code, [status.HTTP_201_CREATED, status.HTTP_200_OK])
         self.assertTrue(Oficio.objects.filter(titulo="Nuevo Oficio Sec").exists())
 
@@ -115,7 +123,7 @@ class OficioViewsTest(APITestCase):
             "descripcion": "No debería poder subirlo",
             "archivo": SimpleUploadedFile("prohibido.pdf", b"content"),
         }
-        response = self.client.post(url, data=form_data, format='multipart')
+        response = self.client.post(url, data=form_data, format="multipart")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_editar_oficio_admin(self):
@@ -126,7 +134,7 @@ class OficioViewsTest(APITestCase):
             "descripcion": "Descripción editada",
             "archivo": SimpleUploadedFile("edited_oficio_admin.pdf", b"edited_content"),
         }
-        response = self.client.patch(url, data=form_data, format='multipart')
+        response = self.client.patch(url, data=form_data, format="multipart")
         self.assertIn(response.status_code, [status.HTTP_200_OK, status.HTTP_204_NO_CONTENT])
         self.oficio.refresh_from_db()
         self.assertEqual(self.oficio.titulo, "Oficio Editado Admin")
@@ -147,13 +155,13 @@ class OficioViewsTest(APITestCase):
     def test_search_oficios(self):
         self.client.force_authenticate(user=self.user)
         url = reverse("oficios:oficios-list")
-        
+
         # Search by title
-        response = self.client.get(url, {'search': 'Existente'})
+        response = self.client.get(url, {"search": "Existente"})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertContains(response, self.oficio.titulo)
-        
+
         # Search for non-existent
-        response = self.client.get(url, {'search': 'Inexistente'})
+        response = self.client.get(url, {"search": "Inexistente"})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertNotContains(response, self.oficio.titulo)

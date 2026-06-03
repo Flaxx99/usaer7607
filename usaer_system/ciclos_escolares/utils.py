@@ -1,7 +1,9 @@
 import logging
+
 from .models import CicloEscolar
 
 logger = logging.getLogger(__name__)
+
 
 def get_current_ciclo_escolar_instance():
     """
@@ -14,7 +16,7 @@ def get_current_ciclo_escolar_instance():
         active_cycle = CicloEscolar.objects.filter(activo=True).first()
         if active_cycle:
             return active_cycle
-        
+
         # If no cycle is marked as active, fallback to date-based logic
         return CicloEscolar.get_current_or_next_cycle()
     except CicloEscolar.DoesNotExist as e:

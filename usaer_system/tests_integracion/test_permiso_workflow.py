@@ -9,15 +9,14 @@ Flujo:
 """
 
 from django.urls import reverse
-from rest_framework import status
 from django.utils import timezone
+from permisos.models import Permiso
+from rest_framework import status
 
 from .base import BaseIntegrationTest
-from permisos.models import Permiso
 
 
 class PermisoWorkflowTest(BaseIntegrationTest):
-
     def test_ciclo_completo_permiso(self):
         """Flujo completo: crear → responder → consultar → eliminar denegado."""
         self._auth(self.maestro)
@@ -32,8 +31,7 @@ class PermisoWorkflowTest(BaseIntegrationTest):
             "horas_solicitadas": 4,
         }
         crear_resp = self.client.post(crear_url, data, format="json")
-        self.assertIn(crear_resp.status_code,
-                      [status.HTTP_201_CREATED, status.HTTP_200_OK])
+        self.assertIn(crear_resp.status_code, [status.HTTP_201_CREATED, status.HTTP_200_OK])
         permiso_id = crear_resp.data.get("id") or crear_resp.json().get("id")
 
         # 2. Admin responde (aprueba)
@@ -101,5 +99,4 @@ class PermisoWorkflowTest(BaseIntegrationTest):
 
         detalle_url = reverse("permisos:permisos-detail", args=[permiso_id])
         delete_resp = self.client.delete(detalle_url)
-        self.assertIn(delete_resp.status_code,
-                      [status.HTTP_204_NO_CONTENT, status.HTTP_200_OK])
+        self.assertIn(delete_resp.status_code, [status.HTTP_204_NO_CONTENT, status.HTTP_200_OK])

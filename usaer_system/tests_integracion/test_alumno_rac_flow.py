@@ -8,14 +8,13 @@ Roles involucrados:
 """
 
 from django.urls import reverse
+from rac.models import RegistroRAC
 from rest_framework import status
 
 from .base import BaseIntegrationTest
-from rac.models import RegistroRAC
 
 
 class AlumnoRACFlowTest(BaseIntegrationTest):
-
     def test_maestro_crea_alumno(self):
         """Maestro de Apoyo da de alta a su alumno."""
         self._auth(self.maestro)
@@ -34,8 +33,7 @@ class AlumnoRACFlowTest(BaseIntegrationTest):
             "clasificacion": "DISCAPACIDAD",
         }
         response = self.client.post(url, data, format="json")
-        self.assertIn(response.status_code,
-                      [status.HTTP_201_CREATED, status.HTTP_200_OK])
+        self.assertIn(response.status_code, [status.HTTP_201_CREATED, status.HTTP_200_OK])
 
     def test_maestro_crea_rac_de_su_alumno(self):
         """Maestro crea un registro RAC para el alumno que le pertenece."""
@@ -51,8 +49,7 @@ class AlumnoRACFlowTest(BaseIntegrationTest):
             "service_type": "USAER",
         }
         response = self.client.post(url, data, format="json")
-        self.assertIn(response.status_code,
-                      [status.HTTP_201_CREATED, status.HTTP_200_OK])
+        self.assertIn(response.status_code, [status.HTTP_201_CREATED, status.HTTP_200_OK])
         self.assertEqual(RegistroRAC.objects.count(), 1)
 
     def test_admin_ve_todos_los_rac(self):
@@ -73,7 +70,9 @@ class AlumnoRACFlowTest(BaseIntegrationTest):
         self._auth(self.admin)
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        results = response.data if isinstance(response.data, list) else response.data.get("results", [])
+        results = (
+            response.data if isinstance(response.data, list) else response.data.get("results", [])
+        )
         self.assertEqual(len(results), 1)
 
     def test_maestro_otra_escuela_no_ve_rac_ajeno(self):
@@ -94,7 +93,9 @@ class AlumnoRACFlowTest(BaseIntegrationTest):
         self._auth(self.maestro_otra_esc)
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        results = response.data if isinstance(response.data, list) else response.data.get("results", [])
+        results = (
+            response.data if isinstance(response.data, list) else response.data.get("results", [])
+        )
         self.assertEqual(len(results), 0)
 
     def test_admin_exporta_rac_completo(self):
@@ -103,5 +104,7 @@ class AlumnoRACFlowTest(BaseIntegrationTest):
         url = reverse("rac:exportar_todo")
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response["Content-Type"],
-                         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        self.assertEqual(
+            response["Content-Type"],
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )

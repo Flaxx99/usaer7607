@@ -6,7 +6,6 @@ esperado. Usa subTest para que cada combinación se reporte individualmente.
 """
 
 from django.urls import reverse
-from rest_framework import status
 
 from .base import BaseIntegrationTest
 
@@ -39,31 +38,46 @@ class RBACMatrixTest(BaseIntegrationTest):
         c = RBACMatrixTest._counter
         payloads = {
             "escuelas": {
-                "clave_estatal": f"NEW{c:03d}", "cct": f"CCTNEW{c:03d}",
-                "nombre": f"Escuela {c}", "nivel": "PRIMARIA",
-                "domicilio": "Dir", "colonia": "Col", "zona": "Z01",
+                "clave_estatal": f"NEW{c:03d}",
+                "cct": f"CCTNEW{c:03d}",
+                "nombre": f"Escuela {c}",
+                "nivel": "PRIMARIA",
+                "domicilio": "Dir",
+                "colonia": "Col",
+                "zona": "Z01",
             },
             "alumnos": {
-                "profesor": self.maestro.pk, "escuela": self.escuela.pk,
-                "apellido_paterno": f"N{c}", "apellido_materno": "A",
-                "nombres": "Test", "curp": f"NEU{c:03d}XXX123456HOMBXX",
-                "sexo": "H", "edad": 7, "grado": "1",
+                "profesor": self.maestro.pk,
+                "escuela": self.escuela.pk,
+                "apellido_paterno": f"N{c}",
+                "apellido_materno": "A",
+                "nombres": "Test",
+                "curp": f"NEU{c:03d}XXX123456HOMBXX",
+                "sexo": "H",
+                "edad": 7,
+                "grado": "1",
                 "clasificacion": "DISCAPACIDAD",
             },
             "incidencias": {
-                "titulo": f"Test {c}", "escuela": self.escuela.pk,
-                "profesor": self.maestro.pk, "descripcion": "Test",
+                "titulo": f"Test {c}",
+                "escuela": self.escuela.pk,
+                "profesor": self.maestro.pk,
+                "descripcion": "Test",
                 "reportado_por": self.admin.pk,
             },
             "permisos": {
-                "motivo": f"Test {c}", "fecha_inicio": "2026-06-03",
-                "fecha_fin": "2026-06-03", "horas_solicitadas": 2,
+                "motivo": f"Test {c}",
+                "fecha_inicio": "2026-06-03",
+                "fecha_fin": "2026-06-03",
+                "horas_solicitadas": 2,
             },
             "documentos": {
-                "alumno": self.alumno.pk, "observaciones": "Test",
+                "alumno": self.alumno.pk,
+                "observaciones": "Test",
             },
             "avisos": {
-                "titulo": f"Test Aviso {c}", "contenido": "Contenido test",
+                "titulo": f"Test Aviso {c}",
+                "contenido": "Contenido test",
                 "fecha_publicacion": "2026-06-03",
             },
         }
@@ -100,25 +114,82 @@ class RBACMatrixTest(BaseIntegrationTest):
                 else:
                     self._auth(user)
                 response = self.client.get(url)
-                self.assertEqual(response.status_code, expected,
-                                 f"{label}: esperado {expected}, obtenido {response.status_code}")
+                self.assertEqual(
+                    response.status_code,
+                    expected,
+                    f"{label}: esperado {expected}, obtenido {response.status_code}",
+                )
 
     def test_rbac_post_matrix(self):
         """Matriz POST: qué roles pueden crear en qué endpoints."""
         cases = [
             ("ANON", "escuelas:escuelas-list", "escuelas", 401, "escuelas-POST-anon"),
-            ("MAESTRO_APOYO", "escuelas:escuelas-list", "escuelas", 403, "escuelas-POST-maestro-deny"),
+            (
+                "MAESTRO_APOYO",
+                "escuelas:escuelas-list",
+                "escuelas",
+                403,
+                "escuelas-POST-maestro-deny",
+            ),
             ("ADMIN", "escuelas:escuelas-list", "escuelas", (201, 200), "escuelas-POST-admin"),
-            ("SECRETARIO", "escuelas:escuelas-list", "escuelas", (201, 200), "escuelas-POST-secretario"),
-            ("ADMIN", "incidencias:incidencias-list", "incidencias", (201, 200), "incidencias-POST-admin"),
-            ("DIRECTOR", "incidencias:incidencias-list", "incidencias", (201, 200), "incidencias-POST-director"),
-            ("SECRETARIO", "incidencias:incidencias-list", "incidencias", 403, "incidencias-POST-secretario-deny"),
-            ("MAESTRO_APOYO", "incidencias:incidencias-list", "incidencias", 403, "incidencias-POST-maestro-deny"),
-            ("MAESTRO_APOYO", "permisos:permisos-list", "permisos", (201, 200), "permisos-POST-maestro"),
+            (
+                "SECRETARIO",
+                "escuelas:escuelas-list",
+                "escuelas",
+                (201, 200),
+                "escuelas-POST-secretario",
+            ),
+            (
+                "ADMIN",
+                "incidencias:incidencias-list",
+                "incidencias",
+                (201, 200),
+                "incidencias-POST-admin",
+            ),
+            (
+                "DIRECTOR",
+                "incidencias:incidencias-list",
+                "incidencias",
+                (201, 200),
+                "incidencias-POST-director",
+            ),
+            (
+                "SECRETARIO",
+                "incidencias:incidencias-list",
+                "incidencias",
+                403,
+                "incidencias-POST-secretario-deny",
+            ),
+            (
+                "MAESTRO_APOYO",
+                "incidencias:incidencias-list",
+                "incidencias",
+                403,
+                "incidencias-POST-maestro-deny",
+            ),
+            (
+                "MAESTRO_APOYO",
+                "permisos:permisos-list",
+                "permisos",
+                (201, 200),
+                "permisos-POST-maestro",
+            ),
             ("ADMIN", "avisos:anuncios-list", "avisos", (201, 200), "avisos-POST-admin"),
             ("MAESTRO_APOYO", "avisos:anuncios-list", "avisos", 403, "avisos-POST-maestro-deny"),
-            ("MAESTRO_APOYO", "documentos:documentos-list", "documentos", (201, 200), "docs-POST-maestro"),
-            ("PSICOLOGO", "documentos:documentos-list", "documentos", (201, 200), "docs-POST-psicologo"),
+            (
+                "MAESTRO_APOYO",
+                "documentos:documentos-list",
+                "documentos",
+                (201, 200),
+                "docs-POST-maestro",
+            ),
+            (
+                "PSICOLOGO",
+                "documentos:documentos-list",
+                "documentos",
+                (201, 200),
+                "docs-POST-psicologo",
+            ),
         ]
         for role, viewname, endpoint_key, expected, label in cases:
             with self.subTest(label=label, role=role, method="POST"):
@@ -131,11 +202,17 @@ class RBACMatrixTest(BaseIntegrationTest):
                 else:
                     self._auth(user)
                 data = self._post_data(endpoint_key)
-                fmt = 'multipart' if endpoint_key == 'documentos' else 'json'
+                fmt = "multipart" if endpoint_key == "documentos" else "json"
                 response = self.client.post(url, data, format=fmt)
                 if isinstance(expected, tuple):
-                    self.assertIn(response.status_code, expected,
-                                  f"{label}: esperado {expected}, obtenido {response.status_code}")
+                    self.assertIn(
+                        response.status_code,
+                        expected,
+                        f"{label}: esperado {expected}, obtenido {response.status_code}",
+                    )
                 else:
-                    self.assertEqual(response.status_code, expected,
-                                     f"{label}: esperado {expected}, obtenido {response.status_code}")
+                    self.assertEqual(
+                        response.status_code,
+                        expected,
+                        f"{label}: esperado {expected}, obtenido {response.status_code}",
+                    )

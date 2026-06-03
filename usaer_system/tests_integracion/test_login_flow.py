@@ -15,24 +15,31 @@ from .base import BaseIntegrationTest
 
 
 class LoginFlowTest(BaseIntegrationTest):
-
     def test_login_exitoso_obtiene_token(self):
         """Login con username (email) y password correctos devuelve un Token."""
         url = reverse("usuarios:login")
-        response = self.client.post(url, {
-            "username": "maestro@test.com",
-            "password": "pass123",
-        }, format="json")
+        response = self.client.post(
+            url,
+            {
+                "username": "maestro@test.com",
+                "password": "pass123",
+            },
+            format="json",
+        )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("token", response.data)
 
     def test_login_fallido_credenciales_incorrectas(self):
         """Login con password incorrecto devuelve 400."""
         url = reverse("usuarios:login")
-        response = self.client.post(url, {
-            "username": "maestro@test.com",
-            "password": "wrongpass",
-        }, format="json")
+        response = self.client.post(
+            url,
+            {
+                "username": "maestro@test.com",
+                "password": "wrongpass",
+            },
+            format="json",
+        )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_acceso_endpoint_con_token_header(self):
@@ -41,10 +48,14 @@ class LoginFlowTest(BaseIntegrationTest):
 
         # Primero login para obtener token real
         login_url = reverse("usuarios:login")
-        login_resp = self.client.post(login_url, {
-            "username": "admin@test.com",
-            "password": "pass123",
-        }, format="json")
+        login_resp = self.client.post(
+            login_url,
+            {
+                "username": "admin@test.com",
+                "password": "pass123",
+            },
+            format="json",
+        )
         token = login_resp.data["token"]
 
         # Usar el token en el header
