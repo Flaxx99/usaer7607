@@ -61,14 +61,18 @@ class AnuncioViewSet(viewsets.ModelViewSet):
             "mis_anuncios"
         ):
             if user.is_superuser:
-                return Anuncio.objects.all()
-            return Anuncio.objects.filter(autor=user)
+                return Anuncio.objects.all().select_related("autor")
+            return Anuncio.objects.filter(autor=user).select_related("autor")
 
         # Para el listado general (tablón), aplicamos el filtro de vigencia
-        return Anuncio.objects.filter(
-            (Q(fecha_expiracion__gte=now) | Q(fecha_expiracion__isnull=True)),
-            fecha_publicacion__lte=now,
-        ).order_by("-fecha_publicacion")
+        return (
+            Anuncio.objects.select_related("autor")
+            .filter(
+                (Q(fecha_expiracion__gte=now) | Q(fecha_expiracion__isnull=True)),
+                fecha_publicacion__lte=now,
+            )
+            .order_by("-fecha_publicacion")
+        )
 
     def perform_create(self, serializer):
         """Asigna automáticamente el autor al crear."""
