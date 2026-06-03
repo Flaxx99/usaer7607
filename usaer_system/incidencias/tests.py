@@ -1,7 +1,10 @@
-from django.test import TestCase
+"""Tests for Incidencias app — migrated to DRF APITestCase."""
+
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+from rest_framework.test import APITestCase, APIClient
+from rest_framework import status
 
 from escuelas.models import Escuela
 from .models import Incidencia
@@ -9,7 +12,7 @@ from .models import Incidencia
 User = get_user_model()
 
 
-class IncidenciaModelTest(TestCase):
+class IncidenciaModelTest(APITestCase):
     def setUp(self):
         self.escuela = Escuela.objects.create(
             clave_estatal="E3", cct="CCT3", nombre="Escuela Incidencia", nivel="Primaria",
@@ -40,8 +43,9 @@ class IncidenciaModelTest(TestCase):
         self.assertIsNotNone(self.incidencia.fecha_resolucion)
 
 
-class IncidenciaViewsTest(TestCase):
+class IncidenciaViewsTest(APITestCase):
     def setUp(self):
+        self.client = APIClient()
         self.escuela = Escuela.objects.create(
             clave_estatal="E4", cct="CCT4", nombre="Escuela Incidencia Views", nivel="Primaria",
             domicilio="Dir", colonia="Col", zona="Z4"
@@ -62,53 +66,65 @@ class IncidenciaViewsTest(TestCase):
             email="maestro_inc@example.com", numero_empleado="EMP004", password="pass",
             escuela=self.escuela, role=User.Role.MAESTRO_APOYO
         )
+        self.maestro_otro = User.objects.create_user(
+            email="maestro_otro@example.com", numero_empleado="EMP005", password="pass",
+            escuela=self.escuela, role=User.Role.MAESTRO_APOYO
+        )
         self.incidencia_maestro = Incidencia.objects.create(
             escuela=self.escuela,
             profesor=self.maestro,
             titulo="Incidencia del Maestro",
             descripcion="Descripción del maestro"
         )
+        # This one belongs to another maestro, so the first maestro should NOT see it.
         self.incidencia_pendiente = Incidencia.objects.create(
             escuela=self.escuela,
-            profesor=self.maestro,
+            profesor=self.maestro_otro,
             titulo="Incidencia Pendiente",
             descripcion="Descripción pendiente"
         )
 
     def test_crear_incidencia_admin(self):
-        self.client.login(email="admin_inc@example.com", password="pass")
+        self.client.force_authenticate(user=self.admin)
+        url = reverse("incidencias:incidencias-list")
         form_data = {
             "titulo": "Nueva Incidencia Admin",
             "escuela": self.escuela.pk,
             "profesor": self.maestro.pk,
             "descripcion": "Descripción de la nueva incidencia",
         }
-        response = self.client.post(reverse("incidencias:crear_incidencia"), data=form_data)
-        self.assertEqual(response.status_code, 302)
-        self.assertTrue(Incidencia.objects.filter(titulo="Nueva Incidencia Admin").exists())
+        response = self.client.post(url, data=form_data, format='json')
+        self.assertIn(response.status_code, [status.HTTP_201_CREATED, status.HTTP_200_OK])
+        # The serializer converts the title to uppercase
+        self.assertTrue(Incidencia.objects.filter(titulo="NUEVA INCIDENCIA ADMIN").exists())
 
     def test_listar_incidencias_maestro(self):
-        self.client.login(email="maestro_inc@example.com", password="pass")
-        response = self.client.get(reverse("incidencias:listar_incidencias"))
-        self.assertEqual(response.status_code, 200)
+        self.client.force_authenticate(user=self.maestro)
+        url = reverse("incidencias:incidencias-list")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertContains(response, self.incidencia_maestro.titulo)
-        self.assertNotContains(response, "Incidencia Pendiente") # Solo ve las suyas
+        # Since it belongs to another maestro, the first maestro shouldn't see it
+        self.assertNotContains(response, self.incidencia_pendiente.titulo)
 
     def test_revisar_incidencias_admin(self):
-        self.client.login(email="admin_inc@example.com", password="pass")
-        response = self.client.get(reverse("incidencias:revisar_incidencias"))
-        self.assertEqual(response.status_code, 200)
+        self.client.force_authenticate(user=self.admin)
+        url = reverse("incidencias:incidencias-list")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertContains(response, self.incidencia_maestro.titulo)
         self.assertContains(response, self.incidencia_pendiente.titulo)
 
     def test_detalle_incidencia(self):
-        self.client.login(email="maestro_inc@example.com", password="pass")
-        response = self.client.get(reverse("incidencias:detalle_incidencia", args=[self.incidencia_maestro.pk]))
-        self.assertEqual(response.status_code, 200)
+        self.client.force_authenticate(user=self.maestro)
+        url = reverse("incidencias:incidencias-detail", args=[self.incidencia_maestro.pk])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertContains(response, self.incidencia_maestro.titulo)
 
     def test_editar_incidencia_director(self):
-        self.client.login(email="director_inc@example.com", password="pass")
+        self.client.force_authenticate(user=self.director)
+        url = reverse("incidencias:incidencias-detail", args=[self.incidencia_pendiente.pk])
         form_data = {
             "titulo": self.incidencia_pendiente.titulo,
             "escuela": self.incidencia_pendiente.escuela.pk,
@@ -117,22 +133,44 @@ class IncidenciaViewsTest(TestCase):
             "estado": "RESUELTA",
             "respuesta_admin": "Incidencia resuelta por director",
         }
-        response = self.client.post(reverse("incidencias:editar_incidencia", args=[self.incidencia_pendiente.pk]), data=form_data)
-        self.assertEqual(response.status_code, 302)
+        response = self.client.patch(url, data=form_data, format='json')
+        if response.status_code not in [status.HTTP_200_OK, status.HTTP_204_NO_CONTENT]:
+            print(f"DEBUG: Response status: {response.status_code}")
+            print(f"DEBUG: Response content: {response.content}")
+        self.assertIn(response.status_code, [status.HTTP_200_OK, status.HTTP_204_NO_CONTENT])
         self.incidencia_pendiente.refresh_from_db()
         self.assertEqual(self.incidencia_pendiente.estado, "RESUELTA")
         self.assertEqual(self.incidencia_pendiente.respuesta_admin, "INCIDENCIA RESUELTA POR DIRECTOR")
 
     def test_resolver_incidencia_admin(self):
-        self.client.login(email="admin_inc@example.com", password="pass")
-        response = self.client.post(reverse("incidencias:resolver_incidencia", args=[self.incidencia_pendiente.pk]), data={'respuesta_admin': 'Resuelta por admin'})
-        self.assertEqual(response.status_code, 302)
+        self.client.force_authenticate(user=self.admin)
+        url = reverse("incidencias:incidencias-detail", args=[self.incidencia_pendiente.pk])
+        form_data = {
+            "estado": "RESUELTA",
+            "respuesta_admin": "Resuelta por admin"
+        }
+        response = self.client.patch(url, data=form_data, format='json')
+        self.assertIn(response.status_code, [status.HTTP_200_OK, status.HTTP_204_NO_CONTENT])
         self.incidencia_pendiente.refresh_from_db()
         self.assertEqual(self.incidencia_pendiente.estado, "RESUELTA")
         self.assertEqual(self.incidencia_pendiente.respuesta_admin, "RESUELTA POR ADMIN")
 
     def test_eliminar_incidencia_director(self):
-        self.client.login(email="director_inc@example.com", password="pass")
-        response = self.client.post(reverse("incidencias:eliminar_incidencia", args=[self.incidencia_maestro.pk]))
-        self.assertEqual(response.status_code, 302)
+        self.client.force_authenticate(user=self.director)
+        url = reverse("incidencias:incidencias-detail", args=[self.incidencia_maestro.pk])
+        response = self.client.delete(url)
+        self.assertIn(response.status_code, [status.HTTP_204_NO_CONTENT, status.HTTP_200_OK])
         self.assertFalse(Incidencia.objects.filter(pk=self.incidencia_maestro.pk).exists())
+
+    def test_crear_incidencia_secretario_denegado(self):
+        """SECRETARIO ya no puede crear incidencias — solo ADMIN y DIRECTOR."""
+        self.client.force_authenticate(user=self.secretario)
+        url = reverse("incidencias:incidencias-list")
+        form_data = {
+            "titulo": "Intento secre",
+            "escuela": self.escuela.pk,
+            "profesor": self.maestro.pk,
+            "descripcion": "No debería poder",
+        }
+        response = self.client.post(url, data=form_data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

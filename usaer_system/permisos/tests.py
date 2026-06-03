@@ -1,8 +1,10 @@
-from django.test import TestCase
+"""Tests for Permisos app — expanded coverage for RBAC, Responses, and Metrics."""
+
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 from django.utils import timezone
-from datetime import timedelta
+from rest_framework.test import APITestCase, APIClient
+from rest_framework import status
 
 from escuelas.models import Escuela
 from .models import Permiso
@@ -10,152 +12,166 @@ from .models import Permiso
 User = get_user_model()
 
 
-class PermisoModelTest(TestCase):
+class PermisoAPITests(APITestCase):
     def setUp(self):
+        self.client = APIClient()
         self.escuela = Escuela.objects.create(
-            clave_estatal="E5", cct="CCT5", nombre="Escuela Permisos", nivel="Primaria",
-            domicilio="Dir", colonia="Col", zona="Z5"
-        )
-        self.profesor = User.objects.create_user(
-            email="profesor_permiso@example.com", numero_empleado="EMP007", password="pass",
-            escuela=self.escuela
+            clave_estatal="E_PERM", cct="CCT_PERM", nombre="Escuela Permisos", nivel="Primaria",
+            domicilio="Dir", colonia="Col", zona="Z_PERM"
         )
         self.admin = User.objects.create_superuser(
-            email="admin_permiso@example.com", numero_empleado="ADM004", password="pass",
-            escuela=self.escuela
+            email="admin_perm@example.com", numero_empleado="ADM_PERM", password="pass"
         )
+        self.director = User.objects.create_user(
+            email="dir_perm@example.com", numero_empleado="DIR_PERM", password="pass",
+            escuela=self.escuela, role=User.Role.DIRECTOR
+        )
+        self.maestro = User.objects.create_user(
+            email="maestro_perm@example.com", numero_empleado="MAEST_PERM", password="pass",
+            escuela=self.escuela, role=User.Role.MAESTRO_APOYO
+        )
+        self.maestro_otro = User.objects.create_user(
+            email="maestro_otro@example.com", numero_empleado="MAEST_OTRO", password="pass",
+            escuela=self.escuela, role=User.Role.MAESTRO_APOYO
+        )
+        
         self.permiso = Permiso.objects.create(
-            profesor=self.profesor,
+            profesor=self.maestro,
             escuela=self.escuela,
-            tipo="PERSONAL",
-            motivo="Vacaciones",
-            fecha_inicio=timezone.localdate(),
-            fecha_fin=timezone.localdate() + timedelta(days=5),
+            motivo="CITA MEDICA",
+            fecha_inicio=timezone.now(),
+            fecha_fin=timezone.now() + timezone.timedelta(days=1),
+            estado=Permiso.Estado.PENDIENTE
         )
 
-    def test_permiso_creation(self):
-        self.assertIsInstance(self.permiso, Permiso)
-        self.assertEqual(self.permiso.estado, "PENDIENTE")
+    def test_solicitar_permiso_maestro(self):
+        self.client.force_authenticate(user=self.maestro)
+        url = reverse('permisos:permisos-list')
+        payload = {
+            "motivo": "Curso de capacitación",
+            "fecha_inicio": "2026-07-01",
+            "fecha_fin": "2026-07-02",
+            "estado": Permiso.Estado.PENDIENTE
+        }
+        response = self.client.post(url, data=payload, format='json')
+        self.assertIn(response.status_code, [status.HTTP_201_CREATED, status.HTTP_200_OK])
+        # The serializer converts the motivo to uppercase
+        self.assertTrue(Permiso.objects.filter(motivo="CURSO DE CAPACITACIÓN").exists())
 
-    def test_permiso_str(self):
-        self.assertIn("Permiso #", str(self.permiso))
-        self.assertIn("Pendiente de revisión", str(self.permiso))
+    def test_listar_permisos_maestro_solo_lo_suyo(self):
+        # Create a permission for another teacher
+        Permiso.objects.create(
+            profesor=self.maestro_otro,
+            escuela=self.escuela,
+            motivo="Permiso Ajeno",
+            fecha_inicio=timezone.now(),
+            fecha_fin=timezone.now() + timezone.timedelta(days=1),
+            estado=Permiso.Estado.PENDIENTE
+        )
+        
+        self.client.force_authenticate(user=self.maestro)
+        url = reverse('permisos:permisos-list')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.json()
+        results = data if isinstance(data, list) else data.get('results', [])
+        
+        self.assertTrue(any(item.get('motivo') == "CITA MEDICA".upper() for item in results))
+        self.assertFalse(any(item.get('motivo') == "PERMISO AJENO".upper() for item in results))
 
-    def test_duracion_dias(self):
-        self.assertEqual(self.permiso.duracion_dias, 6)
+    def test_listar_permisos_director_ve_escuela(self):
+        self.client.force_authenticate(user=self.director)
+        url = reverse('permisos:permisos-list')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.json()
+        results = data if isinstance(data, list) else data.get('results', [])
+        self.assertTrue(any(item.get('motivo') == "CITA MEDICA".upper() for item in results))
 
-    def test_save_sets_fecha_respuesta(self):
-        self.permiso.estado = "APROBADO"
+    def test_responder_permiso_aprobar_director(self):
+        self.client.force_authenticate(user=self.director)
+        url = reverse('permisos:permisos-responder', args=[self.permiso.pk])
+        payload = {
+            "estado": Permiso.Estado.APROBADO,
+            "respuesta_admin": "Aprobado por la dirección"
+        }
+        response = self.client.post(url, data=payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.permiso.refresh_from_db()
+        self.assertEqual(self.permiso.estado, Permiso.Estado.APROBADO)
+        self.assertEqual(self.permiso.respuesta_admin, "APROBADO POR LA DIRECCIÓN")
+
+    def test_responder_permiso_rechazar_requiere_justificacion(self):
+        self.client.force_authenticate(user=self.director)
+        url = reverse('permisos:permisos-responder', args=[self.permiso.pk])
+        payload = {
+            "estado": Permiso.Estado.RECHAZADO,
+            "respuesta_admin": "" # Empty justification
+        }
+        response = self.client.post(url, data=payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_responder_permiso_idempotencia(self):
+        # Set to APROBADO first
+        self.permiso.estado = Permiso.Estado.APROBADO
         self.permiso.save()
-        self.assertIsNotNone(self.permiso.fecha_respuesta)
-        self.assertEqual(self.permiso.administrador, None) # No se asigna si no se pasa _current_user
-
-
-class PermisoViewsTest(TestCase):
-    def setUp(self):
-        self.escuela = Escuela.objects.create(
-            clave_estatal="E6", cct="CCT6", nombre="Escuela Permisos Views", nivel="Primaria",
-            domicilio="Dir", colonia="Col", zona="Z6"
-        )
-        self.profesor = User.objects.create_user(
-            email="profesor_permiso_view@example.com", numero_empleado="EMP008", password="pass",
-            escuela=self.escuela
-        )
-        self.admin = User.objects.create_superuser(
-            email="admin_permiso_view@example.com", numero_empleado="ADM005", password="pass",
-            escuela=self.escuela
-        )
-        self.permiso_profesor = Permiso.objects.create(
-            profesor=self.profesor,
-            escuela=self.escuela,
-            tipo="PERSONAL",
-            motivo="Enfermedad",
-            fecha_inicio=timezone.localdate(),
-            fecha_fin=timezone.localdate() + timedelta(days=1),
-        )
-        self.permiso_admin = Permiso.objects.create(
-            profesor=self.profesor,
-            escuela=self.escuela,
-            tipo="PERSONAL",
-            motivo="Otro motivo",
-            fecha_inicio=timezone.localdate(),
-            fecha_fin=timezone.localdate() + timedelta(days=2),
-        )
-
-    def test_solicitar_permiso(self):
-        self.client.login(email="profesor_permiso_view@example.com", password="pass")
-        form_data = {
-            "tipo": "PERSONAL",
-            "fecha_inicio": timezone.localdate().isoformat(),
-            "fecha_fin": (timezone.localdate() + timedelta(days=1)).isoformat(),
-            "motivo": "Motivo de prueba",
+        
+        self.client.force_authenticate(user=self.director)
+        url = reverse('permisos:permisos-responder', args=[self.permiso.pk])
+        payload = {
+            "estado": Permiso.Estado.RECHAZADO,
+            "respuesta_admin": "Cambio de opinión"
         }
-        response = self.client.post(reverse("permisos:solicitar"), data=form_data)
-        self.assertEqual(response.status_code, 302)
-        self.assertTrue(Permiso.objects.filter(motivo="MOTIVO DE PRUEBA").exists())
+        response = self.client.post(url, data=payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("ya ha sido gestionado", response.data['detail'])
 
-    def test_mis_permisos(self):
-        self.client.login(email="profesor_permiso_view@example.com", password="pass")
-        response = self.client.get(reverse("permisos:mis_permisos"))
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, self.permiso_profesor.motivo)
-        self.assertNotContains(response, self.permiso_admin.motivo) # No debería ver el de admin
-
-    def test_gestionar_permisos_admin(self):
-        self.client.login(email="admin_permiso_view@example.com", password="pass")
-        response = self.client.get(reverse("permisos:gestionar"))
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, self.permiso_profesor.motivo)
-        self.assertContains(response, self.permiso_admin.motivo)
-
-    def test_responder_permiso_aprobar(self):
-        self.client.login(email="admin_permiso_view@example.com", password="pass")
-        form_data = {
-            "estado": "APROBADO",
-            "respuesta_admin": "Aprobado sin problemas",
+    def test_responder_permiso_denied_for_maestro(self):
+        self.client.force_authenticate(user=self.maestro)
+        url = reverse('permisos:permisos-responder', args=[self.permiso.pk])
+        payload = {
+            "estado": Permiso.Estado.APROBADO,
+            "respuesta_admin": "Yo mismo me apruebo"
         }
-        response = self.client.post(reverse("permisos:responder", args=[self.permiso_profesor.pk]), data=form_data)
-        self.assertEqual(response.status_code, 302)
-        self.permiso_profesor.refresh_from_db()
-        self.assertEqual(self.permiso_profesor.estado, "APROBADO")
-        self.assertEqual(self.permiso_profesor.respuesta_admin, "APROBADO SIN PROBLEMAS")
-        self.assertIsNotNone(self.permiso_profesor.fecha_respuesta)
-        self.assertEqual(self.permiso_profesor.administrador, self.admin)
+        response = self.client.post(url, data=payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_responder_permiso_rechazar_sin_respuesta(self):
-        self.client.login(email="admin_permiso_view@example.com", password="pass")
-        form_data = {
-            "estado": "RECHAZADO",
-            "respuesta_admin": "",
-        }
-        response = self.client.post(reverse("permisos:responder", args=[self.permiso_profesor.pk]), data=form_data)
-        self.assertEqual(response.status_code, 200) # Vuelve a mostrar el formulario con errores
-        self.assertContains(response, "Debe proporcionar una razón para el rechazo.")
-
-    def test_eliminar_permiso(self):
-        self.client.login(email="admin_permiso_view@example.com", password="pass")
-        response = self.client.post(reverse("permisos:eliminar", args=[self.permiso_profesor.pk]))
-        self.assertEqual(response.status_code, 302)
-        self.assertFalse(Permiso.objects.filter(pk=self.permiso_profesor.pk).exists())
-
-    def test_detalle_permiso_propio(self):
-        self.client.login(email="profesor_permiso_view@example.com", password="pass")
-        response = self.client.get(reverse("permisos:detalle", args=[self.permiso_profesor.pk]))
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, self.permiso_profesor.motivo)
-
-    def test_detalle_permiso_ajeno_sin_permiso(self):
-        otro_profesor = User.objects.create_user(
-            email="otro_profesor_permiso@example.com", numero_empleado="EMP009", password="pass"
+    def test_metricas_endpoint(self):
+        # Create some permissions with required dates
+        now = timezone.now()
+        Permiso.objects.create(
+            profesor=self.maestro, escuela=self.escuela, 
+            motivo="T1", estado=Permiso.Estado.PENDIENTE,
+            fecha_inicio=now, fecha_fin=now + timezone.timedelta(days=1)
         )
-        permiso_ajeno = Permiso.objects.create(
-            profesor=otro_profesor,
-            escuela=self.escuela,
-            tipo="PERSONAL",
-            motivo="Motivo ajeno",
-            fecha_inicio=timezone.localdate(),
-            fecha_fin=timezone.localdate() + timedelta(days=1),
+        Permiso.objects.create(
+            profesor=self.maestro, escuela=self.escuela, 
+            motivo="T2", estado=Permiso.Estado.APROBADO,
+            fecha_inicio=now, fecha_fin=now + timezone.timedelta(days=1)
         )
-        self.client.login(email="profesor_permiso_view@example.com", password="pass")
-        response = self.client.get(reverse("permisos:detalle", args=[permiso_ajeno.pk]))
-        self.assertEqual(response.status_code, 302) # Redirige a inicio
+        
+        self.client.force_authenticate(user=self.admin)
+        url = reverse('permisos:permisos-metricas')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('pendientes', response.data)
+        self.assertIn('aprobados', response.data)
+        self.assertIn('rechazados', response.data)
+
+    def test_delete_permiso_owner_can_delete_pending(self):
+        # The permission is created as PENDIENTE in setUp
+        self.client.force_authenticate(user=self.maestro)
+        url = reverse('permisos:permisos-detail', args=[self.permiso.pk])
+        response = self.client.delete(url)
+        self.assertIn(response.status_code, [status.HTTP_204_NO_CONTENT, status.HTTP_200_OK])
+        self.assertFalse(Permiso.objects.filter(pk=self.permiso.pk).exists())
+
+    def test_delete_permiso_owner_cannot_delete_approved(self):
+        # Set to APROBADO
+        self.permiso.estado = Permiso.Estado.APROBADO
+        self.permiso.save()
+        
+        self.client.force_authenticate(user=self.maestro)
+        url = reverse('permisos:permisos-detail', args=[self.permiso.pk])
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

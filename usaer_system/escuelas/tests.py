@@ -1,13 +1,16 @@
-from django.test import TestCase
+"""Tests for Escuelas app — migrated to DRF APITestCase."""
+
 from django.urls import reverse
 from django.contrib.auth import get_user_model
-from .models import Escuela
-from .forms import EscuelaForm
+from rest_framework.test import APITestCase, APIClient
+from rest_framework import status
+
+from escuelas.models import Escuela
 
 User = get_user_model()
 
 
-class EscuelaModelTest(TestCase):
+class EscuelaModelTest(APITestCase):
     def setUp(self):
         self.escuela = Escuela.objects.create(
             clave_estatal="12345",
@@ -35,60 +38,17 @@ class EscuelaModelTest(TestCase):
         self.assertEqual(escuela.nivel, "SECUNDARIA")
 
 
-class EscuelaFormTest(TestCase):
-    def test_form_valido(self):
-        form_data = {
-            "clave_estatal": "12345",
-            "cct": "CCT123",
-            "nombre": "Escuela de Prueba",
-            "nivel": "Primaria",
-            "domicilio": "Calle Falsa 123",
-            "colonia": "Centro",
-            "zona": "01",
-        }
-        form = EscuelaForm(data=form_data)
-        self.assertTrue(form.is_valid())
-
-    def test_form_invalido_sin_datos_requeridos(self):
-        form = EscuelaForm(data={})
-        self.assertFalse(form.is_valid())
-        self.assertIn("cct", form.errors)
-        self.assertIn("nombre", form.errors)
-
-    def test_clean_convierte_a_mayusculas(self):
-        form_data = {
-            "clave_estatal": "abcde",
-            "cct": "cctminusculas",
-            "nombre": "nombre en minúsculas",
-            "nivel": "Primaria",
-            "domicilio": "domicilio",
-            "colonia": "colonia",
-            "zona": "zona",
-            "correo_inspector": "correo@minusculas.com",
-        }
-        form = EscuelaForm(data=form_data)
-        self.assertTrue(form.is_valid())
-        cleaned_data = form.cleaned_data
-        self.assertEqual(cleaned_data["clave_estatal"], "ABCDE")
-        self.assertEqual(cleaned_data["cct"], "CCTMINUSCULAS")
-        self.assertEqual(cleaned_data["nombre"], "NOMBRE EN MINÚSCULAS")
-        # El correo no debe cambiar
-        self.assertEqual(cleaned_data["correo_inspector"], "correo@minusculas.com")
-
-
-class EscuelaViewsTest(TestCase):
+class EscuelaViewsTest(APITestCase):
     def setUp(self):
-        self.staff_user = User.objects.create_user(
-            numero_empleado="staff1",
-            email="staff@test.com",
-            password="password",
-            is_staff=True,
+        self.client = APIClient()
+        
+        self.admin = User.objects.create_superuser(
+            email="admin@test.com", numero_empleado="admin", password="password"
         )
-        self.normal_user = User.objects.create_user(
-            numero_empleado="user1",
-            email="user@test.com",
-            password="password",
+        self.maestro = User.objects.create_user(
+            email="user@test.com", numero_empleado="user1", password="password"
         )
+        
         self.escuela = Escuela.objects.create(
             clave_estatal="12345",
             cct="CCT123",
@@ -98,53 +58,64 @@ class EscuelaViewsTest(TestCase):
             colonia="Centro",
             zona="01",
         )
-        self.listar_url = reverse("escuelas:listar_escuelas")
-        self.crear_url = reverse("escuelas:crear_escuela")
-        self.editar_url = reverse("escuelas:editar_escuela", args=[self.escuela.pk])
-        self.eliminar_url = reverse("escuelas:eliminar_escuela", args=[self.escuela.pk])
 
     def test_acceso_denegado_a_no_staff(self):
-        self.client.login(email="user@test.com", password="password")
-        response = self.client.get(self.listar_url)
-        self.assertNotEqual(response.status_code, 200)
-        response = self.client.get(self.crear_url)
-        self.assertNotEqual(response.status_code, 200)
-        response = self.client.get(self.editar_url)
-        self.assertNotEqual(response.status_code, 200)
-        response = self.client.post(self.eliminar_url)
-        self.assertNotEqual(response.status_code, 302) # No debe redirigir
+        # Maestro cannot modify schools, but CAN list them (Read-Only)
+        self.client.force_authenticate(user=self.maestro)
+        
+        # List should be allowed (GET is SAFE_METHOD)
+        url_list = reverse("escuelas:escuelas-list")
+        response = self.client.get(url_list)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # Creation should be denied (POST)
+        url_create = reverse("escuelas:escuelas-list")
+        response = self.client.post(url_create, data={})
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        
+        # Edition should be denied (PATCH/PUT)
+        url_edit = reverse("escuelas:escuelas-detail", args=[self.escuela.pk])
+        response = self.client.patch(url_edit, data={})
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        
+        # Deletion should be denied (DELETE)
+        url_delete = reverse("escuelas:escuelas-detail", args=[self.escuela.pk])
+        response = self.client.delete(url_delete)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_acceso_permitido_a_staff(self):
-        self.client.login(email="staff@test.com", password="password")
-        response = self.client.get(self.listar_url)
-        self.assertEqual(response.status_code, 200)
-        response = self.client.get(self.crear_url)
-        self.assertEqual(response.status_code, 200)
-        response = self.client.get(self.editar_url)
-        self.assertEqual(response.status_code, 200)
+
+    def test_acceso_permitido_a_admin(self):
+        self.client.force_authenticate(user=self.admin)
+        url = reverse("escuelas:escuelas-list")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_listar_escuelas_muestra_escuelas(self):
-        self.client.login(email="staff@test.com", password="password")
-        response = self.client.get(self.listar_url)
+        self.client.force_authenticate(user=self.admin)
+        url = reverse("escuelas:escuelas-list")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertContains(response, self.escuela.nombre)
 
     def test_crear_escuela(self):
-        self.client.login(email="staff@test.com", password="password")
+        self.client.force_authenticate(user=self.admin)
+        url = reverse("escuelas:escuelas-list")
         form_data = {
             "clave_estatal": "67890",
             "cct": "CCT456",
             "nombre": "Nueva Escuela",
-            "nivel": "Secundaria",
+            "nivel": "SECUNDARIA",
             "domicilio": "Av. Siempre Viva 742",
             "colonia": "Springfield",
             "zona": "03",
         }
-        response = self.client.post(self.crear_url, data=form_data)
-        self.assertEqual(response.status_code, 302) # Redirección tras éxito
+        response = self.client.post(url, data=form_data, format='json')
+        self.assertIn(response.status_code, [status.HTTP_201_CREATED, status.HTTP_200_OK])
         self.assertTrue(Escuela.objects.filter(cct="CCT456").exists())
 
     def test_editar_escuela(self):
-        self.client.login(email="staff@test.com", password="password")
+        self.client.force_authenticate(user=self.admin)
+        url = reverse("escuelas:escuelas-detail", args=[self.escuela.pk])
         form_data = {
             "clave_estatal": self.escuela.clave_estatal,
             "cct": self.escuela.cct,
@@ -154,13 +125,14 @@ class EscuelaViewsTest(TestCase):
             "colonia": self.escuela.colonia,
             "zona": self.escuela.zona,
         }
-        response = self.client.post(self.editar_url, data=form_data)
-        self.assertEqual(response.status_code, 302)
+        response = self.client.patch(url, data=form_data, format='json')
+        self.assertIn(response.status_code, [status.HTTP_200_OK, status.HTTP_204_NO_CONTENT])
         self.escuela.refresh_from_db()
         self.assertEqual(self.escuela.nombre, "ESCUELA EDITADA")
 
     def test_eliminar_escuela(self):
-        self.client.login(email="staff@test.com", password="password")
-        response = self.client.post(self.eliminar_url)
-        self.assertEqual(response.status_code, 302)
+        self.client.force_authenticate(user=self.admin)
+        url = reverse("escuelas:escuelas-detail", args=[self.escuela.pk])
+        response = self.client.delete(url)
+        self.assertIn(response.status_code, [status.HTTP_204_NO_CONTENT, status.HTTP_200_OK])
         self.assertFalse(Escuela.objects.filter(pk=self.escuela.pk).exists())
