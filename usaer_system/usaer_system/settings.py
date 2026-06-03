@@ -92,9 +92,10 @@ AXES_RESET_ON_SUCCESS = True  # Resetear contador al loguearse
 AXES_LOCKOUT_PARAMETERS = ["username", "ip_address"]
 
 # ─────────────────────────────────────────────
-# Proxy / Upload settings
+# Proxy / Upload / Cross-Origin settings
 # ─────────────────────────────────────────────
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin-allow-popups"
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10 MB
 
 # Lee los hosts permitidos de una variable de entorno.
@@ -154,8 +155,8 @@ INSTALLED_APPS = [
     "drf_yasg",
 ]
 
-ADMIN_FOR_MODELS = False
-SILENCED_SYSTEM_CHECKS = []
+# Silencia deprecation warning de drf-yasg en Django 6
+SWAGGER_USE_COMPAT_RENDERERS = False
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
@@ -207,6 +208,18 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "OPTIONS": {
+            "min_length": 8,
+        },
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+    },
+    {
         "NAME": "usaer_system.validators.CustomPasswordValidator",
     },
 ]
@@ -239,15 +252,21 @@ LOGOUT_REDIRECT_URL = "/"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
-CORS_ALLOWED_ORIGINS = os.environ.get(
-    "CORS_ALLOWED_ORIGINS",
-    "http://localhost:5173",
-).split(",")
+CORS_ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in os.environ.get(
+        "CORS_ALLOWED_ORIGINS",
+        "http://localhost:5173",
+    ).split(",")
+]
 
-CSRF_TRUSTED_ORIGINS = os.environ.get(
-    "CSRF_TRUSTED_ORIGINS",
-    "http://localhost:5173",
-).split(",")
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.environ.get(
+        "CSRF_TRUSTED_ORIGINS",
+        "http://localhost:5173",
+    ).split(",")
+]
 
 REST_FRAMEWORK = {
     # PRIORIDAD DE AUTENTICACIÓN:
