@@ -3,7 +3,7 @@ import sys
 import subprocess
 
 def run_tests():
-    print("Running: python manage.py test rae in C:\\Users\\LENOVO RYZEN RTX\\Documents\\projects\\usaer\\usaer7607\\usaer_system")
+    print("Running: python manage.py test alumnos in C:\\Users\\LENOVO RYZEN RTX\\Documents\\projects\\usaer\\usaer7607\\usaer_system")
     
     # Setup environment variables for testing
     env = os.environ.copy()
@@ -13,7 +13,7 @@ def run_tests():
     try:
         # Run the test command
         result = subprocess.run(
-            ['python', 'manage.py', 'test', 'rae'],
+            ['python', 'manage.py', 'test', 'alumnos'],
             env=env,
             cwd=r'C:\Users\LENOVO RYZEN RTX\Documents\projects\usaer\\usaer7607\\usaer_system',
             capture_output=False,
