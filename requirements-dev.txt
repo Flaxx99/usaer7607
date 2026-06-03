@@ -22,3 +22,9 @@ pytest-mock>=3.15.0
 
 # Pre-commit
 pre-commit>=4.0.0
+
+# Security (también en requirements.txt para producción)
+django-axes>=8.0.0
+argon2-cffi>=25.0.0
+django-csp>=4.0.0
+sentry-sdk>=2.60.0

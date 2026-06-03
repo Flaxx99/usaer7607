@@ -77,12 +77,12 @@
                             <td>{{ incidencia.fecha_reporte|date:"d/m/Y" }}</td>
                             <td class="text-end">
                                 <div class="btn-group" role="group">
-                                    <a href="{% url 'incidencias:editar_incidencia' incidencia.pk %}" 
+                                    <a href="{% url 'incidencias:editar_incidencia' incidencia.pk %}"
                                        class="btn btn-sm btn-outline-primary">
                                         <i class="fas fa-edit"></i>
                                     </a>
                                     {% if incidencia.estado != 'RESUELTA' %}
-                                    <a href="{% url 'incidencias:resolver_incidencia' incidencia.pk %}" 
+                                    <a href="{% url 'incidencias:resolver_incidencia' incidencia.pk %}"
                                        class="btn btn-sm btn-outline-success">
                                         <i class="fas fa-check-circle"></i>
                                     </a>

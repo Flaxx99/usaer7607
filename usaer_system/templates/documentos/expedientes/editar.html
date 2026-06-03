@@ -18,7 +18,7 @@
     <hr class="my-4"/>
     <h4>Otros archivos</h4>
     {{ formset.management_form }}
-    
+
     {% for subform in formset %}
     {% for hidden in subform.hidden_fields %}
      {{ hidden }}
@@ -42,7 +42,7 @@
             Eliminar este archivo
           </label>
         </div>
-        
+
 
         {% if subform.non_field_errors %}
           <div class="text-danger mt-2">{{ subform.non_field_errors }}</div>

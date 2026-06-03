@@ -47,6 +47,7 @@ class LoginView(generics.GenericAPIView):
     permission_classes = [AllowAny]
     authentication_classes = []
     serializer_class = LoginSerializer
+    throttle_scope = "login"
 
     def post(self, request):
         serializer = self.get_serializer(data=request.data)

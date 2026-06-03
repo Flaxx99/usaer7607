@@ -6,6 +6,22 @@ from dotenv import load_dotenv
 
 load_dotenv()  # Carga las variables de entorno desde .env
 
+# ─────────────────────────────────────────────
+# Sentry: Monitoreo de errores en producción
+# ─────────────────────────────────────────────
+SENTRY_DSN = os.environ.get("SENTRY_DSN")
+if SENTRY_DSN:
+    import sentry_sdk
+    from sentry_sdk.integrations.django import DjangoIntegration
+
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[DjangoIntegration()],
+        traces_sample_rate=0.05,
+        send_default_pii=False,  # No enviar PII por defecto
+        environment="production" if os.environ.get("DEBUG", "False") != "True" else "development",
+    )
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Asegurarse de que el directorio de logs exista
@@ -32,14 +48,56 @@ if not DEBUG:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
 
+# ─────────────────────────────────────────────
+# Security headers (siempre activos)
+# ─────────────────────────────────────────────
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = "DENY"
+SECURE_REFERRER_POLICY = "same-origin"
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_HTTPONLY = False  # True rompe el frontend React que lee CSRF token
+CSRF_COOKIE_SAMESITE = "Lax"
+
+# ─────────────────────────────────────────────
+# Content-Security-Policy (CSP)
+# ─────────────────────────────────────────────
+CSP_DEFAULT_SRC = ("'self'",)
+CSP_STYLE_SRC = ("'self'", "'unsafe-inline'", "https://fonts.googleapis.com")
+CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'", "'unsafe-eval'")
+CSP_FONT_SRC = ("'self'", "https://fonts.gstatic.com")
+CSP_IMG_SRC = ("'self'", "data:")
+CSP_CONNECT_SRC = ("'self'",)
+CSP_FORM_ACTION = ("'self'",)
+
+# ─────────────────────────────────────────────
+# django-axes: Brute-force protection
+# ─────────────────────────────────────────────
+AXES_ENABLED = True
+AXES_FAILURE_LIMIT = 5  # 5 intentos fallidos
+AXES_COOLOFF_TIME = 1  # 1 hora de bloqueo
+AXES_RESET_ON_SUCCESS = True  # Resetear contador al loguearse
+AXES_LOCKOUT_PARAMETERS = ["username", "ip_address"]
+
 # Lee los hosts permitidos de una variable de entorno.
 # En producción, debes poner aquí tu dominio, ej: 'www.misitio.com'
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
 
 
+# ─────────────────────────────────────────────
+# Password Hashing: Argon2 como prioridad
+# ─────────────────────────────────────────────
+PASSWORD_HASHERS = [
+    "django.contrib.auth.hashers.Argon2PasswordHasher",
+    "django.contrib.auth.hashers.PBKDF2PasswordHasher",
+    "django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher",
+    "django.contrib.auth.hashers.BCryptSHA256PasswordHasher",
+]
+
 AUTH_USER_MODEL = "usuarios.User"
 
 AUTHENTICATION_BACKENDS = [
+    "axes.backends.AxesStandaloneBackend",  # Debe ir primero para bloqueo
     "usuarios.backends.EmailOrEmpleadoBackend",
     "django.contrib.auth.backends.ModelBackend",
 ]
@@ -73,6 +131,7 @@ INSTALLED_APPS = [
     # API
     "rest_framework",
     "rest_framework.authtoken",
+    "axes",
     "corsheaders",
     "drf_yasg",
 ]
@@ -88,10 +147,12 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",  # Middleware de Whitenoise
     "django.middleware.gzip.GZipMiddleware",
+    "csp.middleware.CSPMiddleware",  # Content-Security-Policy
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "axes.middleware.AxesMiddleware",  # Brute-force protection
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -182,6 +243,20 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 10,
     "DATETIME_FORMAT": "%Y-%m-%d %H:%M:%S",
     "EXCEPTION_HANDLER": "usaer_system.exceptions.custom_exception_handler",
+    # ─────────────────────────────────────────────
+    # Rate Limiting (Throttling)
+    # ─────────────────────────────────────────────
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+        "rest_framework.throttling.ScopedRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "60/hour",  # Usuarios anónimos
+        "user": "1000/hour",  # Usuarios autenticados
+        "login": "10/minute",  # Endpoint de login (más restrictivo)
+        "burst": "20/minute",  # Picos cortos
+    },
 }
 
 # ------------------- PERMISOS POR ROL -------------------
