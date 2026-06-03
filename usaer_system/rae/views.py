@@ -18,6 +18,7 @@ from usuarios.models import SystemConfiguration
 
 from .models import RegistroRAE, RAEAlumno
 from .serializers import RegistroRAESerializer, RAEAlumnoSerializer, BulkRAESaveSerializer
+from .permissions import RAEPermission
 from ciclos_escolares.utils import get_current_ciclo_escolar_instance
 from alumnos.models import Alumno
 
@@ -27,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 class RegistroRAEViewSet(viewsets.ModelViewSet):
     serializer_class = RegistroRAESerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, RAEPermission]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['escuela__nombre']
     ordering_fields = ['fecha_creacion']

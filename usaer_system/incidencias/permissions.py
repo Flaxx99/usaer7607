@@ -5,9 +5,9 @@ User = get_user_model()
 
 class IncidenciaPermission(permissions.BasePermission):
     """
-    Replica la matriz de roles de tu urls.py antiguo:
+    Matriz de roles para Incidencias:
     - LISTAR: Admin, Director.
-    - CREAR: Admin, Director, Secretario.
+    - CREAR: Admin, Director (Secretario NO).
     - DETALLE: Admin, Director, Maestro Apoyo (Solo si es el involucrado).
     - EDITAR/ELIMINAR: Admin, Director.
     - RESOLVER: Solo Admin.
@@ -20,8 +20,7 @@ class IncidenciaPermission(permissions.BasePermission):
 
         # 2. Permisos globales (Listar y Crear)
         if view.action == 'create':
-            # Según tu urls.py: SECRETARIO, ADMIN, DIRECTOR
-            roles_crear = [User.Role.ADMINISTRADOR.value, User.Role.DIRECTOR.value, User.Role.SECRETARIO.value]
+            roles_crear = [User.Role.ADMINISTRADOR.value, User.Role.DIRECTOR.value]
             return request.user.role in roles_crear or request.user.is_superuser
 
         # Para las demás acciones, dejamos pasar aquí y validamos a nivel de objeto (has_object_permission)

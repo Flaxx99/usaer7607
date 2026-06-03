@@ -1,7 +1,8 @@
 from rest_framework import viewsets, status, views, filters, generics
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from usuarios.permissions import IsAdminOrSecretario
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import get_user_model, login, logout
 from django.db.models import Q, Count
@@ -100,7 +101,7 @@ class UserViewSet(viewsets.ModelViewSet):
         This enforces that non-admin users cannot view the full user list.
         """
         if getattr(self, 'action', None) == 'list':
-            return [IsAuthenticated(), IsAdminUser()]
+            return [IsAuthenticated(), IsAdminOrSecretario()]
         return [IsAuthenticated()]
 
     @action(detail=False, methods=['get'])

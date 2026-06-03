@@ -8,9 +8,19 @@ from .serializers import AnuncioSerializer
 class IsOwnerOrReadOnly(permissions.BasePermission):
     """
     Permiso custom:
-    - Cualquiera logueado puede ver (GET).
-    - Solo el autor o un admin puede editar/borrar.
+    - Ver (GET): Cualquier usuario autenticado.
+    - Crear (POST): Solo Admin o Secretario.
+    - Editar/Borrar (PUT/DELETE): Solo el autor o un admin.
     """
+    def has_permission(self, request, view):
+        if not request.user.is_authenticated:
+            return False
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        # Solo Admin o Secretario pueden crear anuncios
+        return (request.user.is_superuser or 
+                getattr(request.user, 'role', '') in ['ADMIN', 'SECRETARIO'])
+
     def has_object_permission(self, request, view, obj):
         if request.method in permissions.SAFE_METHODS:
             return True

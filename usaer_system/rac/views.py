@@ -12,6 +12,7 @@ from django.contrib.auth import get_user_model
 
 from .models import RegistroRAC
 from .serializers import RegistroRACSerializer
+from .permissions import RACPermission
 from ciclos_escolares.utils import get_current_ciclo_escolar_instance
 
 # --- FUNCIONES HELPER (Iguales que antes) ---
@@ -118,7 +119,7 @@ def fill_statistics_data(ws, registros):
 
 class RegistroRACViewSet(viewsets.ModelViewSet):
     serializer_class = RegistroRACSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, RACPermission]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['alumno__nombres', 'alumno__curp', 'escuela_regular__nombre']
     ordering_fields = ['fecha_registro', 'alumno__grado']
