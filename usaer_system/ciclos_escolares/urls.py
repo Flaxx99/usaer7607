@@ -3,6 +3,8 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import CicloEscolarViewSet, PromocionAlumnosView
 
+app_name = 'ciclos'
+
 router = DefaultRouter()
 router.register(r'', CicloEscolarViewSet, basename='ciclos')
 
