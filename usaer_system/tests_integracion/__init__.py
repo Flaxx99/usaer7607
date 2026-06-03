@@ -1,0 +1,1 @@
+# tests_integracion/__init__.py
