@@ -61,14 +61,26 @@ CSRF_COOKIE_SAMESITE = "Lax"
 
 # ─────────────────────────────────────────────
 # Content-Security-Policy (CSP)
+# django-csp 4.x usa formato CONTENT_SECURITY_POLICY (no CSP_*)
 # ─────────────────────────────────────────────
-CSP_DEFAULT_SRC = ("'self'",)
-CSP_STYLE_SRC = ("'self'", "'unsafe-inline'", "https://fonts.googleapis.com")
-CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'", "'unsafe-eval'")
-CSP_FONT_SRC = ("'self'", "https://fonts.gstatic.com")
-CSP_IMG_SRC = ("'self'", "data:")
-CSP_CONNECT_SRC = ("'self'",)
-CSP_FORM_ACTION = ("'self'",)
+CONTENT_SECURITY_POLICY = {
+    "DIRECTIVES": {
+        "default-src": ("'self'",),
+        "style-src": (
+            "'self'",
+            "'unsafe-inline'",  # Necesario para Django Admin + swagger UI
+            "https://fonts.googleapis.com",
+        ),
+        "script-src": (
+            "'self'",
+            "'unsafe-inline'",  # Necesario para Django Admin inline JS
+        ),
+        "font-src": ("'self'", "https://fonts.gstatic.com"),
+        "img-src": ("'self'", "data:"),
+        "connect-src": ("'self'",),
+        "form-action": ("'self'",),
+    },
+}
 
 # ─────────────────────────────────────────────
 # django-axes: Brute-force protection
@@ -78,6 +90,12 @@ AXES_FAILURE_LIMIT = 5  # 5 intentos fallidos
 AXES_COOLOFF_TIME = 1  # 1 hora de bloqueo
 AXES_RESET_ON_SUCCESS = True  # Resetear contador al loguearse
 AXES_LOCKOUT_PARAMETERS = ["username", "ip_address"]
+
+# ─────────────────────────────────────────────
+# Proxy / Upload settings
+# ─────────────────────────────────────────────
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10 MB
 
 # Lee los hosts permitidos de una variable de entorno.
 # En producción, debes poner aquí tu dominio, ej: 'www.misitio.com'
@@ -221,9 +239,15 @@ LOGOUT_REDIRECT_URL = "/"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
-CORS_ALLOWED_ORIGINS = [
+CORS_ALLOWED_ORIGINS = os.environ.get(
+    "CORS_ALLOWED_ORIGINS",
     "http://localhost:5173",
-]
+).split(",")
+
+CSRF_TRUSTED_ORIGINS = os.environ.get(
+    "CSRF_TRUSTED_ORIGINS",
+    "http://localhost:5173",
+).split(",")
 
 REST_FRAMEWORK = {
     # PRIORIDAD DE AUTENTICACIÓN:
@@ -255,7 +279,6 @@ REST_FRAMEWORK = {
         "anon": "60/hour",  # Usuarios anónimos
         "user": "1000/hour",  # Usuarios autenticados
         "login": "10/minute",  # Endpoint de login (más restrictivo)
-        "burst": "20/minute",  # Picos cortos
     },
 }
 
@@ -591,7 +614,9 @@ ROLES_EQUIPO_ITINERANTE = [
     "ADMIN",
 ]
 
-# Configuración de Logging
+# ─────────────────────────────────────────────
+# Logging
+# ─────────────────────────────────────────────
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -604,6 +629,10 @@ LOGGING = {
             "format": "{levelname} {message}",
             "style": "{",
         },
+        "security": {
+            "format": "[SECURITY] {levelname} {asctime} {module} {message}",
+            "style": "{",
+        },
     },
     "handlers": {
         "file": {
@@ -613,6 +642,14 @@ LOGGING = {
             "maxBytes": 5 * 1024 * 1024,  # 5 MB
             "backupCount": 5,
             "formatter": "verbose",
+        },
+        "security_file": {
+            "level": "WARNING",
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": BASE_DIR / "logs" / "security.log",
+            "maxBytes": 5 * 1024 * 1024,  # 5 MB
+            "backupCount": 10,
+            "formatter": "security",
         },
         "console": {
             "level": "INFO",
@@ -625,6 +662,21 @@ LOGGING = {
             "handlers": ["file", "console"],
             "level": "INFO",
             "propagate": True,
+        },
+        "django.request": {
+            "handlers": ["file", "security_file"],
+            "level": "WARNING",
+            "propagate": False,
+        },
+        "django.security": {
+            "handlers": ["security_file"],
+            "level": "WARNING",
+            "propagate": False,
+        },
+        "axes": {
+            "handlers": ["security_file", "console"],
+            "level": "INFO",
+            "propagate": False,
         },
         "usaer_system": {
             "handlers": ["file", "console"],
