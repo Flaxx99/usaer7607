@@ -154,12 +154,9 @@ class DashboardView(views.APIView):
         user = request.user
 
         ciclo_nombre = "Sin Ciclo Activo"
-        try:
-            ciclo_actual = CicloEscolar.objects.filter(activo=True).first()
-            if ciclo_actual:
-                ciclo_nombre = ciclo_actual.nombre
-        except Exception:
-            pass
+        ciclo_actual = CicloEscolar.objects.filter(activo=True).first()
+        if ciclo_actual:
+            ciclo_nombre = ciclo_actual.nombre
 
         data = {
             "ciclo_actual": ciclo_nombre,

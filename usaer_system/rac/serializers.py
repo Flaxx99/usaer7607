@@ -1,6 +1,7 @@
 # rac/serializers.py
 
 from ciclos_escolares.utils import get_current_ciclo_escolar_instance
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
 
 from .models import RegistroRAC
@@ -60,15 +61,15 @@ class RegistroRACSerializer(serializers.ModelSerializer):
         if not self.instance:
             try:
                 ciclo_actual = get_current_ciclo_escolar_instance()
-                alumno = data.get("alumno")
-                if RegistroRAC.objects.filter(alumno=alumno, ciclo_escolar=ciclo_actual).exists():
-                    raise serializers.ValidationError(
-                        {
-                            "alumno": "Este alumno ya tiene un registro RAC en el ciclo escolar activo."
-                        }
-                    )
-            except Exception:
-                pass  # Si no hay ciclo activo, dejamos pasar o lanzamos otro error según prefieras
+            except ObjectDoesNotExist:
+                # Sin ciclo activo, no podemos validar duplicados
+                return data
+
+            alumno = data.get("alumno")
+            if RegistroRAC.objects.filter(alumno=alumno, ciclo_escolar=ciclo_actual).exists():
+                raise serializers.ValidationError(
+                    {"alumno": "Este alumno ya tiene un registro RAC en el ciclo escolar activo."}
+                )
 
         return data
 

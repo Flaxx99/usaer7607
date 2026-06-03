@@ -5,6 +5,7 @@ from io import BytesIO
 
 from ciclos_escolares.utils import get_current_ciclo_escolar_instance
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponse
 from openpyxl import load_workbook
 from rest_framework import filters, permissions, status, views, viewsets
@@ -252,7 +253,8 @@ class ExportRACView(BaseExportRACView):
         try:
             ciclo = get_current_ciclo_escolar_instance()
             qs = qs.filter(ciclo_escolar=ciclo)
-        except Exception:
+        except ObjectDoesNotExist:
+            # Sin ciclo activo, mostrar todos los registros
             pass
 
         if getattr(user, "role", "") == "MAESTRO_APOYO":
@@ -291,7 +293,8 @@ class ExportAllRACView(BaseExportRACView):
         try:
             ciclo = get_current_ciclo_escolar_instance()
             qs = qs.filter(ciclo_escolar=ciclo)
-        except Exception:
+        except ObjectDoesNotExist:
+            # Sin ciclo activo, exportar todos los registros
             pass
 
         return qs
