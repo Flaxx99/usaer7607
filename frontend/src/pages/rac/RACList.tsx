@@ -11,6 +11,7 @@ import type { RegistroRAC } from '../../api/rac';
 import { useLoading } from '../../context/LoadingContext';
 import { ErrorState } from '../../components/Skeletons';
 import { DataTable } from '../../components/DataTable';
+import { LoadingButton } from '../../components/LoadingButton';
 import type { ColumnDef } from '@tanstack/react-table';
 
 const RACList = () => {
@@ -46,8 +47,11 @@ const RACList = () => {
         link.remove();
     };
 
+    const [exporting, setExporting] = useState<'none' | 'mine' | 'all'>('none');
+
     const handleGenerateRAC = async () => {
         try {
+            setExporting('mine');
             showLoading();
             const blob = await racApi.exportMyRecords();
             downloadBlob(blob, `RAC_${new Date().toISOString().split('T')[0]}.xlsx`);
@@ -56,11 +60,13 @@ const RACList = () => {
             toast.error(<span className="inline-flex items-center gap-1.5"><XCircle size={16} /> Error</span>, { description: 'No se pudo generar el archivo Excel.' });
         } finally {
             hideLoading();
+            setExporting('none');
         }
     };
 
     const handleExportAll = async () => {
         try {
+            setExporting('all');
             showLoading();
             const blob = await racApi.exportGlobal();
             downloadBlob(blob, `RAC_Concentrado_${new Date().toISOString().split('T')[0]}.xlsx`);
@@ -69,6 +75,7 @@ const RACList = () => {
             toast.error(<span className="inline-flex items-center gap-1.5"><XCircle size={16} /> Error</span>, { description: 'No se pudo generar el archivo Excel.' });
         } finally {
             hideLoading();
+            setExporting('none');
         }
     };
 
@@ -155,23 +162,23 @@ const RACList = () => {
                     </div>
                     
                     <div className="flex gap-3">
-                        <button 
+                        <LoadingButton
                             className="btn btn-ghost bg-white/10 hover:bg-white/20 border-white/20 text-white"
+                            icon={FileSpreadsheet}
+                            loading={exporting === 'mine'}
                             onClick={handleGenerateRAC}
-                            title="Generar RAC con tus registros"
                         >
-                            <FileSpreadsheet size={20} />
                             Generar RAC
-                        </button>
+                        </LoadingButton>
                         {isAdmin && (
-                            <button 
+                            <LoadingButton
                                 className="btn btn-ghost bg-white/10 hover:bg-white/20 border-white/20 text-white"
+                                icon={Download}
+                                loading={exporting === 'all'}
                                 onClick={handleExportAll}
-                                title="Exportar concentrado global (Admin/Secretario)"
                             >
-                                <Download size={20} />
                                 Exportar Todo
-                            </button>
+                            </LoadingButton>
                         )}
                         <button 
                             className="btn btn-white btn-lg shadow-md hover:scale-105 transition-transform"

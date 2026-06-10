@@ -10,6 +10,7 @@ import type { RegistroRAE } from '../../api/rae';
 import { useLoading } from '../../context/LoadingContext';
 import { ErrorState } from '../../components/Skeletons';
 import { DataTable } from '../../components/DataTable';
+import { LoadingButton } from '../../components/LoadingButton';
 import type { ColumnDef } from '@tanstack/react-table';
 
 const RAERecordsList = () => {
@@ -42,8 +43,11 @@ const RAERecordsList = () => {
         link.remove();
     };
 
+    const [exporting, setExporting] = useState(false);
+
     const handleGenerateRAE = async () => {
         try {
+            setExporting(true);
             showLoading();
             const blob = await raeApi.exportAll();
             downloadBlob(blob, `RAE_Concentrado_${new Date().toISOString().split('T')[0]}.xlsx`);
@@ -52,6 +56,7 @@ const RAERecordsList = () => {
             toast.error(<span className="inline-flex items-center gap-1.5"><XCircle size={16} /> Error</span>, { description: 'No se pudo generar el archivo Excel.' });
         } finally {
             hideLoading();
+            setExporting(false);
         }
     };
 
@@ -127,14 +132,14 @@ const RAERecordsList = () => {
                         </div>
                     </div>
                     <div className="flex gap-3">
-                        <button 
+                        <LoadingButton
                             className="btn btn-ghost bg-white/10 hover:bg-white/20 border-white/20 text-white"
+                            icon={FileSpreadsheet}
+                            loading={exporting}
                             onClick={handleGenerateRAE}
-                            title="Generar reporte RAE con todas las escuelas"
                         >
-                            <FileSpreadsheet size={20} />
                             Generar RAE
-                        </button>
+                        </LoadingButton>
                     </div>
                 </div>
             </div>

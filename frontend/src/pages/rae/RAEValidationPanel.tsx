@@ -9,6 +9,7 @@ import { raeApi } from '../../api/rae';
 import type { RAEAlumno } from '../../api/rae';
 import { useLoading } from '../../context/LoadingContext';
 import { ValidationSkeleton, EmptyState, ErrorState } from '../../components/Skeletons';
+import { LoadingButton } from '../../components/LoadingButton';
 
 const RAEValidationPanel = () => {
     const { id } = useParams();
@@ -22,8 +23,11 @@ const RAEValidationPanel = () => {
         enabled: !!id,
     });
 
+    const [exporting, setExporting] = useState(false);
+
     const handleExport = async () => {
         try {
+            setExporting(true);
             showLoading();
             const blob = await raeApi.exportExcel(Number(id));
             const url = window.URL.createObjectURL(new Blob([blob]));
@@ -38,6 +42,7 @@ const RAEValidationPanel = () => {
             toast.error(<span className="inline-flex items-center gap-1.5"><XCircle size={16} /> Error</span>, { description: 'No se pudo generar el archivo.' });
         } finally {
             hideLoading();
+            setExporting(false);
         }
     };
 
@@ -74,13 +79,14 @@ const RAEValidationPanel = () => {
                     </button>
                     <h1 className="text-2xl font-black tracking-tight">Validación de Totales RAE</h1>
                 </div>
-                <button 
-                    className="btn btn-success px-8 gap-2 shadow-lg hover:scale-105 transition-transform" 
+                <LoadingButton
+                    className="btn btn-success px-8 gap-2 shadow-lg hover:scale-105 transition-transform"
+                    icon={Download}
+                    loading={exporting}
                     onClick={handleExport}
                 >
-                    <Download size={20} />
                     Descargar Archivo Oficial
-                </button>
+                </LoadingButton>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
