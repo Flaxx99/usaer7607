@@ -74,20 +74,37 @@ class RegistroRACSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
-        """Asignar ciclo escolar automáticamente al crear"""
+        """Asignar ciclo escolar, maestro, escuelas y datos del alumno automáticamente"""
+        request = self.context.get("request")
+
         try:
             validated_data["ciclo_escolar"] = get_current_ciclo_escolar_instance()
         except Exception:
             raise serializers.ValidationError("No hay un ciclo escolar activo configurado.")
 
-        # Lógica de autorrellenado de datos del alumno
+        # Maestro de apoyo = usuario autenticado (a menos que ya venga explícito)
+        if "maestro_apoyo" not in validated_data and request and request.user.is_authenticated:
+            validated_data["maestro_apoyo"] = request.user
+
+        # Autorrellenar datos del alumno
         alumno = validated_data.get("alumno")
         if alumno:
             validated_data["curp"] = alumno.curp
             validated_data["sexo"] = alumno.sexo
             validated_data["edad"] = alumno.edad
             validated_data["grado"] = alumno.grado
-            if alumno.escuela:
+
+            # Escuela regular = escuela del alumno
+            if "escuela_regular" not in validated_data and alumno.escuela:
+                validated_data["escuela_regular"] = alumno.escuela
                 validated_data["zona_regular"] = getattr(alumno.escuela, "zona", "")
+
+            # Escuela básica = misma que la regular por defecto
+            if "escuela_basica" not in validated_data and alumno.escuela:
+                validated_data["escuela_basica"] = alumno.escuela
+
+        # Service type por defecto
+        if "service_type" not in validated_data:
+            validated_data["service_type"] = "USAER"
 
         return super().create(validated_data)

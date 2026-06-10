@@ -2,25 +2,11 @@ import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { 
   Users, School, ClipboardCheck, AlertCircle, Loader2, 
-  Calendar, UserCheck, FileText, ArrowUpRight
+  UserCheck, FileText, ArrowUpRight 
 } from 'lucide-react';
 import { 
-  Container, 
-  SimpleGrid, 
-  Text, 
-  Title, 
-  Group, 
-  Badge, 
-  Stack, 
-  Box, 
-  ThemeIcon,
-  Paper,
-  ScrollArea,
-  Center,
-  Avatar,
-  Progress,
-  Divider
-} from '@mantine/core';
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell 
+} from 'recharts';
 import { getDashboardData } from '../api/dashboard';
 
 const ROLES_MAP: Record<string, string> = {
@@ -79,331 +65,263 @@ const Dashboard = () => {
 
   if (isLoading) {
     return (
-      <Center h="70vh">
-        <Stack align="center" gap="md">
-          <Loader2 className="animate-spin text-blue-600" size={48} />
-          <Text fw={600} size="lg" c="blue.6" className="animate-pulse">
+      <div className="flex items-center justify-center h-[70vh]">
+        <div className="flex flex-col items-center gap-4 text-center">
+          <Loader2 className="animate-spin text-primary w-12 h-12" />
+          <p className="text-lg font-semibold text-primary animate-pulse">
             Sincronizando con el servidor...
-          </Text>
-          <Text size="xs" c="dimmed">Cargando indicadores de gestión escolar</Text>
-        </Stack>
-      </Center>
+          </p>
+          <p className="text-xs text-base-content/60">Cargando indicadores de gestión escolar</p>
+        </div>
+      </div>
     );
   }
 
   if (isError) {
     return (
-      <Center h="70vh">
-        <Paper p="xl" withBorder radius="lg" shadow="md" bg="red.0" style={{ textAlign: 'center', maxWidth: '450px' }}>
-          <ThemeIcon color="red" size="xl" radius="xl" variant="light" mb="md">
-            <AlertCircle size={32} />
-          </ThemeIcon>
-          <Title order={3} c="red.8" mb="xs">Error de Conexión</Title>
-          <Text size="sm" c="red.7" mb="lg">
-            No pudimos contactar al backend. Verifica que el servidor de Django esté activo.
-          </Text>
-          <Text size="xs" c="dimmed">Detalle: {error?.message || 'Error desconocido'}</Text>
-        </Paper>
-      </Center>
+      <div className="flex items-center justify-center h-[70vh] p-4">
+        <div className="card bg-error/10 shadow-xl max-w-md w-full text-center border border-error/20">
+          <div className="card-body items-center gap-4">
+            <div className="w-16 h-16 rounded-full bg-error/20 flex items-center justify-center">
+              <AlertCircle className="w-8 h-8 text-error" />
+            </div>
+            <h3 className="text-xl font-bold text-error">Error de Conexión</h3>
+            <p className="text-sm text-error/80">
+              No pudimos contactar al backend. Verifica que el servidor de Django esté activo.
+            </p>
+            <p className="text-xs text-base-content/50">Detalle: {error?.message || 'Error desconocido'}</p>
+            <div className="card-actions">
+              <button onClick={() => window.location.reload()} className="btn btn-error btn-sm">
+                Reintentar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Container size="xl" py="md">
-      <Stack gap="xl">
+    <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
+      
+      {/* HEADER HERO */}
+      <div className="card bg-gradient-to-br from-primary to-indigo-700 text-primary-content shadow-xl overflow-hidden relative">
+        <div className="absolute -right-12 -top-12 w-48 h-48 rounded-full bg-white/10 pointer-events-none" />
         
-        {/* ========================================================================= */}
-        {/* HEADER HERO (DISEÑO PREMIUM CON DEGRADADO) */}
-        {/* ========================================================================= */}
-        <Paper 
-          radius="lg" 
-          shadow="md" 
-          p="xl" 
-          style={{ 
-            background: 'linear-gradient(135deg, var(--mantine-color-blue-7) 0%, var(--mantine-color-indigo-8) 100%)',
-            color: 'white',
-            position: 'relative',
-            overflow: 'hidden'
-          }}
-        >
-          {/* Círculo decorativo de fondo */}
-          <div style={{
-            position: 'absolute',
-            right: '-50px',
-            top: '-50px',
-            width: '200px',
-            height: '200px',
-            borderRadius: '100px',
-            background: 'rgba(255, 255, 255, 0.05)',
-            pointerEvents: 'none'
-          }} />
-
-          <Group justify="space-between" align="center" wrap="nowrap" style={{ zIndex: 1, position: 'relative' }}>
-            <Group gap="lg">
-              <Avatar 
-                size="xl" 
-                radius="xl" 
-                color="white" 
-                style={{ 
-                  border: '3px solid rgba(255,255,255,0.4)',
-                  boxShadow: 'var(--mantine-shadow-md)',
-                  background: 'rgba(255,255,255,0.1)'
-                }}
-              >
-                {userData.nombre.charAt(0).toUpperCase()}
-              </Avatar>
-              <Stack gap={2}>
-                <Title order={1} fw={800} style={{ letterSpacing: '-0.5px' }}>
+        <div className="card-body p-8 relative z-10">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-6">
+              <div className="avatar">
+                <div className="w-20 h-20 rounded-full ring-4 ring-white/30 bg-white/20 flex items-center justify-center text-2xl font-bold shadow-inner">
+                  {userData.nombre.charAt(0).toUpperCase()}
+                </div>
+              </div>
+              <div className="text-center sm:text-left">
+                <h1 className="text-3xl font-extrabold tracking-tight">
                   ¡Hola, {userData.nombre}!
-                </Title>
-                <Group gap="xs">
-                  <Text fw={500} opacity={0.9}>
-                    {userData.rol}
-                  </Text>
-                  <Badge variant="white" color="blue" size="sm" radius="sm">
-                     {data?.ciclo_actual || 'Ciclo Escolar'}
-                  </Badge>
-                </Group>
-              </Stack>
-            </Group>
+                </h1>
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-1">
+                  <span className="font-medium opacity-90">{userData.rol}</span>
+                  <div className="badge badge-secondary badge-sm font-bold">
+                    {data?.ciclo_actual || 'Ciclo Escolar'}
+                  </div>
+                </div>
+              </div>
+            </div>
             
-            <Box ta="right" className="hidden sm:block" style={{ opacity: 0.9 }}>
-              <Text size="xs" fw={700} tt="uppercase" lts={1}>
+            <div className="hidden sm:block text-right opacity-90">
+              <p className="text-xs font-bold uppercase tracking-widest opacity-70">
                 {new Date().toLocaleDateString('es-MX', { weekday: 'long' })}
-              </Text>
-              <Text fw={800} size="xl" style={{ fontSize: '1.5rem', lineHeight: 1 }}>
+              </p>
+              <p className="text-2xl font-black">
                 {new Date().toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })}
-              </Text>
-            </Box>
-          </Group>
-        </Paper>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
 
-        {/* ========================================================================= */}
-        {/* CARDS DE ESTADÍSTICAS (KPIs ANIMADOS Y FLOTANTES) */}
-        {/* ========================================================================= */}
-        <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="md">
-          {data?.stats && (
-            <>
-              <PremiumStatCard 
-                title="Alumnos Totales" 
-                value={data.stats.total_alumnos} 
-                icon={<Users size={24} />} 
-                color="blue" 
-                description="Matrícula activa en USAER"
-              />
-              <PremiumStatCard 
-                title="Escuelas Regular" 
-                value={data.stats.total_escuelas} 
-                icon={<School size={24} />} 
-                color="teal" 
-                description="Centros de atención vinculados"
-              />
-              <PremiumStatCard 
-                title="Plantilla Docente" 
-                value={data.stats.total_maestros} 
-                icon={<ClipboardCheck size={24} />} 
-                color="indigo" 
-                description="Especialistas y apoyo activo"
-              />
-            </>
-          )}
-          <PremiumStatCard 
-              title="Incidencias Pend." 
-              value={data?.incidencias_pendientes || 0} 
-              icon={<AlertCircle size={24} />} 
-              color="red" 
-              description="Requieren atención inmediata"
-              highlight={data?.incidencias_pendientes > 0}
-              pulse
-          />
-        </SimpleGrid>
+      {/* KPI STATS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {data?.stats && (
+          <>
+            <StatCard 
+              title="Alumnos Totales" 
+              value={data.stats.total_alumnos} 
+              icon={<Users className="w-6 h-6" />} 
+              color="blue" 
+              description="Matrícula activa en USAER"
+            />
+            <StatCard 
+              title="Escuelas Regular" 
+              value={data.stats.total_escuelas} 
+              icon={<School className="w-6 h-6" />} 
+              color="teal" 
+              description="Centros de atención vinculados"
+            />
+            <StatCard 
+              title="Plantilla Docente" 
+              value={data.stats.total_maestros} 
+              icon={<ClipboardCheck className="w-6 h-6" />} 
+              color="indigo" 
+              description="Especialistas y apoyo activo"
+            />
+          </>
+        )}
+        <StatCard 
+            title="Incidencias Pend." 
+            value={data?.incidencias_pendientes || 0} 
+            icon={<AlertCircle className="w-6 h-6" />} 
+            color="error" 
+            description="Requieren atención inmediata"
+            highlight={(data?.incidencias_pendientes ?? 0) > 0}
+            pulse={(data?.incidencias_pendientes ?? 0) > 0}
+        />
+      </div>
 
-        {/* ========================================================================= */}
-        {/* SECCIÓN INFORMATIVA (FEED DE AVISOS Y GRÁFICAS ELEGANTES) */}
-        {/* ========================================================================= */}
-        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
-          
-          {/* PANEL DE AVISOS */}
-          <Paper p="xl" radius="lg" withBorder shadow="xs">
-            <Group justify="space-between" mb="lg">
-              <Stack gap={2}>
-                <Title order={3} fw={800}>Tablón de Avisos</Title>
-                <Text size="xs" c="dimmed">Notificaciones oficiales de la dirección</Text>
-              </Stack>
-              <Badge variant="light" color="blue" size="lg" radius="md">
+      {/* MAIN CONTENT GRID */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        {/* PANEL DE AVISOS */}
+        <div className="card bg-base-100 shadow-sm border border-base-300">
+          <div className="card-body p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-xl font-bold flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-primary" />
+                  Tablón de Avisos
+                </h3>
+                <p className="text-xs text-base-content/60">Notificaciones oficiales de la dirección</p>
+              </div>
+              <div className="badge badge-primary badge-outline font-bold">
                 {data?.ultimos_avisos?.length || 0} publicaciones
-              </Badge>
-            </Group>
+              </div>
+            </div>
 
-            <Divider mb="md" />
+            <div className="divider my-0"></div>
 
-            <ScrollArea h={380} scrollbarSize={6} type="hover">
-              <Stack gap="md" pr="xs">
-                {data?.ultimos_avisos && data.ultimos_avisos.length > 0 ? (
-                  data.ultimos_avisos.map((aviso: any) => (
-                    <Paper 
-                      key={aviso.id} 
-                      p="md" 
-                      radius="md" 
-                      withBorder 
-                      bg="gray.0"
-                      style={{ 
-                        transition: 'transform 0.15s ease, border-color 0.15s ease',
-                        borderLeft: '4px solid var(--mantine-color-blue-6)',
-                        cursor: 'pointer'
-                      }}
-                      className="hover:shadow-sm hover:-translate-x-1"
-                    >
-                      <Group justify="space-between" align="flex-start" mb="xs">
-                        <Text fw={700} size="sm" c="blue.9">{aviso.titulo}</Text>
-                        <Badge size="xs" variant="light" color="gray">
+            <div className="max-h-[400px] overflow-y-auto pr-2 space-y-4 mt-4">
+              {data?.ultimos_avisos && data.ultimos_avisos.length > 0 ? (
+                data.ultimos_avisos.map((aviso: any) => (
+                  <div 
+                    key={aviso.id} 
+                    className="card bg-base-200 hover:bg-base-300 transition-all cursor-pointer group border-l-4 border-primary shadow-sm"
+                  >
+                    <div className="card-body p-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <h4 className="font-bold text-sm text-primary group-hover:text-primary-focus transition-colors">
+                          {aviso.titulo}
+                        </h4>
+                        <span className="badge badge-ghost badge-xs opacity-60">
                           {new Date(aviso.fecha).toLocaleDateString()}
-                        </Badge>
-                      </Group>
-                      <Text size="xs" c="gray.7" mb="md" style={{ lineHeight: 1.4 }}>
+                        </span>
+                      </div>
+                      <p className="text-xs text-base-content/70 mt-1 leading-relaxed">
                         {aviso.contenido}
-                      </Text>
-                      <Group gap="xs">
-                        <Avatar radius="xl" size="xs" color="blue">{aviso.autor.charAt(0).toUpperCase()}</Avatar>
-                        <Text size="xs" fw={600} c="gray.6">{aviso.autor}</Text>
-                      </Group>
-                    </Paper>
-                  ))
-                ) : (
-                  <Center h={200}>
-                    <Text c="dimmed" size="sm">No hay avisos recientes por ahora.</Text>
-                  </Center>
-                )}
-              </Stack>
-            </ScrollArea>
-          </Paper>
-
-          {/* PANEL DE CLASIFICACIONES DE ALUMNOS */}
-          <Paper p="xl" radius="lg" withBorder shadow="xs">
-            <Stack gap={2} mb="lg">
-              <Title order={3} fw={800}>Distribución de Matrícula</Title>
-              <Text size="xs" c="dimmed">Alumnos activos clasificados por condición o discapacidad</Text>
-            </Stack>
-
-            <Divider mb="md" />
-
-            <Stack gap="lg" style={{ height: '380px', justifyContent: 'center' }}>
-              {data?.grafica_clasificacion?.map((item: any, idx: number) => {
-                const colors = ['blue', 'teal', 'violet', 'orange', 'red', 'indigo'];
-                const colorAssigned = colors[idx % colors.length];
-                const percentage = ((item.total / (data.stats?.total_alumnos || 1)) * 100).toFixed(0);
-
-                return (
-                  <Box key={item.clasificacion}>
-                    <Group justify="space-between" mb={4}>
-                      <Group gap="xs">
-                        <ThemeIcon size={8} radius="xl" color={colorAssigned} />
-                        <Text size="xs" fw={700} c="gray.8" style={{ textTransform: 'capitalize' }}>
-                          {item.clasificacion.replace('_', ' ').toLowerCase()}
-                        </Text>
-                      </Group>
-                      <Group gap={4}>
-                        <Text size="xs" fw={800}>{item.total}</Text>
-                        <Text size="xs" c="dimmed">({percentage}%)</Text>
-                      </Group>
-                    </Group>
-                    <Progress 
-                      value={item.total} 
-                      max={data.stats?.total_alumnos || 100} 
-                      color={colorAssigned} 
-                      size="sm" 
-                      radius="xl"
-                      animated
-                    />
-                  </Box>
-                );
-              })}
-              {(!data?.grafica_clasificacion || data.grafica_clasificacion.length === 0) && (
-                <Center h={200}><Text c="dimmed" size="sm">No hay datos de distribución disponibles.</Text></Center>
+                      </p>
+                      <div className="flex items-center gap-2 mt-3">
+                        <div className="avatar placeholder">
+                          <div className="bg-neutral text-neutral-content rounded-full w-5 h-5 text-[10px]">
+                            {aviso.autor.charAt(0).toUpperCase()}
+                          </div>
+                        </div>
+                            <span className="text-xs font-semibold opacity-60">{aviso.autor}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="flex flex-col items-center justify-center h-48 text-base-content/40 italic text-sm">
+                  No hay avisos recientes por ahora.
+                </div>
               )}
-            </Stack>
-          </Paper>
+            </div>
+          </div>
+        </div>
 
-        </SimpleGrid>
-      </Stack>
-    </Container>
+        {/* PANEL DE DISTRIBUCIÓN (GRÁFICA) */}
+        <div className="card bg-base-100 shadow-sm border border-base-300">
+          <div className="card-body p-6">
+            <div className="mb-6">
+              <h3 className="text-xl font-bold flex items-center gap-2">
+                <UserCheck className="w-5 h-5 text-primary" />
+                Distribución de Matrícula
+              </h3>
+              <p className="text-xs text-base-content/60">Alumnos activos clasificados por condición</p>
+            </div>
+
+            <div className="divider my-0"></div>
+
+            <div className="h-[350px] w-full mt-4">
+              {data?.grafica_clasificacion && data.grafica_clasificacion.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={data.grafica_clasificacion} layout="vertical" margin={{ left: 40, right: 30 }}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
+                    <XAxis type="number" hide />
+                    <YAxis 
+                      dataKey="clasificacion" 
+                      type="category" 
+                      tick={{ fontSize: 11, fontWeight: 600 }} 
+                      width={100}
+                      tickFormatter={(val) => val.replace('_', ' ').toLowerCase()}
+                    />
+                    <Tooltip 
+                      cursor={{ fill: 'rgba(0,0,0,0.05)' }} 
+                      contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                    />
+                    <Bar dataKey="total" radius={[0, 4, 4, 0]} barSize={20}>
+                      {data.grafica_clasificacion.map((_entry: any, index: number) => (
+                        <Cell key={`cell-${index}`} fill={COLOR_PALETTE[index % COLOR_PALETTE.length]} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full text-base-content/40 italic text-sm">
+                  No hay datos de distribución disponibles.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 
-// =========================================================================
-// COMPONENTE PREMIUM STAT CARD (DISEÑADOR EXPERTO)
-// =========================================================================
-const PremiumStatCard = ({ title, value, icon, color, description, highlight = false, pulse = false }: any) => (
-  <Paper 
-    p="lg" 
-    radius="lg" 
-    withBorder 
-    shadow="xs"
-    style={{ 
-      backgroundColor: highlight ? `var(--mantine-color-${color}-0)` : 'white',
-      borderLeft: highlight ? `4px solid var(--mantine-color-${color}-filled)` : '1px solid var(--mantine-color-gray-2)',
-      transition: 'all 0.2s ease',
-      cursor: 'pointer',
-      position: 'relative',
-      overflow: 'hidden'
-    }}
-    className="hover:shadow-md hover:-translate-y-1 group"
-  >
-    {/* Micro-indicador decorativo de link */}
-    <div style={{
-      position: 'absolute',
-      right: '12px',
-      top: '12px',
-      opacity: 0,
-      transition: 'opacity 0.2s ease'
-    }} className="group-hover:opacity-40">
-      <ArrowUpRight size={16} />
+const COLOR_PALETTE = ['#3b82f6', '#14b8a6', '#8b5cf6', '#f59e0b', '#ef4444', '#6366f1'];
+
+const StatCard = ({ title, value, icon, color, description, highlight = false, pulse = false }: any) => {
+  const colorClasses: Record<string, string> = {
+    blue: 'bg-blue-100 text-blue-700 border-blue-200',
+    teal: 'bg-teal-100 text-teal-700 border-teal-200',
+    indigo: 'bg-indigo-100 text-indigo-700 border-indigo-200',
+    error: 'bg-error/10 text-error border-error/20',
+  };
+
+  return (
+    <div 
+      className={`card bg-base-100 shadow-sm border transition-all duration-200 cursor-pointer group hover:shadow-md hover:-translate-y-1 ${
+        highlight ? 'border-l-4 border-l-error' : 'border-base-300'
+      }`}
+    >
+      <div className="card-body p-5">
+        <div className="flex items-start justify-between">
+          <div className={`p-3 rounded-xl ${colorClasses[color] || 'bg-base-200'} ${pulse ? 'animate-pulse' : ''}`}>
+            {icon}
+          </div>
+          <ArrowUpRight className="w-4 h-4 opacity-0 group-hover:opacity-40 transition-opacity" />
+        </div>
+        <div className="mt-4">
+          <p className="text-xs font-bold text-base-content/50 uppercase tracking-wider">
+            {title}
+          </p>
+          <h4 className="text-3xl font-black mt-1">{value}</h4>
+          <p className="text-xs text-base-content/60 mt-1">{description}</p>
+        </div>
+      </div>
     </div>
-
-    <Group wrap="nowrap" align="flex-start">
-      <ThemeIcon 
-        color={color} 
-        variant="light" 
-        size={46} 
-        radius="lg"
-        style={{
-          boxShadow: 'var(--mantine-shadow-xs)',
-          animation: pulse ? 'pulse 2s infinite' : 'none'
-        }}
-      >
-        {icon}
-      </ThemeIcon>
-      <Stack gap={2} style={{ flex: 1 }}>
-        <Text size="xs" c="dimmed" fw={700} tt="uppercase" lts={0.5}>
-          {title}
-        </Text>
-        <Text size="2xl" fw={900} style={{ fontSize: '1.8rem', lineHeight: 1 }}>
-          {value}
-        </Text>
-        <Text size="xs" c="dimmed" style={{ lineHeight: 1.2 }}>
-          {description}
-        </Text>
-      </Stack>
-    </Group>
-
-    {/* Estilos CSS Inline clave para efectos del diseñador */}
-    <style dangerouslySetInnerHTML={{__html: `
-      @keyframes pulse {
-        0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(224, 49, 49, 0.4); }
-        70% { transform: scale(1.05); box-shadow: 0 0 0 8px rgba(224, 49, 49, 0); }
-        100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(224, 49, 49, 0); }
-      }
-      .hover\\:-translate-y-1:hover {
-        transform: translateY(-4px);
-      }
-      .hover\\:shadow-md:hover {
-        box-shadow: var(--mantine-shadow-md) !important;
-      }
-      .hover\\:-translate-x-1:hover {
-        transform: translateX(-4px);
-      }
-    `}} />
-  </Paper>
-);
+  );
+};
 
 export default Dashboard;

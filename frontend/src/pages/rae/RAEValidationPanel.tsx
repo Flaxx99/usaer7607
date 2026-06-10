@@ -1,15 +1,12 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { 
-    Container, Stack, Paper, Title, Text, Button, Table, 
-    Group, ActionIcon, Badge, ScrollArea, Divider, Center, Loader
-} from '@mantine/core';
-import { 
-    IconCheck, IconArrowLeft, IconDownload, IconEye, IconAlertCircle 
-} from '@tabler/icons-react';
+  ArrowLeft, Download, Eye
+} from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
-import { raeApi, RAEAlumno } from '../../api/rae';
-import { notifications } from '@mantine/notifications';
+import { toast } from 'sonner';
+import { raeApi } from '../../api/rae';
+import type { RAEAlumno } from '../../api/rae';
 import { useLoading } from '../../context/LoadingContext';
 
 const RAEValidationPanel = () => {
@@ -35,17 +32,9 @@ const RAEValidationPanel = () => {
             document.body.appendChild(link);
             link.click();
             link.remove();
-            notifications.show({
-                title: 'Documento Generado',
-                message: 'El archivo oficial RAE ha sido descargado.',
-                color: 'green',
-            });
-        } catch (error) {
-            notifications.show({
-                title: 'Error',
-                message: 'No se pudo generar el archivo.',
-                color: 'red',
-            });
+            toast.success('Documento Generado', { description: 'El archivo oficial RAE ha sido descargado.' });
+        } catch {
+            toast.error('Error', { description: 'No se pudo generar el archivo.' });
         } finally {
             hideLoading();
         }
@@ -67,69 +56,97 @@ const RAEValidationPanel = () => {
         { label: 'Portafolio', fields: ['diagnostico', 'educativo', 'deteccion', 'psicopedagogico', 'plan', 'modelo'] },
     ];
 
-    if (isLoading) return <Center h="70vh"><Loader size="xl" /></Center>;
+    if (isLoading) return (
+        <div className="flex items-center justify-center h-[70vh] flex-col gap-4">
+            <span className="loading loading-spinner loading-lg text-primary" />
+            <p className="font-bold text-primary animate-pulse">Cargando validación...</p>
+        </div>
+    );
 
     return (
-        <Container size="xl" py="md">
-            <Stack gap="lg">
-                <Group justify="space-between" align="center">
-                    <Group gap="sm">
-                        <Button variant="subtle" color="gray" onClick={() => navigate('/rae/capture/' + id)} leftSection={<IconArrowLeft size={18} />}>
-                            Volver a Captura
-                        </Button>
-                        <Title order={2} fw={900}>Validación de Totales RAE</Title>
-                    </Group>
-                    <Button color="green" size="lg" leftSection={<IconDownload size={20} />} onClick={handleExport}>
-                        Descargar Archivo Oficial
-                    </Button>
-                </Group>
+        <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div className="flex items-center gap-3">
+                    <button 
+                        className="btn btn-ghost btn-sm gap-2" 
+                        onClick={() => navigate('/rae/capture/' + id)}
+                    >
+                        <ArrowLeft size={18} />
+                        Volver a Captura
+                    </button>
+                    <h1 className="text-2xl font-black tracking-tight">Validación de Totales RAE</h1>
+                </div>
+                <button 
+                    className="btn btn-success px-8 gap-2 shadow-lg hover:scale-105 transition-transform" 
+                    onClick={handleExport}
+                >
+                    <Download size={20} />
+                    Descargar Archivo Oficial
+                </button>
+            </div>
 
-                <SimpleGrid cols={{ base: 1, md: 3 }} spacing="lg">
-                    {categories.map(cat => (
-                        <Paper key={cat.label} p="md" radius="lg" withBorder shadow="xs">
-                            <Title order={4} fw={700} mb="md" c="blue.8">{cat.label}</Title>
-                            <Divider mb="md" />
-                            <Stack gap="xs">
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+                {categories.map(cat => (
+                    <div key={cat.label} className="card bg-base-100 shadow-sm border border-base-300">
+                        <div className="card-body p-5 space-y-4">
+                            <h3 className="text-sm font-black uppercase tracking-widest text-primary border-b pb-2">
+                                {cat.label}
+                            </h3>
+                            <div className="flex flex-col gap-2">
                                 {cat.fields.map(f => {
-                                    const total = calculateTotal(f);
+                                    const total = calculateTotal(f as keyof RAEAlumno);
                                     return (
-                                        <Group key={f} justify="space-between" p="xs" style={{ backgroundColor: 'var(--mantine-color-gray-0)', borderRadius: '8px' }}>
-                                            <Text size="sm" fw={500}>{f.toUpperCase()}</Text>
-                                            <Badge 
-                                                color="blue" 
-                                                variant="filled" 
-                                                onClick={() => setSelectedTotal({ field: f, value: true })}
-                                                style={{ cursor: 'pointer' }}
-                                            >
-                                                {total} alumnos
-                                            </Badge>
-                                        </Group>
+                                        <div 
+                                            key={f} 
+                                            className="flex items-center justify-between p-2 bg-base-200 rounded-lg cursor-pointer hover:bg-primary/10 transition-colors group"
+                                            onClick={() => setSelectedTotal({ field: f, value: true })}
+                                        >
+                                            <span className="text-xs font-bold opacity-60 group-hover:opacity-100">{f.toUpperCase()}</span>
+                                            <span className="badge badge-primary badge-sm font-bold">
+                                                {total}
+                                            </span>
+                                        </div>
                                     );
                                 })}
-                            </Stack>
-                        </Paper>
-                    ))}
-                </SimpleGrid>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
 
-                {selectedTotal && (
-                    <Paper p="xl" radius="lg" withBorder shadow="md" bg="gray.0">
-                        <Group justify="space-between" mb="md">
-                            <Title order={3} fw={700}>Alumnos con {selectedTotal.field.toUpperCase()}</Title>
-                            <ActionIcon variant="subtle" color="gray" onClick={() => setSelectedTotal(null)}><IconCheck size={20} /></ActionIcon>
-                        </Group>
-                        <Divider mb="md" />
-                        <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="sm">
-                            {getAlumnosForField(selectedTotal.field).map(a => (
-                                <Paper key={a.id} p="xs" withBorder radius="md" bg="white">
-                                    <Text size="sm" fw={600}>{a.alumno_nombre}</Text>
-                                    <Text size="xs" c="dimmed">{a.grado}</Text>
-                                </Paper>
-                            ))}
-                        </SimpleGrid>
-                    </Paper>
-                )}
-            </Stack>
-        </Container>
+            {selectedTotal && (
+                <div className="card bg-base-100 shadow-xl border-2 border-primary p-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                    <div className="flex justify-between items-center mb-6">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-primary text-white rounded-lg">
+                                <Eye size={20} />
+                            </div>
+                            <h3 className="text-xl font-black">Alumnos con {selectedTotal.field.toUpperCase()}</h3>
+                        </div>
+                        <button 
+                            className="btn btn-ghost btn-sm" 
+                            onClick={() => setSelectedTotal(null)}
+                        >
+                            Cerrar
+                        </button>
+                    </div>
+                    <div className="divider my-0"></div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-6">
+                        {getAlumnosForField(selectedTotal.field as keyof RAEAlumno).map(a => (
+                            <div key={a.id} className="card bg-base-200 p-4 rounded-xl border border-base-300 hover:border-primary transition-colors">
+                                <p className="font-bold text-sm">{a.alumno_nombre}</p>
+                                <p className="text-xs opacity-50">{a.grado}</p>
+                            </div>
+                        ))}
+                        {getAlumnosForField(selectedTotal.field as keyof RAEAlumno).length === 0 && (
+                            <p className="col-span-full text-center py-8 text-base-content/40 italic">
+                                No hay alumnos asignados a esta categoría.
+                            </p>
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
     );
 };
 

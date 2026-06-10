@@ -1,18 +1,12 @@
 import React, { useState } from 'react';
 import { 
-    Container, Stack, Paper, Title, Text, Button, Table, 
-    Group, ActionIcon, Tooltip, Modal, TextInput, 
-    FileInput, Pagination, Loader, Center, ThemeIcon
-} from '@mantine/core';
-import { 
     Plus, Search, Trash2, FileText, Download, UploadCloud 
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import Swal from 'sweetalert2';
-import { notifications } from '@mantine/notifications';
+import { toast } from 'sonner';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { TableSkeleton } from '../../components/Skeletons';
-import { getOficios, uploadOficio, deleteOficio, Oficio } from '../../api/oficios';
+import { getOficios, uploadOficio, deleteOficio } from '../../api/oficios';
 
 const OficiosList = () => {
     const [busqueda, setBusqueda] = useState('');
@@ -35,16 +29,16 @@ const OficiosList = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['oficios'] });
             setIsModalOpen(false);
-            notifications.show({ title: 'Éxito', message: 'Oficio subido correctamente.', color: 'green' });
+            toast.success('Éxito', { description: 'Oficio subido correctamente.' });
         },
-        onError: () => notifications.show({ title: 'Error', message: 'No se pudo subir el archivo.', color: 'red' }),
+        onError: () => toast.error('Error', { description: 'No se pudo subir el archivo.' }),
     });
 
     const deleteMutation = useMutation({
         mutationFn: deleteOficio,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['oficios'] });
-            notifications.show({ title: 'Eliminado', message: 'El oficio ha sido borrado.', color: 'blue' });
+            toast.success('Eliminado', { description: 'El oficio ha sido borrado.' });
         },
     });
 
@@ -52,193 +46,172 @@ const OficiosList = () => {
         event.preventDefault();
         const form = event.currentTarget as HTMLFormElement;
         const formData = new FormData(form);
-        
         uploadMutation.mutate(formData);
     };
 
     const handleDelete = (id: number) => {
-        Swal.fire({
-            title: '¿Eliminar oficio?',
-            text: "Esta acción no se puede deshacer.",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            confirmButtonText: 'Sí, eliminar'
-        }).then((r) => { if (r.isConfirmed) deleteMutation.mutate(id); });
+        if (confirm('¿Eliminar oficio? Esta acción no se puede deshacer.')) {
+            deleteMutation.mutate(id);
+        }
     };
 
     if (isLoading) {
         return (
-            <Container size="xl" py="md">
+            <div className="max-w-7xl mx-auto p-4 md:p-6">
                 <TableSkeleton rows={10} />
-            </Container>
+            </div>
         );
     }
 
     return (
-        <Container size="xl" py="md">
-            <Stack gap="xl">
-                <Paper p="lg" radius="lg" withBorder shadow="sm" bg="blue.0" style={{ borderLeft: '8px solid var(--mantine-color-blue-6)' }}>
-                    <Group justify="space-between" align="center">
-                        <Group gap="md">
-                            <ThemeIcon size={52} radius="lg" color="blue" variant="filled">
-                                <FileText size={30} />
-                            </ThemeIcon>
-                            <div>
-                                <Title order={1} fw={900} lts={-0.5} style={{ fontSize: '1.8rem', lineHeight: 1.2 }}>
-                                    Gestión de Oficios
-                                </Title>
-                                <Text size="sm" c="dimmed" fw={500}>
-                                    Archivo digital de documentos oficiales enviados y recibidos por la USAER 7607.
-                                </Text>
-                            </div>
-                        </Group>
-                        
-                        <Button 
-                            size="lg" 
-                            radius="md" 
-                            leftSection={<Plus size={22} />} 
-                            onClick={() => setIsModalOpen(true)}
-                            color="blue"
-                            style={{ boxShadow: 'var(--mantine-shadow-md)' }}
-                        >
-                            Subir Nuevo Oficio
-                        </Button>
-                    </Group>
-                </Paper>
-
-                <Paper p="md" radius="lg" withBorder shadow="xs">
-                    <TextInput 
-                        size="md"
-                        label="Buscar Oficio"
-                        placeholder="Escribe el título o descripción del documento..." 
-                        leftSection={<Search size={18} />}
-                        value={busqueda} 
-                        onChange={(e) => { setBusqueda(e.target.value); setPage(1); }}
-                    />
-                </Paper>
-
-                <Paper radius="lg" withBorder shadow="xs" overflow="hidden">
-                    <Table striped highlightOnHover verticalSpacing="md">
-                        <Table.Thead bg="gray.0">
-                            <Table.Tr>
-                                <Table.Th>Título del Documento</Table.Th>
-                                <Table.Th>Descripción</Table.Th>
-                                <Table.Th>Fecha de Subida</Table.Th>
-                                <Table.Th ta="center">Acciones</Table.Th>
-                            </Table.Tr>
-                        </Table.Thead>
-                        <Table.Tbody>
-                            {oficios.map((oficio) => (
-                                <Table.Tr key={oficio.id}>
-                                    <Table.Td fw={700}>{oficio.titulo}</Table.Td>
-                                    <Table.Td>{oficio.descripcion || 'Sin descripción'}</Table.Td>
-                                    <Table.Td>
-                                        <Text size="sm">{new Date(oficio.fecha_subida).toLocaleDateString()}</Text>
-                                    </Table.Td>
-                                    <Table.Td>
-                                        <Group justify="center" gap="xs">
-                                            <Tooltip label="Ver / Descargar">
-                                                <ActionIcon 
-                                                    variant="light" 
-                                                    color="blue" 
-                                                    size="lg" 
-                                                    radius="md"
-                                                    component="a" 
-                                                    href={oficio.archivo} 
-                                                    target="_blank"
-                                                >
-                                                    <Download size={18} />
-                                                </ActionIcon>
-                                            </Tooltip>
-                                            <Tooltip label="Eliminar">
-                                                <ActionIcon 
-                                                    variant="light" 
-                                                    color="red" 
-                                                    size="lg" 
-                                                    radius="md"
-                                                    onClick={() => handleDelete(oficio.id)}
-                                                >
-                                                    <Trash2 size={18} />
-                                                </ActionIcon>
-                                            </Tooltip>
-                                        </Group>
-                                    </Table.Td>
-                                </Table.Tr>
-                            ))}
-                        </Table.Tbody>
-                    </Table>
+        <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
+            
+            {/* CABECERA */}
+            <div className="card bg-primary text-primary-content shadow-lg border-l-8 border-primary-dark">
+                <div className="card-body p-8 flex-row items-center justify-between gap-4">
+                    <div className="flex items-center gap-6">
+                        <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shadow-inner">
+                            <FileText size={32} />
+                        </div>
+                        <div>
+                            <h1 className="text-3xl font-black tracking-tight">
+                                Gestión de Oficios
+                            </h1>
+                            <p className="text-sm opacity-90 font-medium">
+                                Archivo digital de documentos oficiales enviados y recibidos por la USAER 7607.
+                            </p>
+                        </div>
+                    </div>
                     
+                    <button 
+                        className="btn btn-white btn-lg shadow-md hover:scale-105 transition-transform"
+                        onClick={() => setIsModalOpen(true)}
+                    >
+                        <Plus size={22} />
+                        Subir Nuevo Oficio
+                    </button>
+                </div>
+            </div>
+
+            {/* TABLA DE ARCHIVOS */}
+            <div className="card bg-base-100 shadow-sm border border-base-300 overflow-hidden">
+                <div className="p-4 border-b border-base-200">
+                    <div className="relative max-w-sm">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40" size={18} />
+                        <input 
+                            type="text" 
+                            placeholder="Buscar por título o descripción..." 
+                            className="input input-bordered pl-10 w-full" 
+                            value={busqueda} 
+                            onChange={(e) => { setBusqueda(e.target.value); setPage(1); }}
+                        />
+                    </div>
+                </div>
+                <div className="overflow-x-auto">
+                    <table className="table table-md table-zebra w-full">
+                        <thead className="bg-base-200">
+                            <tr className="text-xs uppercase opacity-60">
+                                <th>Título del Documento</th>
+                                <th>Descripción</th>
+                                <th>Fecha de Subida</th>
+                                <th className="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {oficios.map((oficio) => (
+                                <tr key={oficio.id} className="hover">
+                                    <td className="font-bold">{oficio.titulo}</td>
+                                    <td className="opacity-70">{oficio.descripcion || 'Sin descripción'}</td>
+                                    <td>
+                                        <span>{new Date(oficio.fecha_subida).toLocaleDateString()}</span>
+                                    </td>
+                                    <td className="text-center">
+                                        <div className="flex justify-center gap-2">
+                                            <a 
+                                                href={oficio.archivo} 
+                                                target="_blank" 
+                                                className="btn btn-ghost btn-xs text-primary"
+                                                title="Ver / Descargar"
+                                            >
+                                                <Download size={16} />
+                                            </a>
+                                            <button 
+                                                className="btn btn-ghost btn-xs text-error" 
+                                                onClick={() => handleDelete(oficio.id)}
+                                                title="Eliminar"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                     {oficios.length === 0 && (
-                        <Center py="xl">
-                            <Stack align="center">
-                                <UploadCloud size={48} color="var(--mantine-color-gray-4)" />
-                                <Text fw={600} c="dimmed">No hay oficios registrados en el archivo.</Text>
-                            </Stack>
-                        </Center>
+                        <div className="p-12 text-center flex flex-col items-center gap-4 text-base-content/40 italic">
+                            <UploadCloud size={48} />
+                            <p>No hay oficios registrados en el archivo.</p>
+                        </div>
                     )}
-                </Paper>
+                </div>
+                
+                <div className="flex justify-center p-4 border-t border-base-200">
+                    <div className="join">
+                        <button className="join-item btn btn-sm" disabled={page === 1} onClick={() => setPage(p => p - 1)}>«</button>
+                        <button className="join-item btn btn-sm no-animation">{page} / {Math.ceil(totalCount / 10)}</button>
+                        <button className="join-item btn btn-sm" disabled={page >= Math.ceil(totalCount / 10)} onClick={() => setPage(p => p + 1)}>»</button>
+                    </div>
+                </div>
+            </div>
 
-                <Group justify="center" py="md">
-                    <Pagination 
-                        total={Math.ceil(totalCount / 10)} 
-                        value={page} 
-                        onChange={setPage} 
-                        color="blue" 
-                        radius="md" 
-                        size="md" 
-                    />
-                </Group>
-            </Stack>
-
-            <Modal 
-                opened={isModalOpen} 
-                onClose={() => setIsModalOpen(false)} 
-                title={<Title order={3} fw={800}>📤 Subir Documento Oficial</Title>}
-                size="md"
-                radius="lg"
-                centered
-            >
-                <form onSubmit={handleFileUpload}>
-                    <Stack gap="md">
-                        <TextInput 
-                            name="titulo"
-                            label="Título del Oficio" 
-                            placeholder="Ej. Reporte Trimestral de Alumnos" 
-                            required
-                            size="md"
-                        />
-                        <TextInput 
-                            name="descripcion"
-                            label="Descripción / Notas" 
-                            placeholder="Ej. Enviado a la supervisión escolar zona 01" 
-                            size="md"
-                        />
-                        <FileInput 
-                            name="archivo"
-                            label="Archivo (PDF, Imagen)" 
-                            placeholder="Selecciona el documento" 
-                            required
-                            size="md"
-                            accept="application/pdf,image/*"
-                        />
-                        <Group justify="flex-end" pt="md">
-                            <Button variant="subtle" color="gray" onClick={() => setIsModalOpen(false)}>
-                                Cancelar
-                            </Button>
-                            <Button 
-                                type="submit" 
-                                color="blue" 
-                                loading={uploadMutation.isPending}
-                                leftSection={<UploadCloud size={18} />}
-                            >
-                                Subir Archivo
-                            </Button>
-                        </Group>
-                    </Stack>
-                </form>
-            </Modal>
-        </Container>
+            {/* MODAL SUBIDA */}
+            {isModalOpen && (
+                <div className="modal modal-open">
+                    <div className="modal-box max-w-md p-0 overflow-hidden">
+                        <div className="bg-primary p-6 text-primary-content flex items-center gap-3">
+                            <UploadCloud size={24} className="text-yellow-300" />
+                            <h3 className="text-xl font-black">📤 Subir Documento Oficial</h3>
+                        </div>
+                        <form onSubmit={handleFileUpload} className="p-6 space-y-6">
+                            <div className="form-control">
+                                <label className="label"><span className="label-text font-bold">Título del Oficio</span></label>
+                                <input name="titulo" required className="input input-bordered w-full" placeholder="Ej. Reporte Trimestral de Alumnos" />
+                            </div>
+                            <div className="form-control">
+                                <label className="label"><span className="label-text font-bold">Descripción / Notas</span></label>
+                                <input name="descripcion" className="input input-bordered w-full" placeholder="Ej. Enviado a la supervisión escolar zona 01" />
+                            </div>
+                            <div className="form-control">
+                                <label className="label"><span className="label-text font-bold">Archivo (PDF, Imagen)</span></label>
+                                <input 
+                                    name="archivo" 
+                                    type="file" 
+                                    required 
+                                    accept="application/pdf,image/*" 
+                                    className="file-input file-input-bordered w-full" 
+                                />
+                            </div>
+                            <div className="flex justify-end gap-3 pt-4 border-t border-base-300">
+                                <button type="button" className="btn btn-ghost" onClick={() => setIsModalOpen(false)}>Cancelar</button>
+                                <button 
+                                    type="submit" 
+                                    className="btn btn-primary px-8 flex items-center gap-2"
+                                    disabled={uploadMutation.isPending}
+                                >
+                                    {uploadMutation.isPending ? (
+                                        <span className="loading loading-spinner loading-xs" />
+                                    ) : (
+                                        <><UploadCloud size={18} /> Subir Archivo</>
+                                    )}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    <div className="modal-backdrop" onClick={() => setIsModalOpen(false)}></div>
+                </div>
+            )}
+        </div>
     );
 };
 

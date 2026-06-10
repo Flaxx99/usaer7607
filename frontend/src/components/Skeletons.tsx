@@ -97,3 +97,41 @@ export function TableSkeleton({ rows = 5 }: { rows?: number }) {
     </div>
   );
 }
+
+/**
+ * CardGridSkeleton
+ * Skeleton for grid-based card layouts.
+ */
+export function CardGridSkeleton({ count = 6, cols = 3 }: { count?: number, cols?: number }) {
+  const colsClass = cols === 1 ? 'grid-cols-1' : cols === 2 ? 'md:grid-cols-2' : 'md:grid-cols-2 lg:grid-cols-3';
+  return (
+    <div className={`grid grid-cols-1 ${colsClass} gap-6`}>
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className="card bg-base-100 shadow-sm border border-base-300 p-6">
+          <div className="flex flex-col gap-4">
+            <div className="flex justify-between items-start">
+              <div className="flex flex-col gap-2">
+                <div className="skeleton h-5 w-32" />
+                <div className="skeleton h-3 w-20" />
+              </div>
+              <div className="skeleton h-6 w-12" />
+            </div>
+            <div className="divider my-0"></div>
+            <div className="flex flex-col gap-2">
+              <div className="skeleton h-4 w-full" />
+              <div className="skeleton h-4 w-3/4" />
+              <div className="skeleton h-4 w-5/6" />
+            </div>
+            <div className="flex items-center justify-between pt-4 border-t border-base-200">
+              <div className="skeleton h-4 w-16" />
+              <div className="flex gap-2">
+                <div className="skeleton h-7 w-7" />
+                <div className="skeleton h-7 w-7" />
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}

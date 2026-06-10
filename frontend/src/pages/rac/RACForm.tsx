@@ -1,21 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { 
-    Container, Stack, Paper, Title, Text, Button, Group, 
-    TextInput, Select, ThemeIcon, Modal, Divider, 
-    Alert, ActionIcon, Box
-} from '@mantine/core';
-import { 
-    IconCheck, IconAlertCircle, IconArrowLeft, IconSave, IconUserCheck 
-} from '@tabler/icons-react';
+  AlertCircle, ArrowLeft, Save, UserCheck, User 
+} from 'lucide-react';
 import { useForm, Controller } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { racApi, RegistroRAC } from '../../api/rac';
-import { notifications } from '@mantine/notifications';
+import { toast } from 'sonner';
+import { racApi } from '../../api/rac';
+import type { RegistroRAC } from '../../api/rac';
 import { useLoading } from '../../context/LoadingContext';
 import { getAlumnos } from '../../api/alumnos';
 
-// --- CONSTANTES DE VALIDACIÓN (Sincronizadas con el Backend) ---
 const CLASIFICACION_SUB = {
     'DISCAPACIDAD': [
         { value: 'DI', label: 'Discapacidad intelectual' },
@@ -65,16 +60,14 @@ const RACForm = () => {
 
     const { data: alumnos, isLoading: loadingAlumnos } = useQuery({
         queryKey: ['alumnos'],
-        queryFn: getAlumnos,
+        queryFn: () => getAlumnos(),
     });
 
     const { data: initialData, isLoading: loadingInitial } = useQuery({
         queryKey: ['rac_record', id],
         queryFn: async () => {
-            // En un entorno real, tendríamos un endpoint GET /api/rac/:id/
-            // Por ahora, buscamos en la lista general para simplificar
             const records = await racApi.getRecords();
-            return records.find((r: RegistroRAC) => r.id === Number(id));
+            return records.results?.find((r: RegistroRAC) => r.id === Number(id));
         },
         enabled: !!id,
     });
@@ -89,17 +82,14 @@ const RACForm = () => {
 
     const currentClasificacion = watch('clasificacion');
 
-    // Efecto para manejar la carga de datos iniciales (Edición)
     useEffect(() => {
         if (initialData) {
             reset(initialData);
-            // Buscamos el alumno para el select
-            const alumno = alumnos?.find(a => a.id === initialData.alumno);
+            const alumno = alumnos?.results?.find(a => a.id === initialData.alumno);
             if (alumno) setSelectedAlumno(alumno);
         }
     }, [initialData, alumnos, reset]);
 
-    // Efecto para resetear subclasificación si cambia la clasificación
     useEffect(() => {
         setValue('subclasificacion', '');
     }, [currentClasificacion, setValue]);
@@ -109,30 +99,18 @@ const RACForm = () => {
         onMutate: () => showLoading(),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['rac_records'] });
-            notifications.show({
-                title: '¡Registro Guardado!',
-                message: 'La información del RAC ha sido actualizada correctamente.',
-                color: 'green',
-            });
+            toast.success('¡Registro Guardado!', { description: 'La información del RAC ha sido actualizada correctamente.' });
             navigate('/rac');
         },
         onError: (err: any) => {
-            notifications.show({
-                title: 'Error al Guardar',
-                message: err.response?.data?.detail || 'Ocurrió un error al procesar el registro.',
-                color: 'red',
-            });
+            toast.error('Error al Guardar', { description: err.response?.data?.detail || 'Ocurrió un error al procesar el registro.' });
         },
         onSettled: () => hideLoading(),
     });
 
     const onSubmit = (data: Partial<RegistroRAC>) => {
         if (!selectedAlumno) {
-            notifications.show({
-                title: 'Alumno Requerido',
-                message: 'Debes seleccionar un alumno antes de guardar.',
-                color: 'orange',
-            });
+            toast.error('Alumno Requerido', { description: 'Debes seleccionar un alumno antes de guardar.' });
             return;
         }
 
@@ -147,153 +125,164 @@ const RACForm = () => {
 
     if (loadingAlumnos || loadingInitial) {
         return (
-            <Container size="xl" py="md">
-                <Center h="70vh">
-                    <Stack align="center">
-                        <Loader size="xl" />
-                        <Text fw={600}>Cargando datos del sistema...</Text>
-                    </Stack>
-                </Center>
-            </Container>
+            <div className="flex items-center justify-center h-[70vh] flex-col gap-4">
+                <span className="loading loading-spinner loading-lg text-primary" />
+                <p className="font-bold text-primary animate-pulse">Cargando datos del sistema...</p>
+            </div>
         );
     }
 
     return (
-        <Container size="lg" py="md">
-            <Stack gap="lg">
-                <Group justify="space-between" align="center">
-                    <Group gap="sm">
-                        <Button variant="subtle" color="gray" onClick={() => navigate('/rac')} leftSection={<IconArrowLeft size={18} />}>
-                            Volver al Listado
-                        </Button>
-                        <Title order={2} fw={900}>
-                            {id ? 'Editar Registro RAC' : 'Nuevo Registro RAC'}
-                        </Title>
-                    </Group>
-                    <Button 
-                        color="indigo" 
-                        rightSection={<IconSave size={18} />} 
-                        onClick={handleSubmit(onSubmit)}
-                        loading={saveMutation.isPending}
+        <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-8">
+            
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div className="flex items-center gap-3">
+                    <button 
+                        className="btn btn-ghost btn-sm gap-2" 
+                        onClick={() => navigate('/rac')}
                     >
-                        Guardar Registro
-                    </Button>
-                </Group>
+                        <ArrowLeft size={18} />
+                        Volver al Listado
+                    </button>
+                    <h1 className="text-2xl font-black tracking-tight">
+                        {id ? 'Editar Registro RAC' : 'Nuevo Registro RAC'}
+                    </h1>
+                </div>
+                <button 
+                    className="btn btn-primary px-8 gap-2" 
+                    onClick={handleSubmit(onSubmit)}
+                    disabled={saveMutation.isPending}
+                >
+                    {saveMutation.isPending ? (
+                        <span className="loading loading-spinner loading-xs" />
+                    ) : (
+                        <><Save size={18} /> Guardar Registro</>
+                    )}
+                </button>
+            </div>
 
-                <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
-                    {/* SECCIÓN 1: SELECCIÓN DE ALUMNO Y DATOS AUTO-RELLENADOS */}
-                    <Paper p="xl" radius="lg" withBorder shadow="sm">
-                        <Stack gap="md">
-                            <Group gap="xs">
-                                <ThemeIcon size={32} radius="md" color="indigo">
-                                    <IconUser size={20} />
-                                </ThemeIcon>
-                                <Title order={4} fw={700}>Información del Alumno</Title>
-                            </Group>
-                            <Divider />
-                            
-                            <Select
-                                label="Seleccionar Alumno"
-                                placeholder="Busca por nombre o CURP"
-                                data={alumnos?.map(a => ({ value: String(a.id), label: `${a.apellido_paterno} ${a.apellido_materno}, ${a.nombre}` })) || []}
-                                searchable
-                                nothingFoundMessage="No se encontró ningún alumno"
-                                onChange={(val) => {
-                                    const alumno = alumnos?.find(a => String(a.id) === val);
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* SECCIÓN 1: INFORMACIÓN DEL ALUMNO */}
+                <div className="card bg-base-100 shadow-sm border border-base-300">
+                    <div className="card-body p-6 space-y-6">
+                        <div className="flex items-center gap-2 border-b pb-4 border-base-200">
+                            <div className="p-2 bg-indigo-100 text-indigo-600 rounded-lg">
+                                <User size={20} />
+                            </div>
+                            <h3 className="text-lg font-bold">Información del Alumno</h3>
+                        </div>
+                        
+                        <div className="form-control w-full">
+                            <label className="label"><span className="label-text font-bold">Seleccionar Alumno</span></label>
+                            <select 
+                                className="select select-bordered w-full"
+                                value={selectedAlumno?.id ? String(selectedAlumno.id) : ''}
+                                onChange={(e) => {
+                                    const alumno = alumnos?.results?.find(a => String(a.id) === e.target.value);
                                     setSelectedAlumno(alumno || null);
                                 }}
-                                value={selectedAlumno?.id ? String(selectedAlumno.id) : null}
-                                size="md"
                                 required
-                            />
+                            >
+                                <option value="">Busca por nombre o CURP...</option>
+                                {alumnos?.results?.map(a => (
+                                    <option key={a.id} value={a.id}>{a.apellido_paterno} {a.apellido_materno}, {a.nombres}</option>
+                                ))}
+                            </select>
+                        </div>
 
-                            {selectedAlumno ? (
-                                <SimpleGrid cols={2} spacing="sm" mt="md" style={{ backgroundColor: 'var(--mantine-color-gray-0)', padding: 'md', borderRadius: 'var(--mantine-radius-md)' }}>
-                                    <Box>
-                                        <Text size="xs" c="dimmed" fw={700}>CURP</Text>
-                                        <Text fw={600} size="sm">{selectedAlumno.curp || 'N/A'}</Text>
-                                    </Box>
-                                    <Box>
-                                        <Text size="xs" c="dimmed" fw={700}>GÉNERO</Text>
-                                        <Text fw={600} size="sm">{selectedAlumno.sexo === 'H' ? 'Hombre' : selectedAlumno.sexo === 'M' ? 'Mujer' : 'N/A'}</Text>
-                                    </Box>
-                                    <Box>
-                                        <Text size="xs" c="dimmed" fw={700}>EDAD</Text>
-                                        <Text fw={600} size="sm">{selectedAlumno.edad} años</Text>
-                                    </Box>
-                                    <Box>
-                                        <Text size="xs" c="dimmed" fw={700}>GRADO</Text>
-                                        <Text fw={600} size="sm">{selectedAlumno.grado} {selectedAlumno.grupo}</Text>
-                                    </Box>
-                                </SimpleGrid>
-                            ) : (
-                                <Alert icon={<IconAlertCircle size={16} />} color="yellow" variant="light">
-                                    Selecciona un alumno para ver sus datos básicos.
-                                </Alert>
-                            )}
-                        </Stack>
-                    </Paper>
+                        {selectedAlumno ? (
+                            <div className="grid grid-cols-2 gap-4 p-4 bg-base-200 rounded-2xl border border-base-300">
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] font-bold uppercase opacity-50">CURP</span>
+                                    <span className="font-bold text-sm">{selectedAlumno.curp || 'N/A'}</span>
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] font-bold uppercase opacity-50">GÉNERO</span>
+                                    <span className="font-bold text-sm">{selectedAlumno.sexo === 'H' ? 'Hombre' : selectedAlumno.sexo === 'M' ? 'Mujer' : 'N/A'}</span>
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] font-bold uppercase opacity-50">EDAD</span>
+                                    <span className="font-bold text-sm">{selectedAlumno.edad} años</span>
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] font-bold uppercase opacity-50">GRADO / GRUPO</span>
+                                    <span className="font-bold text-sm">{selectedAlumno.grado} {selectedAlumno.grupo}</span>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="alert alert-warning shadow-sm py-3">
+                                <AlertCircle size={18} />
+                                <span className="text-xs font-medium">Selecciona un alumno para ver sus datos básicos.</span>
+                            </div>
+                        )}
+                    </div>
+                </div>
 
-                    {/* SECCIÓN 2: CLASIFICACIÓN TÉCNICA */}
-                    <Paper p="xl" radius="lg" withBorder shadow="sm">
-                        <Stack gap="md">
-                            <Group gap="xs">
-                                <ThemeIcon size={32} radius="md" color="indigo">
-                                    <IconUserCheck size={20} />
-                                </ThemeIcon>
-                                <Title order={4} fw={700}>Clasificación Técnica</Title>
-                            </Group>
-                            <Divider />
+                {/* SECCIÓN 2: CLASIFICACIÓN TÉCNICA */}
+                <div className="card bg-base-100 shadow-sm border border-base-300">
+                    <div className="card-body p-6 space-y-6">
+                        <div className="flex items-center gap-2 border-b pb-4 border-base-200">
+                            <div className="p-2 bg-indigo-100 text-indigo-600 rounded-lg">
+                                <UserCheck size={20} />
+                            </div>
+                            <h3 className="text-lg font-bold">Clasificación Técnica</h3>
+                        </div>
 
+                        <div className="form-control w-full">
+                            <label className="label"><span className="label-text font-bold">Clasificación</span></label>
                             <Controller
                                 name="clasificacion"
                                 control={control}
                                 rules={{ required: "La clasificación es obligatoria" }}
                                 render={({ field }) => (
-                                    <Select
-                                        {...field}
-                                        label="Clasificación"
-                                        placeholder="Selecciona la categoría"
-                                        data={CLASIFICACIONES}
-                                        size="md"
-                                        error={errors.clasificacion?.message}
+                                    <select 
+                                        {...field} 
+                                        className={`select select-bordered w-full ${errors.clasificacion ? 'border-error' : ''}`}
                                         required
-                                    />
+                                    >
+                                        <option value="">Selecciona la categoría</option>
+                                        {CLASIFICACIONES.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                                    </select>
                                 )}
                             />
+                            {errors.clasificacion && <span className="text-error text-xs mt-1">{errors.clasificacion.message}</span>}
+                        </div>
 
+                        <div className="form-control w-full">
+                            <label className="label"><span className="label-text font-bold">Subclasificación</span></label>
                             <Controller
                                 name="subclasificacion"
                                 control={control}
                                 rules={{ required: "La subclasificación es obligatoria" }}
                                 render={({ field }) => (
-                                    <Select
-                                        {...field}
-                                        label="Subclasificación"
-                                        placeholder={currentClasificacion ? "Selecciona la sub-categoría" : "Primero elige una clasificación"}
-                                        data={currentClasificacion ? CLASIFICACION_SUB[currentClasificacion] : []}
+                                    <select 
+                                        {...field} 
+                                        className={`select select-bordered w-full ${errors.subclasificacion ? 'border-error' : ''}`}
                                         disabled={!currentClasificacion}
-                                        size="md"
-                                        error={errors.subclasificacion?.message}
                                         required
-                                    />
+                                    >
+                                        <option value="">{currentClasificacion ? "Selecciona la sub-categoría" : "Primero elige una clasificación"}</option>
+                                        {currentClasificacion ? (CLASIFICACION_SUB as any)[currentClasificacion].map((opt: any) => (
+                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                        )) : []}
+                                    </select>
                                 )}
                             />
+                            {errors.subclasificacion && <span className="text-error text-xs mt-1">{errors.subclasificacion.message}</span>}
+                        </div>
 
-                            <TextInput 
-                                label="Observaciones" 
+                        <div className="form-control w-full">
+                            <label className="label"><span className="label-text font-bold">Observaciones</span></label>
+                            <textarea 
+                                {...register('observaciones')} 
+                                className="textarea textarea-bordered h-32" 
                                 placeholder="Notas adicionales sobre la condición del alumno..."
-                                {...register('observaciones')}
-                                size="md"
-                                multiline
-                                autosize
-                                minRows={3}
                             />
-                        </Stack>
-                    </Paper>
-                </SimpleGrid>
-            </Stack>
-        </Container>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     );
 };
 

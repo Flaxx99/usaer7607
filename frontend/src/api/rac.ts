@@ -48,6 +48,12 @@ export const racApi = {
             return response.data;
         }
     },
+    exportMyRecords: async () => {
+        const response = await client.get('/api/rac/exportar/', {
+            responseType: 'blob',
+        });
+        return response.data;
+    },
     exportGlobal: async () => {
         const response = await client.get('/api/rac/exportar-todo/', {
             responseType: 'blob',

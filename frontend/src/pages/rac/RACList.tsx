@@ -1,53 +1,69 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
-    Container, Stack, Paper, Title, Text, Button, Table, 
-    Group, ActionIcon, Tooltip, TextInput, Badge, 
-    SimpleGrid, Box, Divider, ScrollArea, Loader, Avatar
-} from '@mantine/core';
-import { 
-    IconSearch, IconEdit, IconFileText, IconPlus, 
-    IconDownload, IconUser, IconCalendar 
-} from '@tabler/icons-react';
+  FileText, Search, Edit2, Plus, Download, FileSpreadsheet
+} from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { racApi, RegistroRAC } from '../../api/rac';
-import { notifications } from '@mantine/notifications';
+import { toast } from 'sonner';
+import { racApi } from '../../api/rac';
+import type { RegistroRAC } from '../../api/rac';
 import { useLoading } from '../../context/LoadingContext';
-import CustomPagination from '../../components/common/CustomPagination';
 
 const RACList = () => {
     const navigate = useNavigate();
     const { showLoading, hideLoading } = useLoading();
     const [search, setSearch] = useState('');
     const [page, setPage] = useState(1);
+    const [userRole, setUserRole] = useState('');
+
+    useEffect(() => {
+        const stored = localStorage.getItem('user');
+        if (stored) {
+            try {
+                const u = JSON.parse(stored);
+                setUserRole(u.role || '');
+            } catch { /* ignore */ }
+        }
+    }, []);
+
+    const isAdmin = userRole === 'ADMIN' || userRole === 'ADMINISTRADOR' || userRole === 'SECRETARIO';
 
     const { data: recordsData, isLoading } = useQuery({
         queryKey: ['rac_records', page],
         queryFn: () => racApi.getRecords(page),
     });
 
-    const handleExport = async () => {
+    const downloadBlob = (blob: Blob, filename: string) => {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', filename);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+    };
+
+    const handleGenerateRAC = async () => {
+        try {
+            showLoading();
+            const blob = await racApi.exportMyRecords();
+            downloadBlob(blob, `RAC_${new Date().toISOString().split('T')[0]}.xlsx`);
+            toast.success('RAC Generado', { description: 'Tu registro RAC ha sido exportado exitosamente.' });
+        } catch {
+            toast.error('Error de Exportación', { description: 'No se pudo generar el archivo Excel.' });
+        } finally {
+            hideLoading();
+        }
+    };
+
+    const handleExportAll = async () => {
         try {
             showLoading();
             const blob = await racApi.exportGlobal();
-            const url = window.URL.createObjectURL(new Blob([blob]));
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', `RAC_Concentrado_${new Date().toISOString().split('T')[0]}.xlsx`);
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            notifications.show({
-                title: 'Exportación Exitosa',
-                message: 'El concentrado RAC ha sido generado.',
-                color: 'green',
-            });
-        } catch (error) {
-            notifications.show({
-                title: 'Error de Exportación',
-                message: 'No se pudo generar el archivo Excel.',
-                color: 'red',
-            });
+            downloadBlob(blob, `RAC_Concentrado_${new Date().toISOString().split('T')[0]}.xlsx`);
+            toast.success('Exportación Exitosa', { description: 'El concentrado RAC ha sido generado.' });
+        } catch {
+            toast.error('Error de Exportación', { description: 'No se pudo generar el archivo Excel.' });
         } finally {
             hideLoading();
         }
@@ -62,135 +78,139 @@ const RACList = () => {
     );
 
     return (
-        <Container size="xl" py="md">
-            <Stack gap="xl">
-                <Paper p="lg" radius="lg" withBorder shadow="sm" bg="indigo.0" style={{ borderLeft: '8px solid var(--mantine-color-indigo-6)' }}>
-                    <Group justify="space-between" align="center">
-                        <Group gap="md">
-                            <Box 
-                                p={12} 
-                                radius="lg" 
-                                bg="indigo.6" 
-                                style={{ color: 'white', boxShadow: 'var(--mantine-shadow-md)' }}
+        <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
+            
+            {/* CABECERA */}
+            <div className="card bg-indigo-600 text-white shadow-lg border-l-8 border-indigo-900">
+                <div className="card-body p-8 flex-row items-center justify-between gap-4">
+                    <div className="flex items-center gap-6">
+                        <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shadow-inner">
+                            <FileText size={32} />
+                        </div>
+                        <div>
+                            <h1 className="text-3xl font-black tracking-tight">
+                                Registros RAC
+                            </h1>
+                            <p className="text-sm opacity-90 font-medium">
+                                Registro de Alumnos con Discapacidad o Aptitudes Sobresalientes.
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div className="flex gap-3">
+                        <button 
+                            className="btn btn-ghost bg-white/10 hover:bg-white/20 border-white/20 text-white"
+                            onClick={handleGenerateRAC}
+                            title="Generar RAC con tus registros"
+                        >
+                            <FileSpreadsheet size={20} />
+                            Generar RAC
+                        </button>
+                        {isAdmin && (
+                            <button 
+                                className="btn btn-ghost bg-white/10 hover:bg-white/20 border-white/20 text-white"
+                                onClick={handleExportAll}
+                                title="Exportar concentrado global (Admin/Secretario)"
                             >
-                                <IconFileText size={32} />
-                            </Box>
-                            <div>
-                                <Title order={1} fw={900} lts={-0.5} style={{ fontSize: '1.8rem', lineHeight: 1.2 }}>
-                                    Registros RAC
-                                </Title>
-                                <Text size="sm" c="dimmed" fw={500}>
-                                    Registro de Alumnos con Discapacidad o Aptitudes Sobresalientes.
-                                </Text>
-                            </div>
-                        </Group>
-                        
-                        <Group gap="xs">
-                            <Button 
-                                variant="light" 
-                                color="indigo" 
-                                leftSection={<IconDownload size={20} />} 
-                                onClick={handleExport}
-                            >
-                                Exportar Concentrado
-                            </Button>
-                            <Button 
-                                size="lg" 
-                                radius="md" 
-                                leftSection={<IconPlus size={22} />} 
-                                onClick={() => navigate('/rac/nuevo')}
-                                color="indigo"
-                                style={{ boxShadow: 'var(--mantine-shadow-md)' }}
-                            >
-                                Nuevo Registro
-                            </Button>
-                        </Group>
-                    </Group>
-                </Paper>
+                                <Download size={20} />
+                                Exportar Todo
+                            </button>
+                        )}
+                        <button 
+                            className="btn btn-white btn-lg shadow-md hover:scale-105 transition-transform"
+                            onClick={() => navigate('/rac/nuevo')}
+                        >
+                            <Plus size={22} />
+                            Nuevo Registro
+                        </button>
+                    </div>
+                </div>
+            </div>
 
-                <Paper p="md" radius="lg" withBorder shadow="xs">
-                    <Group justify="space-between" mb="md">
-                        <Title order={4} fw={700}>Listado de Registros</Title>
-                        <TextInput 
+            {/* TABLA CON BÚSQUEDA INTEGRADA */}
+            <div className="card bg-base-100 shadow-sm border border-base-300 overflow-hidden">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-4 border-b border-base-200">
+                    <h3 className="font-bold text-base">Listado de Registros</h3>
+                    <div className="relative w-full sm:w-72">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40" size={18} />
+                        <input 
+                            type="text" 
                             placeholder="Buscar alumno o CURP..." 
-                            leftSection={<IconSearch size={16} />}
+                            className="input input-bordered pl-10 w-full"
                             value={search}
-                            onChange={(e) => setSearch(e.currentTarget.value)}
-                            style={{ width: 300 }}
+                            onChange={(e) => setSearch(e.target.value)}
                         />
-                    </Group>
-
-                    <Divider mb="md" />
-
-                    <ScrollArea>
-                        <Table verticalSpacing="sm" highlightOnHover>
-                            <Table.Thead>
-                                <Table.Tr>
-                                    <Table.Th>Alumno</Table.Th>
-                                    <Table.Th>CURP</Table.Th>
-                                    <Table.Th>Clasificación</Table.Th>
-                                    <Table.Th>Subclasificación</Table.Th>
-                                    <Table.Th>Maestro de Apoyo</Table.Th>
-                                    <Table.Th style={{ textAlign: 'right' }}>Acciones</Table.Th>
-                                </Table.Tr>
-                            </Table.Thead>
-                            <Table.Tbody>
-                                {isLoading ? (
-                                    <Table.Tr>
-                                        <Table.Td colSpan={6} align="center" py="xl">
-                                            <Loader size="sm" /> Cargando registros...
-                                        </Table.Td>
-                                    </Table.Tr>
-                                ) : filteredRecords.length > 0 ? (
-                                    filteredRecords.map((rec: RegistroRAC) => (
-                                        <Table.Tr key={rec.id}>
-                                            <Table.Td>
-                                                <Group gap="xs">
-                                                    <Avatar size="sm" radius="xl" color="indigo">{rec.alumno_nombre?.[0]}</Avatar>
-                                                    <Text fw={600}>{rec.alumno_nombre}</Text>
-                                                </Group>
-                                            </Table.Td>
-                                            <Table.Td style={{ fontFamily: 'monospace' }}>{rec.curp}</Table.Td>
-                                            <Table.Td>
-                                                <Badge variant="light" color="indigo">{rec.clasificacion}</Badge>
-                                            </Table.Td>
-                                            <Table.Td>{rec.subclasificacion}</Table.Td>
-                                            <Table.Td>{rec.maestro_nombre}</Table.Td>
-                                            <Table.Td style={{ textAlign: 'right' }}>
-                                                <Tooltip label="Editar Registro">
-                                                    <ActionIcon 
-                                                        variant="light" 
-                                                        color="indigo" 
-                                                        size="lg" 
-                                                        radius="md"
-                                                        onClick={() => navigate(`/rac/editar/${rec.id}`)}
-                                                    >
-                                                        <IconEdit size={18} />
-                                                    </ActionIcon>
-                                                </Tooltip>
-                                            </Table.Td>
-                                        </Table.Tr>
-                                    ))
-                                ) : (
-                                    <Table.Tr>
-                                        <Table.Td colSpan={6} align="center" py="xl">
-                                            <Text c="dimmed">No se encontraron registros RAC.</Text>
-                                        </Table.Td>
-                                    </Table.Tr>
-                                )}
-                            </Table.Tbody>
-                        </Table>
-                    </ScrollArea>
-
-                    <CustomPagination 
-                        total={totalCount} 
-                        pageSize={10} 
-                        currentPage={page} 
-                        onPageChange={setPage} 
-                    />
-                </Paper>
-            </Stack>
-        </Container>
+                    </div>
+                </div>
+                <div className="overflow-x-auto">
+                    <table className="table table-md table-zebra w-full">
+                        <thead className="bg-base-200">
+                            <tr className="text-xs uppercase opacity-60">
+                                <th>Alumno</th>
+                                <th>CURP</th>
+                                <th>Clasificación</th>
+                                <th>Subclasificación</th>
+                                <th>Maestro de Apoyo</th>
+                                <th className="text-right">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {isLoading ? (
+                                <tr>
+                                    <td colSpan={6} className="text-center py-12">
+                                        <span className="loading loading-spinner loading-lg text-primary"></span>
+                                        <p className="mt-2 text-base-content/50 font-medium">Cargando registros...</p>
+                                    </td>
+                                </tr>
+                            ) : filteredRecords.length > 0 ? (
+                                filteredRecords.map((rec: RegistroRAC) => (
+                                    <tr key={rec.id} className="hover">
+                                        <td>
+                                            <div className="flex items-center gap-3">
+                                                <div className="avatar placeholder">
+                                                    <div className="bg-indigo-100 text-indigo-700 rounded-full w-8 h-8 text-xs font-bold">
+                                                        {rec.alumno_nombre?.[0]}
+                                                    </div>
+                                                </div>
+                                                <span className="font-bold text-sm">{rec.alumno_nombre}</span>
+                                            </div>
+                                        </td>
+                                        <td className="font-mono text-xs opacity-70">{rec.curp}</td>
+                                        <td>
+                                            <span className="badge badge-indigo badge-sm font-bold">{rec.clasificacion}</span>
+                                        </td>
+                                        <td className="text-sm">{rec.subclasificacion}</td>
+                                        <td className="text-sm font-medium">{rec.maestro_nombre}</td>
+                                        <td className="text-right">
+                                            <button 
+                                                className="btn btn-ghost btn-xs text-indigo-600 hover:bg-indigo-50"
+                                                onClick={() => navigate(`/rac/editar/${rec.id}`)}
+                                            >
+                                                <Edit2 size={16} />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan={6} className="text-center py-12 text-base-content/40 italic">
+                                        No se encontraron registros RAC.
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div className="flex justify-center p-4 border-t border-base-200">
+                    <div className="join">
+                        <button className="join-item btn btn-sm" disabled={page === 1} onClick={() => setPage(p => p - 1)}>«</button>
+                        <button className="join-item btn btn-sm no-animation">{page} / {Math.ceil(totalCount / 10)}</button>
+                        <button className="join-item btn btn-sm" disabled={page >= Math.ceil(totalCount / 10)} onClick={() => setPage(p => p + 1)}>»</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     );
 };
 

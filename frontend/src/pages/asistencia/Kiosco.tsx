@@ -2,25 +2,11 @@ import { useState, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { Link } from 'react-router-dom';
-import { notifications } from '@mantine/notifications';
+import { toast } from 'sonner';
 import { 
   Clock, UserCheck, LogIn, LogOut, ShieldCheck, 
-  ArrowRight, CheckCircle, AlertCircle, WifiOff
+  ArrowRight
 } from 'lucide-react';
-import { 
-  Container, 
-  Paper, 
-  Title, 
-  Text, 
-  TextInput, 
-  Button, 
-  Group, 
-  ThemeIcon, 
-  Center, 
-  Box, 
-  Stack,
-  Badge
-} from '@mantine/core';
 import { registrarAsistencia } from '../../api/asistencia';
 import { attendanceBuffer } from '../../utils/attendanceBuffer';
 
@@ -45,19 +31,15 @@ const Kiosco = () => {
                     await registrarAsistencia(record.numero_empleado);
                     attendanceBuffer.remove(record.id);
                 } catch (e) {
-                    // Si vuelve a fallar, detenemos la sincronización para no saturar
                     console.error(`Fallo al sincronizar registro ${record.id}`, e);
                     break; 
                 }
             }
 
             if (attendanceBuffer.getAll().length === 0) {
-                notifications.show({
-                    title: 'Sincronización completa',
-                    message: 'Todos los registros pendientes han sido enviados.',
-                    color: 'blue',
-                    icon: <CheckCircle size={18} />,
-                    autoClose: 3000,
+                toast.success('Sincronización completa', { 
+                    description: 'Todos los registros pendientes han sido enviados.',
+                    duration: 3000 
                 });
             }
         };
@@ -65,58 +47,41 @@ const Kiosco = () => {
         syncAttendance();
     }, []);
 
-    const { register, handleSubmit, reset, setFocus, formState: { isSubmitting } } = useForm<{ numero_empleado: string }>();
+    const { register, handleSubmit, reset, setFocus } = useForm<{ numero_empleado: string }>();
 
     const mutation = useMutation({
         mutationFn: registrarAsistencia,
         onSuccess: (data) => {
             const isEntrada = data.tipo === 'ENTRADA';
             
-            notifications.show({
-                title: isEntrada ? '¡Bienvenido a la USAER 7607!' : '¡Hasta luego, buen descanso!',
-                message: `${data.profesor} • ${data.hora}`,
-                color: isEntrada ? 'teal' : 'blue',
-                icon: isEntrada ? <CheckCircle size={18} /> : <LogOut size={18} />,
-                autoClose: 4000,
-                withCloseButton: false,
-                styles: (theme) => ({
-                    root: { backgroundColor: theme.colors.gray[0], borderColor: theme.colors.gray[2] },
-                    title: { fontSize: theme.fontSizes.lg, fontWeight: 800 },
-                    description: { fontSize: theme.fontSizes.md, color: theme.colors.gray[8] }
-                })
-            });
+            toast.success(
+                isEntrada ? '¡Bienvenido a la USAER 7607!' : '¡Hasta luego, buen descanso!', 
+                { 
+                    description: `${data.profesor} • ${data.hora}`,
+                    duration: 4000 
+                }
+            );
 
             reset();
             setTimeout(() => setFocus('numero_empleado'), 500); 
         },
         onError: (err: any) => {
-            // DETERMINAR SI ES ERROR DE RED O ERROR DE DATOS
-            const isNetworkError = !err.response; // Axios: no hay respuesta del servidor
+            const isNetworkError = !err.response;
 
             if (isNetworkError) {
-                // ESCENARIO 1: SIN INTERNET -> Guardamos en buffer
-                const numeroEmpleado = register('numero_empleado').name === 'numero_empleado' 
-                    ? (document.querySelector('input[name="numero_empleado"]') as HTMLInputElement)?.value 
-                    : '';
+                const numeroEmpleado = (document.querySelector('input[name="numero_empleado"]') as HTMLInputElement)?.value;
 
                 if (numeroEmpleado) {
                     attendanceBuffer.save(numeroEmpleado);
-                    notifications.show({
-                        title: 'Modo Offline 📶',
-                        message: 'Sin conexión. Tu checada se guardó localmente y se enviará automáticamente al recuperar la red.',
-                        color: 'orange',
-                        icon: <WifiOff size={18} />,
-                        autoClose: 5000,
+                    toast.warning('Modo Offline 📶', { 
+                        description: 'Sin conexión. Tu checada se guardó localmente y se enviará automáticamente al recuperar la red.',
+                        duration: 5000 
                     });
                 }
             } else {
-                // ESCENARIO 2: ERROR DE SERVIDOR (Ej. Empleado no existe)
-                notifications.show({
-                    title: 'No registrado',
-                    message: err.response?.data?.detail || 'Error en el registro',
-                    color: 'red',
-                    icon: <AlertCircle size={18} />,
-                    autoClose: 4000,
+                toast.error('No registrado', { 
+                    description: err.response?.data?.detail || 'Error en el registro',
+                    duration: 4000 
                 });
             }
             
@@ -130,7 +95,9 @@ const Kiosco = () => {
     };
 
     const formatTime = (date: Date) => {
-        return date.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const h = String(date.getHours()).padStart(2, '0');
+        const m = String(date.getMinutes()).padStart(2, '0');
+        return `${h}:${m}`;
     };
 
     const formatDate = (date: Date) => {
@@ -138,144 +105,107 @@ const Kiosco = () => {
     };
 
     return (
-        <Box 
-            style={{ 
-                minHeight: '100vh', 
-                background: 'linear-gradient(135deg, var(--mantine-color-blue-7) 0%, var(--mantine-color-indigo-9) 100%)',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                position: 'relative',
-                overflow: 'hidden'
-            }}
-        >
-            <Box style={{ position: 'absolute', top: '20px', right: '20px', zIndex: 10 }}>
-                <Button 
-                    component={Link} 
+        <div className="relative min-h-screen w-full flex flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-primary-dark via-primary to-indigo-900 text-white p-4">
+            
+            {/* Decoración de fondo */}
+            <div className="absolute top-[-10%] left-[-10%] w-[40vw] h-[40vw] rounded-full bg-white/5 pointer-events-none" />
+            <div className="absolute bottom-[-15%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-white/5 pointer-events-none" />
+
+            {/* Acceso Admin */}
+            <div className="absolute top-4 right-4 z-10 sm:top-6 sm:right-6">
+                <Link 
                     to="/login"
-                    variant="white" 
-                    color="gray"
-                    leftSection={<ShieldCheck size={16} />}
-                    radius="xl"
-                    size="xs"
-                    style={{ opacity: 0.8 }}
+                    className="btn btn-ghost btn-sm bg-white/10 hover:bg-white/20 text-white border-white/20 rounded-full flex items-center gap-2 opacity-80 hover:opacity-100 transition-opacity text-xs sm:text-sm"
                 >
+                    <ShieldCheck size={14} />
                     Acceso Admin
-                </Button>
-            </Box>
+                </Link>
+            </div>
             
-            <div style={{
-                position: 'absolute',
-                top: '-10%',
-                left: '-10%',
-                width: '40vw',
-                height: '40vw',
-                borderRadius: '100%',
-                background: 'rgba(255, 255, 255, 0.03)',
-                pointerEvents: 'none'
-            }} />
-            <div style={{
-                position: 'absolute',
-                bottom: '-15%',
-                right: '-10%',
-                width: '50vw',
-                height: '50vw',
-                borderRadius: '100%',
-                background: 'rgba(255, 255, 255, 0.02)',
-                pointerEvents: 'none'
-            }} />
-            
-            <Paper 
-                radius="3xl" 
-                shadow="xl" 
-                p="xl" 
-                w={{ base: '90%', sm: '500px' }}
-                bg="white"
-                style={{ zIndex: 1, textAlign: 'center' }}
-            >
-                <Stack gap="lg" align="center">
-                    <Stack gap={2} align="center">
-                        <Text size="xs" fw={700} c="blue" tt="uppercase" lts={2}>
-                            Hora Oficial USAER 7607
-                        </Text>
-                        <Title 
-                            order={1} 
-                            fw={900} 
-                            c="gray.9" 
-                            style={{ 
-                                fontSize: '4.5rem', 
-                                lineHeight: 1, 
-                                letterSpacing: '-2px',
-                                fontVariantNumeric: 'tabular-nums'
-                            }}
-                        >
+            {/* Card Principal — Diseño "Cartelera Escolar" */}
+            <div className="card card-paper text-base-content w-full max-w-lg sm:max-w-xl z-10">
+                <div className="card-body items-center text-center p-6 sm:p-12 space-y-8 sm:space-y-12">
+                    
+                    {/* ─── Sección del Reloj — estilo "salón de clases" ─── */}
+                    <div className="space-y-3 sm:space-y-4 w-full">
+                        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 rounded-full">
+                            <Clock size={14} className="text-primary" />
+                            <p className="text-[10px] sm:text-xs font-bold text-primary uppercase tracking-widest">
+                                Hora Oficial USAER 7607
+                            </p>
+                        </div>
+                        <h1 className="text-5xl sm:text-8xl font-black tracking-tighter tabular-nums text-base-content leading-none">
                             {formatTime(horaActual)}
-                        </Title>
-                        <Text size="lg" c="dimmed" fw={500} tt="capitalize" style={{ fontSize: '1.1rem' }}>
+                        </h1>
+                        <p className="text-base sm:text-xl font-bold text-base-content/80 capitalize">
                             {formatDate(horaActual)}
-                        </Text>
-                    </Stack>
-                    
-                    <Box w="100%" h={1} bg="gray.1" mt="md" mb="md" />
-                    
-                    <form onSubmit={handleSubmit(onSubmit)} style={{ width: '100%' }}>
-                        <Stack gap="md">
-                            <TextInput 
-                                label="Ingrese su N° de Empleado"
-                                placeholder="Escriba y presione Enter"
-                                size="xl"
-                                leftSection={<UserCheck size={24} className="text-blue-500" />}
-                                rightSection={
-                                    mutation.isPending ? (
-                                        <ThemeIcon variant="transparent" size="lg">
-                                            <Clock className="animate-spin text-blue-500" />
-                                        </ThemeIcon>
-                                    ) : (
-                                        <Button 
+                        </p>
+                    </div>
+
+                    {/* ─── Separador tipo "regla escolar" ─── */}
+                    <div className="w-full flex items-center gap-3 text-base-content/20">
+                        <div className="flex-1 h-px bg-base-300" />
+                        <div className="flex gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-primary/30" />
+                            <span className="w-2 h-2 rounded-full bg-secondary" />
+                            <span className="w-2 h-2 rounded-full bg-accent/50" />
+                        </div>
+                        <div className="flex-1 h-px bg-base-300" />
+                    </div>
+
+                    {/* ─── Sección del Formulario ─── */}
+                    <div className="w-full space-y-6 sm:space-y-8">
+                        <form onSubmit={handleSubmit(onSubmit)} className="w-full space-y-4 sm:space-y-6">
+                            <div className="form-control w-full">
+                                <label className="label justify-center">
+                                    <span className="label-text font-black text-base-content text-base sm:text-lg">Ingrese su N° de Empleado</span>
+                                </label>
+                                <div className="relative group">
+                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-primary group-focus-within:scale-110 transition-transform">
+                                        <UserCheck size={24} strokeWidth={3} />
+                                    </div>
+                                    <input 
+                                        {...register('numero_empleado', { required: true })}
+                                        autoFocus
+                                        autoComplete="off"
+                                        className="input input-bordered w-full pl-12 pr-32 text-center text-2xl sm:text-3xl font-black tracking-[0.15em] sm:tracking-[0.2em] font-mono h-16 sm:h-24 border-2 sm:border-4 focus:border-primary transition-all"
+                                        placeholder="000000"
+                                    />
+                                    <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                                        <button 
                                             type="submit" 
-                                            variant="filled" 
-                                            color="blue" 
-                                            radius="xl" 
-                                            size="lg"
-                                            leftSection={<ArrowRight size={20} />}
+                                            className="btn btn-primary h-12 sm:h-16 px-4 sm:px-8 rounded-xl sm:rounded-2xl shadow-lg hover:scale-105 active:scale-95 transition-all text-base sm:text-xl font-black"
                                             disabled={mutation.isPending}
                                         >
-                                            CHECAR
-                                        </Button>
-                                    )
-                                }
-                                {...register('numero_empleado', { required: true })}
-                                autoFocus
-                                autoComplete="off"
-                                styles={{
-                                    input: { 
-                                        textAlign: 'center', 
-                                        fontSize: '1.5rem', 
-                                        fontWeight: 700, 
-                                        letterSpacing: '4px',
-                                        fontFamily: 'monospace'
-                                    }
-                                }}
-                            />
-                        </Stack>
-                    </form>
-                    
-                    <Group justify="center" gap="lg" mt="md">
-                        <Badge size="lg" variant="light" color="teal" leftSection={<LogIn size={14} />}>
-                            Entrada (1er Registro)
-                        </Badge>
-                        <Badge size="lg" variant="light" color="blue" leftSection={<LogOut size={14} />}>
-                            Salida (2do Registro)
-                        </Badge>
-                    </Group>
-                </Stack>
-            </Paper>
+                                            {mutation.isPending ? (
+                                                <Clock className="animate-spin" size={24} />
+                                            ) : (
+                                                <><span className="font-black">CHECAR</span> <ArrowRight size={20} className="hidden sm:inline" /></>
+                                            )}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+
+                        <div className="flex flex-col sm:flex-row justify-center gap-3 w-full">
+                            <div className="badge badge-success badge-lg gap-2 py-3 sm:py-4 px-4 text-white font-bold shadow-md w-full sm:w-auto">
+                                <LogIn size={18} />
+                                Entrada (1ra vez)
+                            </div>
+                            <div className="badge badge-info badge-lg gap-2 py-3 sm:py-4 px-4 text-white font-bold shadow-md w-full sm:w-auto">
+                                <LogOut size={18} />
+                                Salida (2da vez)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             
-            <Text size="xs" c="white" style={{ position: 'absolute', bottom: '20px', opacity: 0.5 }}>
+            <footer className="absolute bottom-4 sm:bottom-6 text-white/60 text-[10px] sm:text-xs font-bold">
                 Sistema de Gestión Escolar USAER 7607 &copy; {new Date().getFullYear()}
-            </Text>
-        </Box>
+            </footer>
+        </div>
     );
 };
 

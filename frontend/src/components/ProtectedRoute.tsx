@@ -16,30 +16,26 @@ export const ProtectedRoute = ({ allowedRoles, children }: ProtectedRouteProps) 
   const userStr = localStorage.getItem('user');
   
   if (!userStr) {
-    // No hay usuario logueado -> Login
     return <Navigate to="/login" replace />;
   }
 
+  let user;
   try {
-    const user = JSON.parse(userStr);
-    const userRole = user.role || '';
-    const isSuperUser = user.is_superuser || false;
-
-    // Los Superusuarios tienen acceso a TODO
-    if (isSuperUser) {
-      return children ? <>{children}</> : <Outlet />;
-    }
-
-    // Si se definieron roles permitidos, validamos si el usuario tiene uno de ellos
-    if (allowedRoles && !allowedRoles.includes(userRole)) {
-      // Usuario logueado pero sin permisos -> Dashboard (o página de No Autorizado)
-      return <Navigate to="/dashboard" replace />;
-    }
-
-    // Todo correcto -> Permitir acceso
-    return children ? <>{children}</> : <Outlet />;
-  } catch (e) {
-    // Error en el JSON del usuario -> Login
+    user = JSON.parse(userStr);
+  } catch {
     return <Navigate to="/login" replace />;
   }
+
+  const userRole = user.role || '';
+  const isSuperUser = user.is_superuser || false;
+
+  if (isSuperUser) {
+    return children ? <>{children}</> : <Outlet />;
+  }
+
+  if (allowedRoles && !allowedRoles.includes(userRole)) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return children ? <>{children}</> : <Outlet />;
 };

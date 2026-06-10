@@ -1,0 +1,149 @@
+import { useEffect, useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Bell, CheckCheck, Trash2, Loader2, Inbox } from 'lucide-react';
+import { toast } from 'sonner';
+import { notificacionesApi, Notificacion } from '../../api/notificaciones';
+
+const ListaNotificaciones = () => {
+    const queryClient = useQueryClient();
+    const [page, setPage] = useState(1);
+
+    const { data, isLoading, isError } = useQuery({
+        queryKey: ['notificaciones', page],
+        queryFn: () => notificacionesApi.getNotificaciones(page),
+    });
+
+    const markAsReadMutation = useMutation({
+        mutationFn: notificacionesApi.marcarComoLeida,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['notificaciones'] });
+            toast.success('Notificación marcada como leída');
+        },
+    });
+
+    const markAllReadMutation = useMutation({
+        mutationFn: notificacionesApi.marcarTodasComoLeidas,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['notificaciones'] });
+            toast.success('Todas las notificaciones marcadas como leídas');
+        },
+    });
+
+    if (isLoading) {
+        return (
+            <div className="flex flex-col items-center justify-center h-[60vh] text-base-content/50">
+                <Loader2 className="animate-spin w-12 h-12 mb-4" />
+                <p className="text-lg font-medium">Cargando notificaciones...</p>
+            </div>
+        );
+    }
+
+    if (isError) {
+        return (
+            <div className="flex flex-col items-center justify-center h-[60vh] text-error">
+                <p className="text-xl font-bold">Error al cargar notificaciones</p>
+                <button 
+                    onClick={() => queryClient.refetch()} 
+                    className="btn btn-primary mt-4"
+                >
+                    Reintentar
+                </button>
+            </div>
+        );
+    }
+
+    const notificaciones = data?.results || [];
+    const totalPages = Math.ceil((data?.count || 0) / 10);
+
+    return (
+        <div className="max-w-4xl mx-auto p-4 md:p-6 space-y-6">
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-3xl font-black flex items-center gap-3">
+                        <Bell className="text-primary" />
+                        Notificaciones
+                    </h1>
+                    <p className="text-base-content/60">Mantente al tanto de las novedades y avisos.</p>
+                </div>
+                
+                {notificaciones.length > 0 && (
+                    <button 
+                        onClick={() => markAllReadMutation.mutate()}
+                        disabled={markAllReadMutation.isPending}
+                        className="btn btn-ghost btn-sm gap-2"
+                    >
+                        <CheckCheck size={18} />
+                        Marcar todas como leídas
+                    </button>
+                )}
+            </div>
+
+            {notificaciones.length === 0 ? (
+                <div className="card bg-base-100 border border-dashed border-base-300 p-20 text-center">
+                    <Inbox className="w-16 h-16 mx-auto text-base-content/20 mb-4" />
+                    <p className="text-xl font-bold text-base-content/40">No tienes notificaciones nuevas</p>
+                </div>
+            ) : (
+                <div className="space-y-4">
+                    {notificaciones.map((n) => (
+                        <div 
+                            key={n.id} 
+                            className={`card bg-base-100 border transition-all hover:shadow-md ${
+                                n.leido ? 'border-base-200 opacity-70' : 'border-primary shadow-sm'
+                            }`}
+                        >
+                            <div className="card-body p-5 flex-row items-start justify-between gap-4">
+                                <div className="flex-1">
+                                    <h3 className={`font-bold ${n.leido ? 'text-base-content/70' : 'text-base-content'}`}>
+                                        {n.titulo}
+                                    </h3>
+                                    <p className="text-sm text-base-content/70 mt-1 whitespace-pre-wrap">
+                                        {n.contenido}
+                                    </p>
+                                    <p className="text-[10px] opacity-50 mt-3">
+                                        {new Date(n.fecha_creacion).toLocaleString()}
+                                    </p>
+                                </div>
+                                
+                                {!n.leido && (
+                                    <button 
+                                        onClick={() => markAsReadMutation.mutate(n.id)}
+                                        className="btn btn-ghost btn-xs text-primary"
+                                    >
+                                        Marcar leída
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    ))}
+
+                    {totalPages > 1 && (
+                        <div className="flex justify-center mt-8">
+                            <div className="join">
+                                <button 
+                                    className="join-item btn btn-sm" 
+                                    disabled={page === 1}
+                                    onClick={() => setPage(p => p - 1)}
+                                >
+                                    «
+                                </button>
+                                <button className="join-item btn btn-sm no-animation">
+                                    {page} / {totalPages}
+                                </button>
+                                <button 
+                                    className="join-item btn btn-sm" 
+                                    disabled={page >= totalPages}
+                                    onClick={() => setPage(p => p + 1)}
+                                >
+                                    »
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default ListaNotificaciones;

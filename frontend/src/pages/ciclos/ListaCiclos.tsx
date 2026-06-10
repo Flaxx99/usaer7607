@@ -1,53 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { 
     Plus, Calendar, Edit2, Trash2, CheckCircle, AlertTriangle, Layers, ArrowRightCircle,
-    GraduationCap, TrendingUp, RefreshCw, Save
+    GraduationCap, TrendingUp, Save 
 } from 'lucide-react';
-import Swal from 'sweetalert2';
-import { 
-    Container, 
-    Stack, 
-    Paper, 
-    Title, 
-    Text, 
-    Button, 
-    Badge, 
-    Group, 
-    Avatar, 
-    Modal, 
-    TextInput, 
-    Select, 
-    ThemeIcon, 
-    Center, 
-    Loader, 
-    Box, 
-    Divider,
-    Grid,
-    ActionIcon,
-    Tooltip,
-    Textarea,
-    FileInput,
-    List,
-    rem,
-    SimpleGrid,
-    Anchor,
-    Checkbox,
-    Alert,
-    NumberInput,
-    Progress
-} from '@mantine/core';
-import { DatePickerInput, DatesProvider } from '@mantine/dates';
-import 'dayjs/locale/es';
-import { TableSkeleton } from '../../components/Skeletons';
-import { useLoading } from '../../context/LoadingContext';
-
+import { toast } from 'sonner';
 import { 
     getCiclos, createCiclo, updateCiclo, deleteCiclo, 
     previewPromocion, ejecutarPromocion, getPromocionStatus
 } from '../../api/ciclos';
-
+import { TableSkeleton } from '../../components/Skeletons';
+import { useLoading } from '../../context/LoadingContext';
 import type { CicloEscolar } from '../../interfaces/ciclo';
 
 const ListaCiclos = () => {
@@ -58,7 +22,7 @@ const ListaCiclos = () => {
   
   const queryClient = useQueryClient();
   const { showLoading, hideLoading } = useLoading();
-  const { register, handleSubmit, reset, watch, control, formState: { errors } } = useForm<CicloEscolar>();
+  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<CicloEscolar>();
 
   const { data: ciclos, isLoading } = useQuery({
     queryKey: ['ciclos'],
@@ -72,12 +36,11 @@ const ListaCiclos = () => {
     retry: false
   });
 
-  // --- POLLING DE ESTADO DE PROMOCIÓN ---
-  const { data: promotionStatus, isLoading: loadingStatus } = useQuery({
+  const { data: promotionStatus } = useQuery({
     queryKey: ['promocionStatus', promotionTaskId],
     queryFn: () => getPromocionStatus(promotionTaskId!),
     enabled: !!promotionTaskId,
-    refetchInterval: (data) => (data?.status === 'PROCESSING' ? 2000 : false),
+    refetchInterval: (query) => (query.state.data?.status === 'PROCESSING' ? 2000 : false),
   });
 
   const createMutation = useMutation({
@@ -86,11 +49,11 @@ const ListaCiclos = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ciclos'] });
       cerrarModal();
-      Swal.fire('¡Guardado! 📅', 'El ciclo escolar ha sido registrado.', 'success');
+      toast.success('¡Guardado! 📅', { description: 'El ciclo escolar ha sido registrado.' });
     },
     onError: (err: any) => {
         const msg = err.response?.data?.non_field_errors || 'Revisa las fechas.';
-        Swal.fire('Error ❌', String(msg), 'error');
+        toast.error('Error ❌', { description: String(msg) });
     },
     onSettled: () => hideLoading()
   });
@@ -101,11 +64,11 @@ const ListaCiclos = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ciclos'] });
       cerrarModal();
-      if (isModalOpen) Swal.fire('¡Actualizado! ✏️', 'Datos actualizados.', 'success');
+      if (isModalOpen) toast.success('¡Actualizado! ✏️', { description: 'Datos actualizados.' });
     },
     onError: (err: any) => {
         const msg = err.response?.data?.non_field_errors || 'No se pudo actualizar.';
-        Swal.fire('Error ❌', String(msg), 'error');
+        toast.error('Error ❌', { description: String(msg) });
     },
     onSettled: () => hideLoading()
   });
@@ -115,9 +78,9 @@ const ListaCiclos = () => {
     onMutate: () => showLoading(),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ciclos'] });
-      Swal.fire('¡Eliminado! 🗑️', 'El ciclo ha sido borrado.', 'success');
+      toast.success('¡Eliminado! 🗑️', { description: 'El ciclo ha sido borrado.' });
     },
-    onError: () => Swal.fire('Error ❌', 'No se puede eliminar este ciclo.', 'error'),
+    onError: () => toast.error('Error ❌', { description: 'No se puede eliminar este ciclo.' }),
     onSettled: () => hideLoading()
   });
 
@@ -125,50 +88,33 @@ const ListaCiclos = () => {
     mutationFn: ejecutarPromocion,
     onMutate: () => showLoading(),
     onSuccess: (data) => {
-        // Si el backend ya es asíncrono, devolverá un taskId
         if (data.task_id) {
             setPromotionTaskId(data.task_id);
         } else {
-            // Si es respuesta inmediata (síncrona), cerramos y mostramos éxito
             setIsPromocionOpen(false);
             setPromotionTaskId(null);
             queryClient.invalidateQueries({ queryKey: ['alumnos'] }); 
-            Swal.fire({
-                title: '¡Promoción Exitosa! 🎓',
-                html: `
-                    <div class="text-left text-sm">
-                        <p><strong>Alumnos promovidos:</strong> ${data.promovidos}</p>
-                        <p><strong>Alumnos graduados (Baja):</strong> ${data.graduados}</p>
-                    </div>
-                `,
-                icon: 'success'
+            toast.success('¡Promoción Exitosa! 🎓', { 
+                description: `Promovidos: ${data.promovidos} | Graduados: ${data.graduados}` 
             });
         }
     },
-    onError: () => Swal.fire('Error ❌', 'Hubo un problema al iniciar la promoción.', 'error'),
+    onError: () => toast.error('Error ❌', { description: 'Hubo un problema al iniciar la promoción.' }),
     onSettled: () => hideLoading()
   });
 
-  // Efecto para manejar el final de la tarea asíncrona
   useEffect(() => {
     if (promotionStatus?.status === 'COMPLETED') {
         setIsPromocionOpen(false);
         setPromotionTaskId(null);
         queryClient.invalidateQueries({ queryKey: ['alumnos'] }); 
-        Swal.fire({
-            title: '¡Promoción Exitosa! 🎓',
-            html: `
-                <div class="text-left text-sm">
-                    <p><strong>Alumnos promovidos:</strong> ${promotionStatus.data?.promovidos}</p>
-                    <p><strong>Alumnos graduados (Baja):</strong> ${promotionStatus.data?.graduados}</p>
-                </div>
-            `,
-            icon: 'success'
+        toast.success('¡Promoción Exitosa! 🎓', { 
+            description: `Promovidos: ${promotionStatus.data?.promovidos} | Graduados: ${promotionStatus.data?.graduados}` 
         });
     } else if (promotionStatus?.status === 'FAILED') {
         setIsPromocionOpen(false);
         setPromotionTaskId(null);
-        Swal.fire('Error ❌', promotionStatus.error || 'La promoción falló durante el proceso.', 'error');
+        toast.error('Error ❌', { description: promotionStatus.error || 'La promoción falló durante el proceso.' });
     }
   }, [promotionStatus, queryClient]);
 
@@ -201,41 +147,21 @@ const ListaCiclos = () => {
 
   const handleActivarCiclo = (ciclo: CicloEscolar) => {
     if (ciclo.activo) return;
-    Swal.fire({
-        title: `¿Activar Ciclo ${ciclo.nombre}?`,
-        text: "Este pasará a ser el ciclo actual. El anterior se desactivará.",
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: 'Sí, activar',
-        confirmButtonColor: '#2563eb'
-    }).then((r) => {
-        if (r.isConfirmed) {
-            updateMutation.mutate({ ...ciclo, activo: true });
-        }
-    });
+    if (confirm(`¿Activar Ciclo ${ciclo.nombre}? Este pasará a ser el ciclo actual. El anterior se desactivará.`)) {
+        updateMutation.mutate({ ...ciclo, activo: true });
+    }
   };
 
   const handleDelete = (id: number) => {
-    Swal.fire({
-      title: '¿Eliminar ciclo?', text: "Esta acción no se puede deshacer.", icon: 'warning',
-      showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Sí, borrar'
-    }).then((r) => { if (r.isConfirmed) deleteMutation.mutate(id); });
+    if (confirm('¿Eliminar ciclo? Esta acción no se puede deshacer.')) {
+        deleteMutation.mutate(id);
+    }
   };
 
   const handleConfirmarPromocion = () => {
-    Swal.fire({
-        title: '¿ESTÁS SEGURO?',
-        text: "Esto avanzará de grado a los alumnos activos y dará de baja a los que terminan nivel. Esta acción es masiva.",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#d33',
-        confirmButtonText: 'Sí, Ejecutar Cierre',
-        cancelButtonText: 'Cancelar'
-    }).then((r) => {
-        if (r.isConfirmed) {
-            ejecutarPromocionMutation.mutate();
-        }
-    });
+    if (confirm('¿ESTÁS SEGURO? Esto avanzará de grado a los alumnos activos y dará de baja a los que terminan nivel. Esta acción es masiva.')) {
+        ejecutarPromocionMutation.mutate();
+    }
   };
 
   const fechaInicio = watch('fecha_inicio');
@@ -244,340 +170,260 @@ const ListaCiclos = () => {
 
   if (isLoading) {
       return (
-        <Container size="xl" py="md">
+        <div className="max-w-7xl mx-auto p-4 md:p-6">
           <TableSkeleton rows={5} />
-        </Container>
+        </div>
       );
   }
 
   return (
-    <Container size="xl" py="md">
-        <Stack gap="xl">
-            
-            <Paper p="lg" radius="lg" withBorder shadow="sm" bg="blue.0" style={{ borderLeft: '8px solid var(--mantine-color-blue-6)' }}>
-                <Group justify="space-between" align="center">
-                    <Group gap="md">
-                        <ThemeIcon size={52} radius="lg" color="blue" variant="filled">
-                            <Layers size={30} />
-                        </ThemeIcon>
-                        <div>
-                            <Title order={1} fw={900} lts={-0.5} style={{ fontSize: '1.8rem', lineHeight: 1.2 }}>
-                                Ciclos Escolares
-                            </Title>
-                            <Text size="sm" c="dimmed" fw={500}>
-                                Define los periodos de trabajo y gestiona el ciclo vigente.
-                            </Text>
-                        </div>
-                    </Group>
-                    
-                    <Group gap="xs">
-                        <Button 
-                            size="lg" 
-                            radius="md" 
-                            leftSection={<TrendingUp size={20} />} 
-                            onClick={() => setIsPromocionOpen(true)}
-                            color="green"
-                            variant="light"
-                        >
-                            Promoción de Grado
-                        </Button>
-                        <Button 
-                            size="lg" 
-                            radius="md" 
-                            leftSection={<Plus size={22} />} 
-                            onClick={handleOpenCreate}
-                            color="blue"
-                            style={{ boxShadow: 'var(--mantine-shadow-md)' }}
-                        >
-                            Nuevo Ciclo
-                        </Button>
-                    </Group>
-                </Group>
-            </Paper>
-
-            <Stack gap="md">
-                {ciclos?.map((ciclo) => (
-                    <Paper 
-                        key={ciclo.id}
-                        p="lg" 
-                        radius="lg" 
-                        withBorder 
-                        shadow={ciclo.activo ? 'md' : 'xs'}
-                        bg={ciclo.activo ? 'blue.0' : 'white'}
-                        style={{ 
-                            borderLeft: `6px solid ${ciclo.activo ? 'var(--mantine-color-blue-6)' : 'var(--mantine-color-gray-3)'}`,
-                            transition: 'all 0.2s ease',
-                        }}
+    <>
+      <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
+        
+        <div className="card bg-primary text-primary-content shadow-lg border-l-8 border-primary-dark">
+            <div className="card-body p-8 flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-6">
+                    <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shadow-inner">
+                        <Layers size={30} />
+                    </div>
+                    <div>
+                        <h1 className="text-3xl font-black tracking-tight">
+                            Ciclos Escolares
+                        </h1>
+                        <p className="text-sm opacity-90 font-medium">
+                            Define los periodos de trabajo y gestiona el ciclo vigente.
+                        </p>
+                    </div>
+                </div>
+                
+                <div className="flex gap-3">
+                    <button 
+                        className="btn btn-ghost bg-white/10 hover:bg-white/20 border-white/20 text-white"
+                        onClick={() => setIsPromocionOpen(true)}
                     >
-                        <Group justify="space-between" align="center" wrap="wrap" gap="md">
-                            <Group gap="md" align="center">
-                                <ThemeIcon 
-                                    size={56} 
-                                    radius="xl" 
-                                    color={ciclo.activo ? 'blue' : 'gray'} 
-                                    variant={ciclo.activo ? 'filled' : 'light'}
-                                >
-                                    <Calendar size={28} />
-                                </ThemeIcon>
-                                <div>
-                                    <Title order={3} fw={800} c={ciclo.activo ? 'blue.8' : 'gray.8'} style={{ fontSize: '1.3rem', lineHeight: 1.2 }}>
+                        <TrendingUp size={20} />
+                        Promoción de Grado
+                    </button>
+                    <button 
+                        className="btn btn-white btn-lg shadow-md hover:scale-105 transition-transform"
+                        onClick={handleOpenCreate}
+                    >
+                        <Plus size={22} />
+                        Nuevo Ciclo
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4">
+            {ciclos?.map((ciclo) => (
+                <div 
+                    key={ciclo.id} 
+                    className={`card bg-base-100 shadow-sm border border-base-300 p-6 transition-all hover:shadow-md ${
+                        ciclo.activo ? 'border-l-8 border-l-primary bg-primary/5' : 'border-l-8 border-l-base-300'
+                    }`}
+                >
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                        <div className="flex items-center gap-6">
+                            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center shadow-sm ${
+                                ciclo.activo ? 'bg-primary text-white' : 'bg-base-200 text-base-content/50'
+                            }`}>
+                                <Calendar size={28} />
+                            </div>
+                            <div>
+                                <div className="flex items-center gap-3">
+                                    <h3 className={`text-xl font-black ${ciclo.activo ? 'text-primary' : 'text-base-content'}`}>
                                         {ciclo.nombre}
-                                        {ciclo.activo && (
-                                            <Badge color="blue" variant="filled" size="sm" ml="sm" fw={700} leftSection={<CheckCircle size={12} />}>
-                                                VIGENTE
-                                            </Badge>
-                                        )}
-                                    </Title>
-                                    <Group gap="xs" mt={4}>
-                                        <Text size="sm" c="dimmed" fw={600} style={{ fontFamily: 'monospace' }}>
-                                            {ciclo.fecha_inicio}
-                                        </Text>
-                                        <ArrowRightCircle size={14} color="var(--mantine-color-gray-4)" />
-                                        <Text size="sm" c="dimmed" fw={600} style={{ fontFamily: 'monospace' }}>
-                                            {ciclo.fecha_fin}
-                                        </Text>
-                                    </Group>
+                                    </h3>
+                                    {ciclo.activo && (
+                                        <span className="badge badge-primary badge-sm font-bold">VIGENTE</span>
+                                    )}
                                 </div>
-                            </Group>
+                                <div className="flex items-center gap-2 text-sm opacity-60 font-mono mt-1">
+                                    <span>{ciclo.fecha_inicio}</span>
+                                    <ArrowRightCircle size={14} />
+                                    <span>{ciclo.fecha_fin}</span>
+                                </div>
+                            </div>
+                        </div>
 
-                            <Group gap="xs">
-                                {!ciclo.activo && (
-                                    <Button 
-                                        variant="outline" 
-                                        color="blue" 
-                                        size="md" 
-                                        leftSection={<CheckCircle size={16} />}
-                                        onClick={() => handleActivarCiclo(ciclo)}
-                                    >
-                                        Activar
-                                    </Button>
-                                )}
-                                <Tooltip label="Editar ciclo">
-                                    <ActionIcon 
-                                        variant="light" 
-                                        color="blue" 
-                                        size="lg" 
-                                        radius="md"
-                                        onClick={() => handleOpenEdit(ciclo)}
-                                    >
-                                        <Edit2 size={18} />
-                                    </ActionIcon>
-                                </Tooltip>
-                                <Tooltip label="Eliminar ciclo">
-                                    <ActionIcon 
-                                        variant="light" 
-                                        color="red" 
-                                        size="lg" 
-                                        radius="md"
-                                        onClick={() => handleDelete(ciclo.id)}
-                                    >
-                                        <Trash2 size={18} />
-                                    </ActionIcon>
-                                </Tooltip>
-                            </Group>
-                        </Group>
-                    </Paper>
-                ))}
-
-                {ciclos?.length === 0 && (
-                    <Paper p="xl" withBorder radius="lg" bg="gray.0" ta="center">
-                        <AlertTriangle size={48} className="text-gray-400 mx-auto" style={{ marginBottom: '12px' }} />
-                        <Text fw={600} c="dimmed">No hay ciclos escolares registrados.</Text>
-                    </Paper>
-                )}
-            </Stack>
-
-            <Modal 
-              opened={isModalOpen} 
-              onClose={cerrarModal} 
-              title={<Title order={3} fw={800}>📅 {cicloEditar ? "Editar Ciclo" : "Nuevo Ciclo Escolar"}</Title>}
-              size="md"
-              radius="lg"
-              centered
-            >
-                <form onSubmit={handleSubmit(onSubmit)}>
-                  <Stack gap="md">
-                    <TextInput 
-                        label="Nombre del Ciclo"
-                        placeholder="Ej. 2024-2025"
-                        required
-                        {...register('nombre', { required: "El nombre es obligatorio" })}
-                        error={errors.nombre?.message}
-                        size="md"
-                        style={{ textTransform: 'uppercase', fontFamily: 'monospace' }}
-                    />
-
-                    <SimpleGrid cols={2} spacing="md">
-                        <Controller
-                            name="fecha_inicio"
-                            control={control}
-                            rules={{ required: "La fecha de inicio es obligatoria" }}
-                            render={({ field }) => (
-                                <DatePickerInput
-                                    label="Fecha de Inicio"
-                                    placeholder="Selecciona fecha"
-                                    value={field.value ? new Date(field.value) : null}
-                                    onChange={(val) => field.onChange(val ? val.toISOString().split('T')[0] : '')}
-                                    error={errors.fecha_inicio?.message}
-                                    size="md"
-                                    locale="es"
-                                    valueFormat="DD [de] MMMM [de] YYYY"
-                                />
+                        <div className="flex gap-2">
+                            {!ciclo.activo && (
+                                <button 
+                                    className="btn btn-outline btn-sm gap-2" 
+                                    onClick={() => handleActivarCiclo(ciclo)}
+                                >
+                                    <CheckCircle size={16} />
+                                    Activar
+                                </button>
                             )}
-                        />
-                        <Controller
-                            name="fecha_fin"
-                            control={control}
-                            rules={{ required: "La fecha de fin es obligatoria" }}
-                            render={({ field }) => (
-                                <DatePickerInput
-                                    label="Fecha de Fin"
-                                    placeholder="Selecciona fecha"
-                                    value={field.value ? new Date(field.value) : null}
-                                    onChange={(val) => field.onChange(val ? val.toISOString().split('T')[0] : '')}
-                                    error={errors.fecha_fin?.message}
-                                    size="md"
-                                    locale="es"
-                                    valueFormat="DD [de] MMMM [de] YYYY"
-                                />
-                            )}
-                        />
-                    </SimpleGrid>
+                            <button className="btn btn-ghost btn-sm text-primary" onClick={() => handleOpenEdit(ciclo)}>
+                                <Edit2 size={16} />
+                            </button>
+                            <button className="btn btn-ghost btn-sm text-error" onClick={() => handleDelete(ciclo.id)}>
+                                <Trash2 size={16} />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            ))}
 
-                    {fechasInvalidas && (
-                        <Alert icon={<AlertTriangle size={16} />} color="red" title="Error de fechas" radius="md">
-                            La fecha de inicio debe ser anterior a la fecha de fin.
-                        </Alert>
-                    )}
+            {ciclos?.length === 0 && (
+                <div className="card bg-base-200 p-12 text-center space-y-4">
+                    <AlertTriangle size={48} className="mx-auto text-base-content/20" />
+                    <p className="font-medium text-base-content/40">No hay ciclos escolares registrados.</p>
+                </div>
+            )}
+        </div>
 
-                    {!cicloEditar && (
-                        <Paper p="sm" bg="yellow.0" withBorder radius="md">
-                            <Checkbox 
-                                label={
-                                    <div>
-                                        <Text fw={700} size="sm">Marcar como Ciclo Activo</Text>
-                                        <Text size="xs" c="dimmed">Al guardar, el sistema desactivará cualquier otro ciclo vigente.</Text>
-                                    </div>
-                                }
-                                {...register('activo')}
-                                size="md"
+        {/* MODAL CICLO */}
+        {isModalOpen && (
+            <div className="modal modal-open">
+                <div className="modal-box max-w-md p-0 overflow-hidden">
+                    <div className="bg-primary p-6 text-primary-content flex items-center gap-3">
+                        <Calendar size={24} className="text-yellow-300" />
+                        <h3 className="text-xl font-black">
+                            {cicloEditar ? "Editar Ciclo" : "Nuevo Ciclo Escolar"}
+                        </h3>
+                    </div>
+                    <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
+                        <div className="form-control">
+                            <label className="label"><span className="label-text font-bold">Nombre del Ciclo</span></label>
+                            <input 
+                                {...register('nombre', { required: "El nombre es obligatorio" })} 
+                                className="input input-bordered w-full font-mono uppercase" 
+                                placeholder="Ej. 2024-2025" 
                             />
-                        </Paper>
-                    )}
+                            {errors.nombre && <span className="text-error text-xs mt-1">{errors.nombre.message}</span>}
+                        </div>
 
-                    <Group justify="flex-end" pt="md" style={{ borderTop: '1px solid var(--mantine-color-gray-2)' }}>
-                      <Button variant="subtle" color="gray" onClick={cerrarModal}>
-                        Cancelar
-                      </Button>
-                      <Button type="submit" color="blue" leftSection={<Save size={18} />}>
-                        {cicloEditar ? 'Actualizar Ciclo' : 'Guardar Ciclo'}
-                      </Button>
-                    </Group>
-                  </Stack>
-                </form>
-            </Modal>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="form-control">
+                                <label className="label"><span className="label-text font-bold">Fecha Inicio</span></label>
+                                <input 
+                                    type="date" 
+                                    {...register('fecha_inicio', { required: "Obligatorio" })} 
+                                    className="input input-bordered w-full" 
+                                />
+                            </div>
+                            <div className="form-control">
+                                <label className="label"><span className="label-text font-bold">Fecha Fin</span></label>
+                                <input 
+                                    type="date" 
+                                    {...register('fecha_fin', { required: "Obligatorio" })} 
+                                    className="input input-bordered w-full" 
+                                />
+                            </div>
+                        </div>
 
-            <Modal 
-              opened={isPromocionOpen} 
-              onClose={() => setIsPromocionOpen(false)} 
-              title={<Title order={3} fw={800}>🎓 Simulación de Cierre de Ciclo</Title>}
-              size="lg"
-              radius="lg"
-              centered
-            >
-                <Stack gap="md">
-                    <Alert icon={<TrendingUp size={18} />} color="blue" title="¿Qué hace esta herramienta?" radius="md">
-                        <Stack gap={4} mt={4}>
-                            <Text size="sm">• Avanza de grado a los alumnos activos (ej. 1° → 2°).</Text>
-                            <Text size="sm">• Gradúa (da de baja) a los que terminan nivel (ej. 6° Primaria → Egresado).</Text>
-                            <Text size="sm">• No afecta a alumnos inactivos o dados de baja anteriormente.</Text>
-                        </Stack>
-                    </Alert>
+                        {fechasInvalidas && (
+                            <div className="alert alert-error py-2 text-xs">
+                                <AlertTriangle size={14} />
+                                <span>La fecha de inicio debe ser anterior a la de fin.</span>
+                            </div>
+                        )}
 
-                    {loadingPreview ? (
-                        <Center py="xl">
-                            <Stack align="center">
-                                <Loader size="xl" variant="bars" color="blue" />
-                                <Text fw={600} c="dimmed">Analizando alumnos...</Text>
-                            </Stack>
-                        </Center>
-                    ) : errorPreview ? (
-                        <Alert icon={<AlertTriangle size={18} />} color="red" title="Error al cargar la simulación" radius="md">
-                            <Button variant="subtle" size="xs" onClick={() => refetchPreview()} mt="xs">Reintentar</Button>
-                        </Alert>
-                    ) : (
-                        <Stack gap="md">
-                            {promotionTaskId ? (
-                                <Paper p="xl" radius="lg" withBorder shadow="sm" ta="center" bg="blue.0">
-                                    <Stack align="center" gap="md">
-                                        <Loader size="xl" variant="circle" color="blue" />
-                                        <Title order={3} fw={800} c="blue.8">Procesando Promoción...</Title>
-                                        <Text size="sm" c="dimmed">
-                                            Estamos actualizando los grados de los alumnos. Por favor, no cierres esta ventana.
-                                        </Text>
-                                        <Progress 
-                                            value={promotionStatus?.progress || 0} 
-                                            striped 
-                                            animated 
-                                            color="blue" 
-                                            radius="xl" 
-                                            w="100%" 
-                                            h="md"
-                                        />
-                                        <Text size="xs" fw={700} c="blue.6">
-                                            Estado: {promotionStatus?.status || 'Sincronizando...'}
-                                        </Text>
-                                    </Stack>
-                                </Paper>
-                            ) : (
-                                <SimpleGrid cols={3} spacing="md">
-                                    <Paper p="lg" radius="lg" withBorder shadow="xs" ta="center" bg="blue.0">
-                                        <ThemeIcon size={48} radius="xl" color="blue" variant="light" mb="sm">
-                                            <TrendingUp size={24} />
-                                        </ThemeIcon>
-                                        <Title order={2} fw={900} c="blue.8">{previewData?.a_promover_count}</Title>
-                                        <Text size="sm" fw={600} c="blue.7">Serán Promovidos</Text>
-                                        <Text size="xs" c="dimmed">Pasan al siguiente grado</Text>
-                                    </Paper>
-                                    <Paper p="lg" radius="lg" withBorder shadow="xs" ta="center" bg="green.0">
-                                        <ThemeIcon size={48} radius="xl" color="green" variant="light" mb="sm">
-                                            <GraduationCap size={24} />
-                                        </ThemeIcon>
-                                        <Title order={2} fw={900} c="green.8">{previewData?.a_graduar_count}</Title>
-                                        <Text size="sm" fw={600} c="green.7">Serán Graduados</Text>
-                                        <Text size="xs" c="dimmed">Egresan del nivel</Text>
-                                    </Paper>
-                                    <Paper p="lg" radius="lg" withBorder shadow="xs" ta="center" bg="gray.0">
-                                        <ThemeIcon size={48} radius="xl" color="gray" variant="light" mb="sm">
-                                            <CheckCircle size={24} />
-                                        </ThemeIcon>
-                                        <Title order={2} fw={900} c="gray.8">{previewData?.total_activos}</Title>
-                                        <Text size="sm" fw={600} c="gray.7">Total Analizados</Text>
-                                        <Text size="xs" c="dimmed">Alumnos activos hoy</Text>
-                                    </Paper>
-                                </SimpleGrid>
-                            )}
-                        </Stack>
-                    )}
+                        {!cicloEditar && (
+                            <div className="flex items-center gap-3 p-3 bg-base-200 rounded-xl border border-base-300">
+                                <input type="checkbox" {...register('activo')} className="checkbox checkbox-primary" />
+                                <span className="text-sm font-medium">Marcar como Ciclo Activo</span>
+                            </div>
+                        )}
 
-                    <Group justify="flex-end" pt="md" style={{ borderTop: '1px solid var(--mantine-color-gray-2)' }}>
-                      <Button variant="subtle" color="gray" onClick={() => setIsPromocionOpen(false)}>
-                        Cancelar
-                      </Button>
-                      <Button 
-                        color="red" 
-                        leftSection={<TrendingUp size={18} />}
-                        onClick={handleConfirmarPromocion}
-                        disabled={loadingPreview || !!errorPreview || ejecutarPromocionMutation.isPending || !!promotionTaskId}
-                        loading={ejecutarPromocionMutation.isPending}
-                      >
-                        Ejecutar Cierre y Promoción
-                      </Button>
-                    </Group>
-                </Stack>
-            </Modal>
-        </Stack>
-    </Container>
+                        <div className="flex justify-end gap-3 pt-4 border-t border-base-300">
+                            <button type="button" className="btn btn-ghost" onClick={cerrarModal}>Cancelar</button>
+                            <button type="submit" className="btn btn-primary px-8 flex items-center gap-2">
+                                <Save size={18} />
+                                {cicloEditar ? 'Actualizar' : 'Guardar'}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <div className="modal-backdrop" onClick={cerrarModal}></div>
+            </div>
+        )}
+
+        {/* MODAL PROMOCIÓN */}
+        {isPromocionOpen && (
+            <div className="modal modal-open">
+                <div className="modal-box max-w-2xl p-0 overflow-hidden">
+                    <div className="bg-indigo-700 p-6 text-white flex items-center gap-3">
+                        <TrendingUp size={24} className="text-yellow-300" />
+                        <h3 className="text-xl font-black">Simulación de Cierre de Ciclo</h3>
+                    </div>
+                    <div className="p-6 space-y-6">
+                        <div className="alert alert-info py-3 text-xs shadow-sm">
+                            <div className="flex flex-col gap-1">
+                                <p><strong>Promoción:</strong> Avanza de grado a los alumnos activos.</p>
+                                <p><strong>Graduación:</strong> Da de baja a los que terminan nivel.</p>
+                            </div>
+                        </div>
+
+                        {loadingPreview ? (
+                            <div className="flex items-center justify-center py-12 flex-col gap-4">
+                                <span className="loading loading-spinner loading-lg text-primary" />
+                                <p className="font-bold text-primary animate-pulse">Analizando alumnos...</p>
+                            </div>
+                        ) : errorPreview ? (
+                            <div className="alert alert-error py-4 text-center">
+                                <p>Error al cargar la simulación.</p>
+                                <button className="btn btn-ghost btn-xs" onClick={() => refetchPreview()}>Reintentar</button>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="card bg-blue-50 p-6 text-center border border-blue-200">
+                                    <div className="flex justify-center mb-2 text-blue-600"><TrendingUp size={32} /></div>
+                                    <h4 className="text-3xl font-black text-blue-800">{previewData?.a_promover_count}</h4>
+                                    <p className="text-xs font-bold uppercase text-blue-600">Promovidos</p>
+                                </div>
+                                <div className="card bg-green-50 p-6 text-center border border-green-200">
+                                    <div className="flex justify-center mb-2 text-green-600"><GraduationCap size={32} /></div>
+                                    <h4 className="text-3xl font-black text-green-800">{previewData?.a_graduar_count}</h4>
+                                    <p className="text-xs font-bold uppercase text-green-600">Graduados</p>
+                                </div>
+                                <div className="card bg-base-200 p-6 text-center border border-base-300">
+                                    <div className="flex justify-center mb-2 text-base-content/40"><CheckCircle size={32} /></div>
+                                    <h4 className="text-3xl font-black text-base-content">{previewData?.total_activos}</h4>
+                                    <p className="text-xs font-bold uppercase text-base-content/60">Total Analizados</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {promotionTaskId && (
+                            <div className="card bg-primary text-white p-8 text-center space-y-4 animate-pulse">
+                                <span className="loading loading-ring loading-lg mx-auto" />
+                                <h4 className="text-xl font-black">Procesando Promoción...</h4>
+                                <div className="w-full bg-white/20 rounded-full h-3 overflow-hidden">
+                                    <div 
+                                        className="bg-white h-full transition-all duration-500" 
+                                        style={{ width: `${promotionStatus?.progress || 0}%` }} 
+                                    />
+                                </div>
+                                <p className="text-xs font-medium">Estado: {promotionStatus?.status || 'Sincronizando...'}</p>
+                            </div>
+                        )}
+
+                        <div className="flex justify-end gap-3 pt-6 border-t border-base-300">
+                            <button className="btn btn-ghost" onClick={() => setIsPromocionOpen(false)}>Cancelar</button>
+                            <button 
+                                className="btn btn-error px-8 gap-2" 
+                                onClick={handleConfirmarPromocion}
+                                disabled={loadingPreview || !!errorPreview || ejecutarPromocionMutation.isPending || !!promotionTaskId}
+                            >
+                                {ejecutarPromocionMutation.isPending ? (
+                                    <span className="loading loading-spinner loading-xs" />
+                                ) : (
+                                    <><TrendingUp size={18} /> Ejecutar Cierre</>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div className="modal-backdrop" onClick={() => setIsPromocionOpen(false)}></div>
+            </div>
+        )}
+    </div>
+    </>
   );
 };
 

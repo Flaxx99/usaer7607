@@ -23,26 +23,24 @@ export interface CalendarEvent {
     color: string;
     created_by_nombre?: string;
     assigned_to_nombre?: string;
-    alumno_nombre?: string;
-    escuela_nombre?: string;
 }
 
 export const calendarApi = {
     getEvents: async (page = 1) => {
-        const response = await client.get(`/api/usuarios/calendar/?page=${page}`);
+        const response = await client.get(`/calendario/?page=${page}`);
         return response.data as PaginatedResponse<CalendarEvent>;
     },
     saveEvent: async (data: Partial<CalendarEvent>) => {
         if (data.id) {
-            const response = await client.patch(`/api/usuarios/calendar/${data.id}/`, data);
+            const response = await client.patch(`/calendario/${data.id}/`, data);
             return response.data;
         } else {
-            const response = await client.post('/api/usuarios/calendar/', data);
+            const response = await client.post('/calendario/', data);
             return response.data;
         }
     },
     deleteEvent: async (id: number) => {
-        const response = await client.delete(`/api/usuarios/calendar/${id}/`);
+        const response = await client.delete(`/calendario/${id}/`);
         return response.data;
     },
 };

@@ -1,21 +1,19 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { 
-    Container, Stack, Paper, Title, Text, Button, Group, 
-    Badge, ScrollArea, SimpleGrid, ActionIcon, Tooltip, 
-    Divider, Box, ThemeIcon, Center, Loader
-} from '@mantine/core';
+  useQuery, useMutation, useQueryClient 
+} from '@tanstack/react-query';
 import { 
-    IconCalendar, IconPlus, IconCheck, IconClock, 
-    IconAlertCircle, IconUser, IconSchool, IconTrash 
-} from '@tabler/icons-react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { calendarApi, CalendarEvent } from '../../api/calendar';
-import { notifications } from '@mantine/notifications';
+  Calendar as CalendarIcon, Plus, Clock, 
+  AlertCircle, Trash, Edit2 
+} from 'lucide-react';
+import { toast } from 'sonner';
 import { useLoading } from '../../context/LoadingContext';
 import TaskModal from './TaskModal';
 import { getUsuarios } from '../../api/usuarios';
 import { getAlumnos } from '../../api/alumnos';
 import { getEscuelas } from '../../api/escuelas';
+import { calendarApi } from '../../api/calendar';
+import type { CalendarEvent } from '../../api/calendar';
 
 const SchoolCalendar = () => {
     const queryClient = useQueryClient();
@@ -25,12 +23,12 @@ const SchoolCalendar = () => {
 
     const { data: events, isLoading: loadingEvents } = useQuery({
         queryKey: ['calendar_events'],
-        queryFn: calendarApi.getEvents,
+        queryFn: () => calendarApi.getEvents(),
     });
 
-    const { data: users } = useQuery({ queryKey: ['users'], queryFn: getUsuarios });
-    const { data: alunos } = useQuery({ queryKey: ['alumnos'], queryFn: getAlumnos });
-    const { data: escuelas } = useQuery({ queryKey: ['escuelas'], queryFn: getEscuelas });
+    const { data: users } = useQuery({ queryKey: ['users'], queryFn: () => getUsuarios() });
+    const { data: alunos } = useQuery({ queryKey: ['alumnos'], queryFn: () => getAlumnos() });
+    const { data: escuelas } = useQuery({ queryKey: ['escuelas'], queryFn: () => getEscuelas() });
 
     const saveMutation = useMutation({
         mutationFn: calendarApi.saveEvent,
@@ -39,18 +37,10 @@ const SchoolCalendar = () => {
             queryClient.invalidateQueries({ queryKey: ['calendar_events'] });
             setModalOpened(false);
             setEditingEvent(null);
-            notifications.show({
-                title: 'Calendario Actualizado',
-                message: 'El evento/tarea ha sido guardado correctamente.',
-                color: 'green',
-            });
+            toast.success('Calendario Actualizado', { description: 'El evento/tarea ha sido guardado correctamente.' });
         },
         onError: (err: any) => {
-            notifications.show({
-                title: 'Error',
-                message: err.response?.data?.detail || 'No se pudo guardar el evento.',
-                color: 'red',
-            });
+            toast.error('Error', { description: err.response?.data?.detail || 'No se pudo guardar el evento.' });
         },
         onSettled: () => hideLoading(),
     });
@@ -60,7 +50,7 @@ const SchoolCalendar = () => {
         onMutate: () => showLoading(),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['calendar_events'] });
-            notifications.show({ title: 'Eliminado', message: 'El evento ha sido borrado.', color: 'gray' });
+            toast.success('Eliminado', { description: 'El evento ha sido borrado.' });
         },
         onSettled: () => hideLoading(),
     });
@@ -82,145 +72,162 @@ const SchoolCalendar = () => {
         });
     };
 
-    const getPriorityColor = (p: string) => {
-        switch (p) {
-            case 'ALTA': return 'red';
-            case 'MEDIA': return 'yellow';
-            case 'BAJA': return 'blue';
-            default: return 'gray';
-        }
-    };
-
-    if (loadingEvents) return <Center h="70vh"><Loader size="xl" /></Center>;
+    if (loadingEvents) return (
+      <div className="flex items-center justify-center h-[70vh]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="loading loading-spinner loading-lg text-primary" />
+          <p className="text-lg font-semibold text-primary animate-pulse">Cargando agenda...</p>
+        </div>
+      </div>
+    );
 
     return (
-        <Container size="xl" py="md">
-            <Stack gap="lg">
-                <Paper p="lg" radius="lg" withBorder shadow="sm" bg="blue.0" style={{ borderLeft: '8px solid var(--mantine-color-blue-6)' }}>
-                    <Group justify="space-between" align="center">
-                        <Group gap="md">
-                            <Box p={12} radius="lg" bg="blue.6" style={{ color: 'white', boxShadow: 'var(--mantine-shadow-md)' }}>
-                                <IconCalendar size={32} />
-                            </Box>
-                            <div>
-                                <Title order={1} fw={900} lts={-0.5} style={{ fontSize: '1.8rem', lineHeight: 1.2 }}>
-                                    Agenda y Tareas USAER
-                                </Title>
-                                <Text size="sm" c="dimmed" fw={500}>Gestión de actividades, evaluaciones y tareas administrativas.</Text>
-                            </div>
-                        </Group>
-                        <Button 
-                            size="lg" 
-                            radius="md" 
-                            leftSection={<IconPlus size={22} />} 
-                            onClick={handleOpenCreate}
-                            color="blue"
-                            style={{ boxShadow: 'var(--mantine-shadow-md)' }}
-                        >
-                            Nueva Tarea/Evento
-                        </Button>
-                    </Group>
-                </Paper>
+        <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
+            <div className="card bg-primary text-primary-content shadow-lg border-l-8 border-primary-dark">
+                <div className="card-body p-8 flex-row items-center justify-between gap-4">
+                    <div className="flex items-center gap-6">
+                        <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shadow-inner">
+                            <CalendarIcon size={32} />
+                        </div>
+                        <div>
+                            <h1 className="text-3xl font-black tracking-tight">
+                                Agenda y Tareas USAER
+                            </h1>
+                            <p className="text-sm opacity-90 font-medium">Gestión de actividades, evaluaciones y tareas administrativas.</p>
+                        </div>
+                    </div>
+                    <button 
+                        className="btn btn-white btn-lg shadow-md hover:scale-105 transition-transform"
+                        onClick={handleOpenCreate}
+                    >
+                        <Plus size={22} />
+                        Nueva Tarea/Evento
+                    </button>
+                </div>
+            </div>
 
-                <SimpleGrid cols={{ base: 1, md: 3 }} spacing="lg">
-                    {/* COLUMNA 1: TAREAS PENDIENTES CRÍTICAS */}
-                    <Paper p="md" radius="lg" withBorder shadow="xs" style={{ borderTop: '4px solid red' }}>
-                        <Group gap="xs" mb="md">
-                            <IconAlertCircle color="red" size={20} />
-                            <Title order={4} fw={700}>Urgentes (Prioridad Alta)</Title>
-                        </Group>
-                        <Divider mb="md" />
-                        <Stack gap="sm">
-                            {events?.filter(e => e.priority === 'ALTA' && e.status === 'PENDIENTE').map(e => (
-                                <Paper key={e.id} p="sm" withBorder radius="md" bg="red.0" style={{ borderLeft: '3px solid red' }}>
-                                    <Group justify="space-between" wrap="nowrap">
-                                        <Text size="sm" fw={700} truncate>{e.title}</Text>
-                                        <ActionIcon variant="subtle" color="red" onClick={() => handleOpenEdit(e)}><IconEdit size={14} /></ActionIcon>
-                                    </Group>
-                                    <Text size="xs" c="dimmed">{new Date(e.start_time).toLocaleDateString()}</Text>
-                                </Paper>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* COLUMNA 1: URGENTES */}
+                <div className="card bg-base-100 shadow-sm border border-base-300 border-t-4 border-t-error">
+                    <div className="card-body p-6">
+                        <div className="flex items-center gap-2 mb-4">
+                            <AlertCircle className="text-error" size={20} />
+                            <h3 className="text-lg font-bold">Urgentes (Alta)</h3>
+                        </div>
+                        <div className="divider my-0"></div>
+                        <div className="flex flex-col gap-3 mt-4">
+                            {events?.results?.filter(e => e.priority === 'ALTA' && e.status === 'PENDIENTE').map(e => (
+                                <div key={e.id} className="card bg-error/5 border border-error/20 p-3 transition-all hover:bg-error/10 group">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <span className="text-sm font-bold truncate">{e.title}</span>
+                                        <button 
+                                          className="btn btn-ghost btn-xs text-error opacity-0 group-hover:opacity-100" 
+                                          onClick={() => handleOpenEdit(e)}
+                                        >
+                                          <Edit2 size={12} />
+                                        </button>
+                                    </div>
+                                    <p className="text-xs text-base-content/50">{new Date(e.start_time).toLocaleDateString()}</p>
+                                </div>
                             ))}
-                            {events?.filter(e => e.priority === 'ALTA' && e.status === 'PENDIENTE').length === 0 && (
-                                <Text size="xs" c="dimmed" ta="center">No hay tareas urgentes.</Text>
+                            {events?.results?.filter(e => e.priority === 'ALTA' && e.status === 'PENDIENTE').length === 0 && (
+                                <p className="text-xs text-center text-base-content/40 italic">No hay tareas urgentes.</p>
                             )}
-                        </Stack>
-                    </Paper>
+                        </div>
+                    </div>
+                </div>
 
-                    {/* COLUMNA 2: AGENDA DEL DÍA / SEMANA */}
-                    <Paper p="md" radius="lg" withBorder shadow="xs" style={{ gridColumn: 'span 2', borderTop: '4px solid blue' }}>
-                        <Group gap="xs" mb="md">
-                            <IconClock color="blue" size={20} />
-                            <Title order={4} fw={700}>Cronograma de Actividades</Title>
-                        </Group>
-                        <Divider mb="md" />
-                        <ScrollArea h={600}>
-                            <Table verticalSpacing="sm" highlightOnHover>
-                                <Table.Thead>
-                                    <Table.Tr>
-                                        <Table.Th>Fecha/Hora</Table.Th>
-                                        <Table.Th>Evento/Tarea</Table.Th>
-                                        <Table.Th>Asignado</Table.Th>
-                                        <Table.Th>Relacionado</Table.Th>
-                                        <Table.Th>Estado</Table.Th>
-                                        <Table.Th style={{ textAlign: 'right' }}>Acciones</Table.Th>
-                                    </Table.Tr>
-                                </Table.Thead>
-                                <Table.Tbody>
-                                    {events?.map(e => (
-                                        <Table.Tr key={e.id}>
-                                            <Table.Td>
-                                                <Text size="xs" fw={600}>{new Date(e.start_time).toLocaleDateString()}</Text>
-                                                <Text size="xs" c="dimmed">{new Date(e.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
-                                            </Table.Td>
-                                            <Table.Td>
-                                                <Group gap={5}>
-                                                    <Box style={{ width: 8, height: 24, backgroundColor: e.color, borderRadius: 4 }} />
-                                                    <Text size="sm" fw={600}>{e.title}</Text>
-                                                </Group>
-                                                <Text size="xs" c="dimmed" truncate>{e.description}</Text>
-                                            </Table.Td>
-                                            <Table.Td>
-                                                <Badge variant="light" color="gray" size="sm">{e.assigned_to_nombre || 'S/N'}</Badge>
-                                            </Table.Td>
-                                            <Table.Td>
-                                                <Group gap={4}>
-                                                    {e.alumno_nombre && <Badge size="xs" color="blue" variant="outline"><IconUser size={10}/> {e.alumno_nombre}</Badge>}
-                                                    {e.escuela_nombre && <Badge size="xs" color="teal" variant="outline"><IconSchool size={10}/> {e.escuela_nombre}</Badge>}
-                                                </Group>
-                                            </Table.Td>
-                                            <Table.Td>
-                                                <Badge color={e.status === 'COMPLETADO' ? 'green' : e.status === 'CANCELADO' ? 'red' : 'yellow'}>
+                {/* COLUMNA 2 & 3: CRONOGRAMA */}
+                <div className="lg:col-span-2 card bg-base-100 shadow-sm border border-base-300 border-t-4 border-t-primary">
+                    <div className="card-body p-6">
+                        <div className="flex items-center gap-2 mb-4">
+                            <Clock className="text-primary" size={20} />
+                            <h3 className="text-lg font-bold">Cronograma de Actividades</h3>
+                        </div>
+                        <div className="divider my-0"></div>
+                        <div className="overflow-x-auto mt-4">
+                            <table className="table table-zebra w-full">
+                                <thead>
+                                    <tr className="text-xs uppercase opacity-60">
+                                        <th>Fecha/Hora</th>
+                                        <th>Evento/Tarea</th>
+                                        <th>Asignado</th>
+                                        <th>Relacionada</th>
+                                        <th>Estado</th>
+                                        <th className="text-right">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {events?.results?.map(e => (
+                                        <tr key={e.id} className="hover">
+                                            <td>
+                                                <div className="flex flex-col">
+                                                    <span className="text-xs font-bold">{new Date(e.start_time).toLocaleDateString()}</span>
+                                                    <span className="text-xs opacity-50">{new Date(e.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-1 h-4 rounded-full" style={{ backgroundColor: e.color }} />
+                                                    <span className="text-sm font-bold">{e.title}</span>
+                                                </div>
+                                                <p className="text-xs opacity-50 truncate max-w-xs">{e.description}</p>
+                                            </td>
+                                            <td>
+                                                <span className="badge badge-ghost badge-sm font-medium">{e.assigned_to_nombre || 'S/N'}</span>
+                                            </td>
+                                            <td>
+                                                <div className="flex gap-1">
+                                                    {e.alumno_nombre && <span className="badge badge-outline badge-xs text-primary">Alum: {e.alumno_nombre}</span>}
+                                                    {e.escuela_nombre && <span className="badge badge-outline badge-xs text-secondary">Esc: {e.escuela_nombre}</span>}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span className={`badge badge-sm font-bold ${
+                                                    e.status === 'COMPLETADO' ? 'badge-success' : 
+                                                    e.status === 'CANCELADO' ? 'badge-error' : 'badge-warning'
+                                                }`}>
                                                     {e.status}
-                                                </Badge>
-                                            </Table.Td>
-                                            <Table.Td style={{ textAlign: 'right' }}>
-                                                <Group gap={5} justify="right">
-                                                    <ActionIcon variant="light" color="blue" size="lg" radius="md" onClick={() => handleOpenEdit(e)}><IconEdit size={16} /></ActionIcon>
-                                                    <ActionIcon variant="light" color="red" size="lg" radius="md" onClick={() => {
+                                                </span>
+                                            </td>
+                                            <td className="text-right">
+                                                <div className="flex justify-end gap-1">
+                                                    <button 
+                                                      className="btn btn-ghost btn-xs text-primary" 
+                                                      onClick={() => handleOpenEdit(e)}
+                                                    >
+                                                      <Edit2 size={14} />
+                                                    </button>
+                                                    <button 
+                                                      className="btn btn-ghost btn-xs text-error" 
+                                                      onClick={() => {
                                                         if (confirm('¿Eliminar este evento?')) deleteMutation.mutate(e.id);
-                                                    }}><IconTrash size={16} /></ActionIcon>
-                                                </Group>
-                                            </Table.Td>
-                                        </Table.Tr>
+                                                      }}
+                                                    >
+                                                      <Trash size={14} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
                                     ))}
-                                </Table.Tbody>
-                            </Table>
-                        </ScrollArea>
-                    </LTable>
-                </Paper>
-            </Stack>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <TaskModal 
                 opened={modalOpened} 
                 onClose={() => { setModalOpened(false); setEditingEvent(null); }} 
                 onSave={handleSave}
                 initialData={editingEvent}
-                users={users || []}
-                alunos={alunos || []}
+                users={(users as unknown as any[]) || []}
+                alunos={(alunos as unknown as any[]) || []}
                 escuelas={escuelas || []}
                 currentUserRole={localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).role : ''}
             />
-        </Container>
+        </div>
     );
 };
 

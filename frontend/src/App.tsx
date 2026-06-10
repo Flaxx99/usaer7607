@@ -23,6 +23,7 @@ import RAERecordsList from './pages/rae/RAERecordsList';
 import RAECaptureGrid from './pages/rae/RAECaptureGrid';
 import RAEValidationPanel from './pages/rae/RAEValidationPanel';
 import SchoolCalendar from './pages/calendar/SchoolCalendar';
+import ListaNotificaciones from './pages/notificaciones/ListaNotificaciones';
 
 // Definición de Roles para Seguridad de Rutas
 const ROLE_ADMIN = ['ADMIN', 'ADMINISTRADOR', 'SECRETARIO'];
@@ -47,9 +48,10 @@ function App() {
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/avisos" element={<TablonAvisos />} />
               <Route path="/asistencias" element={<HistorialAsistencia />} />
-              <Route path="/permisos" element={<GestionPermisos />} />
-              <Route path="/incidencias" element={<GestionIncidencias />} />
-            </Route>
+             <Route path="/permisos" element={<GestionPermisos />} />
+             <Route path="/incidencias" element={<GestionIncidencias />} />
+             <Route path="/notificaciones" element={<ListaNotificaciones />} />
+           </Route>
 
             {/* Rutas restringidas a Docentes y Admins */}
             <Route element={<ProtectedRoute allowedRoles={ROLE_DOCENTE} />}>

@@ -74,19 +74,25 @@ export interface RAEInitResponse {
 
 export const raeApi = {
     getMyRecords: async (page = 1) => {
-        const response = await client.get(`/rae/mis_registros/?page=${page}`);
+        const response = await client.get(`/api/rae/mis_registros/?page=${page}`);
         return response.data as PaginatedResponse<RegistroRAE>;
     },
     initCapture: async () => {
-        const response = await client.get('/rae/captura/');
+        const response = await client.get('/api/rae/captura/');
         return response.data as RAEInitResponse;
     },
     saveBulk: async (data: { registro_id: number, alumnos: any[] }) => {
-        const response = await client.post('/rae/guardar_bulk/', data);
+        const response = await client.post('/api/rae/guardar_bulk/', data);
         return response.data;
     },
     exportExcel: async (id: number) => {
-        const response = await client.get(`/rae/exportar_excel/${id}`, {
+        const response = await client.get(`/api/rae/exportar_excel/${id}`, {
+            responseType: 'blob',
+        });
+        return response.data;
+    },
+    exportAll: async () => {
+        const response = await client.get('/api/rae/exportar_todo_excel/', {
             responseType: 'blob',
         });
         return response.data;

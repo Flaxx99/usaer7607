@@ -1,14 +1,30 @@
 import random
+from datetime import date
 
 from alumnos.models import Alumno
+from ciclos_escolares.models import CicloEscolar
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from escuelas.models import Escuela
 from faker import Faker
-from rac.models import RegistroRAC
+from rac.models import (
+    APTITUDES_SUB,
+    DISCAPACIDAD_SUB,
+    DIFICULTADES_SUB,
+    RegistroRAC,
+    TRASTORNOS_SUB,
+)
 
 User = get_user_model()
 fake = Faker("es_MX")
+
+# Mapa de clasificación → lista de subclasificaciones válidas
+SUBCLASIFICACION_MAP = {
+    "DISCAPACIDAD": [c[0] for c in DISCAPACIDAD_SUB],
+    "DIFICULTADES_SEVERAS": [c[0] for c in DIFICULTADES_SUB],
+    "TRASTORNOS": [c[0] for c in TRASTORNOS_SUB],
+    "APTITUDES_SOBRESALIENTES": [c[0] for c in APTITUDES_SUB],
+}
 
 
 class Command(BaseCommand):
@@ -105,17 +121,32 @@ class Command(BaseCommand):
         )
         self.stdout.write("   Escuelas creadas.")
 
+        self.stdout.write("\n3.5. Creando ciclo escolar actual...")
+        ciclo, created = CicloEscolar.objects.get_or_create(
+            nombre="2025-2026",
+            defaults={
+                "fecha_inicio": date(2025, 8, 15),
+                "fecha_fin": date(2026, 7, 15),
+                "activo": True,
+            },
+        )
+        if created:
+            self.stdout.write("   Ciclo escolar 2025-2026 creado.")
+        else:
+            self.stdout.write("   Ciclo escolar 2025-2026 ya existe.")
+
         self.stdout.write("\n4. Creando alumnos y registros RAC asociados...")
-        self._create_students_for_teacher(maestra1, escuela1, 10)
-        self._create_students_for_teacher(maestra2, escuela2, 8)
-        self._create_students_for_teacher(maestra1, escuela3, 5)
+        self._create_students_for_teacher(maestra1, escuela1, ciclo, 10)
+        self._create_students_for_teacher(maestra2, escuela2, ciclo, 8)
+        self._create_students_for_teacher(maestra1, escuela3, ciclo, 5)
         self.stdout.write("   Alumnos y registros RAC creados.")
 
         self.stdout.write(
             self.style.SUCCESS("\n--- Proceso de población de datos finalizado exitosamente. ---")
         )
 
-    def _create_students_for_teacher(self, teacher, school, count):
+    def _create_students_for_teacher(self, teacher, school, ciclo, count):
+        escuelas = list(Escuela.objects.all())
         for i in range(count):
             sexo = random.choice(["H", "M"])
             first_name = fake.first_name_male() if sexo == "H" else fake.first_name_female()
@@ -128,40 +159,34 @@ class Command(BaseCommand):
                 apellido_materno=last_name_m,
                 curp=fake.unique.lexify(text="????######??????##").upper(),
                 sexo=sexo,
-                edad=random.randint(6, 12),  # Usar edad en lugar de fecha_nacimiento
+                edad=random.randint(6, 12),
                 grado=str(random.randint(1, 6)),
                 grupo=random.choice(["A", "B", "C"]),
                 escuela=school,
                 profesor=teacher,
                 clasificacion=random.choice(
-                    [choice[0] for choice in Alumno.CLASIFICACION_CHOICES]
-                ),  # Asignar clasificación
+                    [c[0] for c in Alumno.CLASIFICACION_CHOICES]
+                ),
             )
 
-            self._create_random_rac(alumno, teacher)
+            self._create_random_rac(alumno, teacher, ciclo, escuelas)
 
-    def _create_random_rac(self, alumno, maestro):
-        rac_fields = {
-            f.name: random.choice([True, False])
-            for f in RegistroRAC._meta.get_fields()
-            if f.name.startswith(
-                ("discapacidad_", "dificultad_", "trastorno_", "aptitud_", "apoyo_", "portafolio_")
-            )
-        }
-        if not any(rac_fields.values()):
-            random_field = random.choice(list(rac_fields.keys()))
-            rac_fields[random_field] = True
+    def _create_random_rac(self, alumno, maestro, ciclo, escuelas):
+        clasificacion = alumno.clasificacion
+        opciones = SUBCLASIFICACION_MAP.get(clasificacion, ["NO_APLICA"])
+        subclasificacion = random.choice(opciones)
 
-        if random.choice([True, False]):
-            rac_fields["es_nuevo_ingreso"] = True
-            rac_fields["es_subsecuente"] = False
-        else:
-            rac_fields["es_nuevo_ingreso"] = False
-            rac_fields["es_subsecuente"] = True
+        escuela_regular = random.choice(escuelas)
+        escuela_basica = random.choice([e for e in escuelas if e != escuela_regular] or escuelas)
 
         RegistroRAC.objects.create(
             alumno=alumno,
+            ciclo_escolar=ciclo,
             maestro_apoyo=maestro,
+            escuela_regular=escuela_regular,
+            escuela_basica=escuela_basica,
+            clasificacion=clasificacion,
+            subclasificacion=subclasificacion,
+            service_type=random.choice(["USAER", "CAM_BASICO", "CAM_LABORAL"]),
             observaciones=fake.sentence(nb_words=10),
-            **rac_fields,
         )

@@ -1,20 +1,14 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { 
-    Container, Stack, Paper, Title, Text, Button, Table, 
-    Group, ActionIcon, Tooltip, Badge, ScrollArea, 
-    Divider, Center, Loader, Checkbox, Box
-} from '@mantine/core';
-import { 
-    IconSave, IconArrowLeft, IconCheck, IconAlertCircle, 
-    IconUser, IconFileCheck 
-} from '@tabler/icons-react';
+  Save, ArrowLeft
+} from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
-import { raeApi, RAEAlumno, RAEInitResponse } from '../../api/rae';
-import { notifications } from '@mantine/notifications';
+import { toast } from 'sonner';
+import { raeApi } from '../../api/rae';
+import type { RAEAlumno } from '../../api/rae';
 import { useLoading } from '../../context/LoadingContext';
 
-// --- DEFINICIÓN DE COLUMNAS (Categorizadas) ---
 const RAE_COLUMNS = {
     condiciones: {
         label: 'Condiciones',
@@ -102,18 +96,10 @@ const RAECaptureGrid = () => {
             setDirtyRows(new Set());
             localStorage.removeItem(storageKey);
             localStorage.removeItem(`${storageKey}_dirty`);
-            notifications.show({
-                title: 'Datos Guardados',
-                message: 'La captura de RAE ha sido sincronizada con el servidor.',
-                color: 'green',
-            });
+            toast.success('Datos Guardados', { description: 'La captura de RAE ha sido sincronizada con el servidor.' });
         },
-        onError: (err: any) => {
-            notifications.show({
-                title: 'Error al Guardar',
-                message: 'Hubo un problema al guardar los cambios.',
-                color: 'red',
-            });
+        onError: () => {
+            toast.error('Error al Guardar', { description: 'Hubo un problema al guardar los cambios.' });
         },
         onSettled: () => hideLoading(),
     });
@@ -136,7 +122,7 @@ const RAECaptureGrid = () => {
         }));
 
         if (updates.length === 0) {
-            notifications.show({ title: 'Sin cambios', message: 'No hay datos nuevos para guardar.', color: 'blue' });
+            toast.info('Sin cambios', { description: 'No hay datos nuevos para guardar.' });
             return;
         }
 
@@ -148,116 +134,122 @@ const RAECaptureGrid = () => {
 
     if (isLoading) {
         return (
-            <Center h="70vh">
-                <Stack align="center">
-                    <Loader size="xl" />
-                    <Text fw={600}>Cargando cuadrícula de captura...</Text>
-                </Stack>
-            </Center>
+            <div className="flex items-center justify-center h-[70vh] flex-col gap-4">
+                <span className="loading loading-spinner loading-lg text-primary" />
+                <p className="font-bold text-primary animate-pulse">Cargando cuadrícula de captura...</p>
+            </div>
         );
     }
 
     return (
-        <Container size="xl" py="md">
-            <Stack gap="lg">
-                <Paper p="lg" radius="lg" withBorder shadow="sm" bg="blue.0" style={{ borderLeft: '8px solid var(--mantine-color-blue-6)' }}>
-                    <Group justify="space-between" align="center">
-                        <Group gap="md">
-                            <Button variant="subtle" color="gray" onClick={() => navigate('/rae')} leftSection={<IconArrowLeft size={18} />}>
-                                Volver al Listado
-                            </Button>
-                            <Box>
-                                <Title order={1} fw={900} lts={-0.5} style={{ fontSize: '1.6rem', lineHeight: 1.2 }}>
-                                    Captura RAE: {initData?.escuela}
-                                </Title>
-                                <Text size="sm" c="dimmed" fw={500}>Ciclo: {initData?.ciclo} | {initData?.alumnos.length} Alumnos</Text>
-                            </Box>
-                        </Group>
-                        
-                         <Group gap="sm">
-                             <Button 
-                                 variant="light" 
-                                 color="gray" 
-                                 onClick={() => {
-                                     setDrafts({});
-                                     setDirtyRows(new Set());
-                                     localStorage.removeItem(storageKey);
-                                     localStorage.removeItem(`${storageKey}_dirty`);
-                                     notifications.show({ title: 'Borradores eliminados', message: 'Se han limpiado los cambios locales.', color: 'blue' });
-                                 }}
-                                 disabled={dirtyRows.size === 0}
-                             >
-                                 Limpiar Borradores
-                             </Button>
-                             <Button 
-                                 color="blue" 
-                                 leftSection={<IconSave size={20} />} 
-                                 onClick={handleSave}
-                                 loading={saveMutation.isPending}
-                                 disabled={dirtyRows.size === 0}
-                             >
-                                 Guardar Cambios ({dirtyRows.size})
-                             </Button>
-                         </Group>
+        <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
+            <div className="card bg-primary text-primary-content shadow-lg border-l-8 border-primary-dark">
+                <div className="card-body p-8 flex-row items-center justify-between gap-4 flex-wrap">
+                    <div className="flex items-center gap-3">
+                        <button 
+                            className="btn btn-ghost btn-sm gap-2" 
+                            onClick={() => navigate('/rae')}
+                        >
+                            <ArrowLeft size={18} />
+                            Volver
+                        </button>
+                        <div className="ml-4">
+                            <h1 className="text-2xl font-black tracking-tight">
+                                Captura RAE: {initData?.escuela}
+                            </h1>
+                            <p className="text-sm opacity-90 font-medium">
+                                Ciclo: {initData?.ciclo} | {initData?.alumnos.length} Alumnos
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div className="flex gap-3">
+                        <button 
+                            className="btn btn-ghost bg-white/10 hover:bg-white/20 border-white/20 text-white"
+                            onClick={() => {
+                                setDrafts({});
+                                setDirtyRows(new Set());
+                                localStorage.removeItem(storageKey);
+                                localStorage.removeItem(`${storageKey}_dirty`);
+                                toast.info('Borradores eliminados', { description: 'Se han limpiado los cambios locales.' });
+                            }}
+                            disabled={dirtyRows.size === 0}
+                        >
+                            Limpiar Borradores
+                        </button>
+                        <button 
+                            className="btn btn-white btn-lg shadow-md hover:scale-105 transition-transform"
+                            onClick={handleSave}
+                            disabled={saveMutation.isPending || dirtyRows.size === 0}
+                        >
+                            {saveMutation.isPending ? (
+                                <span className="loading loading-spinner loading-xs" />
+                            ) : (
+                                <><Save size={20} /> Guardar Cambios ({dirtyRows.size})</>
+                            )}
+                        </button>
+                    </div>
+                </div>
+            </div>
 
-                    </Group>
-                </Paper>
+            <div className="card bg-base-100 shadow-sm border border-base-300 p-6">
+                <p className="text-xs text-base-content/50 font-medium italic mb-4">
+                    Instrucciones: Marque los cuadros correspondientes. Las filas resaltadas en amarillo indican cambios pendientes de guardado.
+                </p>
 
-                <Paper p="md" radius="lg" withBorder shadow="xs">
-                    <Text size="xs" c="dimmed" mb="sm" fw={700} tt="uppercase">
-                        Instrucciones: Marque los cuadros correspondientes. Las filas resaltadas indican cambios pendientes de guardado.
-                    </Text>
-
-                    <ScrollArea>
-                        <Table verticalSpacing="sm" highlightOnHover stickyHeader>
-                            <Table.Thead>
-                                <Table.Tr>
-                                    <Table.Th style={{ width: 250, position: 'sticky', left: 0, backgroundColor: 'var(--mantine-color-gray-0)', zIndex: 10 }}>Alumno</Table.Th>
-                                    {Object.entries(RAE_COLUMNS).map(([catKey, cat]) => (
-                                        <Table.Th key={catKey} colSpan={cat.fields.length} align="center" bg="gray.1">
-                                            {cat.label}
-                                        </Table.Th>
-                                    ))}
-                                </Table.Tr>
-                                <Table.Tr>
-                                    <Table.Th style={{ position: 'sticky', left: 0, backgroundColor: 'var(--mantine-color-gray-0)', zIndex: 10 }}>Nombre Completo</Table.Th>
-                                    {Object.values(RAE_COLUMNS).flatMap(cat => 
-                                        cat.fields.map(f => (
-                                            <Table.Th key={f.id} style={{ width: 60, textAlign: 'center' }}>{f.label}</Table.Th>
-                                        ))
-                                    )}
-                                </Table.Tr>
-                            </Table.Thead>
-                            <Table.Tbody>
-                                {initData?.alumnos.map((alum: RAEAlumno) => {
-                                    const isDirty = dirtyRows.has(alum.id);
-                                    return (
-                                        <Table.Tr key={alum.id} bg={isDirty ? 'yellow.0' : undefined}>
-                                            <Table.Td style={{ position: 'sticky', left: 0, backgroundColor: isDirty ? 'yellow.0' : 'var(--mantine-color-gray-0)', zIndex: 10 }} fw={600}>
-                                                {alum.alumno_nombre}
-                                            </Table.Td>
-                                            {Object.values(RAE_COLUMNS).flatMap(cat => 
-                                                cat.fields.map(f => {
-                                                    const val = drafts[alum.id]?.[f.id] ?? alum[f.id as keyof RAEAlumno] as boolean;
-                                                    return (
-                                                        <Table.Td key={f.id} align="center">
-                                                            <Checkbox 
-                                                                checked={!!val} 
-                                                                onChange={(e) => handleCheckboxChange(alum.id, f.id, e.currentTarget.checked)}
-                                                            />
-                                                        </Table.Td>
-                                                    );
-                                                })
-                                            )}
-                                        </Table.Tr>
-                                    );
-                                })}
-                            </Table.Tbody>
-                        </Table>
-                    </ScrollArea>
-                </Paper>
-            </Stack>
-        </Container>
+                <div className="overflow-x-auto border rounded-xl">
+                    <table className="table table-zebra w-full border-collapse">
+                        <thead>
+                            <tr className="bg-base-200">
+                                <th className="sticky left-0 bg-base-200 z-20 border-r w-64 text-left">Alumno</th>
+                                {Object.entries(RAE_COLUMNS).map(([catKey, cat]) => (
+                                    <th key={catKey} colSpan={cat.fields.length} className="text-center border-r bg-base-300 text-xs uppercase opacity-70">
+                                        {cat.label}
+                                    </th>
+                                ))}
+                            </tr>
+                            <tr className="bg-base-100">
+                                <th className="sticky left-0 bg-base-100 z-20 border-r text-left text-xs font-bold">Nombre Completo</th>
+                                {Object.values(RAE_COLUMNS).flatMap(cat => 
+                                    cat.fields.map(f => (
+                                        <th key={f.id} className="text-center text-[10px] font-bold w-12 border-r">
+                                            {f.label}
+                                        </th>
+                                    ))
+                                )}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {initData?.alumnos.map((alum: RAEAlumno) => {
+                                const isDirty = dirtyRows.has(alum.id);
+                                return (
+                                    <tr key={alum.id} className={isDirty ? 'bg-yellow-50' : ''}>
+                                        <td className={`sticky left-0 z-10 border-r font-bold text-sm ${isDirty ? 'bg-yellow-100' : 'bg-base-100'}`}>
+                                            {alum.alumno_nombre}
+                                        </td>
+                                        {Object.values(RAE_COLUMNS).flatMap(cat => 
+                                            cat.fields.map(f => {
+                                                const val = (drafts[alum.id] as any)?.[f.id] ?? (alum as any)[f.id] as boolean;
+                                                return (
+                                                    <td key={f.id} className="text-center border-r">
+                                                        <input 
+                                                            type="checkbox" 
+                                                            className="checkbox checkbox-primary checkbox-sm" 
+                                                            checked={!!val} 
+                                                            onChange={(e) => handleCheckboxChange(alum.id, f.id, e.target.checked)}
+                                                        />
+                                                    </td>
+                                                );
+                                            })
+                                        )}
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     );
 };
 

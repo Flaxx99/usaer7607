@@ -2,46 +2,15 @@ import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm, Controller } from 'react-hook-form';
 import { 
-  Plus, Search, Users, Edit2, Trash2, GraduationCap, 
-  Save, School as SchoolIcon, Activity, Sparkles, Filter, RefreshCw
+  Plus, Search, Users, Edit2, Trash2, 
+  Save, School as SchoolIcon, Sparkles, Filter
 } from 'lucide-react';
-import Swal from 'sweetalert2';
-import { 
-  Container, 
-  Grid, 
-  Paper, 
-   Title, 
-   Text, 
-   TextInput, 
-   Select, 
-   Button, 
-   Table, 
-   Badge, 
-   Group, 
-   Avatar, 
-   ActionIcon, 
-   Modal, 
-   Checkbox, 
-   Stack, 
-   Loader, 
-   Center,
-   SimpleGrid,
-   SegmentedControl,
-   Box,
-   Tooltip,
-   ThemeIcon,
-   Pagination
- } from '@mantine/core';
-
+import { toast } from 'sonner';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { TableSkeleton } from '../../components/Skeletons';
-
-// API
 import { getAlumnos, createAlumno, updateAlumno, deleteAlumno } from '../../api/alumnos';
 import { getEscuelas } from '../../api/escuelas'; 
 import { getMaestros } from '../../api/usuarios';
-
-// INTERFACES
 import type { Alumno } from '../../interfaces/alumno';
 
 const CLASIFICACIONES_OPCIONES = [
@@ -56,8 +25,8 @@ const CLASIFICACIONES_OPCIONES = [
 const ListaAlumnos = () => {
   const [busqueda, setBusqueda] = useState('');
   const busquedaDebounced = useDebouncedValue(busqueda, 300);
-  const [filtroEscuela, setFiltroEscuela] = useState<string | null>('TODAS');
-  const [filtroCondicion, setFiltroCondicion] = useState<string | null>('TODAS');
+  const [filtroEscuela, setFiltroEscuela] = useState<string>('TODAS');
+  const [filtroCondicion, setFiltroCondicion] = useState<string>('TODAS');
   const [filtroEstado, setFiltroEstado] = useState<string>('ACTIVOS');
   const [page, setPage] = useState(1);
   
@@ -67,12 +36,10 @@ const ListaAlumnos = () => {
   const queryClient = useQueryClient();
   const { register, handleSubmit, reset, watch, control, formState: { errors } } = useForm<Alumno>();
 
-  // Resetear a página 1 cuando cambia la búsqueda debounced
   useEffect(() => {
     setPage(1);
   }, [busquedaDebounced]);
 
-  // 1. CARGA DE DATOS (TanStack Query)
   const { data: paginatedAlumnos, isLoading: loadingAlumnos } = useQuery({
     queryKey: ['alumnos', page, busquedaDebounced, filtroEscuela, filtroCondicion, filtroEstado],
     queryFn: () => getAlumnos(page, busquedaDebounced, filtroEscuela || '', filtroCondicion || '', filtroEstado),
@@ -83,7 +50,7 @@ const ListaAlumnos = () => {
 
   const { data: escuelas } = useQuery({
     queryKey: ['escuelas'],
-    queryFn: getEscuelas,
+    queryFn: () => getEscuelas(),
   });
 
   const { data: maestros } = useQuery({
@@ -91,7 +58,6 @@ const ListaAlumnos = () => {
     queryFn: getMaestros,
   });
 
-  // Selectores para filtros en formato Mantine
   const escuelasOpciones = useMemo(() => {
     if (!escuelas) return [{ value: 'TODAS', label: '🏫 Todas las Escuelas' }];
     return [
@@ -107,7 +73,6 @@ const ListaAlumnos = () => {
     ];
   }, []);
 
-  // --- LÓGICA DINÁMICA DE GRADOS ---
   const escuelaIdSeleccionada = watch('escuela');
 
   const gradosDisponibles = useMemo(() => {
@@ -123,15 +88,14 @@ const ListaAlumnos = () => {
     }
   }, [escuelas, escuelaIdSeleccionada]);
 
-  // --- MUTACIONES ---
   const createMutation = useMutation({
     mutationFn: createAlumno,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['alumnos'] });
       cerrarModal();
-      Swal.fire('¡Registrado!', 'El alumno ha sido dado de alta exitosamente.', 'success');
+      toast.success('¡Registrado!', { description: 'El alumno ha sido dado de alta exitosamente.' });
     },
-    onError: () => Swal.fire('Error', 'Revisa los datos (posible CURP ya registrada).', 'error')
+    onError: () => toast.error('Error', { description: 'Revisa los datos (posible CURP ya registrada).' })
   });
 
   const updateMutation = useMutation({
@@ -139,21 +103,20 @@ const ListaAlumnos = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['alumnos'] });
       cerrarModal();
-      Swal.fire('¡Guardado!', 'Datos escolares actualizados.', 'success');
+      toast.success('¡Guardado!', { description: 'Datos escolares actualizados.' });
     },
-    onError: () => Swal.fire('Error', 'No se pudo guardar la información.', 'error')
+    onError: () => toast.error('Error', { description: 'No se pudo guardar la información.' })
   });
 
   const deleteMutation = useMutation({
     mutationFn: deleteAlumno,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['alumnos'] });
-      Swal.fire('Eliminado', 'El alumno ha sido dado de baja de la USAER.', 'success');
+      toast.success('Eliminado', { description: 'El alumno ha sido dado de baja de la USAER.' });
     },
-    onError: () => Swal.fire('Error', 'No se puede eliminar (registros vinculados).', 'error')
+    onError: () => toast.error('Error', { description: 'No se puede eliminar (registros vinculados).' })
   });
 
-  // --- FUNCIONES ---
   const cerrarModal = () => {
     setIsModalOpen(false);
     setAlumnoEditar(null);
@@ -162,7 +125,7 @@ const ListaAlumnos = () => {
 
   const handleFilterChange = (setter: (val: any) => void, value: any) => {
     setter(value);
-    setPage(1); // Reset to page 1 on filter change
+    setPage(1);
   };
 
   const handleOpenCreate = () => {
@@ -206,513 +169,379 @@ const ListaAlumnos = () => {
   };
 
   const handleDelete = (id: number) => {
-    Swal.fire({
-      title: '¿Dar de baja alumno?', 
-      text: "Se mantendrá el expediente histórico pero el alumno saldrá de atención activa.", 
-      icon: 'warning',
-      showCancelButton: true, 
-      confirmButtonColor: '#d33', 
-      confirmButtonText: 'Sí, dar de baja'
-    }).then((r) => { if (r.isConfirmed) deleteMutation.mutate(id); });
+    if (confirm('¿Dar de baja alumno? Se mantendrá el expediente histórico pero el alumno saldrá de atención activa.')) {
+        deleteMutation.mutate(id);
+    }
   };
 
-  // --- FILTRADO AVANZADO (Para maestros) ---
   const clasificacionActual = watch('clasificacion');
 
   if (loadingAlumnos) {
     return (
-      <Container size="xl" py="md">
+      <div className="max-w-7xl mx-auto p-4 md:p-6">
         <TableSkeleton rows={10} />
-      </Container>
+      </div>
     );
   }
 
   return (
-    <Container size="xl" py="md">
-      <Stack gap="xl">
+    <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
+      
+      {/* CABECERA */}
+      <div className="card bg-primary text-primary-content shadow-lg border-l-8 border-primary-dark">
+        <div className="card-body p-8 flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-6">
+            <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shadow-inner">
+              <Users size={30} />
+            </div>
+            <div>
+              <h1 className="text-3xl font-black tracking-tight">
+                Control de Alumnos
+              </h1>
+              <p className="text-sm opacity-90 font-medium">
+                Lista oficial y expedientes de estudiantes atendidos por la USAER 7607
+              </p>
+            </div>
+          </div>
+          <button 
+            className="btn btn-white btn-lg shadow-md hover:scale-105 transition-transform"
+            onClick={handleOpenCreate}
+          >
+            <Plus size={22} />
+            Nuevo Ingreso Alumno
+          </button>
+        </div>
+      </div>
+
+      {/* FILTROS */}
+      <div className="card bg-base-100 shadow-sm border border-base-300 p-6 space-y-6">
+        <div className="flex items-center gap-2 text-base-content/60">
+          <Filter size={16} className="text-primary" />
+          <span className="text-xs font-bold uppercase tracking-widest">Filtros de Búsqueda Rápida</span>
+        </div>
         
-        {/* ========================================================================= */}
-        {/* CABECERA CON ESTILO ESCOLAR Y BOTÓN DE ACCIÓN GIGANTE */}
-        {/* ========================================================================= */}
-        <Paper p="lg" radius="lg" withBorder shadow="sm" bg="blue.0" style={{ borderLeft: '8px solid var(--mantine-color-blue-6)' }}>
-          <Group justify="space-between" align="center">
-            <Group gap="md">
-              <ThemeIcon size={52} radius="lg" color="blue" variant="filled">
-                <Users size={30} />
-              </ThemeIcon>
-              <div>
-                <Title order={1} fw={900} lts={-0.5} style={{ fontSize: '1.8rem', lineHeight: 1.2 }}>
-                  Control de Alumnos
-                </Title>
-                <Text size="sm" c="dimmed" fw={500}>
-                  Lista oficial y expedientes de estudiantes atendidos por la USAER 7607
-                </Text>
-              </div>
-            </Group>
-            
-            <Button 
-              size="lg" 
-              radius="md" 
-              leftSection={<Plus size={22} />} 
-              onClick={handleOpenCreate}
-              color="blue"
-              style={{ boxShadow: 'var(--mantine-shadow-md)' }}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+          <div className="form-control w-full">
+            <label className="label"><span className="label-text font-bold">Buscar Alumno</span></label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40" size={18} />
+              <input 
+                type="text" 
+                placeholder="Apellido, Nombre o CURP..." 
+                className="input input-bordered pl-10 w-full" 
+                value={busqueda} 
+                onChange={(e) => setBusqueda(e.target.value)}
+              />
+            </div>
+          </div>
+          
+          <div className="form-control w-full">
+            <label className="label"><span className="label-text font-bold">Escuela</span></label>
+            <select 
+              className="select select-bordered w-full" 
+              value={filtroEscuela} 
+              onChange={(e) => handleFilterChange(setFiltroEscuela, e.target.value)}
             >
-              Nuevo Ingreso Alumno
-            </Button>
-          </Group>
-        </Paper>
+              {escuelasOpciones.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+            </select>
+          </div>
 
-        {/* ========================================================================= */}
-        {/* PANEL DE BÚSQUEDA Y FILTRADO ULTRA-ACCESIBLE */}
-        {/* ========================================================================= */}
-        <Paper p="md" radius="lg" withBorder shadow="xs">
-          <Stack gap="md">
-            <Group gap="xs">
-              <Filter size={16} className="text-blue-500" />
-              <Text size="xs" fw={700} c="dimmed" tt="uppercase" lts={0.5}>Filtros de Búsqueda Rápida</Text>
-            </Group>
-            
-            <Grid align="flex-end">
-              <Grid.Col span={{ base: 12, md: 4 }}>
-                <TextInput 
-                  size="md"
-                  label="Buscar Alumno"
-                  placeholder="Escribe Apellido, Nombre o CURP..." 
-                  leftSection={<Search size={18} />}
-                  value={busqueda} 
-                  onChange={(e) => setBusqueda(e.target.value)}
-                />
-              </Grid.Col>
-              
-               <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-                 <Select
-                   size="md"
-                   label="Filtrar por Escuela"
-                   data={escuelasOpciones}
-                   value={filtroEscuela}
-                   onChange={(val) => handleFilterChange(setFiltroEscuela, val)}
-                   searchable
-                 />
-               </Grid.Col>
+          <div className="form-control w-full">
+            <label className="label"><span className="label-text font-bold">Diagnóstico</span></label>
+            <select 
+              className="select select-bordered w-full" 
+              value={filtroCondicion} 
+              onChange={(e) => handleFilterChange(setFiltroCondicion, e.target.value)}
+            >
+              {condicionesOpciones.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+            </select>
+          </div>
 
-               <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-                 <Select
-                   size="md"
-                   label="Filtrar por Diagnóstico"
-                   data={condicionesOpciones}
-                   value={filtroCondicion}
-                   onChange={(val) => handleFilterChange(setFiltroCondicion, val)}
-                   searchable
-                 />
-               </Grid.Col>
+          <div className="form-control w-full">
+            <label className="label"><span className="label-text font-bold">Estado</span></label>
+            <div className="join w-full">
+              <button 
+                className={`btn btn-sm join-item ${filtroEstado === 'ACTIVOS' ? 'btn-primary' : 'btn-outline'}`}
+                onClick={() => handleFilterChange(setFiltroEstado, 'ACTIVOS')}
+              >Activos</button>
+              <button 
+                className={`btn btn-sm join-item ${filtroEstado === 'BAJAS' ? 'btn-primary' : 'btn-outline'}`}
+                onClick={() => handleFilterChange(setFiltroEstado, 'BAJAS')}
+              >Bajas</button>
+              <button 
+                className={`btn btn-sm join-item ${filtroEstado === 'TODOS' ? 'btn-primary' : 'btn-outline'}`}
+                onClick={() => handleFilterChange(setFiltroEstado, 'TODOS')}
+              >Todos</button>
+            </div>
+          </div>
+        </div>
+      </div>
 
-               <Grid.Col span={{ base: 12, md: 2 }}>
-                 <Stack gap={2}>
-                   <Text size="xs" fw={600} style={{ marginBottom: '3px' }}>Estado</Text>
-                   <SegmentedControl
-                     size="sm"
-                     value={filtroEstado}
-                     onChange={(val) => handleFilterChange(setFiltroEstado, val)}
-                     data={[
-                       { label: 'Activos', value: 'ACTIVOS' },
-                       { label: 'Bajas', value: 'BAJAS' },
-                       { label: 'Todos', value: 'TODOS' }
-                     ]}
-                     color="blue"
-                     radius="md"
-                   />
-                 </Stack>
-               </Grid.Col>
-
-            </Grid>
-          </Stack>
-        </Paper>
-
-        {/* ========================================================================= */}
-        {/* TABLA DE ALUMNOS CON BOTONES GRANDES Y VISIBLES (UX ACCESIBLE) */}
-        {/* ========================================================================= */}
-        <Paper radius="lg" withBorder shadow="xs" style={{ overflow: 'hidden' }}>
-          <Table.ScrollContainer minWidth={800}>
-            <Table highlightOnHover verticalSpacing="md" horizontalSpacing="md">
-              <Table.Thead bg="gray.0">
-                <Table.Tr>
-                  <Table.Th fw={800} style={{ fontSize: '0.85rem' }}>Estudiante / CURP</Table.Th>
-                  <Table.Th fw={800} style={{ fontSize: '0.85rem' }}>Escuela de Procedencia</Table.Th>
-                  <Table.Th fw={800} style={{ fontSize: '0.85rem' }}>Diagnóstico / Condición</Table.Th>
-                  <Table.Th fw={800} style={{ fontSize: '0.85rem' }} ta="center">Estatus</Table.Th>
-                  <Table.Th fw={800} style={{ fontSize: '0.85rem' }} ta="center">Acciones del Maestro</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-               <Table.Tbody>
-                 {alumnos.map((item) => (
-                   <Table.Tr key={item.id}>
-
-                    
-                    {/* COLUMNA 1: ALUMNO */}
-                    <Table.Td>
-                      <Group gap="sm">
-                        <Avatar color={item.sexo === 'H' ? 'blue' : 'grape'} radius="xl" size="md">
+      {/* TABLA */}
+      <div className="card bg-base-100 shadow-sm border border-base-300 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="table table-md table-zebra w-full">
+            <thead className="bg-base-200">
+              <tr className="text-xs uppercase opacity-60">
+                <th>Estudiante / CURP</th>
+                <th>Escuela de Procedencia</th>
+                <th>Diagnóstico</th>
+                <th className="text-center">Estatus</th>
+                <th className="text-center">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {alumnos.map((item) => (
+                <tr key={item.id} className="hover">
+                  <td>
+                    <div className="flex items-center gap-3">
+                      <div className="avatar placeholder">
+                        <div className={`avatar-placeholder ${item.sexo === 'H' ? 'bg-blue-200 text-blue-700' : 'bg-purple-200 text-purple-700'} rounded-full w-10 h-10 font-bold text-lg`}>
                           {item.nombres.charAt(0)}
-                        </Avatar>
-                        <div>
-                          <Text fw={800} size="md" c="gray.8">
-                            {item.nombres} {item.apellido_paterno} {item.apellido_materno}
-                          </Text>
-                          <Group gap={6} mt={2}>
-                            <Badge size="xs" variant="light" color="gray" fontStyle="mono">{item.curp}</Badge>
-                            <Badge size="xs" variant="light" color={item.sexo === 'H' ? 'blue' : 'grape'}>
-                              {item.sexo === 'H' ? 'Niño' : 'Niña'}
-                            </Badge>
-                          </Group>
                         </div>
-                      </Group>
-                    </Table.Td>
-
-                    {/* COLUMNA 2: ESCUELA */}
-                    <Table.Td>
-                      <Group gap="xs">
-                        <SchoolIcon size={16} className="text-blue-500" />
-                        <div>
-                          <Text fw={700} size="sm" c="gray.8">
-                            {item.escuela_detalle?.nombre || `Escuela #${item.escuela}`}
-                          </Text>
-                          <Text size="xs" c="dimmed">
-                            {item.grado}° Grado • Grupo "{item.grupo}"
-                          </Text>
+                      </div>
+                      <div>
+                        <p className="font-bold text-sm leading-tight">{item.nombres} {item.apellido_paterno} {item.apellido_materno}</p>
+                        <div className="flex gap-1 mt-1">
+                          <span className="badge badge-ghost badge-xs font-mono opacity-60">{item.curp}</span>
+                          <span className="badge badge-ghost badge-xs opacity-60">{item.sexo === 'H' ? 'Niño' : 'Niña'}</span>
                         </div>
-                      </Group>
-                    </Table.Td>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div className="flex items-center gap-2">
+                      <SchoolIcon size={16} className="text-primary" />
+                      <div>
+                        <p className="font-bold text-sm">{item.escuela_detalle?.nombre || `Escuela #${item.escuela}`}</p>
+                        <p className="text-xs opacity-50">{item.grado}° Grado • Grupo "{item.grupo}"</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div className="flex flex-col gap-1">
+                      <span className={`badge badge-sm font-bold ${
+                        item.clasificacion === 'NINGUNO' ? 'badge-ghost' :
+                        item.clasificacion === 'DISCAPACIDAD' ? 'badge-info' :
+                        item.clasificacion === 'DIFICULTADES_SEVERAS' ? 'badge-warning' :
+                        item.clasificacion === 'TRASTORNOS' ? 'badge-error' : 'badge-secondary'
+                      }`}>
+                        {item.clasificacion.replace('_', ' ')}
+                      </span>
+                      {item.clasificacion_otro && (
+                        <p className="text-xs italic opacity-60 pl-1">"{item.clasificacion_otro}"</p>
+                      )}
+                    </div>
+                  </td>
+                  <td className="text-center">
+                    <span className={`badge badge-sm font-bold ${item.activo ? 'badge-success' : 'badge-error'}`}>
+                      {item.activo ? 'Activo' : 'Baja'}
+                    </span>
+                  </td>
+                  <td className="text-center">
+                    <div className="flex justify-center gap-2">
+                      <button className="btn btn-ghost btn-xs text-primary" onClick={() => handleOpenEdit(item)}>
+                        <Edit2 size={14} />
+                      </button>
+                      <button className="btn btn-ghost btn-xs text-error" onClick={() => handleDelete(item.id)}>
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {alumnos.length === 0 && (
+            <div className="p-12 text-center text-base-content/40 italic">
+              🔍 No encontramos alumnos que coincidan con los filtros aplicados.
+            </div>
+          )}
+        </div>
+        
+        <div className="flex justify-center p-4 border-t border-base-200">
+          <div className="join">
+            <button className="join-item btn btn-sm" disabled={page === 1} onClick={() => setPage(p => p - 1)}>«</button>
+            <button className="join-item btn btn-sm no-animation">{page} / {Math.ceil(totalCount / 10)}</button>
+            <button className="join-item btn btn-sm" disabled={page >= Math.ceil(totalCount / 10)} onClick={() => setPage(p => p + 1)}>»</button>
+          </div>
+        </div>
+      </div>
 
-                    {/* COLUMNA 3: DIAGNÓSTICO */}
-                    <Table.Td>
-                      <Stack gap={4}>
-                        <Badge 
-                          size="md" 
-                          variant="light" 
-                          color={
-                            item.clasificacion === 'NINGUNO' ? 'gray' :
-                            item.clasificacion === 'DISCAPACIDAD' ? 'violet' :
-                            item.clasificacion === 'DIFICULTADES_SEVERAS' ? 'orange' :
-                            item.clasificacion === 'TRASTORNOS' ? 'red' : 'teal'
-                          }
-                          radius="sm"
-                        >
-                          {item.clasificacion.replace('_', ' ')}
-                        </Badge>
-                        {item.clasificacion_otro && (
-                          <Text size="xs" c="dimmed" fs="italic" pl={4}>
-                            "{item.clasificacion_otro}"
-                          </Text>
-                        )}
-                      </Stack>
-                    </Table.Td>
-
-                    {/* COLUMNA 4: ESTATUS */}
-                    <Table.Td ta="center">
-                      <Badge size="md" variant="filled" color={item.activo ? 'green' : 'red'}>
-                        {item.activo ? 'Activo' : 'Baja'}
-                      </Badge>
-                    </Table.Td>
-
-                    {/* COLUMNA 5: ACCIONES (GRANDES, VISIBLES, TÁCTILES) */}
-                    <Table.Td>
-                      <Group gap="xs" justify="center">
-                        <Tooltip label="Editar datos del alumno" position="top">
-                          <Button 
-                            size="xs" 
-                            variant="light" 
-                            color="blue" 
-                            leftSection={<Edit2 size={14} />}
-                            onClick={() => handleOpenEdit(item)}
-                            radius="md"
-                          >
-                            Editar
-                          </Button>
-                        </Tooltip>
-                        
-                        <Tooltip label="Dar de baja de USAER" position="top">
-                          <Button 
-                            size="xs" 
-                            variant="light" 
-                            color="red" 
-                            leftSection={<Trash2 size={14} />}
-                            onClick={() => handleDelete(item.id)}
-                            radius="md"
-                          >
-                            Baja
-                          </Button>
-                        </Tooltip>
-                      </Group>
-                    </Table.Td>
-
-                  </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
-           </Table.ScrollContainer>
-           
-           {alumnos.length === 0 && (
-             <Box p="xl" style={{ textAlign: 'center' }}>
-               <Text size="md" c="dimmed" fw={500}>
-                 🔍 No encontramos alumnos que coincidan con los filtros aplicados.
-               </Text>
-             </Box>
-           )}
-         </Paper>
-         
-         <Group justify="center" py="md">
-           <Pagination 
-             total={Math.ceil(totalCount / 10)} 
-             value={page} 
-             onChange={setPage} 
-             color="blue" 
-             radius="md" 
-             size="md" 
-             siblings={2} 
-             boundaries={1} 
-           />
-         </Group>
-
-         {/* ========================================================================= */}
-
-        {/* MODAL FORMULARIO DE ALUMNOS (DISEÑO ESCOLAR, AMPLIO Y CLARO) */}
-        {/* ========================================================================= */}
-        <Modal 
-          opened={isModalOpen} 
-          onClose={cerrarModal} 
-          title={
-            <Group gap="xs">
-              <Sparkles size={20} className="text-yellow-500" />
-              <Title order={3} fw={800}>
+      {/* MODAL FORMULARIO */}
+      {isModalOpen && (
+        <div className="modal modal-open">
+          <div className="modal-box max-w-3xl p-0 overflow-hidden bg-base-100">
+            <div className="bg-primary p-6 text-primary-content flex items-center gap-3">
+              <Sparkles size={24} className="text-yellow-300" />
+              <h3 className="text-xl font-black">
                 {alumnoEditar ? "Modificar Ficha de Alumno" : "Inscripción de Nuevo Alumno"}
-              </Title>
-            </Group>
-          }
-          size="lg"
-          radius="lg"
-          centered
-        >
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <Stack gap="lg">
+              </h3>
+            </div>
+            
+            <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
               
-              {/* SECCIÓN 1: DATOS PERSONALES */}
-              <Paper p="md" radius="md" withBorder bg="gray.0">
-                <Text size="sm" fw={800} c="blue" mb="md" style={{ borderBottom: '2px solid var(--mantine-color-blue-1)', pb: '4px' }}>
-                  🍎 1. Datos Personales del Niño/a
-                </Text>
-                
-                <Stack gap="sm">
-                  <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="xs">
-                    <TextInput 
-                      label="Nombre(s)" 
-                      placeholder="Ej. LUIS ANGEL" 
-                      required
-                      {...register('nombres', { required: "El nombre es obligatorio" })}
-                      error={errors.nombres?.message}
-                    />
-                    <TextInput 
-                      label="Apellido Paterno" 
-                      placeholder="Ej. VIDAL" 
-                      required
-                      {...register('apellido_paterno', { required: "El apellido es obligatorio" })}
-                      error={errors.apellido_paterno?.message}
-                    />
-                    <TextInput 
-                      label="Apellido Materno" 
-                      placeholder="Ej. BUSTAMANTE" 
-                      {...register('apellido_materno')}
-                    />
-                  </SimpleGrid>
-
-                  <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="xs">
-                    <TextInput 
-                      label="CURP" 
-                      placeholder="18 CARACTERES" 
-                      required
+              {/* SECCIÓN 1: PERSONALES */}
+              <div className="space-y-4 p-4 bg-base-200 rounded-2xl border border-base-300">
+                <h4 className="text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
+                   🍎 1. Datos Personales
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="form-control">
+                    <label className="label py-1"><span className="label-text text-xs font-bold">Nombre(s)</span></label>
+                    <input {...register('nombres', { required: "Obligatorio" })} className="input input-bordered" placeholder="Ej. LUIS ANGEL" />
+                    {errors.nombres && <span className="text-error text-[10px] mt-1">{errors.nombres.message}</span>}
+                  </div>
+                  <div className="form-control">
+                    <label className="label py-1"><span className="label-text text-xs font-bold">Apellido Paterno</span></label>
+                    <input {...register('apellido_paterno', { required: "Obligatorio" })} className="input input-bordered" placeholder="Ej. VIDAL" />
+                    {errors.apellido_paterno && <span className="text-error text-[10px] mt-1">{errors.apellido_paterno.message}</span>}
+                  </div>
+                  <div className="form-control">
+                    <label className="label py-1"><span className="label-text text-xs font-bold">Apellido Materno</span></label>
+                    <input {...register('apellido_materno')} className="input input-bordered" placeholder="Ej. BUSTAMANTE" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="form-control">
+                    <label className="label py-1"><span className="label-text text-xs font-bold">CURP</span></label>
+                    <input 
                       {...register('curp', { 
-                        required: "La CURP es obligatoria", 
-                        minLength: { value: 18, message: "Debe tener 18 caracteres" },
-                        maxLength: { value: 18, message: "Debe tener 18 caracteres" }
-                      })}
-                      error={errors.curp?.message}
-                      style={{ textTransform: 'uppercase', fontFamily: 'monospace' }}
+                        required: "Obligatorio", 
+                        minLength: { value: 18, message: "18 caracteres" },
+                        maxLength: { value: 18, message: "18 caracteres" }
+                      })} 
+                      className="input input-bordered font-mono uppercase" 
+                      placeholder="18 CARACTERES" 
                     />
-                    
-                    <TextInput 
-                      type="date"
-                      label="Fecha de Nacimiento" 
-                      {...register('fecha_nacimiento')}
-                    />
-
+                    {errors.curp && <span className="text-error text-[10px] mt-1">{errors.curp.message}</span>}
+                  </div>
+                  <div className="form-control">
+                    <label className="label py-1"><span className="label-text text-xs font-bold">Fecha Nacimiento</span></label>
+                    <input type="date" {...register('fecha_nacimiento')} className="input input-bordered" />
+                  </div>
+                  <div className="form-control">
+                    <label className="label py-1"><span className="label-text text-xs font-bold">Sexo</span></label>
                     <Controller
                       name="sexo"
                       control={control}
                       defaultValue="H"
                       render={({ field }) => (
-                        <Select
-                          label="Sexo"
-                          data={[
-                            { value: 'H', label: 'Niño (Hombre)' },
-                            { value: 'M', label: 'Niña (Mujer)' }
-                          ]}
-                          value={field.value}
-                          onChange={field.onChange}
-                        />
+                        <select {...field} className="select select-bordered">
+                          <option value="H">Niño (Hombre)</option>
+                          <option value="M">Niña (Mujer)</option>
+                        </select>
                       )}
                     />
-                  </SimpleGrid>
-                </Stack>
-              </Paper>
+                  </div>
+                </div>
+              </div>
 
-              {/* SECCIÓN 2: ASIGNACIÓN DE DOCENTE */}
-              <Paper p="md" radius="md" withBorder bg="gray.0">
-                <Text size="sm" fw={800} c="blue" mb="md" style={{ borderBottom: '2px solid var(--mantine-color-blue-1)', pb: '4px' }}>
-                  🧑‍🏫 2. Maestro/a de Apoyo USAER
-                </Text>
-                
+              {/* SECCIÓN 2: DOCENTE */}
+              <div className="space-y-4 p-4 bg-base-200 rounded-2xl border border-base-300">
+                <h4 className="text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
+                   🧑‍🏫 2. Maestro de Apoyo USAER
+                </h4>
                 <Controller
                   name="profesor"
                   control={control}
                   render={({ field }) => (
-                    <Select
-                      label="Maestro Responsable"
-                      placeholder="Seleccione el maestro de apoyo"
-                      data={maestros?.map(m => ({ value: String(m.id), label: `${m.nombre} ${m.apellido_paterno} (${m.email})` })) || []}
+                    <select 
+                      {...field} 
+                      className="select select-bordered w-full"
                       value={field.value ? String(field.value) : ''}
-                      onChange={(val) => field.onChange(val ? Number(val) : null)}
-                      searchable
-                      clearable
-                    />
+                      onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
+                    >
+                      <option value="">Seleccione el maestro de apoyo...</option>
+                      {maestros?.map(m => <option key={m.id} value={m.id}>{m.nombre} {m.apellido_paterno} ({m.email})</option>)}
+                    </select>
                   )}
                 />
-                <Text size="10px" c="dimmed" mt={4}>
-                  * Deja vacío para asignación automática al docente que está realizando la captura actual.
-                </Text>
-              </Paper>
+                <p className="text-[10px] opacity-50"> * Deja vacío para asignación automática al docente actual.</p>
+              </div>
 
-              {/* SECCIÓN 3: DATOS ESCOLARES */}
-              <Paper p="md" radius="md" withBorder bg="gray.0">
-                <Text size="sm" fw={800} c="blue" mb="md" style={{ borderBottom: '2px solid var(--mantine-color-blue-1)', pb: '4px' }}>
-                  🏫 3. Escuela Regular y Ubicación Grado/Grupo
-                </Text>
-                
-                <Stack gap="sm">
-                  <Controller
-                    name="escuela"
-                    control={control}
-                    rules={{ required: "La escuela es obligatoria" }}
-                    render={({ field }) => (
-                      <Select
-                        label="Escuela Regular de Procedencia"
-                        placeholder="Busca la escuela..."
-                        data={escuelas?.map(e => ({ value: String(e.id), label: `${e.nombre} (${e.nivel})` })) || []}
-                        value={field.value ? String(field.value) : ''}
-                        onChange={(val) => field.onChange(val ? Number(val) : undefined)}
-                        searchable
-                        required
-                        error={errors.escuela?.message}
-                      />
-                    )}
-                  />
-
-                  <SimpleGrid cols={2} spacing="xs">
-                    <Controller
-                      name="grado"
-                      control={control}
-                      defaultValue="1"
-                      render={({ field }) => (
-                        <Select
-                          label="Grado Escolar"
-                          data={gradosDisponibles.map(g => ({ value: g, label: `${g}° Grado` }))}
-                          value={String(field.value)}
-                          onChange={field.onChange}
-                        />
-                      )}
-                    />
-                    <TextInput 
-                      label="Grupo" 
-                      placeholder="Ej. A" 
-                      required
-                      {...register('grupo', { required: "El grupo es obligatorio" })}
-                      error={errors.grupo?.message}
-                      style={{ textTransform: 'uppercase', textAlign: 'center' }}
-                    />
-                  </SimpleGrid>
-                </Stack>
-              </Paper>
-
-              {/* SECCIÓN 4: CLASIFICACIÓN USAER */}
-              <Paper p="md" radius="md" withBorder bg="gray.0">
-                <Text size="sm" fw={800} c="blue" mb="md" style={{ borderBottom: '2px solid var(--mantine-color-blue-1)', pb: '4px' }}>
-                  🩺 4. Clasificación y Diagnóstico Especializado
-                </Text>
-                
-                <Stack gap="sm">
-                  <Controller
-                    name="clasificacion"
-                    control={control}
-                    defaultValue="NINGUNO"
-                    render={({ field }) => (
-                      <Select
-                        label="Condición / Diagnóstico Principal"
-                        data={CLASIFICACIONES_OPCIONES}
-                        value={field.value}
-                        onChange={field.onChange}
-                      />
-                    )}
-                  />
-
-                  {clasificacionActual === 'OTRO' && (
-                    <TextInput 
-                      label="Especifique condición:" 
-                      placeholder="Ej. Trastorno motor fino..."
-                      required
-                      {...register('clasificacion_otro', { required: "Debe especificar la condición si selecciona OTRO" })}
-                      error={errors.clasificacion_otro?.message}
-                    />
+              {/* SECCIÓN 3: ESCOLARES */}
+              <div className="space-y-4 p-4 bg-base-200 rounded-2xl border border-base-300">
+                <h4 className="text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
+                   🏫 3. Ubicación Escolar
+                </h4>
+                <Controller
+                  name="escuela"
+                  control={control}
+                  rules={{ required: "Obligatorio" }}
+                  render={({ field }) => (
+                    <select 
+                      {...field} 
+                      className="select select-bordered w-full"
+                      value={field.value ? String(field.value) : ''}
+                      onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                    >
+                      <option value="">Busca la escuela...</option>
+                      {escuelas?.map(e => <option key={e.id} value={e.id}>{e.nombre} ({e.nivel})</option>)}
+                    </select>
                   )}
+                />
+                <div className="grid grid-cols-2 gap-4">
+                  <Controller
+                    name="grado"
+                    control={control}
+                    defaultValue="1"
+                    render={({ field }) => (
+                      <select {...field} className="select select-bordered">
+                        {gradosDisponibles.map(g => <option key={g} value={g}>{g}° Grado</option>)}
+                      </select>
+                    )}
+                  />
+                  <div className="form-control">
+                    <input {...register('grupo', { required: "Obligatorio" })} className="input input-bordered text-center uppercase" placeholder="Ej. A" />
+                  </div>
+                </div>
+              </div>
 
-                  <Box p="sm" style={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid var(--mantine-color-gray-3)' }}>
-                    <Controller
-                      name="activo"
-                      control={control}
-                      defaultValue={true}
-                      render={({ field }) => (
-                        <Checkbox
-                          size="md"
-                          label="Atención Activa (El alumno está recibiendo apoyo actualmente)"
-                          checked={field.value}
-                          onChange={(e) => field.onChange(e.currentTarget.checked)}
-                        />
-                      )}
-                    />
-                  </Box>
-                </Stack>
-              </Paper>
+              {/* SECCIÓN 4: DIAGNÓSTICO */}
+              <div className="space-y-4 p-4 bg-base-200 rounded-2xl border border-base-300">
+                <h4 className="text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
+                   🩺 4. Clasificación USAER
+                </h4>
+                <Controller
+                  name="clasificacion"
+                  control={control}
+                  defaultValue="NINGUNO"
+                  render={({ field }) => (
+                    <select {...field} className="select select-bordered w-full">
+                      {CLASIFICACIONES_OPCIONES.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                    </select>
+                  )}
+                />
+                {clasificacionActual === 'OTRO' && (
+                  <input {...register('clasificacion_otro', { required: "Obligatorio" })} className="input input-bordered" placeholder="Especifique condición..." />
+                )}
+                <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-base-300">
+                  <input type="checkbox" {...control.register('activo')} className="checkbox checkbox-primary" defaultChecked />
+                  <span className="text-sm font-medium">Atención Activa (recibe apoyo actualmente)</span>
+                </div>
+              </div>
 
-              {/* BOTONES DE ACCIÓN */}
-              <Group justify="flex-end" pt="md" style={{ borderTop: '1px solid var(--mantine-color-gray-2)' }}>
-                <Button variant="subtle" color="gray" onClick={cerrarModal} size="md">
-                  Cancelar
-                </Button>
-                <Button 
+              <div className="flex justify-end gap-3 pt-4 border-t border-base-300">
+                <button type="button" className="btn btn-ghost" onClick={cerrarModal}>Cancelar</button>
+                <button 
                   type="submit" 
-                  loading={createMutation.isPending || updateMutation.isPending} 
-                  color="blue"
-                  size="md"
-                  leftSection={<Save size={18} />}
+                  className="btn btn-primary px-8" 
+                  disabled={createMutation.isPending || updateMutation.isPending}
                 >
-                  Guardar Ficha Escolar
-                </Button>
-              </Group>
-
-            </Stack>
-          </form>
-        </Modal>
-
-      </Stack>
-    </Container>
+                  {createMutation.isPending || updateMutation.isPending ? (
+                    <span className="loading loading-spinner loading-xs" />
+                  ) : (
+                    <><Save size={18} /> Guardar Ficha</>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+          <div className="modal-backdrop" onClick={cerrarModal}></div>
+        </div>
+      )}
+    </div>
   );
 };
 
