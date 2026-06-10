@@ -23,6 +23,8 @@ export interface CalendarEvent {
     color: string;
     created_by_nombre?: string;
     assigned_to_nombre?: string;
+    alumno_nombre?: string;
+    escuela_nombre?: string;
 }
 
 export const calendarApi = {

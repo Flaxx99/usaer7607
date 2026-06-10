@@ -2,7 +2,7 @@ import client from './client';
 import type { Permiso, MetricasPermisos, EstadoPermiso } from '../interfaces/permisos';
 
 // --- LEER ---
-export const getPermisos = async (filters: Record<string, any> = {}): Promise<Permiso[]> => {
+export const getPermisos = async (filters: Record<string, string | number | boolean | undefined> = {}): Promise<Permiso[]> => {
     // Convertimos filtros a query params
     const response = await client.get('/permisos/', { params: filters });
     if (response.data.results) return response.data.results;

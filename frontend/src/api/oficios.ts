@@ -6,7 +6,7 @@ export interface Oficio {
     descripcion?: string;
     archivo: string;
     fecha_subida: string;
-    subido_por: any;
+    subido_por: number;
 }
 
 export interface PaginatedResponse<T> {

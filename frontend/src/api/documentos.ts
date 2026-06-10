@@ -13,33 +13,30 @@ const buildFormData = (data: Expediente) => {
     // Verificamos explícitamente que NO sea un string (URL antigua)
     // Solo procesamos si es un FileList (input nuevo) o File directo
 
+    // Helper para extraer un File desde File | FileList | null
+    const getFile = (field: File | FileList | null | undefined): File | null => {
+        if (!field) return null;
+        if (field instanceof FileList && field.length > 0) return field[0];
+        if (field instanceof File) return field;
+        return null;
+    };
+
     // 1. Informe Detección
     if (data.informe_deteccion && typeof data.informe_deteccion !== 'string') {
-        if ((data.informe_deteccion as any).length > 0) {
-             // Es un FileList del input, tomamos el primero
-            formData.append('informe_deteccion', (data.informe_deteccion as any)[0]);
-        } else if (data.informe_deteccion instanceof File) {
-             // Es un File directo
-            formData.append('informe_deteccion', data.informe_deteccion);
-        }
+        const file = getFile(data.informe_deteccion);
+        if (file) formData.append('informe_deteccion', file);
     }
 
     // 2. Informe Psicopedagógico
     if (data.informe_psicopedagogico && typeof data.informe_psicopedagogico !== 'string') {
-        if ((data.informe_psicopedagogico as any).length > 0) {
-            formData.append('informe_psicopedagogico', (data.informe_psicopedagogico as any)[0]);
-        } else if (data.informe_psicopedagogico instanceof File) {
-            formData.append('informe_psicopedagogico', data.informe_psicopedagogico);
-        }
+        const file = getFile(data.informe_psicopedagogico);
+        if (file) formData.append('informe_psicopedagogico', file);
     }
 
     // 3. Plan de Intervención
     if (data.plan_intervencion && typeof data.plan_intervencion !== 'string') {
-        if ((data.plan_intervencion as any).length > 0) {
-            formData.append('plan_intervencion', (data.plan_intervencion as any)[0]);
-        } else if (data.plan_intervencion instanceof File) {
-            formData.append('plan_intervencion', data.plan_intervencion);
-        }
+        const file = getFile(data.plan_intervencion);
+        if (file) formData.append('plan_intervencion', file);
     }
 
     // Archivos Extra
@@ -62,7 +59,7 @@ export const getDocumentos = async (): Promise<Expediente[]> => {
 export const createDocumento = async (data: Expediente): Promise<Expediente> => {
     const formData = buildFormData(data);
     const response = await client.post('/documentos/', formData, {
-        headers: { 'Content-Type': undefined } as any 
+        headers: { 'Content-Type': undefined } as unknown as import('axios').RawAxiosRequestHeaders
     });
     return response.data;
 };
@@ -70,7 +67,7 @@ export const createDocumento = async (data: Expediente): Promise<Expediente> => 
 export const updateDocumento = async (data: Expediente): Promise<Expediente> => {
     const formData = buildFormData(data);
     const response = await client.patch(`/documentos/${data.id}/`, formData, {
-        headers: { 'Content-Type': undefined } as any
+        headers: { 'Content-Type': undefined } as unknown as import('axios').RawAxiosRequestHeaders
     });
     return response.data;
 };

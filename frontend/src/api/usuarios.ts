@@ -53,16 +53,17 @@ export const createUsuario = async (data: Usuario): Promise<Usuario> => {
     try {
         const response = await client.post('/usuarios/', data);
         return response.data;
-    } catch (error: any) {
-        console.error("Error CREATE usuario:", error.response?.data);
+    } catch (error: unknown) {
+        console.error("Error CREATE usuario:", (error as { response?: { data?: unknown } }).response?.data);
         throw error;
     }
 };
 
 // --- ACTUALIZAR ---
 export const updateUsuario = async (data: Usuario): Promise<Usuario> => {
-    const datosEnvio = { ...data };
-    delete (datosEnvio as any).id;
+    // Separamos los campos read-only que no se envían al backend
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { id, escuela_detalle, nombre_completo, antiguedad, fecha_ingreso, last_login, date_joined, ...datosEnvio } = data;
 
     if (!datosEnvio.password || String(datosEnvio.password).trim() === '') {
         delete datosEnvio.password;
@@ -78,18 +79,11 @@ export const updateUsuario = async (data: Usuario): Promise<Usuario> => {
     if (datosEnvio.rfc === "") delete datosEnvio.rfc;
     if (datosEnvio.curp === "") delete datosEnvio.curp;
 
-    delete (datosEnvio as any).escuela_detalle;
-    delete (datosEnvio as any).nombre_completo;
-    delete (datosEnvio as any).antiguedad;
-    delete (datosEnvio as any).fecha_ingreso;
-    delete (datosEnvio as any).last_login;
-    delete (datosEnvio as any).date_joined;
-
     try {
-        const response = await client.patch(`/usuarios/${data.id}/`, datosEnvio);
+        const response = await client.patch(`/usuarios/${id}/`, datosEnvio);
         return response.data;
-    } catch (error: any) {
-        console.error("Error UPDATE usuario DETALLE:", error.response?.data);
+    } catch (error: unknown) {
+        console.error("Error UPDATE usuario DETALLE:", (error as { response?: { data?: unknown } }).response?.data);
         throw error;
     }
 };

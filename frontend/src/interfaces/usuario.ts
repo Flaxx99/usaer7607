@@ -42,4 +42,8 @@ export interface Usuario {
     activo: boolean; // Backend: activo
     password?: string; // Opcional (solo escritura)
     is_superuser?: boolean;
+    
+    // Campos de solo lectura del servidor (se excluyen al enviar)
+    last_login?: string;
+    date_joined?: string;
 }

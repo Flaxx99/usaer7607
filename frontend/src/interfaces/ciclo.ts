@@ -16,3 +16,22 @@ export interface PromocionPreview {
     detalles_graduar?: string[];
     detalles_errores?: string[];
 }
+
+// Resultado de ejecutarPromocion (puede ser síncrono o devolver task_id para async)
+export interface PromocionResult {
+    task_id?: string;
+    promovidos?: number;
+    graduados?: number;
+    message?: string;
+}
+
+// Estado de una tarea de promoción asíncrona
+export interface PromocionStatus {
+    status: 'PROCESSING' | 'COMPLETED' | 'FAILED';
+    data?: {
+        promovidos: number;
+        graduados: number;
+    };
+    error?: string;
+    progress?: number; // Porcentaje de progreso (0-100)
+}

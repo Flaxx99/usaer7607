@@ -15,10 +15,10 @@ export interface Expediente {
     profesor?: number;
     profesor_nombre?: string; // ReadOnly
     
-    // Archivos (pueden ser string URL o File al subir)
-    informe_deteccion?: string | File | null;
-    informe_psicopedagogico?: string | File | null;
-    plan_intervencion?: string | File | null;
+    // Archivos (pueden ser string URL, File o FileList al subir desde formulario)
+    informe_deteccion?: string | File | FileList | null;
+    informe_psicopedagogico?: string | File | FileList | null;
+    plan_intervencion?: string | File | FileList | null;
     
     observaciones: string;
     fecha_subida?: string;

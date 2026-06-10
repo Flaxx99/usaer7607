@@ -1,5 +1,5 @@
 import client from './client';
-import type { CicloEscolar, PromocionPreview } from '../interfaces/ciclo';
+import type { CicloEscolar, PromocionPreview, PromocionResult, PromocionStatus } from '../interfaces/ciclo';
 
 // --- LEER ---
 export const getCiclos = async (): Promise<CicloEscolar[]> => {
@@ -36,13 +36,13 @@ export const previewPromocion = async (): Promise<PromocionPreview> => {
 };
 
 // 2. Ejecución Real (POST)
-export const ejecutarPromocion = async (): Promise<any> => {
+export const ejecutarPromocion = async (): Promise<PromocionResult> => {
     const response = await client.post('/ciclos/promover-alumnos/', { confirmed: true });
     return response.data;
 };
 
 // 3. Estado de la tarea (GET)
-export const getPromocionStatus = async (taskId: string): Promise<any> => {
+export const getPromocionStatus = async (taskId: string): Promise<PromocionStatus> => {
     const response = await client.get(`/ciclos/promocion/status/${taskId}/`);
     return response.data;
 };
