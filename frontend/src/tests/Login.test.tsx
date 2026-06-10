@@ -1,14 +1,21 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Login from '../pages/Login';
+
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+});
 
 // Helper para renderizar con todos los providers necesarios
 const renderWithProviders = (ui: React.ReactElement) => {
   return render(
-    <MemoryRouter initialEntries={['/login']}>
-      {ui}
-    </MemoryRouter>
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={['/login']}>
+        {ui}
+      </MemoryRouter>
+    </QueryClientProvider>
   );
 };
 
