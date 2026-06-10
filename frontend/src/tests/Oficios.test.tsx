@@ -1,5 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { MantineProvider } from '@mantine/core';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import OficiosList from '../pages/oficios/OficiosList';
@@ -20,13 +20,11 @@ const queryClient = new QueryClient({
 });
 
 const wrapper = ({ children }: { children: React.ReactNode }) => (
-    <MantineProvider>
-        <QueryClientProvider client={queryClient}>
-            <MemoryRouter>
-                {children}
-            </MemoryRouter>
-        </QueryClientProvider>
-    </MantineProvider>
+    <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+            {children}
+        </MemoryRouter>
+    </QueryClientProvider>
 );
 
 describe('Oficios File Upload Flow', () => {
@@ -58,9 +56,9 @@ describe('Oficios File Upload Flow', () => {
         const fileInput = screen.getByLabelText(/Archivo \(PDF, Imagen\)/i);
         fireEvent.change(fileInput, { target: { files: [file] } });
 
-        // Submit
-        const submitButton = screen.getByText(/Subir Archivo/i);
-        fireEvent.click(submitButton);
+        // Submit directamente sobre el formulario
+        const form = await screen.findByTestId('upload-form');
+        fireEvent.submit(form);
 
         await waitFor(() => {
             expect(uploadOficio).toHaveBeenCalled();

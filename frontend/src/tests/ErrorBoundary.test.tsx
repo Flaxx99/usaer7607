@@ -1,18 +1,15 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MantineProvider } from '@mantine/core';
-import { Notifications } from '@mantine/notifications';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 
 vi.spyOn(console, 'error').mockImplementation(() => {});
 
 const renderWithProviders = (ui: React.ReactElement) => {
   return render(
-    <MantineProvider>
-      <Notifications />
+    <>
       {ui}
-    </MantineProvider>
+    </>
   );
 };
 

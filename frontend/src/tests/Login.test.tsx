@@ -1,19 +1,14 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
-import { MantineProvider } from '@mantine/core';
-import { Notifications } from '@mantine/notifications';
 import Login from '../pages/Login';
 
 // Helper para renderizar con todos los providers necesarios
 const renderWithProviders = (ui: React.ReactElement) => {
   return render(
-    <MantineProvider>
-      <Notifications />
-      <MemoryRouter initialEntries={['/login']}>
-        {ui}
-      </MemoryRouter>
-    </MantineProvider>
+    <MemoryRouter initialEntries={['/login']}>
+      {ui}
+    </MemoryRouter>
   );
 };
 

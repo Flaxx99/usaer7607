@@ -1,11 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { MantineProvider } from '@mantine/core';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import ListaAlumnos from '../pages/alumnos/ListaAlumnos';
 import { getAlumnos } from '../api/alumnos';
-import { getEscuelas } from '../api/escuelas';
-import { getMaestros } from '../api/usuarios';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 vi.mock('../api/alumnos', async (importOriginal) => {
@@ -29,13 +27,11 @@ const queryClient = new QueryClient({
 });
 
 const wrapper = ({ children }: { children: React.ReactNode }) => (
-    <MantineProvider>
-        <QueryClientProvider client={queryClient}>
-            <MemoryRouter>
-                {children}
-            </MemoryRouter>
-        </QueryClientProvider>
-    </MantineProvider>
+    <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+            {children}
+        </MemoryRouter>
+    </QueryClientProvider>
 );
 
 describe('Pagination & Filtering Integration', () => {
@@ -59,9 +55,9 @@ describe('Pagination & Filtering Integration', () => {
             expect(getAlumnos).toHaveBeenCalledWith(1, '', 'TODAS', 'TODAS', 'ACTIVOS');
         });
 
-        // Buscar botón de página 2 (Mantine Pagination renderiza botones con el número)
-        const page2Button = await screen.findByText('2');
-        fireEvent.click(page2Button);
+        // Buscar botón "Siguiente" (navegación tipo join con iconos)
+        const nextButton = await screen.findByRole('button', { name: /Página siguiente/i });
+        fireEvent.click(nextButton);
 
         // Verificar que se llamó a la página 2
         await waitFor(() => {
@@ -80,11 +76,11 @@ describe('Pagination & Filtering Integration', () => {
         render(<ListaAlumnos />, { wrapper });
 
         // Ir a la página 2 primero
-        const page2Button = await screen.findByText('2');
-        fireEvent.click(page2Button);
+        const nextButton = await screen.findByRole('button', { name: /Página siguiente/i });
+        fireEvent.click(nextButton);
 
         // Escribir en el buscador (esperar a que vuelva a renderizarse tras la carga)
-        const searchInput = await screen.findByPlaceholderText(/Escribe Apellido, Nombre o CURP.../i);
+        const searchInput = await screen.findByPlaceholderText(/Apellido, Nombre o CURP/i);
         fireEvent.change(searchInput, { target: { value: 'Juan' } });
 
         // Esperar al debounce (300ms) y verificar que la llamada es a la página 1

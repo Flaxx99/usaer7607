@@ -1,11 +1,10 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { MantineProvider } from '@mantine/core';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter, Route, Routes, useParams } from 'react-router-dom';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import RAECaptureGrid from '../pages/rae/RAECaptureGrid';
 import { raeApi } from '../api/rae';
 import { LoadingProvider } from '../context/LoadingContext';
-import { notifications } from '@mantine/notifications';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 // Mock de iconos para evitar errores de resolución en Vitest
@@ -47,17 +46,15 @@ const queryClient = new QueryClient({
 });
 
 const wrapper = ({ children }: { children: React.ReactNode }) => (
-    <MantineProvider>
-        <QueryClientProvider client={queryClient}>
-            <LoadingProvider>
-                <MemoryRouter initialEntries={['/rae/capture/123']}>
-                    <Routes>
-                        <Route path="/rae/capture/:id" element={children} />
-                    </Routes>
-                </MemoryRouter>
-            </LoadingProvider>
-        </QueryClientProvider>
-    </MantineProvider>
+    <QueryClientProvider client={queryClient}>
+        <LoadingProvider>
+            <MemoryRouter initialEntries={['/rae/capture/123']}>
+                <Routes>
+                    <Route path="/rae/capture/:id" element={children} />
+                </Routes>
+            </MemoryRouter>
+        </LoadingProvider>
+    </QueryClientProvider>
 );
 
 describe('RAE Persistence & Auto-Save', () => {

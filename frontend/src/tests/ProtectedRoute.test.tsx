@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { MemoryRouter, Navigate } from 'react-router-dom';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 import { ProtectedRoute } from '../components/ProtectedRoute';
 
 describe('ProtectedRoute', () => {
