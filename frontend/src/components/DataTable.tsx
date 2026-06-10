@@ -7,7 +7,8 @@ import {
     getSortedRowModel,
 } from '@tanstack/react-table';
 import type { ColumnDef } from '@tanstack/react-table';
-import { ChevronLeft, ChevronRight, Search, FileX } from 'lucide-react';
+import { ChevronLeft, ChevronRight, FileX } from 'lucide-react';
+import { SearchBar } from './SearchBar';
 import { TableSkeleton } from './Skeletons';
 
 interface DataTableProps<TData> {
@@ -52,17 +53,11 @@ export function DataTable<TData>({
     return (
         <div className="space-y-4" aria-live="polite">
             {onSearchChange && (
-                <div className="relative max-w-sm">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40" size={18} aria-hidden="true" />
-                    <input 
-                        type="text" 
-                        placeholder={placeholder} 
-                        className="input input-bordered pl-10 w-full" 
-                        value={searchValue} 
-                        onChange={(e) => onSearchChange?.(e.target.value)} 
-                        aria-label={placeholder}
-                    />
-                </div>
+                <SearchBar
+                    value={searchValue || ''}
+                    onChange={onSearchChange}
+                    placeholder={placeholder}
+                />
             )}
 
             <div className="card bg-base-100 shadow-sm border border-base-300 overflow-hidden">
