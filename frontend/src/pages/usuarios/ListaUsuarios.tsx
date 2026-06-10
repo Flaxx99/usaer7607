@@ -1,35 +1,26 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm, Controller } from 'react-hook-form';
+import type { SubmitHandler } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { usuarioSchema, type UsuarioFormData, ROLES_OPTIONS, SITUACION_OPTIONS } from '../../schemas/usuario';
 import { 
     Plus, Edit2, Trash2, Shield, Mail, Key, 
     Briefcase, Phone, School as SchoolIcon, User as UserIcon, CheckCircle, XCircle, Save, User
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { isAxiosError } from 'axios';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { getUsuarios, createUsuario, updateUsuario, deleteUsuario } from '../../api/usuarios';
 import { getEscuelas } from '../../api/escuelas';
 import type { Usuario } from '../../interfaces/usuario';
+import { ErrorState } from '../../components/Skeletons';
 import { DataTable } from '../../components/DataTable';
+import Modal from '../../components/Modal';
 import type { ColumnDef } from '@tanstack/react-table';
 
-const ROLES_OPTIONS = [
-    { value: 'ADMIN', label: 'Administrador del Sistema' }, 
-    { value: 'DIRECTOR', label: 'Director(a)' },
-    { value: 'MAESTRO_APOYO', label: 'Maestro(a) de Apoyo' },
-    { value: 'PSICOLOGO', label: 'Psicólogo(a)' },
-    { value: 'TRAB_SOCIAL', label: 'Trabajador(a) Social' },
-    { value: 'COMUNICACION', label: 'Mtro. Comunicación' },
-    { value: 'PSICOMOTRICIDAD', label: 'Mtro. Psicomotricidad' },
-    { value: 'TRAB_MANUAL', label: 'Trabajador Manual' },
-    { value: 'SECRETARIO', label: 'Secretario(a)' },
-];
-
-const SITUACION_OPTIONS = [
-    { value: 'BASE', label: 'Base' },
-    { value: 'INTERINO', label: 'Interino' },
-    { value: 'CONTRATO', label: 'Contrato' },
-];
+// --- ESQUEMA DE VALIDACIÓN ZOD ---
+// (Moved to frontend/src/schemas/usuario.ts)
 
 const ListaUsuarios = () => {
   const [busqueda, setBusqueda] = useState('');
@@ -39,13 +30,25 @@ const ListaUsuarios = () => {
   const [usuarioEditar, setUsuarioEditar] = useState<Usuario | null>(null);
   
   const queryClient = useQueryClient();
-  const { register, handleSubmit, reset, control, formState: { errors } } = useForm<Usuario>();
+  const { register, handleSubmit, reset, control, formState: { errors } } = useForm<UsuarioFormData>({
+    resolver: zodResolver(usuarioSchema),
+    defaultValues: {
+        activo: true,
+    }
+  });
 
+
+  // Reset to page 1 when search text changes (debounced).
+  // This is intentionally a side effect tied to the derived debounced value,
+  // not a direct state update. The alternative would couple page-reset logic
+  // into every search input handler, which is more fragile.
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     setPage(1);
   }, [busquedaDebounced]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
-  const { data: paginatedUsuarios, isLoading: loadingUsuarios } = useQuery({
+  const { data: paginatedUsuarios, isLoading: loadingUsuarios, isError, error } = useQuery({
     queryKey: ['usuarios', page, busquedaDebounced],
     queryFn: () => getUsuarios(page, busquedaDebounced),
   });
@@ -65,8 +68,9 @@ const ListaUsuarios = () => {
       cerrarModal();
       toast.success('¡Creado! 👤', { description: 'Usuario registrado exitosamente.' });
     },
-    onError: (err: any) => {
-        const msg = err.response?.data?.email ? 'El correo ya existe.' : 'Revisa los datos.';
+    onError: (err) => {
+        const errorData = isAxiosError(err) ? err.response?.data as Record<string, unknown> | undefined : undefined;
+        const msg = errorData?.email ? 'El correo ya existe.' : 'Revisa los datos.';
         toast.error('Error ❌', { description: msg });
     }
   });
@@ -101,31 +105,46 @@ const ListaUsuarios = () => {
         activo: true, 
         role: 'MAESTRO_APOYO',
         nivel: 'PRIMARIA', 
-        situacion: 'BASE'
+        situacion: 'BASE',
+        nombre: '',
+        apellido_paterno: '',
+        email: ''
     });
     setIsModalOpen(true);
   };
 
   const handleOpenEdit = (user: Usuario) => {
     setUsuarioEditar(user);
-    reset({ ...user, password: '' });
+    reset({ 
+        ...user, 
+        password: user.password || '',
+        // Aseguramos que los campos requeridos por Zod estén presentes
+        nombre: user.nombre || '',
+        apellido_paterno: user.apellido_paterno || '',
+        email: user.email || '',
+        role: user.role || 'MAESTRO_APOYO',
+    });
     setIsModalOpen(true);
   };
 
-  const onSubmit = (data: Usuario) => {
-    if(data.rfc) data.rfc = data.rfc.toUpperCase();
-    if(data.curp) data.curp = data.curp.toUpperCase();
-    if(data.nombre) data.nombre = data.nombre.toUpperCase();
-    if(data.apellido_paterno) data.apellido_paterno = data.apellido_paterno.toUpperCase();
-    if(data.apellido_materno) data.apellido_materno = data.apellido_materno?.toUpperCase();
-    if(data.domicilio) data.domicilio = data.domicilio?.toUpperCase();
-    if(data.nivel) data.nivel = data.nivel?.toUpperCase();
-    if (String(data.escuela) === "") data.escuela = null;
+  const onSubmit: SubmitHandler<UsuarioFormData> = (data) => {
+    // Limpieza y normalización de datos (Standard USAER)
+    const cleanedData = {
+      ...data,
+      rfc: data.rfc?.toUpperCase(),
+      curp: data.curp?.toUpperCase(),
+      nombre: data.nombre.toUpperCase(),
+      apellido_paterno: data.apellido_paterno.toUpperCase(),
+      apellido_materno: data.apellido_materno?.toUpperCase(),
+      domicilio: data.domicilio?.toUpperCase(),
+      nivel: data.nivel?.toUpperCase(),
+      escuela: data.escuela ? Number(data.escuela) : null,
+    };
 
     if (usuarioEditar) {
-        updateMutation.mutate({ ...data, id: usuarioEditar.id });
+        updateMutation.mutate({ ...cleanedData, id: usuarioEditar.id });
     } else {
-        createMutation.mutate(data);
+        createMutation.mutate(cleanedData as Usuario);
     }
   };
 
@@ -241,6 +260,8 @@ const ListaUsuarios = () => {
     }
   ];
 
+  if (isError) return <ErrorState error={error} message="Error al cargar los usuarios. Intenta de nuevo." />;
+
   return (
     <>
       <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
@@ -275,122 +296,119 @@ const ListaUsuarios = () => {
           />
       </div>
 
-      {isModalOpen && (
-          <div className="modal modal-open">
-              <div className="modal-box max-w-3xl p-0 overflow-hidden">
-                  <div className="bg-primary p-6 text-primary-content flex items-center justify-between">
-                      <h3 className="text-xl font-black flex items-center gap-2"><UserIcon size={24} className="text-yellow-300" /> {usuarioEditar ? "Editar Usuario" : "Nuevo Usuario"}</h3>
-                      <button className="btn btn-ghost btn-circle btn-sm text-white" onClick={cerrarModal}>✕</button>
+      <Modal
+          isOpen={isModalOpen}
+          onClose={cerrarModal}
+          title={usuarioEditar ? "Editar Usuario" : "Nuevo Usuario"}
+          icon={<UserIcon size={24} />}
+          size="xl"
+      >
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              <div className="p-4 bg-base-200 rounded-2xl border border-base-300 space-y-4">
+                  <h4 className="text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2"><Key size={16} /> Cuenta de Acceso</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="form-control">
+                          <label className="label" htmlFor="email"><span className="label-text text-xs font-bold">Correo Electrónico (Login)</span></label>
+                          <input id="email" {...register('email', { required: "Obligatorio" })} className="input input-bordered" placeholder="correo@ejemplo.com" />
+                          {errors.email && <span className="text-error text-xs mt-1">{errors.email.message}</span>}
+                      </div>
+                      <div className="form-control">
+                          <label className="label" htmlFor="password"><span className="label-text text-xs font-bold">Contraseña</span></label>
+                          <input id="password" type="password" {...register('password', { required: !usuarioEditar, minLength: { value: 5, message: "Mínimo 5 chars" } })} className="input input-bordered" placeholder={usuarioEditar ? "Dejar vacía para mantener" : "Mínimo 5 caracteres"} />
+                          {errors.password && <span className="text-error text-xs mt-1">{errors.password.message}</span>}
+                      </div>
+                      <div className="form-control">
+                          <label className="label" htmlFor="role"><span className="label-text text-xs font-bold">Rol en Sistema</span></label>
+                          <Controller name="role" control={control} rules={{ required: "Obligatorio" }} render={({ field }) => (
+                              <select id="role" {...field} className="select select-bordered">
+                                  {ROLES_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                              </select>
+                          )} />
+                        </div>
+                        <div className="flex items-center gap-3 p-2">
+                            <input type="checkbox" {...register('activo')} className="checkbox checkbox-primary" />
+                            <span className="text-sm font-medium">Usuario Activo</span>
+                        </div>
+                    </div>
                   </div>
-                  <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
-                      <div className="p-4 bg-base-200 rounded-2xl border border-base-300 space-y-4">
-                          <h4 className="text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2"><Key size={16} /> Cuenta de Acceso</h4>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div className="form-control">
-                                  <label className="label"><span className="label-text text-xs font-bold">Correo Electrónico (Login)</span></label>
-                                  <input {...register('email', { required: "Obligatorio" })} className="input input-bordered" placeholder="correo@ejemplo.com" />
-                                  {errors.email && <span className="text-error text-[10px] mt-1">{errors.email.message}</span>}
-                              </div>
-                              <div className="form-control">
-                                  <label className="label"><span className="label-text text-xs font-bold">Contraseña</span></label>
-                                  <input type="password" {...register('password', { required: !usuarioEditar, minLength: { value: 5, message: "Mínimo 5 chars" } })} className="input input-bordered" placeholder={usuarioEditar ? "Dejar vacía para mantener" : "Mínimo 5 caracteres"} />
-                                  {errors.password && <span className="text-error text-[10px] mt-1">{errors.password.message}</span>}
-                              </div>
-                              <div className="form-control">
-                                  <label className="label"><span className="label-text text-xs font-bold">Rol en Sistema</span></label>
-                                  <Controller name="role" control={control} rules={{ required: "Obligatorio" }} render={({ field }) => (
-                                      <select {...field} className="select select-bordered">
-                                          {ROLES_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-                                      </select>
-                                  )} />
-                                </div>
-                                <div className="flex items-center gap-3 p-2">
-                                    <input type="checkbox" {...register('activo')} className="checkbox checkbox-primary" />
-                                    <span className="text-sm font-medium">Usuario Activo</span>
-                                </div>
-                            </div>
+
+                  <div className="p-4 bg-base-200 rounded-2xl border border-base-300 space-y-4">
+                      <h4 className="text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2"><User size={16} /> Datos Personales</h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                          <div className="form-control">
+                            <label className="label" htmlFor="nombre"><span className="label-text text-xs font-bold">Nombre(s)</span></label>
+                                <input id="nombre" {...register('nombre', { required: "Obligatorio" })} className="input input-bordered uppercase" />
                           </div>
-
-                          <div className="p-4 bg-base-200 rounded-2xl border border-base-300 space-y-4">
-                              <h4 className="text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2"><User size={16} /> Datos Personales</h4>
-                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                  <div className="form-control">
-                                      <label className="label"><span className="label-text text-xs font-bold">Nombre(s)</span></label>
-                                      <input {...register('nombre', { required: "Obligatorio" })} className="input input-bordered uppercase" />
-                                  </div>
-                                  <div className="form-control">
-                                      <label className="label"><span className="label-text text-xs font-bold">Apellido Paterno</span></label>
-                                      <input {...register('apellido_paterno', { required: "Obligatorio" })} className="input input-bordered uppercase" />
-                                  </div>
-                                  <div className="form-control">
-                                      <label className="label"><span className="label-text text-xs font-bold">Apellido Materno</span></label>
-                                      <input {...register('apellido_materno')} className="input input-bordered uppercase" />
-                                  </div>
-                                  <div className="form-control">
-                                      <label className="label"><span className="label-text text-xs font-bold">RFC</span></label>
-                                      <input {...register('rfc')} className="input input-bordered uppercase font-mono" />
-                                  </div>
-                                  <div className="form-control">
-                                      <label className="label"><span className="label-text text-xs font-bold">CURP</span></label>
-                                      <input {...register('curp')} className="input input-bordered uppercase font-mono" />
-                                  </div>
-                                </div>
+                          <div className="form-control">
+<label className="label" htmlFor="apellido_paterno"><span className="label-text text-xs font-bold">Apellido Paterno</span></label>
+                               <input id="apellido_paterno" {...register('apellido_paterno', { required: "Obligatorio" })} className="input input-bordered uppercase" />
                           </div>
+                          <div className="form-control">
+<label className="label" htmlFor="apellido_materno"><span className="label-text text-xs font-bold">Apellido Materno</span></label>
+                               <input id="apellido_materno" {...register('apellido_materno')} className="input input-bordered uppercase" />
+                          </div>
+                          <div className="form-control">
+<label className="label" htmlFor="rfc"><span className="label-text text-xs font-bold">RFC</span></label>
+                               <input id="rfc" {...register('rfc')} className="input input-bordered uppercase font-mono" />
+                          </div>
+                          <div className="form-control">
+<label className="label" htmlFor="curp"><span className="label-text text-xs font-bold">CURP</span></label>
+                               <input id="curp" {...register('curp')} className="input input-bordered uppercase font-mono" />
+                          </div>
+                        </div>
+                  </div>
 
-                          <div className="p-4 bg-base-200 rounded-2xl border border-base-300 space-y-4">
-                              <h4 className="text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2"><Briefcase size={16} /> Información Laboral</h4>
-                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                  <div className="form-control">
-                                      <label className="label"><span className="label-text text-xs font-bold">No. Empleado</span></label>
-                                      <input {...register('numero_empleado')} className="input input-bordered" />
-                                  </div>
-                                  <div className="form-control">
-                                      <label className="label"><span className="label-text text-xs font-bold">Escuela Asignada</span></label>
-                                      <Controller name="escuela" control={control} render={({ field }) => (
-                                          <select {...field} className="select select-bordered" value={field.value ? String(field.value) : ''} onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}>
-                                              <option value="">Sin Asignar</option>
-                                              {escuelas?.map(esc => <option key={esc.id} value={esc.id}>{esc.nombre}</option>)}
-                                          </select>
-                                      )} />
-                                  </div>
-                                  <div className="form-control">
-                                      <label className="label"><span className="label-text text-xs font-bold">Situación</span></label>
-                                      <Controller name="situacion" control={control} render={({ field }) => (
-                                          <select {...field} className="select select-bordered">
-                                              {SITUACION_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-                                          </select>
-                                      )} />
-                                  </div>
-                                </div>
-                            </div>
+                  <div className="p-4 bg-base-200 rounded-2xl border border-base-300 space-y-4">
+                      <h4 className="text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2"><Briefcase size={16} /> Información Laboral</h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                          <div className="form-control">
+<label className="label" htmlFor="numero_empleado"><span className="label-text text-xs font-bold">No. Empleado</span></label>
+                               <input id="numero_empleado" {...register('numero_empleado')} className="input input-bordered" />
+                          </div>
+                          <div className="form-control">
+                               <label className="label" htmlFor="escuela"><span className="label-text text-xs font-bold">Escuela Asignada</span></label>
+                               <Controller name="escuela" control={control} render={({ field }) => (
+                                   <select id="escuela" {...field} className="select select-bordered" value={field.value ? String(field.value) : ''} onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}>
+                                      <option value="">Sin Asignar</option>
+                                      {escuelas?.map(esc => <option key={esc.id} value={esc.id}>{esc.nombre}</option>)}
+                                  </select>
+                              )} />
+                          </div>
+                          <div className="form-control">
+                               <label className="label" htmlFor="situacion"><span className="label-text text-xs font-bold">Situación</span></label>
+                               <Controller name="situacion" control={control} render={({ field }) => (
+                                   <select id="situacion" {...field} className="select select-bordered">
+                                      {SITUACION_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                                  </select>
+                              )} />
+                          </div>
+                        </div>
+                    </div>
 
-                            <div className="p-4 bg-base-200 rounded-2xl border border-base-300 space-y-4">
-                                <h4 className="text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2"><Phone size={16} /> Contacto</h4>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div className="form-control">
-                                        <label className="label"><span className="label-text text-xs font-bold">Teléfono Fijo</span></label>
-                                        <input {...register('telefono')} className="input input-bordered" />
-                                    </div>
-                                    <div className="form-control">
-                                        <label className="label"><span className="label-text text-xs font-bold">Celular</span></label>
-                                        <input {...register('celular')} className="input input-bordered" />
-                                    </div>
-                                    <div className="form-control col-span-full">
-                                        <label className="label"><span className="label-text text-xs font-bold">Domicilio</span></label>
-                                        <input {...register('domicilio')} className="input input-bordered uppercase" />
-                                    </div>
-                                </div>
+                    <div className="p-4 bg-base-200 rounded-2xl border border-base-300 space-y-4">
+                        <h4 className="text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2"><Phone size={16} /> Contacto</h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="form-control">
+<label className="label" htmlFor="telefono"><span className="label-text text-xs font-bold">Teléfono Fijo</span></label>
+                                 <input id="telefono" {...register('telefono')} className="input input-bordered" />
                             </div>
+                            <div className="form-control">
+<label className="label" htmlFor="celular"><span className="label-text text-xs font-bold">Celular</span></label>
+                                 <input id="celular" {...register('celular')} className="input input-bordered" />
+                            </div>
+                            <div className="form-control col-span-full">
+<label className="label" htmlFor="domicilio"><span className="label-text text-xs font-bold">Domicilio</span></label>
+                                 <input id="domicilio" {...register('domicilio')} className="input input-bordered uppercase" />
+                            </div>
+                        </div>
+                    </div>
 
-                            <div className="flex justify-end gap-3 pt-4 border-t border-base-300">
-                                <button type="button" className="btn btn-ghost" onClick={cerrarModal}>Cancelar</button>
-                                <button type="submit" className="btn btn-primary px-8 flex items-center gap-2"><Save size={18} /> {usuarioEditar ? 'Guardar Cambios' : 'Registrar Usuario'}</button>
-                            </div>
-                    </form>
-                </div>
-                <div className="modal-backdrop" onClick={cerrarModal}></div>
-            </div>
-        )}
+                    <div className="flex justify-end gap-3 pt-4 border-t border-base-300">
+                        <button type="button" className="btn btn-ghost" onClick={cerrarModal}>Cancelar</button>
+                        <button type="submit" className="btn btn-primary px-8 flex items-center gap-2"><Save size={18} /> {usuarioEditar ? 'Guardar Cambios' : 'Registrar Usuario'}</button>
+                    </div>
+            </form>
+        </Modal>
     </>
   );
 };

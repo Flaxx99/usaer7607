@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { documentoFormSchema, type DocumentoForm } from '../../schemas/documento';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { 
     Plus, Search, FolderOpen, Edit2, Trash2, 
-    FileText, Save, Paperclip, X, UploadCloud
+    Save, Paperclip, X, UploadCloud
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { 
@@ -12,19 +14,31 @@ import {
 } from '../../api/documentos';
 import { getAlumnos } from '../../api/alumnos';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
+import Modal from '../../components/Modal';
+import { EmptyState, ErrorState } from '../../components/Skeletons';
 import type { Expediente } from '../../interfaces/documentos';
 
-const DocStatus = ({ label, hasFile, url }: { label: string, hasFile: boolean, url?: string }) => (
-    <div className="flex items-center justify-between p-2 bg-base-200 rounded-lg border border-base-300 group hover:border-primary transition-colors">
-        <span className="text-xs font-bold opacity-70">{label}</span>
-        {hasFile ? (
-            <a href={url} target="_blank" rel="noreferrer" className="btn btn-ghost btn-xs text-success gap-1">
-                <FileText size={12} /> Ver
-            </a>
-        ) : (
-            <span className="text-xs text-error font-bold">Faltante</span>
-        )}
+const DocStatus = ({ label, hasFile, url }: { label: string; hasFile: boolean; url?: string }) => (
+  <div className={`flex items-center gap-2 p-2 rounded-lg border text-xs font-bold transition-colors ${
+    hasFile 
+      ? 'bg-success/10 border-success/20 text-success' 
+      : 'bg-base-200 border-base-300 text-base-content/30'
+  }`}>
+    <div className={`w-5 h-5 rounded-full flex items-center justify-center ${
+      hasFile ? 'bg-success text-success-content' : 'bg-base-300'
+    }`}>
+      {hasFile ? (
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+      ) : (
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      )}
     </div>
+    {url ? (
+      <a href={url} target="_blank" rel="noreferrer" className="hover:underline">{label}</a>
+    ) : (
+      <span>{label}</span>
+    )}
+  </div>
 );
 
 const ListaDocumentos = () => {
@@ -37,9 +51,11 @@ const ListaDocumentos = () => {
   const [tempDesc, setTempDesc] = useState('');
 
   const queryClient = useQueryClient();
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<Expediente>();
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<DocumentoForm>({
+    resolver: zodResolver(documentoFormSchema),
+  });
 
-  const { data: documentos, isLoading: loadingDocs } = useQuery({
+  const { data: documentos, isLoading: loadingDocs, isError, error } = useQuery({
     queryKey: ['documentos'],
     queryFn: getDocumentos,
   });
@@ -54,7 +70,7 @@ const ListaDocumentos = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documentos'] });
       cerrarModal();
-      toast.success('¡Guardado! 📂', { description: 'Expediente creado correctamente' });
+      toast.success('¡Registrado! 📂', { description: 'Expediente creado correctamente' });
     },
     onError: () => toast.error('Error ❌', { description: 'No se pudo crear el expediente' })
   });
@@ -82,7 +98,7 @@ const ListaDocumentos = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documentos'] });
       if (docEditar) {
-          toast.success('Archivo eliminado');
+          toast.success('¡Eliminado! 🗑️', { description: 'Archivo anexo eliminado.' });
           cerrarModal();
       }
     }
@@ -106,7 +122,7 @@ const ListaDocumentos = () => {
   const handleOpenEdit = (doc: Expediente) => {
     setDocEditar(doc);
     setExtrasTemp([]);
-    reset(doc);
+    reset({ ...doc, alumno: String(doc.alumno) });
     setIsModalOpen(true);
   };
 
@@ -125,12 +141,12 @@ const ListaDocumentos = () => {
     setExtrasTemp(nuevos);
   };
 
-  const onSubmit = (data: Expediente) => {
-    data.nuevos_archivos_temp = extrasTemp;
+  const onSubmit = (data: DocumentoForm) => {
+    const payload = { ...data, alumno: Number(data.alumno), nuevos_archivos_temp: extrasTemp } as unknown as Expediente;
     if (docEditar) {
-        updateMutation.mutate({ ...data, id: docEditar.id });
+        updateMutation.mutate({ ...payload, id: docEditar.id });
     } else {
-        createMutation.mutate(data);
+        createMutation.mutate(payload);
     }
   };
 
@@ -154,6 +170,8 @@ const ListaDocumentos = () => {
 
   const isLoading = loadingDocs || loadingAlumnos;
 
+  if (isError) return <ErrorState error={error} message="Error al cargar los expedientes. Intenta de nuevo." />;
+
   if (isLoading) {
       return (
         <div className="max-w-7xl mx-auto p-4 md:p-6">
@@ -165,8 +183,7 @@ const ListaDocumentos = () => {
   }
 
   return (
-    <>
-      <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
+    <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
         
         <div className="card bg-primary text-primary-content shadow-lg border-l-8 border-primary-dark">
             <div className="card-body p-8 flex-row items-center justify-between gap-4">
@@ -264,27 +281,25 @@ const ListaDocumentos = () => {
             })}
 
             {documentosFiltrados?.length === 0 && (
-                <div className="col-span-full card bg-base-200 p-12 text-center space-y-4">
-                    <FolderOpen size={48} className="mx-auto text-base-content/20" />
-                    <p className="font-medium text-base-content/40">No se encontraron expedientes con ese criterio de búsqueda.</p>
-                </div>
+                <EmptyState icon={FolderOpen} title="No se encontraron expedientes con ese criterio de búsqueda." />
             )}
                 </div>
             </div>
         </div>
 
-        {isModalOpen && (
-            <div className="modal modal-open">
-                <div className="modal-box max-w-2xl p-0 overflow-hidden">
-                    <div className="bg-primary p-6 text-primary-content flex items-center gap-3">
-                        <FolderOpen size={24} className="text-yellow-300" />
-                        <h3 className="text-xl font-black">📂 {docEditar ? "Editar Expediente" : "Nuevo Expediente"}</h3>
-                    </div>
-                    <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
+        <Modal
+            isOpen={isModalOpen}
+            onClose={cerrarModal}
+            title={docEditar ? "Editar Expediente" : "Nuevo Expediente"}
+            icon={<FolderOpen size={24} />}
+            size="lg"
+        >
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                         <div className="form-control">
-                            <label className="label"><span className="label-text font-bold">Alumno</span></label>
+                            <label className="label" htmlFor="alumno"><span className="label-text font-bold">Alumno</span></label>
                             <select 
-                                {...register('alumno', { required: "Selecciona un alumno" })} 
+                                id="alumno"
+                                {...register('alumno')} 
                                 className="select select-bordered w-full"
                                 disabled={!!docEditar}
                                 required
@@ -300,22 +315,22 @@ const ListaDocumentos = () => {
                         <div className="divider">Documentos Base</div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="form-control">
-                                <label className="label"><span className="label-text text-xs font-bold">Inf. Detección</span></label>
-                                <input type="file" {...register('informe_deteccion')} className="file-input file-input-bordered w-full text-xs" accept=".pdf,.doc,.docx" />
+                                <label className="label" htmlFor="informe_deteccion"><span className="label-text text-xs font-bold">Inf. Detección</span></label>
+                                <input id="informe_deteccion" type="file" {...register('informe_deteccion')} className="file-input file-input-bordered w-full text-xs" accept=".pdf,.doc,.docx" />
                             </div>
                             <div className="form-control">
-                                <label className="label"><span className="label-text text-xs font-bold">Inf. Psicopedagógico</span></label>
-                                <input type="file" {...register('informe_psicopedagogico')} className="file-input file-input-bordered w-full text-xs" accept=".pdf,.doc,.docx" />
+                                <label className="label" htmlFor="informe_psicopedagogico"><span className="label-text text-xs font-bold">Inf. Psicopedagógico</span></label>
+                                <input id="informe_psicopedagogico" type="file" {...register('informe_psicopedagogico')} className="file-input file-input-bordered w-full text-xs" accept=".pdf,.doc,.docx" />
                             </div>
                             <div className="form-control">
-                                <label className="label"><span className="label-text text-xs font-bold">Plan Intervención</span></label>
-                                <input type="file" {...register('plan_intervencion')} className="file-input file-input-bordered w-full text-xs" accept=".pdf,.doc,.docx" />
+                                <label className="label" htmlFor="plan_intervencion"><span className="label-text text-xs font-bold">Plan Intervención</span></label>
+                                <input id="plan_intervencion" type="file" {...register('plan_intervencion')} className="file-input file-input-bordered w-full text-xs" accept=".pdf,.doc,.docx" />
                             </div>
                         </div>
 
                         <div className="form-control">
-                            <label className="label"><span className="label-text font-bold">Observaciones</span></label>
-                            <textarea {...register('observaciones')} className="textarea textarea-bordered h-24" placeholder="Notas adicionales..." />
+                            <label className="label" htmlFor="observaciones"><span className="label-text font-bold">Observaciones</span></label>
+                            <textarea id="observaciones" {...register('observaciones')} className="textarea textarea-bordered h-24" placeholder="Notas adicionales..." />
                         </div>
 
                         <div className="divider">Archivos Anexos</div>
@@ -380,12 +395,8 @@ const ListaDocumentos = () => {
                             </button>
                         </div>
                     </form>
-                </div>
-                <div className="modal-backdrop" onClick={cerrarModal}></div>
-            </div>
-        )}
+                </Modal>
     </div>
-    </>
   );
 };
 

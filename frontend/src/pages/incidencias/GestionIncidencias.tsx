@@ -1,15 +1,19 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { incidenciaSchema, resolverSchema, type IncidenciaForm, type ResolverForm } from '../../schemas/incidencia';
 import { 
     AlertTriangle, CheckCircle, Plus, Search, 
     MessageSquare, FileText, Settings
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { isAxiosError } from 'axios';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
-import { TableSkeleton } from '../../components/Skeletons';
+import { TableSkeleton, EmptyState, ErrorState } from '../../components/Skeletons';
+import Modal from '../../components/Modal';
 import { getIncidencias, createIncidencia, resolverIncidencia, getMaestrosParaSelect } from '../../api/incidencias';
-import type { Incidencia, IncidenciaInput } from '../../interfaces/incidencia';
+import type { Incidencia } from '../../interfaces/incidencia';
 
 const GestionIncidencias = () => {
     const queryClient = useQueryClient();
@@ -19,10 +23,14 @@ const GestionIncidencias = () => {
     const [busqueda, setBusqueda] = useState('');
     const busquedaDebounced = useDebouncedValue(busqueda, 300);
 
-    const { register: registerCreate, handleSubmit: handleSubmitCreate, reset: resetCreate, formState: { errors: errorsCreate } } = useForm<IncidenciaInput>();
-    const { register: registerResolve, handleSubmit: handleSubmitResolve, reset: resetResolve, formState: { errors: errorsResolve } } = useForm<{respuesta: string}>();
+    const { register: registerCreate, handleSubmit: handleSubmitCreate, reset: resetCreate, formState: { errors: errorsCreate } } = useForm<IncidenciaForm>({
+        resolver: zodResolver(incidenciaSchema),
+    });
+    const { register: registerResolve, handleSubmit: handleSubmitResolve, reset: resetResolve, formState: { errors: errorsResolve } } = useForm<ResolverForm>({
+        resolver: zodResolver(resolverSchema),
+    });
 
-    const { data: incidencias, isLoading } = useQuery({
+    const { data: incidencias, isLoading, isError, error } = useQuery({
         queryKey: ['incidencias'],
         queryFn: getIncidencias,
     });
@@ -53,9 +61,12 @@ const GestionIncidencias = () => {
             queryClient.invalidateQueries({ queryKey: ['incidencias'] });
             setIsCreateOpen(false);
             resetCreate();
-            toast.success('Incidencia Reportada', { description: 'El reporte ha sido guardado en la bitácora.' });
+            toast.success('¡Reportada! ⚠️', { description: 'El reporte ha sido guardado en la bitácora.' });
         },
-        onError: (err: any) => toast.error('Error al reportar', { description: err.response?.data?.detail || 'Verifique los datos.' })
+        onError: (err) => {
+            const errorData = isAxiosError(err) ? err.response?.data as Record<string, unknown> | undefined : undefined;
+            toast.error('Error ❌', { description: (errorData?.detail as string) || 'Verifique los datos.' });
+        }
     });
 
     const respondMutation = useMutation({
@@ -65,15 +76,15 @@ const GestionIncidencias = () => {
             queryClient.invalidateQueries({ queryKey: ['incidencias'] });
             setResolveItem(null);
             resetResolve();
-            toast.success('Caso Resuelto', { description: 'La resolución ha sido guardada y notificada.' });
+            toast.success('¡Resuelto! ✅', { description: 'La resolución ha sido guardada y notificada.' });
         }
     });
 
-    const onCreateSubmit = (data: IncidenciaInput) => {
-        createMutation.mutate(data);
+    const onCreateSubmit = (data: IncidenciaForm) => {
+        createMutation.mutate({ ...data, profesor: Number(data.profesor) });
     };
 
-    const onResolveSubmit = (data: { respuesta: string }) => {
+    const onResolveSubmit = (data: ResolverForm) => {
         if (resolveItem) {
             respondMutation.mutate({ 
                 id: resolveItem.id, 
@@ -82,6 +93,8 @@ const GestionIncidencias = () => {
             });
         }
     };
+
+    if (isError) return <ErrorState error={error} message="Error al cargar las incidencias. Intenta de nuevo." />;
 
     if (isLoading) {
         return (
@@ -128,10 +141,10 @@ const GestionIncidencias = () => {
                         </div>
                     </div>
                     <div className="form-control w-full">
-                        <label className="label"><span className="label-text font-bold">Buscar en la Bitácora</span></label>
+                        <label className="label" htmlFor="buscar_bitacora"><span className="label-text font-bold">Buscar en la Bitácora</span></label>
                         <div className="input input-bordered flex items-center gap-2">
                             <Search size={18} className="opacity-50" />
-                            <input type="text" placeholder="Buscar por título, persona o descripción..." className="grow" value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
+                            <input id="buscar_bitacora" type="text" placeholder="Buscar por título, persona o descripción..." className="grow" value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
                         </div>
                     </div>
                 </div>
@@ -180,80 +193,66 @@ const GestionIncidencias = () => {
                     </div>
                 ))}
                 {incidenciasFiltradas?.length === 0 && (
-                    <div className="flex flex-col items-center justify-center py-12 text-center bg-base-200 rounded-box border-2 border-dashed border-base-300">
-                        <Search size={48} className="text-base-content/20 mb-4" />
-                        <p className="font-medium text-base-content/50">No se encontraron reportes con estos filtros.</p>
-                    </div>
+                    <EmptyState icon={Search} title="No se encontraron reportes con estos filtros." dashed />
                 )}
             </div>
 
-            {/* MODAL CREAR */}
-            {isCreateOpen && (
-                <div className="modal modal-open">
-                    <div className="modal-box max-w-lg p-0 overflow-hidden">
-                        <div className="bg-warning text-warning-content p-6 flex items-center justify-between">
-                            <h3 className="text-xl font-bold flex items-center gap-2"><AlertTriangle size={24} /> Nuevo Reporte de Incidencia</h3>
-                            <button className="btn btn-ghost btn-circle btn-sm text-white" onClick={() => setIsCreateOpen(false)}>✕</button>
-                        </div>
-                        <div className="p-6 space-y-6">
-                            <form onSubmit={handleSubmitCreate(onCreateSubmit)} className="flex flex-col gap-4">
-                                <div className="form-control">
-                                    <label className="label"><span className="label-text font-bold">Título del Incidente</span></label>
-                                    <input type="text" className="input input-bordered w-full" {...registerCreate('titulo', { required: "El título es obligatorio" })} />
-                                    {errorsCreate.titulo && <span className="text-error text-xs mt-1">{errorsCreate.titulo.message as string}</span>}
-                                </div>
-                                <div className="form-control">
-                                    <label className="label"><span className="label-text font-bold">Profesor / Personal Involucrado</span></label>
-                                    <select className="select select-bordered w-full" {...registerCreate('profesor', { required: "Debe seleccionar al involucrado" })}>
-                                        <option value="">Seleccione el personal...</option>
-                                        {maestros?.map((m: any) => <option key={m.id} value={m.id}>{m.nombre} {m.apellido_paterno} ({m.numero_empleado})</option>)}
-                                    </select>
-                                    {errorsCreate.profesor && <span className="text-error text-xs mt-1">{errorsCreate.profesor.message as string}</span>}
-                                </div>
-                                <div className="form-control">
-                                    <label className="label"><span className="label-text font-bold">Descripción Detallada</span></label>
-                                    <textarea className="textarea textarea-bordered h-32" {...registerCreate('descripcion', { required: "La descripción es obligatoria" })}></textarea>
-                                    {errorsCreate.descripcion && <span className="text-error text-xs mt-1">{errorsCreate.descripcion.message as string}</span>}
-                                </div>
-                                <div className="flex justify-end gap-3 pt-4 border-t border-base-300">
-                                    <button type="button" className="btn btn-ghost" onClick={() => setIsCreateOpen(false)}>Cancelar</button>
-                                    <button type="submit" className="btn btn-warning gap-2"><FileText size={18} /> Guardar en Bitácora</button>
-                                </div>
-                            </form>
-                        </div>
+            <Modal
+                isOpen={isCreateOpen}
+                onClose={() => setIsCreateOpen(false)}
+                title="Nuevo Reporte de Incidencia"
+                icon={<AlertTriangle size={24} />}
+                color="warning"
+            >
+                <form onSubmit={handleSubmitCreate(onCreateSubmit)} className="flex flex-col gap-4">
+                    <div className="form-control">
+                        <label className="label" htmlFor="titulo"><span className="label-text font-bold">Título del Incidente</span></label>
+                        <input id="titulo" type="text" className="input input-bordered w-full" {...registerCreate('titulo')} />
+                        {errorsCreate.titulo && <span className="text-error text-xs mt-1">{errorsCreate.titulo.message as string}</span>}
                     </div>
-                    <div className="modal-backdrop" onClick={() => setIsCreateOpen(false)}></div>
-                </div>
-            )}
+                    <div className="form-control">
+                        <label className="label" htmlFor="profesor"><span className="label-text font-bold">Profesor / Personal Involucrado</span></label>
+                        <select id="profesor" className="select select-bordered w-full" {...registerCreate('profesor')}>
+                            <option value="">Seleccione el personal...</option>
+                            {maestros?.map((m: { id: number; nombre: string; apellido_paterno: string; numero_empleado?: string }) => <option key={m.id} value={m.id}>{m.nombre} {m.apellido_paterno} ({m.numero_empleado})</option>)}
+                        </select>
+                        {errorsCreate.profesor && <span className="text-error text-xs mt-1">{errorsCreate.profesor.message as string}</span>}
+                    </div>
+                    <div className="form-control">
+                        <label className="label" htmlFor="descripcion"><span className="label-text font-bold">Descripción Detallada</span></label>
+                        <textarea id="descripcion" className="textarea textarea-bordered h-32" {...registerCreate('descripcion')}></textarea>
+                        {errorsCreate.descripcion && <span className="text-error text-xs mt-1">{errorsCreate.descripcion.message as string}</span>}
+                    </div>
+                    <div className="flex justify-end gap-3 pt-4 border-t border-base-300">
+                        <button type="button" className="btn btn-ghost" onClick={() => setIsCreateOpen(false)}>Cancelar</button>
+                        <button type="submit" className="btn btn-warning gap-2"><FileText size={18} /> Guardar en Bitácora</button>
+                    </div>
+                </form>
+            </Modal>
 
-            {/* MODAL RESOLVER */}
-            {resolveItem && (
-                <div className="modal modal-open">
-                    <div className="modal-box max-w-md p-0 overflow-hidden">
-                        <div className="bg-neutral text-neutral-content p-6 flex items-center justify-between">
-                            <h3 className="text-xl font-bold flex items-center gap-2"><Settings size={24} /> Resolución de Incidencia</h3>
-                            <button className="btn btn-ghost btn-circle btn-sm text-white" onClick={() => setResolveItem(null)}>✕</button>
-                        </div>
-                        <div className="p-6 space-y-6">
-                            <div className="bg-base-200 p-4 rounded-box border border-base-300">
-                                <p className="text-xs font-bold uppercase opacity-50 mb-1">Reporte Original:</p>
-                                <h4 className="font-bold text-sm mb-1">{resolveItem.titulo}</h4>
-                                <p className="text-xs italic opacity-80">"{resolveItem.descripcion}"</p>
-                            </div>
-                            <div className="form-control">
-                                <label className="label"><span className="label-text font-bold">Resolución Oficial</span></label>
-                                <textarea className="textarea textarea-bordered h-32" {...registerResolve('respuesta', { required: "Debe ingresar una justificación oficial" })}></textarea>
-                                {errorsResolve.respuesta && <span className="text-error text-xs mt-1">{errorsResolve.respuesta.message as string}</span>}
-                            </div>
-                            <div className="flex gap-3 pt-4 border-t border-base-300">
-                                <button className="btn btn-ghost flex-1" onClick={() => setResolveItem(null)}>Posponer</button>
-                                <button className="btn btn-success flex-1 gap-2" onClick={handleSubmitResolve(onResolveSubmit)}><CheckCircle size={18} /> Marcar Resuelta</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="modal-backdrop" onClick={() => setResolveItem(null)}></div>
+            <Modal
+                isOpen={!!resolveItem}
+                onClose={() => setResolveItem(null)}
+                title="Resolución de Incidencia"
+                icon={<Settings size={24} />}
+                color="neutral"
+                size="sm"
+            >
+                <div className="bg-base-200 p-4 rounded-box border border-base-300">
+                    <p className="text-xs font-bold uppercase opacity-50 mb-1">Reporte Original:</p>
+                    <h4 className="font-bold text-sm mb-1">{resolveItem?.titulo}</h4>
+                    <p className="text-xs italic opacity-80">"{resolveItem?.descripcion}"</p>
                 </div>
-            )}
+                <div className="form-control">
+                    <label className="label" htmlFor="respuesta"><span className="label-text font-bold">Resolución Oficial</span></label>
+                    <textarea id="respuesta" className="textarea textarea-bordered h-32" {...registerResolve('respuesta')}></textarea>
+                    {errorsResolve.respuesta && <span className="text-error text-xs mt-1">{errorsResolve.respuesta.message as string}</span>}
+                </div>
+                <div className="flex gap-3 pt-4 border-t border-base-300">
+                    <button className="btn btn-ghost flex-1" onClick={() => setResolveItem(null)}>Posponer</button>
+                    <button className="btn btn-success flex-1 gap-2" onClick={handleSubmitResolve(onResolveSubmit)}><CheckCircle size={18} /> Marcar Resuelta</button>
+                </div>
+            </Modal>
         </div>
     );
 };

@@ -1,13 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { 
-  Users, School, ClipboardCheck, AlertCircle, Loader2, 
+  Users, School, ClipboardCheck, AlertCircle,
   UserCheck, FileText, ArrowUpRight 
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell 
 } from 'recharts';
+import { DashboardSkeleton, ErrorState } from '../components/Skeletons';
 import { getDashboardData } from '../api/dashboard';
+import type { Aviso, StatCardProps } from '../interfaces/dashboard';
 
 const ROLES_MAP: Record<string, string> = {
     'DIRECTOR': 'Director(a) de Escuela',
@@ -21,41 +23,31 @@ const ROLES_MAP: Record<string, string> = {
     'ADMIN': 'Administrador del Sistema'
 };
 
-const Dashboard = () => {
-  const [userData, setUserData] = useState({
-    nombre: 'Usuario',
-    rol: 'Cargando...',
-    email: ''
-  });
-
-  useEffect(() => {
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-      try {
-        const user = JSON.parse(userStr);
-        let nombreFinal = user.email ? user.email.split('@')[0] : 'Usuario';
-        if (user.nombre_completo) {
-            nombreFinal = user.nombre_completo;
-        } else if ((user.nombre || user.first_name) && (user.apellido_paterno || user.last_name)) {
-            const n = user.nombre || user.first_name || '';
-            const a = user.apellido_paterno || user.last_name || '';
-            nombreFinal = `${n} ${a}`.trim();
-        } else if (user.username) {
-            nombreFinal = user.username;
-        }
-        const rolCodigo = user.role; 
-        const rolMostrar = ROLES_MAP[rolCodigo] || 'Personal USAER';
-
-        setUserData({
-          nombre: nombreFinal,
-          rol: rolMostrar,
-          email: user.email || ''
-        });
-      } catch (e) {
-        console.error("Error leyendo usuario", e);
-      }
+const loadUserData = () => {
+  const userStr = localStorage.getItem('user');
+  if (!userStr) return { nombre: 'Usuario', rol: 'Cargando...', email: '' };
+  try {
+    const user = JSON.parse(userStr);
+    let nombreFinal = user.email ? user.email.split('@')[0] : 'Usuario';
+    if (user.nombre_completo) {
+        nombreFinal = user.nombre_completo;
+    } else if ((user.nombre || user.first_name) && (user.apellido_paterno || user.last_name)) {
+        const n = user.nombre || user.first_name || '';
+        const a = user.apellido_paterno || user.last_name || '';
+        nombreFinal = `${n} ${a}`.trim();
+    } else if (user.username) {
+        nombreFinal = user.username;
     }
-  }, []);
+    const rolCodigo = user.role; 
+    const rolMostrar = ROLES_MAP[rolCodigo] || 'Personal USAER';
+    return { nombre: nombreFinal, rol: rolMostrar, email: user.email || '' };
+  } catch {
+    return { nombre: 'Usuario', rol: 'Cargando...', email: '' };
+  }
+};
+
+const Dashboard = () => {
+  const [userData] = useState(loadUserData);
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['dashboard'],
@@ -64,41 +56,11 @@ const Dashboard = () => {
   });
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-[70vh]">
-        <div className="flex flex-col items-center gap-4 text-center">
-          <Loader2 className="animate-spin text-primary w-12 h-12" />
-          <p className="text-lg font-semibold text-primary animate-pulse">
-            Sincronizando con el servidor...
-          </p>
-          <p className="text-xs text-base-content/60">Cargando indicadores de gestión escolar</p>
-        </div>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   if (isError) {
-    return (
-      <div className="flex items-center justify-center h-[70vh] p-4">
-        <div className="card bg-error/10 shadow-xl max-w-md w-full text-center border border-error/20">
-          <div className="card-body items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-error/20 flex items-center justify-center">
-              <AlertCircle className="w-8 h-8 text-error" />
-            </div>
-            <h3 className="text-xl font-bold text-error">Error de Conexión</h3>
-            <p className="text-sm text-error/80">
-              No pudimos contactar al backend. Verifica que el servidor de Django esté activo.
-            </p>
-            <p className="text-xs text-base-content/50">Detalle: {error?.message || 'Error desconocido'}</p>
-            <div className="card-actions">
-              <button onClick={() => window.location.reload()} className="btn btn-error btn-sm">
-                Reintentar
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return <ErrorState error={error} onRetry={() => window.location.reload()} />;
   }
 
   return (
@@ -202,7 +164,7 @@ const Dashboard = () => {
 
             <div className="max-h-[400px] overflow-y-auto pr-2 space-y-4 mt-4">
               {data?.ultimos_avisos && data.ultimos_avisos.length > 0 ? (
-                data.ultimos_avisos.map((aviso: any) => (
+                data.ultimos_avisos.map((aviso: Aviso) => (
                   <div 
                     key={aviso.id} 
                     className="card bg-base-200 hover:bg-base-300 transition-all cursor-pointer group border-l-4 border-primary shadow-sm"
@@ -221,7 +183,7 @@ const Dashboard = () => {
                       </p>
                       <div className="flex items-center gap-2 mt-3">
                         <div className="avatar placeholder">
-                          <div className="bg-neutral text-neutral-content rounded-full w-5 h-5 text-[10px]">
+                          <div className="bg-neutral text-neutral-content rounded-full w-5 h-5 text-xs">
                             {aviso.autor.charAt(0).toUpperCase()}
                           </div>
                         </div>
@@ -270,7 +232,7 @@ const Dashboard = () => {
                       contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                     />
                     <Bar dataKey="total" radius={[0, 4, 4, 0]} barSize={20}>
-                      {data.grafica_clasificacion.map((_entry: any, index: number) => (
+                      {data.grafica_clasificacion.map((_entry: unknown, index: number) => (
                         <Cell key={`cell-${index}`} fill={COLOR_PALETTE[index % COLOR_PALETTE.length]} />
                       ))}
                     </Bar>
@@ -291,7 +253,7 @@ const Dashboard = () => {
 
 const COLOR_PALETTE = ['#3b82f6', '#14b8a6', '#8b5cf6', '#f59e0b', '#ef4444', '#6366f1'];
 
-const StatCard = ({ title, value, icon, color, description, highlight = false, pulse = false }: any) => {
+const StatCard = ({ title, value, icon, color, description, highlight = false, pulse = false }: StatCardProps) => {
   const colorClasses: Record<string, string> = {
     blue: 'bg-blue-100 text-blue-700 border-blue-200',
     teal: 'bg-teal-100 text-teal-700 border-teal-200',

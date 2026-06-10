@@ -1,38 +1,52 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
-import { Plus, Search, School, Edit2, Trash2, MapPin, Save, AlertTriangle } from 'lucide-react';
+import { escuelaSchema, type EscuelaFormData, NIVELES_OPCIONES } from '../../schemas/escuela';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Plus, School, Edit2, Trash2, Save } from 'lucide-react';
 import { toast } from 'sonner';
+import { isAxiosError } from 'axios';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
-import { CardGridSkeleton } from '../../components/Skeletons';
+import { CardGridSkeleton, ErrorState } from '../../components/Skeletons';
 import { getEscuelas, deleteEscuela, createEscuela, updateEscuela } from '../../api/escuelas';
 import type { Escuela } from '../../interfaces/escuela';
+import { DataTable } from '../../components/DataTable';
+import Modal from '../../components/Modal';
+import type { ColumnDef } from '@tanstack/react-table';
+
 
 const toTitleCase = (str: string) => {
   if (!str) return '';
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 };
 
-const NIVELES_OPCIONES = [
-  { value: 'Primaria', label: '🏫 Primaria' },
-  { value: 'Preescolar', label: '🧸 Preescolar' },
-  { value: 'Secundaria', label: '🎓 Secundaria' },
-  { value: 'Telesecundaria', label: '📡 Telesecundaria' },
-];
-
 const ListaEscuelas = () => {
   const [busqueda, setBusqueda] = useState('');
   const busquedaDebounced = useDebouncedValue(busqueda, 300);
+  const [page, setPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [escuelaEditar, setEscuelaEditar] = useState<Escuela | null>(null);
   
   const queryClient = useQueryClient();
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<Escuela>();
-
-  const { data: escuelas, isLoading, isError } = useQuery({
-    queryKey: ['escuelas'],
-    queryFn: () => getEscuelas(),
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<EscuelaFormData>({
+    resolver: zodResolver(escuelaSchema),
   });
+
+  const { data: allEscuelas = [], isLoading, isError } = useQuery({
+    queryKey: ['escuelas'],
+    queryFn: () => getEscuelas(1000, 1),
+  });
+
+  const busquedaLower = busquedaDebounced.toLowerCase();
+  const escuelas = busquedaDebounced
+    ? allEscuelas.filter(e => 
+        e.nombre.toLowerCase().includes(busquedaLower) ||
+        e.cct.toLowerCase().includes(busquedaLower) ||
+        e.clave_estatal.toLowerCase().includes(busquedaLower)
+      )
+    : allEscuelas;
+  const totalCount = escuelas.length;
+
 
   const createMutation = useMutation({
     mutationFn: createEscuela,
@@ -41,9 +55,10 @@ const ListaEscuelas = () => {
       cerrarModal();
       toast.success('¡Creada! 🏫', { description: 'La escuela se registró correctamente en el sistema.' });
     },
-    onError: (error: any) => {
-      const mensaje = error.response?.data?.detail || 'Verifique los datos.';
-      toast.error('Error al guardar ❌', { description: mensaje });
+    onError: (error) => {
+      const errorData = isAxiosError(error) ? error.response?.data as Record<string, unknown> | undefined : undefined;
+      const mensaje = errorData?.detail as string | undefined || 'Verifique los datos.';
+      toast.error('Error ❌', { description: mensaje });
     }
   });
 
@@ -54,9 +69,10 @@ const ListaEscuelas = () => {
       cerrarModal();
       toast.success('¡Actualizada! ✏️', { description: 'Los datos de la escuela han sido guardados.' });
     },
-    onError: (error: any) => {
-      const mensaje = error.response?.data?.detail || 'Verifique los datos.';
-      toast.error('Error al guardar ❌', { description: mensaje });
+    onError: (error) => {
+      const errorData = isAxiosError(error) ? error.response?.data as Record<string, unknown> | undefined : undefined;
+      const mensaje = errorData?.detail as string | undefined || 'Verifique los datos.';
+      toast.error('Error ❌', { description: mensaje });
     }
   });
 
@@ -84,21 +100,21 @@ const ListaEscuelas = () => {
     setIsModalOpen(true);
   };
 
+
   const handleOpenEdit = (escuela: Escuela) => {
     setEscuelaEditar(escuela);
-    const datosParaFormulario = {
+    reset({
         ...escuela,
         nivel: toTitleCase(escuela.nivel)
-    };
-    reset(datosParaFormulario);
+    });
     setIsModalOpen(true);
   };
 
-  const onSubmit = (data: Escuela) => {
+  const onSubmit = (data: EscuelaFormData) => {
     if (escuelaEditar) {
-        updateMutation.mutate({ ...data, id: escuelaEditar.id });
+        updateMutation.mutate({ ...data, id: escuelaEditar.id } as Escuela);
     } else {
-        createMutation.mutate(data);
+        createMutation.mutate(data as Escuela);
     }
   };
 
@@ -108,11 +124,51 @@ const ListaEscuelas = () => {
     }
   };
 
-  const escuelasFiltradas = escuelas?.filter(escuela => 
-    escuela.nombre.toLowerCase().includes(busquedaDebounced.toLowerCase()) ||
-    escuela.clave_estatal.toLowerCase().includes(busquedaDebounced.toLowerCase()) ||
-    escuela.cct.toLowerCase().includes(busquedaDebounced.toLowerCase())
-  );
+  const columns: ColumnDef<Escuela>[] = [
+    {
+        accessorKey: 'nombre',
+        header: 'Nombre de la Escuela',
+        cell: ({ row }) => (
+            <div className="flex items-center gap-2">
+                <School size={16} className="text-primary" />
+                <span className="font-bold">{row.original.nombre}</span>
+            </div>
+        )
+    },
+    {
+        accessorKey: 'cct',
+        header: 'CCT',
+        cell: ({ row }) => <span className="font-mono text-xs">{row.original.cct}</span>
+    },
+    {
+        accessorKey: 'nivel',
+        header: 'Nivel',
+        cell: ({ row }) => (
+            <span className={`badge badge-sm font-bold ${
+                row.original.nivel.toUpperCase().includes('PRIMARIA') ? 'badge-primary' : 
+                row.original.nivel.toUpperCase().includes('PREESCOLAR') ? 'badge-warning' : 'badge-success'
+            }`}>
+                {toTitleCase(row.original.nivel)}
+            </span>
+        )
+    },
+    {
+        accessorKey: 'zona',
+        header: 'Zona',
+        cell: ({ row }) => <span className="text-sm">{row.original.zona}</span>
+    },
+    {
+        id: 'actions',
+        header: 'Acciones',
+        cell: ({ row }) => (
+            <div className="flex justify-center gap-2">
+                <button className="btn btn-ghost btn-xs text-primary" onClick={() => handleOpenEdit(row.original)}><Edit2 size={14} /></button>
+                <button className="btn btn-ghost btn-xs text-error" onClick={() => handleDelete(row.original.id)}><Trash2 size={14} /></button>
+            </div>
+        )
+    }
+  ];
+
 
   if (isLoading) {
       return (
@@ -121,14 +177,7 @@ const ListaEscuelas = () => {
         </div>
       );
   }
-  if (isError) return (
-    <div className="flex items-center justify-center h-50vh p-4">
-      <div className="alert alert-error shadow-lg max-w-md">
-        <AlertTriangle className="w-6 h-6" />
-        <span>Error al cargar datos del servidor.</span>
-      </div>
-    </div>
-  );
+  if (isError) return <ErrorState message="Error al cargar las escuelas. Intenta de nuevo." />;
 
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
@@ -149,111 +198,73 @@ const ListaEscuelas = () => {
                 </button>
             </div>
         </div>
+        
+        <DataTable 
+            data={escuelas} 
+            columns={columns} 
+            isLoading={isLoading}
+            totalCount={totalCount}
+            page={page}
+            onPageChange={setPage}
+            onSearchChange={setBusqueda}
+            searchValue={busqueda}
+            placeholder="Buscar por Nombre, CCT o Clave Estatal..."
+        />
 
-        <div className="card bg-base-100 shadow-sm border border-base-300">
-            <div className="p-4 border-b border-base-200">
-                <div className="flex items-center gap-2 max-w-sm">
-                    <Search size={18} className="text-base-content/40" />
-                    <input type="text" placeholder="Nombre, CCT o Clave Estatal..." className="input input-bordered flex-1" value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
-                </div>
-            </div>
-            <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {escuelasFiltradas?.map((escuela) => (
-                <div key={escuela.id} className="card bg-base-100 shadow-sm border border-base-300 transition-all hover:shadow-md group" style={{ borderLeft: '6px solid var(--color-primary)' }}>
-                    <div className="card-body p-6">
-                        <div className="flex items-start justify-between gap-2 mb-4">
-                            <div className="badge badge-ghost font-mono text-xs font-bold">CCT: {escuela.cct}</div>
-                            <div className={`badge badge-sm font-bold ${
-                                escuela.nivel.includes('PRIMARIA') ? 'badge-primary' : 
-                                escuela.nivel.includes('PREESCOLAR') ? 'badge-warning' : 'badge-success'
-                            }`}>{toTitleCase(escuela.nivel)}</div>
-                        </div>
-                        <h3 className="text-lg font-bold text-base-content leading-tight mb-3">{escuela.nombre}</h3>
-                        <div className="divider my-0"></div>
-                        <div className="space-y-2 mt-4">
-                            <div className="flex items-center gap-2 text-sm text-base-content/70">
-                                <MapPin size={16} className="text-primary" />
-                                <span className="font-medium">{escuela.domicilio}</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-xs text-base-content/50">
-                                <div className="w-4" />
-                                <span>Col. {escuela.colonia} • Zona {escuela.zona}</span>
-                            </div>
-                        </div>
-                        <div className="card-actions justify-end mt-6 pt-4 border-t border-base-200 gap-2">
-                            <button className="btn btn-sm btn-outline btn-primary gap-1" onClick={() => handleOpenEdit(escuela)}><Edit2 size={14} /> Editar</button>
-                            <button className="btn btn-sm btn-outline btn-error gap-1" onClick={() => handleDelete(escuela.id)}><Trash2 size={14} /> Eliminar</button>
-                        </div>
-                    </div>
-                </div>
-            ))}
-            {escuelasFiltradas?.length === 0 && (
-                <div className="col-span-full flex flex-col items-center justify-center py-12 text-center bg-base-200 rounded-box border-2 border-dashed border-base-300">
-                  <School size={48} className="text-base-content/20 mb-4" />
-                  <p className="font-medium text-base-content/50">No se encontraron escuelas.</p>
-                </div>
-            )}
-            </div>
-            </div>
-        </div>
 
-        {isModalOpen && (
-            <div className="modal modal-open">
-                <div className="modal-box max-w-2xl p-0 overflow-hidden">
-                    <div className="bg-primary p-6 text-primary-content flex items-center justify-between">
-                        <h3 className="text-xl font-bold flex items-center gap-2"><School size={24} /> {escuelaEditar ? "Editar Escuela" : "Registrar Nueva Escuela"}</h3>
-                        <button className="btn btn-ghost btn-circle btn-sm text-white" onClick={cerrarModal}>✕</button>
-                    </div>
-                    <form onSubmit={handleSubmit(onSubmit)} className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="md:col-span-2 form-control">
-                            <label className="label"><span className="label-text font-bold">Nombre de la Escuela</span></label>
-                            <input type="text" className="input input-bordered w-full" {...register('nombre', { required: "Obligatorio" })} />
-                            {errors.nombre && <span className="text-error text-xs mt-1">{errors.nombre.message as string}</span>}
-                        </div>
-                        <div className="form-control">
-                            <label className="label"><span className="label-text font-bold">CCT</span></label>
-                            <input type="text" className="input input-bordered w-full font-mono" {...register('cct', { required: "Obligatorio" })} />
-                            {errors.cct && <span className="text-error text-xs mt-1">{errors.cct.message as string}</span>}
-                        </div>
-                        <div className="form-control">
-                            <label className="label"><span className="label-text font-bold">Clave Estatal</span></label>
-                            <input type="text" className="input input-bordered w-full" {...register('clave_estatal', { required: "Obligatorio" })} />
-                            {errors.clave_estatal && <span className="text-error text-xs mt-1">{errors.clave_estatal.message as string}</span>}
-                        </div>
-                        <div className="form-control">
-                            <label className="label"><span className="label-text font-bold">Nivel Educativo</span></label>
-                            <select className="select select-bordered w-full" {...register('nivel', { required: "Obligatorio" })}>
-                                <option value="">Selecciona el nivel</option>
-                                {NIVELES_OPCIONES.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-                            </select>
-                            {errors.nivel && <span className="text-error text-xs mt-1">{errors.nivel.message as string}</span>}
-                        </div>
-                        <div className="form-control">
-                            <label className="label"><span className="label-text font-bold">Zona Escolar</span></label>
-                            <input type="text" className="input input-bordered w-full" {...register('zona', { required: "Obligatorio" })} />
-                            {errors.zona && <span className="text-error text-xs mt-1">{errors.zona.message as string}</span>}
-                        </div>
-                        <div className="md:col-span-2 divider my-2">Ubicación Física</div>
-                        <div className="form-control">
-                            <label className="label"><span className="label-text font-bold">Domicilio Completo</span></label>
-                            <input type="text" className="input input-bordered w-full" {...register('domicilio', { required: "Obligatorio" })} />
-                            {errors.domicilio && <span className="text-error text-xs mt-1">{errors.domicilio.message as string}</span>}
-                        </div>
-                        <div className="form-control">
-                            <label className="label"><span className="label-text font-bold">Colonia</span></label>
-                            <input type="text" className="input input-bordered w-full" {...register('colonia', { required: "Obligatorio" })} />
-                            {errors.colonia && <span className="text-error text-xs mt-1">{errors.colonia.message as string}</span>}
-                        </div>
-                        <div className="md:col-span-2 flex justify-end gap-3 pt-4 border-t border-base-300">
-                            <button type="button" className="btn btn-ghost" onClick={cerrarModal}>Cancelar</button>
-                            <button type="submit" className="btn btn-primary gap-2"><Save size={18} /> {escuelaEditar ? 'Guardar Cambios' : 'Registrar Escuela'}</button>
-                        </div>
-                    </form>
+        <Modal
+            isOpen={isModalOpen}
+            onClose={cerrarModal}
+            title={escuelaEditar ? "Editar Escuela" : "Registrar Nueva Escuela"}
+            icon={<School size={24} />}
+            size="lg"
+        >
+            <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="md:col-span-2 form-control">
+                    <label className="label" htmlFor="nombre"><span className="label-text font-bold">Nombre de la Escuela</span></label>
+                    <input id="nombre" type="text" className="input input-bordered w-full" {...register('nombre', { required: "Obligatorio" })} />
+                    {errors.nombre && <span className="text-error text-xs mt-1">{errors.nombre.message as string}</span>}
                 </div>
-                <div className="modal-backdrop" onClick={cerrarModal}></div>
-            </div>
-        )}
+                <div className="form-control">
+                    <label className="label" htmlFor="cct"><span className="label-text font-bold">CCT</span></label>
+                    <input id="cct" type="text" className="input input-bordered w-full font-mono" {...register('cct', { required: "Obligatorio" })} />
+                    {errors.cct && <span className="text-error text-xs mt-1">{errors.cct.message as string}</span>}
+                </div>
+                <div className="form-control">
+                    <label className="label" htmlFor="clave_estatal"><span className="label-text font-bold">Clave Estatal</span></label>
+                    <input id="clave_estatal" type="text" className="input input-bordered w-full" {...register('clave_estatal', { required: "Obligatorio" })} />
+                    {errors.clave_estatal && <span className="text-error text-xs mt-1">{errors.clave_estatal.message as string}</span>}
+                </div>
+                <div className="form-control">
+                    <label className="label" htmlFor="nivel"><span className="label-text font-bold">Nivel Educativo</span></label>
+                    <select id="nivel" className="select select-bordered w-full" {...register('nivel', { required: "Obligatorio" })}>
+                        <option value="">Selecciona el nivel</option>
+                        {NIVELES_OPCIONES.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                    </select>
+                    {errors.nivel && <span className="text-error text-xs mt-1">{errors.nivel.message as string}</span>}
+                </div>
+                <div className="form-control">
+                    <label className="label" htmlFor="zona"><span className="label-text font-bold">Zona Escolar</span></label>
+                    <input id="zona" type="text" className="input input-bordered w-full" {...register('zona', { required: "Obligatorio" })} />
+                    {errors.zona && <span className="text-error text-xs mt-1">{errors.zona.message as string}</span>}
+                </div>
+                <div className="md:col-span-2 divider my-2">Ubicación Física</div>
+                <div className="form-control">
+                    <label className="label" htmlFor="domicilio"><span className="label-text font-bold">Domicilio Completo</span></label>
+                    <input id="domicilio" type="text" className="input input-bordered w-full" {...register('domicilio', { required: "Obligatorio" })} />
+                    {errors.domicilio && <span className="text-error text-xs mt-1">{errors.domicilio.message as string}</span>}
+                </div>
+                <div className="form-control">
+                    <label className="label" htmlFor="colonia"><span className="label-text font-bold">Colonia</span></label>
+                    <input id="colonia" type="text" className="input input-bordered w-full" {...register('colonia', { required: "Obligatorio" })} />
+                    {errors.colonia && <span className="text-error text-xs mt-1">{errors.colonia.message as string}</span>}
+                </div>
+                <div className="md:col-span-2 flex justify-end gap-3 pt-4 border-t border-base-300">
+                    <button type="button" className="btn btn-ghost" onClick={cerrarModal}>Cancelar</button>
+                    <button type="submit" className="btn btn-primary gap-2"><Save size={18} /> {escuelaEditar ? 'Guardar Cambios' : 'Registrar Escuela'}</button>
+                </div>
+            </form>
+        </Modal>
     </div>
   );
 };

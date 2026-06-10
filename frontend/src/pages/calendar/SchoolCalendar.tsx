@@ -7,7 +7,9 @@ import {
   AlertCircle, Trash, Edit2 
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { isAxiosError } from 'axios';
 import { useLoading } from '../../context/LoadingContext';
+import { EmptyState, ErrorState } from '../../components/Skeletons';
 import TaskModal from './TaskModal';
 import { getUsuarios } from '../../api/usuarios';
 import { getAlumnos } from '../../api/alumnos';
@@ -21,7 +23,7 @@ const SchoolCalendar = () => {
     const [modalOpened, setModalOpened] = useState(false);
     const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
 
-    const { data: events, isLoading: loadingEvents } = useQuery({
+    const { data: events, isLoading: loadingEvents, isError, error } = useQuery({
         queryKey: ['calendar_events'],
         queryFn: () => calendarApi.getEvents(),
     });
@@ -37,10 +39,11 @@ const SchoolCalendar = () => {
             queryClient.invalidateQueries({ queryKey: ['calendar_events'] });
             setModalOpened(false);
             setEditingEvent(null);
-            toast.success('Calendario Actualizado', { description: 'El evento/tarea ha sido guardado correctamente.' });
+            toast.success('¡Guardado! ✅', { description: 'El evento/tarea ha sido guardado correctamente.' });
         },
-        onError: (err: any) => {
-            toast.error('Error', { description: err.response?.data?.detail || 'No se pudo guardar el evento.' });
+        onError: (err) => {
+            const errorData = isAxiosError(err) ? err.response?.data as Record<string, unknown> | undefined : undefined;
+            toast.error('Error ❌', { description: (errorData?.detail as string) || 'No se pudo guardar el evento.' });
         },
         onSettled: () => hideLoading(),
     });
@@ -50,7 +53,7 @@ const SchoolCalendar = () => {
         onMutate: () => showLoading(),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['calendar_events'] });
-            toast.success('Eliminado', { description: 'El evento ha sido borrado.' });
+            toast.success('¡Eliminado! 🗑️', { description: 'El evento ha sido borrado.' });
         },
         onSettled: () => hideLoading(),
     });
@@ -71,6 +74,8 @@ const SchoolCalendar = () => {
             id: editingEvent?.id,
         });
     };
+
+    if (isError) return <ErrorState error={error} message="Error al cargar la agenda. Intenta de nuevo." />;
 
     if (loadingEvents) return (
       <div className="flex items-center justify-center h-[70vh]">
@@ -131,7 +136,7 @@ const SchoolCalendar = () => {
                                 </div>
                             ))}
                             {events?.results?.filter(e => e.priority === 'ALTA' && e.status === 'PENDIENTE').length === 0 && (
-                                <p className="text-xs text-center text-base-content/40 italic">No hay tareas urgentes.</p>
+                                <EmptyState icon={AlertCircle} title="No hay tareas urgentes." />
                             )}
                         </div>
                     </div>
@@ -222,8 +227,8 @@ const SchoolCalendar = () => {
                 onClose={() => { setModalOpened(false); setEditingEvent(null); }} 
                 onSave={handleSave}
                 initialData={editingEvent}
-                users={(users as unknown as any[]) || []}
-                alunos={(alunos as unknown as any[]) || []}
+                users={(users?.results || []).map(u => ({ id: u.id, nombre: u.nombre, first_name: u.nombre, last_name: u.apellido_paterno || '' }))}
+                alunos={(alunos?.results || []).map(a => ({ id: a.id, nombre: a.nombres, nombres: a.nombres, apellido_paterno: a.apellido_paterno }))}
                 escuelas={escuelas || []}
                 currentUserRole={localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).role : ''}
             />

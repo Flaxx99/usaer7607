@@ -1,15 +1,19 @@
 import { useState, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm, Controller } from 'react-hook-form';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { avisoFormSchema, type AvisoForm } from '../../schemas/aviso';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { 
     Megaphone, Plus, Calendar, Edit2, Trash2, 
     AlertCircle, Search, Filter
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { isAxiosError } from 'axios';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
-import { CardGridSkeleton } from '../../components/Skeletons';
+import { CardGridSkeleton, EmptyState, ErrorState } from '../../components/Skeletons';
+import Modal from '../../components/Modal';
 import { getAvisos, createAviso, updateAviso, deleteAviso } from '../../api/avisos';
 import type { Anuncio } from '../../interfaces/aviso';
 
@@ -21,9 +25,11 @@ const TablonAvisos = () => {
   const [avisoEditar, setAvisoEditar] = useState<Anuncio | null>(null);
 
   const queryClient = useQueryClient();
-  const { register, handleSubmit, control, reset, formState: { errors } } = useForm<Anuncio>();
+  const { register, handleSubmit, control, reset, formState: { errors } } = useForm<AvisoForm>({
+    resolver: zodResolver(avisoFormSchema),
+  });
 
-  const { data: avisos, isLoading } = useQuery({
+  const { data: avisos, isLoading, isError, error } = useQuery({
     queryKey: ['avisos', verMisAvisos],
     queryFn: () => getAvisos(verMisAvisos),
   });
@@ -33,11 +39,12 @@ const TablonAvisos = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['avisos'] });
       cerrarModal();
-      toast.success('Publicado 📢', { description: 'El aviso ha sido creado y se enviarán notificaciones al personal.' });
+      toast.success('¡Publicado! 📢', { description: 'El aviso ha sido creado y se enviarán notificaciones al personal.' });
     },
-    onError: (err: any) => {
-        const msg = err.response?.data?.fecha_expiracion || 'Revisa los datos.';
-        toast.error('Error ❌', { description: String(msg) });
+    onError: (err) => {
+        const errorData = isAxiosError(err) ? err.response?.data as Record<string, unknown> | undefined : undefined;
+        const msg = errorData?.fecha_expiracion as string | undefined || 'Revisa los datos.';
+        toast.error('Error ❌', { description: msg });
     }
   });
 
@@ -46,7 +53,7 @@ const TablonAvisos = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['avisos'] });
       cerrarModal();
-      toast.success('Actualizado ✏️', { description: 'Aviso modificado correctamente.' });
+      toast.success('¡Actualizado! ✏️', { description: 'Aviso modificado correctamente.' });
     },
     onError: () => toast.error('Error ❌', { description: 'No se pudo actualizar.' })
   });
@@ -55,7 +62,7 @@ const TablonAvisos = () => {
     mutationFn: deleteAviso,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['avisos'] });
-      toast.success('Eliminado 🗑️', { description: 'Aviso borrado del tablón.' });
+      toast.success('¡Eliminado! 🗑️', { description: 'Aviso borrado del tablón.' });
     }
   });
 
@@ -88,7 +95,7 @@ const TablonAvisos = () => {
     setIsModalOpen(true);
   };
 
-  const onSubmit = (data: Anuncio) => {
+  const onSubmit = (data: AvisoForm) => {
     const envio = { ...data };
     if (!envio.fecha_expiracion || String(envio.fecha_expiracion).trim() === '') {
         envio.fecha_expiracion = null;
@@ -100,9 +107,9 @@ const TablonAvisos = () => {
         envio.fecha_expiracion = `${envio.fecha_expiracion}:00`;
     }
     if (avisoEditar) {
-        updateMutation.mutate({ ...envio, id: avisoEditar.id });
+        updateMutation.mutate({ ...envio, id: avisoEditar.id } as Anuncio);
     } else {
-        createMutation.mutate(envio);
+        createMutation.mutate(envio as Anuncio);
     }
   };
 
@@ -127,6 +134,8 @@ const TablonAvisos = () => {
       return cumpleBusqueda;
     });
   }, [avisos, busquedaDebounced]);
+
+  if (isError) return <ErrorState error={error} message="Error al cargar los avisos. Intenta de nuevo." />;
 
   if (isLoading) {
       return (
@@ -175,10 +184,11 @@ const TablonAvisos = () => {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
                 <div className="form-control w-full">
-                    <label className="label"><span className="label-text font-bold">Buscar Aviso</span></label>
+                    <label className="label" htmlFor="buscar_aviso"><span className="label-text font-bold">Buscar Aviso</span></label>
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40" size={18} />
                         <input 
+                            id="buscar_aviso"
                             type="text" 
                             placeholder="Escribe el título o contenido..." 
                             className="input input-bordered pl-10 w-full" 
@@ -250,7 +260,7 @@ const TablonAvisos = () => {
                                     </div>
                                     <div className="flex flex-col">
                                         <span className="text-xs font-bold">{aviso.autor_nombre}</span>
-                                        <span className="text-[10px] opacity-50">Autor</span>
+                                        <span className="text-xs opacity-50">Autor</span>
                                     </div>
                                 </div>
 
@@ -271,98 +281,92 @@ const TablonAvisos = () => {
             })}
 
             {avisos?.length === 0 && (
-                <div className="col-span-full card bg-base-200 p-12 text-center space-y-4">
-                    <Megaphone size={48} className="mx-auto text-base-content/20" />
-                    <p className="font-medium text-base-content/40">No hay avisos publicados en esta sección.</p>
-                </div>
+                <EmptyState icon={Megaphone} title="No hay avisos publicados en esta sección." />
             )}
         </div>
 
-        {/* MODAL CREAR/EDITAR */}
-        {isModalOpen && (
-            <div className="modal modal-open">
-                <div className="modal-box max-w-2xl p-0 overflow-hidden">
-                    <div className="bg-primary p-6 text-primary-content flex items-center gap-3">
-                        <Megaphone size={24} className="text-yellow-300" />
-                        <h3 className="text-xl font-black">
-                            {avisoEditar ? "Editar Comunicado" : "Nuevo Comunicado Oficial"}
-                        </h3>
-                    </div>
-                    <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
-                        <div className="form-control">
-                            <label className="label"><span className="label-text font-bold">Título del Aviso</span></label>
-                            <input 
-                                {...register('titulo', { required: "El título es obligatorio" })} 
-                                className="input input-bordered w-full" 
-                                placeholder="Ej. Suspensión de labores, Junta de Consejo..." 
-                            />
-                            {errors.titulo && <span className="text-error text-xs mt-1">{errors.titulo.message}</span>}
-                        </div>
-
-                        <div className="form-control">
-                            <label className="label"><span className="label-text font-bold">Contenido del Comunicado</span></label>
-                            <textarea 
-                                {...register('contenido', { required: "El contenido es obligatorio" })} 
-                                className="textarea textarea-bordered h-32" 
-                                placeholder="Detalle la información relevante..." 
-                            />
-                            {errors.contenido && <span className="text-error text-xs mt-1">{errors.contenido.message}</span>}
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="form-control">
-                                <label className="label"><span className="label-text font-bold">Fecha de Publicación</span></label>
-                                <Controller
-                                    name="fecha_publicacion"
-                                    control={control}
-                                    rules={{ required: "Requerido" }}
-                                    render={({ field }) => (
-                                        <input 
-                                            type="datetime-local" 
-                                            {...field} 
-                                            className="input input-bordered w-full" 
-                                        />
-                                    )}
-                                />
-                            </div>
-                            <div className="form-control">
-                                <label className="label"><span className="label-text font-bold">Fecha de Expiración (Opcional)</span></label>
-                                <Controller
-                                    name="fecha_expiracion"
-                                    control={control}
-                                    render={({ field }) => (
-                                        <input 
-                                            type="datetime-local" 
-                                            value={field.value || ''}
-                                            onChange={field.onChange}
-                                            onBlur={field.onBlur}
-                                            ref={field.ref}
-                                            className="input input-bordered w-full" 
-                                        />
-                                    )}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="p-4 bg-primary/10 rounded-xl border border-primary/20 flex items-start gap-3">
-                            <AlertCircle size={18} className="text-primary mt-1" />
-                            <p className="text-xs text-primary-content/80">
-                                Al publicar, se enviará una notificación automática a todos los usuarios activos del sistema.
-                            </p>
-                        </div>
-
-                        <div className="flex justify-end gap-3 pt-4 border-t border-base-300">
-                            <button type="button" className="btn btn-ghost" onClick={cerrarModal}>Cancelar</button>
-                            <button type="submit" className="btn btn-primary px-8 flex items-center gap-2">
-                                <Megaphone size={18} />
-                                {avisoEditar ? 'Actualizar Aviso' : 'Publicar Comunicado'}
-                            </button>
-                        </div>
-                    </form>
+        <Modal
+            isOpen={isModalOpen}
+            onClose={cerrarModal}
+            title={avisoEditar ? "Editar Comunicado" : "Nuevo Comunicado Oficial"}
+            icon={<Megaphone size={24} />}
+            size="lg"
+        >
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                <div className="form-control">
+                    <label className="label" htmlFor="titulo"><span className="label-text font-bold">Título del Aviso</span></label>
+                    <input 
+                        id="titulo"
+                        {...register('titulo')} 
+                        className="input input-bordered w-full" 
+                        placeholder="Ej. Suspensión de labores, Junta de Consejo..." 
+                    />
+                    {errors.titulo && <span className="text-error text-xs mt-1">{errors.titulo.message}</span>}
                 </div>
-                <div className="modal-backdrop" onClick={cerrarModal}></div>
-            </div>
-        )}
+
+                <div className="form-control">
+                    <label className="label" htmlFor="contenido"><span className="label-text font-bold">Contenido del Comunicado</span></label>
+                    <textarea 
+                        id="contenido"
+                        {...register('contenido')} 
+                        className="textarea textarea-bordered h-32" 
+                        placeholder="Detalle la información relevante..." 
+                    />
+                    {errors.contenido && <span className="text-error text-xs mt-1">{errors.contenido.message}</span>}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="form-control">
+                        <label className="label" htmlFor="fecha_publicacion"><span className="label-text font-bold">Fecha de Publicación</span></label>
+                        <Controller
+                            name="fecha_publicacion"
+                            control={control}
+                            render={({ field }) => (
+                                <input 
+                                    id="fecha_publicacion"
+                                    type="datetime-local" 
+                                    {...field} 
+                                    className="input input-bordered w-full" 
+                                />
+                            )}
+                        />
+                    </div>
+                    <div className="form-control">
+                        <label className="label" htmlFor="fecha_expiracion"><span className="label-text font-bold">Fecha de Expiración (Opcional)</span></label>
+                        <Controller
+                            name="fecha_expiracion"
+                            control={control}
+                            render={({ field }) => (
+                                <input 
+                                    id="fecha_expiracion"
+                                    type="datetime-local" 
+                                    value={field.value || ''}
+                                    onChange={field.onChange}
+                                    onBlur={field.onBlur}
+                                    ref={field.ref}
+                                    className="input input-bordered w-full" 
+                                />
+                            )}
+                        />
+                    </div>
+                </div>
+
+                <div className="p-4 bg-primary/10 rounded-xl border border-primary/20 flex items-start gap-3">
+                    <AlertCircle size={18} className="text-primary mt-1" />
+                    <p className="text-xs text-primary-content/80">
+                        Al publicar, se enviará una notificación automática a todos los usuarios activos del sistema.
+                    </p>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4 border-t border-base-300">
+                    <button type="button" className="btn btn-ghost" onClick={cerrarModal}>Cancelar</button>
+                    <button type="submit" className="btn btn-primary px-8 flex items-center gap-2">
+                        <Megaphone size={18} />
+                        {avisoEditar ? 'Actualizar Aviso' : 'Publicar Comunicado'}
+                    </button>
+                </div>
+            </form>
+        </Modal>
     </div>
   );
 };

@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Bell, CheckCheck, Trash2, Loader2, Inbox } from 'lucide-react';
+import { Bell, CheckCheck, Loader2, Inbox } from 'lucide-react';
 import { toast } from 'sonner';
-import { notificacionesApi, Notificacion } from '../../api/notificaciones';
+import { EmptyState, ErrorState } from '../../components/Skeletons';
+import { notificacionesApi } from '../../api/notificaciones';
 
 const ListaNotificaciones = () => {
     const queryClient = useQueryClient();
@@ -17,7 +18,7 @@ const ListaNotificaciones = () => {
         mutationFn: notificacionesApi.marcarComoLeida,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['notificaciones'] });
-            toast.success('Notificación marcada como leída');
+            toast.success('¡Leída! ✅', { description: 'Notificación marcada como leída.' });
         },
     });
 
@@ -25,7 +26,7 @@ const ListaNotificaciones = () => {
         mutationFn: notificacionesApi.marcarTodasComoLeidas,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['notificaciones'] });
-            toast.success('Todas las notificaciones marcadas como leídas');
+            toast.success('¡Todo leído! ✅', { description: 'Todas las notificaciones marcadas como leídas.' });
         },
     });
 
@@ -40,15 +41,11 @@ const ListaNotificaciones = () => {
 
     if (isError) {
         return (
-            <div className="flex flex-col items-center justify-center h-[60vh] text-error">
-                <p className="text-xl font-bold">Error al cargar notificaciones</p>
-                <button 
-                    onClick={() => queryClient.refetch()} 
-                    className="btn btn-primary mt-4"
-                >
-                    Reintentar
-                </button>
-            </div>
+            <ErrorState 
+                title="Error al cargar"
+                message="No se pudieron cargar las notificaciones. Intenta de nuevo."
+                onRetry={() => queryClient.invalidateQueries({ queryKey: ['notificaciones'] })}
+            />
         );
     }
 
@@ -79,10 +76,7 @@ const ListaNotificaciones = () => {
             </div>
 
             {notificaciones.length === 0 ? (
-                <div className="card bg-base-100 border border-dashed border-base-300 p-20 text-center">
-                    <Inbox className="w-16 h-16 mx-auto text-base-content/20 mb-4" />
-                    <p className="text-xl font-bold text-base-content/40">No tienes notificaciones nuevas</p>
-                </div>
+                <EmptyState icon={Inbox} title="No tienes notificaciones nuevas" dashed />
             ) : (
                 <div className="space-y-4">
                     {notificaciones.map((n) => (
@@ -100,7 +94,7 @@ const ListaNotificaciones = () => {
                                     <p className="text-sm text-base-content/70 mt-1 whitespace-pre-wrap">
                                         {n.contenido}
                                     </p>
-                                    <p className="text-[10px] opacity-50 mt-3">
+                                    <p className="text-xs opacity-50 mt-3">
                                         {new Date(n.fecha_creacion).toLocaleString()}
                                     </p>
                                 </div>

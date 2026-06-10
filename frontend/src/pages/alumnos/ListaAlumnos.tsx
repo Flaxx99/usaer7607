@@ -1,26 +1,23 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm, Controller } from 'react-hook-form';
+import type { SubmitHandler } from 'react-hook-form';
+import { alumnoSchema, type AlumnoFormData, CLASIFICACIONES_OPCIONES } from '../../schemas/alumno';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { 
-  Plus, Search, Users, Edit2, Trash2, 
+  Plus, Users, Edit2, Trash2, 
   Save, School as SchoolIcon, Sparkles, Filter
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
-import { TableSkeleton } from '../../components/Skeletons';
+import { TableSkeleton, ErrorState } from '../../components/Skeletons';
 import { getAlumnos, createAlumno, updateAlumno, deleteAlumno } from '../../api/alumnos';
 import { getEscuelas } from '../../api/escuelas'; 
 import { getMaestros } from '../../api/usuarios';
 import type { Alumno } from '../../interfaces/alumno';
-
-const CLASIFICACIONES_OPCIONES = [
-  { value: 'NINGUNO', label: 'NINGUNO (En evaluación)' },
-  { value: 'DISCAPACIDAD', label: 'DISCAPACIDAD' },
-  { value: 'DIFICULTADES_SEVERAS', label: 'DIFICULTADES SEVERAS' },
-  { value: 'TRASTORNOS', label: 'TRASTORNOS (TDAH, TEA...)' },
-  { value: 'APTITUDES_SOBRESALIENTES', label: 'APTITUDES SOBRESALIENTES' },
-  { value: 'OTRO', label: 'OTRO (Especifique)' }
-];
+import { DataTable } from '../../components/DataTable';
+import Modal from '../../components/Modal';
+import type { ColumnDef } from '@tanstack/react-table';
 
 const ListaAlumnos = () => {
   const [busqueda, setBusqueda] = useState('');
@@ -34,13 +31,16 @@ const ListaAlumnos = () => {
   const [alumnoEditar, setAlumnoEditar] = useState<Alumno | null>(null);
   
   const queryClient = useQueryClient();
-  const { register, handleSubmit, reset, watch, control, formState: { errors } } = useForm<Alumno>();
+  const { register, handleSubmit, reset, watch, control, formState: { errors } } = useForm<AlumnoFormData>({
+    resolver: zodResolver(alumnoSchema),
+    defaultValues: { activo: true },
+  });
 
   useEffect(() => {
     setPage(1);
   }, [busquedaDebounced]);
 
-  const { data: paginatedAlumnos, isLoading: loadingAlumnos } = useQuery({
+  const { data: paginatedAlumnos, isLoading: loadingAlumnos, isError, error } = useQuery({
     queryKey: ['alumnos', page, busquedaDebounced, filtroEscuela, filtroCondicion, filtroEstado],
     queryFn: () => getAlumnos(page, busquedaDebounced, filtroEscuela || '', filtroCondicion || '', filtroEstado),
   });
@@ -93,9 +93,9 @@ const ListaAlumnos = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['alumnos'] });
       cerrarModal();
-      toast.success('¡Registrado!', { description: 'El alumno ha sido dado de alta exitosamente.' });
+      toast.success('¡Registrado! ✅', { description: 'El alumno ha sido dado de alta exitosamente.' });
     },
-    onError: () => toast.error('Error', { description: 'Revisa los datos (posible CURP ya registrada).' })
+    onError: () => toast.error('Error ❌', { description: 'Revisa los datos (posible CURP ya registrada).' })
   });
 
   const updateMutation = useMutation({
@@ -103,18 +103,18 @@ const ListaAlumnos = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['alumnos'] });
       cerrarModal();
-      toast.success('¡Guardado!', { description: 'Datos escolares actualizados.' });
+      toast.success('¡Actualizado! ✏️', { description: 'Datos escolares actualizados.' });
     },
-    onError: () => toast.error('Error', { description: 'No se pudo guardar la información.' })
+    onError: () => toast.error('Error ❌', { description: 'No se pudo guardar la información.' })
   });
 
   const deleteMutation = useMutation({
     mutationFn: deleteAlumno,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['alumnos'] });
-      toast.success('Eliminado', { description: 'El alumno ha sido dado de baja de la USAER.' });
+      toast.success('¡Eliminado! 🗑️', { description: 'El alumno ha sido dado de baja de la USAER.' });
     },
-    onError: () => toast.error('Error', { description: 'No se puede eliminar (registros vinculados).' })
+    onError: () => toast.error('Error ❌', { description: 'No se puede eliminar (registros vinculados).' })
   });
 
   const cerrarModal = () => {
@@ -123,10 +123,94 @@ const ListaAlumnos = () => {
     reset();
   };
 
-  const handleFilterChange = (setter: (val: any) => void, value: any) => {
-    setter(value);
-    setPage(1);
-  };
+  const columns: ColumnDef<Alumno>[] = [
+    {
+        accessorKey: 'nombres',
+        header: 'Estudiante / CURP',
+        cell: ({ row }) => {
+            const item = row.original;
+            return (
+                <div className="flex items-center gap-3">
+                    <div className="avatar placeholder">
+                        <div className={`avatar-placeholder ${item.sexo === 'H' ? 'bg-blue-200 text-blue-700' : 'bg-purple-200 text-purple-700'} rounded-full w-10 h-10 font-bold text-lg`}>
+                            {item.nombres.charAt(0)}
+                        </div>
+                    </div>
+                    <div>
+                        <p className="font-bold text-sm leading-tight">{item.nombres} {item.apellido_paterno} {item.apellido_materno}</p>
+                        <div className="flex gap-1 mt-1">
+                            <span className="badge badge-ghost badge-xs font-mono opacity-60">{item.curp}</span>
+                            <span className="badge badge-ghost badge-xs opacity-60">{item.sexo === 'H' ? 'Niño' : 'Niña'}</span>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+    },
+    {
+        accessorKey: 'escuela',
+        header: 'Escuela de Procedencia',
+        cell: ({ row }) => {
+            const item = row.original;
+            return (
+                <div className="flex items-center gap-2">
+                    <SchoolIcon size={16} className="text-primary" />
+                    <div>
+                        <p className="font-bold text-sm">{item.escuela_detalle?.nombre || `Escuela #${item.escuela}`}</p>
+                        <p className="text-xs opacity-50">{item.grado}° Grado • Grupo "{item.grupo}"</p>
+                    </div>
+                </div>
+            );
+        }
+    },
+    {
+        accessorKey: 'clasificacion',
+        header: 'Diagnóstico',
+        cell: ({ row }) => {
+            const item = row.original;
+            return (
+                <div className="flex flex-col gap-1">
+                    <span className={`badge badge-sm font-bold ${
+                        item.clasificacion === 'NINGUNO' ? 'badge-ghost' :
+                        item.clasificacion === 'DISCAPACIDAD' ? 'badge-info' :
+                        item.clasificacion === 'DIFICULTADES_SEVERAS' ? 'badge-warning' :
+                        item.clasificacion === 'TRASTORNOS' ? 'badge-error' : 'badge-secondary'
+                    }`}>
+                        {item.clasificacion.replace('_', ' ')}
+                    </span>
+                    {item.clasificacion_otro && (
+                        <p className="text-xs italic opacity-60 pl-1">"{item.clasificacion_otro}"</p>
+                    )}
+                </div>
+            );
+        }
+    },
+    {
+        accessorKey: 'activo',
+        header: 'Estatus',
+        cell: ({ row }) => (
+            <div className="flex justify-center">
+                <span className={`badge badge-sm font-bold ${row.original.activo ? 'badge-success' : 'badge-error'}`}>
+                    {row.original.activo ? 'Activo' : 'Baja'}
+                </span>
+            </div>
+        )
+    },
+    {
+        id: 'actions',
+        header: 'Acciones',
+        cell: ({ row }) => (
+            <div className="flex justify-center gap-2">
+                <button className="btn btn-ghost btn-xs text-primary" onClick={() => handleOpenEdit(row.original)}>
+                    <Edit2 size={14} />
+                </button>
+                <button className="btn btn-ghost btn-xs text-error" onClick={() => handleDelete(row.original.id)}>
+                    <Trash2 size={14} />
+                </button>
+            </div>
+        )
+    }
+  ];
 
   const handleOpenCreate = () => {
     setAlumnoEditar(null);
@@ -144,27 +228,31 @@ const ListaAlumnos = () => {
 
   const handleOpenEdit = (alumno: Alumno) => {
     setAlumnoEditar(alumno);
-    reset(alumno); 
+    reset({ ...alumno, fecha_nacimiento: alumno.fecha_nacimiento || undefined });
     setIsModalOpen(true);
   };
 
-  const onSubmit = (data: Alumno) => {
-    data.nombres = data.nombres.toUpperCase();
-    data.apellido_paterno = data.apellido_paterno.toUpperCase();
-    data.apellido_materno = data.apellido_materno ? data.apellido_materno.toUpperCase() : '';
-    data.curp = data.curp.toUpperCase();
-    data.grupo = data.grupo.toUpperCase();
-
-    if (!data.profesor || String(data.profesor) === "") {
-        data.profesor = null; 
-    } else {
-        data.profesor = Number(data.profesor);
-    }
+  const onSubmit: SubmitHandler<AlumnoFormData> = (data) => {
+    const payload: Omit<Alumno, 'id'> & Partial<Pick<Alumno, 'id'>> = {
+        nombres: data.nombres.toUpperCase(),
+        apellido_paterno: data.apellido_paterno.toUpperCase(),
+        apellido_materno: (data.apellido_materno || '').toUpperCase(),
+        curp: data.curp.toUpperCase(),
+        fecha_nacimiento: data.fecha_nacimiento,
+        sexo: data.sexo,
+        escuela: Number(data.escuela) || 0,
+        profesor: !data.profesor || String(data.profesor) === '' ? null : Number(data.profesor),
+        grado: data.grado,
+        grupo: data.grupo.toUpperCase(),
+        clasificacion: data.clasificacion as Alumno['clasificacion'],
+        clasificacion_otro: data.clasificacion_otro,
+        activo: data.activo,
+    };
 
     if (alumnoEditar) {
-        updateMutation.mutate({ ...data, id: alumnoEditar.id });
+        updateMutation.mutate({ ...payload, id: alumnoEditar.id } as Alumno);
     } else {
-        createMutation.mutate(data);
+        createMutation.mutate(payload as Alumno);
     }
   };
 
@@ -175,6 +263,8 @@ const ListaAlumnos = () => {
   };
 
   const clasificacionActual = watch('clasificacion');
+
+  if (isError) return <ErrorState error={error} message="Error al cargar los alumnos. Intenta de nuevo." />;
 
   if (loadingAlumnos) {
     return (
@@ -212,174 +302,79 @@ const ListaAlumnos = () => {
           </button>
         </div>
       </div>
-
-      {/* FILTROS */}
+      
+      {/* FILTROS AVANZADOS */}
       <div className="card bg-base-100 shadow-sm border border-base-300 p-6 space-y-6">
         <div className="flex items-center gap-2 text-base-content/60">
           <Filter size={16} className="text-primary" />
-          <span className="text-xs font-bold uppercase tracking-widest">Filtros de Búsqueda Rápida</span>
+          <span className="text-xs font-bold uppercase tracking-widest">Filtros Avanzados</span>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
           <div className="form-control w-full">
-            <label className="label"><span className="label-text font-bold">Buscar Alumno</span></label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40" size={18} />
-              <input 
-                type="text" 
-                placeholder="Apellido, Nombre o CURP..." 
-                className="input input-bordered pl-10 w-full" 
-                value={busqueda} 
-                onChange={(e) => setBusqueda(e.target.value)}
-              />
-            </div>
-          </div>
-          
-          <div className="form-control w-full">
-            <label className="label"><span className="label-text font-bold">Escuela</span></label>
+            <label className="label" htmlFor="filtro_escuela"><span className="label-text font-bold">Escuela</span></label>
             <select 
+              id="filtro_escuela"
               className="select select-bordered w-full" 
               value={filtroEscuela} 
-              onChange={(e) => handleFilterChange(setFiltroEscuela, e.target.value)}
+              onChange={(e) => { setFiltroEscuela(e.target.value); setPage(1); }}
             >
               {escuelasOpciones.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
             </select>
           </div>
-
+          
           <div className="form-control w-full">
-            <label className="label"><span className="label-text font-bold">Diagnóstico</span></label>
+            <label className="label" htmlFor="filtro_diagnostico"><span className="label-text font-bold">Diagnóstico</span></label>
             <select 
+              id="filtro_diagnostico"
               className="select select-bordered w-full" 
               value={filtroCondicion} 
-              onChange={(e) => handleFilterChange(setFiltroCondicion, e.target.value)}
+              onChange={(e) => { setFiltroCondicion(e.target.value); setPage(1); }}
             >
               {condicionesOpciones.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
             </select>
           </div>
-
+          
           <div className="form-control w-full">
             <label className="label"><span className="label-text font-bold">Estado</span></label>
             <div className="join w-full">
               <button 
                 className={`btn btn-sm join-item ${filtroEstado === 'ACTIVOS' ? 'btn-primary' : 'btn-outline'}`}
-                onClick={() => handleFilterChange(setFiltroEstado, 'ACTIVOS')}
+                onClick={() => { setFiltroEstado('ACTIVOS'); setPage(1); }}
               >Activos</button>
               <button 
                 className={`btn btn-sm join-item ${filtroEstado === 'BAJAS' ? 'btn-primary' : 'btn-outline'}`}
-                onClick={() => handleFilterChange(setFiltroEstado, 'BAJAS')}
+                onClick={() => { setFiltroEstado('BAJAS'); setPage(1); }}
               >Bajas</button>
               <button 
                 className={`btn btn-sm join-item ${filtroEstado === 'TODOS' ? 'btn-primary' : 'btn-outline'}`}
-                onClick={() => handleFilterChange(setFiltroEstado, 'TODOS')}
+                onClick={() => { setFiltroEstado('TODOS'); setPage(1); }}
               >Todos</button>
             </div>
           </div>
         </div>
       </div>
-
-      {/* TABLA */}
-      <div className="card bg-base-100 shadow-sm border border-base-300 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="table table-md table-zebra w-full">
-            <thead className="bg-base-200">
-              <tr className="text-xs uppercase opacity-60">
-                <th>Estudiante / CURP</th>
-                <th>Escuela de Procedencia</th>
-                <th>Diagnóstico</th>
-                <th className="text-center">Estatus</th>
-                <th className="text-center">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {alumnos.map((item) => (
-                <tr key={item.id} className="hover">
-                  <td>
-                    <div className="flex items-center gap-3">
-                      <div className="avatar placeholder">
-                        <div className={`avatar-placeholder ${item.sexo === 'H' ? 'bg-blue-200 text-blue-700' : 'bg-purple-200 text-purple-700'} rounded-full w-10 h-10 font-bold text-lg`}>
-                          {item.nombres.charAt(0)}
-                        </div>
-                      </div>
-                      <div>
-                        <p className="font-bold text-sm leading-tight">{item.nombres} {item.apellido_paterno} {item.apellido_materno}</p>
-                        <div className="flex gap-1 mt-1">
-                          <span className="badge badge-ghost badge-xs font-mono opacity-60">{item.curp}</span>
-                          <span className="badge badge-ghost badge-xs opacity-60">{item.sexo === 'H' ? 'Niño' : 'Niña'}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td>
-                    <div className="flex items-center gap-2">
-                      <SchoolIcon size={16} className="text-primary" />
-                      <div>
-                        <p className="font-bold text-sm">{item.escuela_detalle?.nombre || `Escuela #${item.escuela}`}</p>
-                        <p className="text-xs opacity-50">{item.grado}° Grado • Grupo "{item.grupo}"</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td>
-                    <div className="flex flex-col gap-1">
-                      <span className={`badge badge-sm font-bold ${
-                        item.clasificacion === 'NINGUNO' ? 'badge-ghost' :
-                        item.clasificacion === 'DISCAPACIDAD' ? 'badge-info' :
-                        item.clasificacion === 'DIFICULTADES_SEVERAS' ? 'badge-warning' :
-                        item.clasificacion === 'TRASTORNOS' ? 'badge-error' : 'badge-secondary'
-                      }`}>
-                        {item.clasificacion.replace('_', ' ')}
-                      </span>
-                      {item.clasificacion_otro && (
-                        <p className="text-xs italic opacity-60 pl-1">"{item.clasificacion_otro}"</p>
-                      )}
-                    </div>
-                  </td>
-                  <td className="text-center">
-                    <span className={`badge badge-sm font-bold ${item.activo ? 'badge-success' : 'badge-error'}`}>
-                      {item.activo ? 'Activo' : 'Baja'}
-                    </span>
-                  </td>
-                  <td className="text-center">
-                    <div className="flex justify-center gap-2">
-                      <button className="btn btn-ghost btn-xs text-primary" onClick={() => handleOpenEdit(item)}>
-                        <Edit2 size={14} />
-                      </button>
-                      <button className="btn btn-ghost btn-xs text-error" onClick={() => handleDelete(item.id)}>
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {alumnos.length === 0 && (
-            <div className="p-12 text-center text-base-content/40 italic">
-              🔍 No encontramos alumnos que coincidan con los filtros aplicados.
-            </div>
-          )}
-        </div>
-        
-        <div className="flex justify-center p-4 border-t border-base-200">
-          <div className="join">
-            <button className="join-item btn btn-sm" disabled={page === 1} onClick={() => setPage(p => p - 1)}>«</button>
-            <button className="join-item btn btn-sm no-animation">{page} / {Math.ceil(totalCount / 10)}</button>
-            <button className="join-item btn btn-sm" disabled={page >= Math.ceil(totalCount / 10)} onClick={() => setPage(p => p + 1)}>»</button>
-          </div>
-        </div>
-      </div>
-
-      {/* MODAL FORMULARIO */}
-      {isModalOpen && (
-        <div className="modal modal-open">
-          <div className="modal-box max-w-3xl p-0 overflow-hidden bg-base-100">
-            <div className="bg-primary p-6 text-primary-content flex items-center gap-3">
-              <Sparkles size={24} className="text-yellow-300" />
-              <h3 className="text-xl font-black">
-                {alumnoEditar ? "Modificar Ficha de Alumno" : "Inscripción de Nuevo Alumno"}
-              </h3>
-            </div>
-            
-            <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
+      
+      <DataTable 
+        data={alumnos} 
+        columns={columns} 
+        isLoading={loadingAlumnos}
+        totalCount={totalCount}
+        page={page}
+        onPageChange={setPage}
+        onSearchChange={setBusqueda}
+        searchValue={busqueda}
+        placeholder="Apellido, Nombre o CURP..."
+      />
+      
+      <Modal
+          isOpen={isModalOpen}
+          onClose={cerrarModal}
+          title={alumnoEditar ? "Modificar Ficha de Alumno" : "Inscripción de Nuevo Alumno"}
+          icon={<Sparkles size={24} />}
+          size="xl"
+      >
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               
               {/* SECCIÓN 1: PERSONALES */}
               <div className="space-y-4 p-4 bg-base-200 rounded-2xl border border-base-300">
@@ -390,12 +385,12 @@ const ListaAlumnos = () => {
                   <div className="form-control">
                     <label className="label py-1"><span className="label-text text-xs font-bold">Nombre(s)</span></label>
                     <input {...register('nombres', { required: "Obligatorio" })} className="input input-bordered" placeholder="Ej. LUIS ANGEL" />
-                    {errors.nombres && <span className="text-error text-[10px] mt-1">{errors.nombres.message}</span>}
+                    {errors.nombres && <span className="text-error text-xs mt-1">{errors.nombres.message}</span>}
                   </div>
                   <div className="form-control">
                     <label className="label py-1"><span className="label-text text-xs font-bold">Apellido Paterno</span></label>
                     <input {...register('apellido_paterno', { required: "Obligatorio" })} className="input input-bordered" placeholder="Ej. VIDAL" />
-                    {errors.apellido_paterno && <span className="text-error text-[10px] mt-1">{errors.apellido_paterno.message}</span>}
+                    {errors.apellido_paterno && <span className="text-error text-xs mt-1">{errors.apellido_paterno.message}</span>}
                   </div>
                   <div className="form-control">
                     <label className="label py-1"><span className="label-text text-xs font-bold">Apellido Materno</span></label>
@@ -414,7 +409,7 @@ const ListaAlumnos = () => {
                       className="input input-bordered font-mono uppercase" 
                       placeholder="18 CARACTERES" 
                     />
-                    {errors.curp && <span className="text-error text-[10px] mt-1">{errors.curp.message}</span>}
+                    {errors.curp && <span className="text-error text-xs mt-1">{errors.curp.message}</span>}
                   </div>
                   <div className="form-control">
                     <label className="label py-1"><span className="label-text text-xs font-bold">Fecha Nacimiento</span></label>
@@ -436,7 +431,7 @@ const ListaAlumnos = () => {
                   </div>
                 </div>
               </div>
-
+              
               {/* SECCIÓN 2: DOCENTE */}
               <div className="space-y-4 p-4 bg-base-200 rounded-2xl border border-base-300">
                 <h4 className="text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
@@ -457,9 +452,9 @@ const ListaAlumnos = () => {
                     </select>
                   )}
                 />
-                <p className="text-[10px] opacity-50"> * Deja vacío para asignación automática al docente actual.</p>
+                <p className="text-xs opacity-50"> * Deja vacío para asignación automática al docente actual.</p>
               </div>
-
+              
               {/* SECCIÓN 3: ESCOLARES */}
               <div className="space-y-4 p-4 bg-base-200 rounded-2xl border border-base-300">
                 <h4 className="text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
@@ -497,7 +492,7 @@ const ListaAlumnos = () => {
                   </div>
                 </div>
               </div>
-
+              
               {/* SECCIÓN 4: DIAGNÓSTICO */}
               <div className="space-y-4 p-4 bg-base-200 rounded-2xl border border-base-300">
                 <h4 className="text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
@@ -521,7 +516,7 @@ const ListaAlumnos = () => {
                   <span className="text-sm font-medium">Atención Activa (recibe apoyo actualmente)</span>
                 </div>
               </div>
-
+              
               <div className="flex justify-end gap-3 pt-4 border-t border-base-300">
                 <button type="button" className="btn btn-ghost" onClick={cerrarModal}>Cancelar</button>
                 <button 
@@ -537,10 +532,7 @@ const ListaAlumnos = () => {
                 </button>
               </div>
             </form>
-          </div>
-          <div className="modal-backdrop" onClick={cerrarModal}></div>
-        </div>
-      )}
+        </Modal>
     </div>
   );
 };

@@ -1,39 +1,50 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
 import MainLayout from './layouts/MainLayout';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
-// Pages imports
-import ListaEscuelas from './pages/escuelas/ListaEscuelas';
-import ListaAlumnos from './pages/alumnos/ListaAlumnos';
-import ListaDocumentos from './pages/documentos/ListaDocumentos';
-import ListaUsuarios from './pages/usuarios/ListaUsuarios';
-import ListaCiclos from './pages/ciclos/ListaCiclos';
-import TablonAvisos from './pages/avisos/TablaAvisos';
-import GestionPermisos from './pages/permisos/GestionPermisos';
-import Kiosco from './pages/asistencia/Kiosco';
-import HistorialAsistencia from './pages/asistencia/HistorialAsistencia';
-import GestionIncidencias from './pages/incidencias/GestionIncidencias';
-import OficiosList from './pages/oficios/OficiosList';
-import RACList from './pages/rac/RACList';
-import RACForm from './pages/rac/RACForm';
-import RAERecordsList from './pages/rae/RAERecordsList';
-import RAECaptureGrid from './pages/rae/RAECaptureGrid';
-import RAEValidationPanel from './pages/rae/RAEValidationPanel';
-import SchoolCalendar from './pages/calendar/SchoolCalendar';
-import ListaNotificaciones from './pages/notificaciones/ListaNotificaciones';
+// --- Lazy-loaded page chunks ---
+const Login = lazy(() => import('./pages/Login'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const ListaEscuelas = lazy(() => import('./pages/escuelas/ListaEscuelas'));
+const ListaAlumnos = lazy(() => import('./pages/alumnos/ListaAlumnos'));
+const ListaDocumentos = lazy(() => import('./pages/documentos/ListaDocumentos'));
+const ListaUsuarios = lazy(() => import('./pages/usuarios/ListaUsuarios'));
+const ListaCiclos = lazy(() => import('./pages/ciclos/ListaCiclos'));
+const TablonAvisos = lazy(() => import('./pages/avisos/TablaAvisos'));
+const GestionPermisos = lazy(() => import('./pages/permisos/GestionPermisos'));
+const Kiosco = lazy(() => import('./pages/asistencia/Kiosco'));
+const HistorialAsistencia = lazy(() => import('./pages/asistencia/HistorialAsistencia'));
+const GestionIncidencias = lazy(() => import('./pages/incidencias/GestionIncidencias'));
+const OficiosList = lazy(() => import('./pages/oficios/OficiosList'));
+const RACList = lazy(() => import('./pages/rac/RACList'));
+const RACForm = lazy(() => import('./pages/rac/RACForm'));
+const RAERecordsList = lazy(() => import('./pages/rae/RAERecordsList'));
+const RAECaptureGrid = lazy(() => import('./pages/rae/RAECaptureGrid'));
+const RAEValidationPanel = lazy(() => import('./pages/rae/RAEValidationPanel'));
+const SchoolCalendar = lazy(() => import('./pages/calendar/SchoolCalendar'));
+const ListaNotificaciones = lazy(() => import('./pages/notificaciones/ListaNotificaciones'));
 
 // Definición de Roles para Seguridad de Rutas
 const ROLE_ADMIN = ['ADMIN', 'ADMINISTRADOR', 'SECRETARIO'];
 const ROLE_DOCENTE = ['ADMIN', 'ADMINISTRADOR', 'SECRETARIO', 'MAESTRO_APOYO'];
 
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center bg-base-200">
+    <div className="flex flex-col items-center gap-3">
+      <div className="loading loading-spinner loading-lg text-primary" />
+      <p className="text-sm font-bold text-base-content/50">Cargando...</p>
+    </div>
+  </div>
+);
+
 function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
-        <Routes>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
           
           {/* --- RUTA PRINCIPAL (PÚBLICA): EL KIOSCO --- */}
           <Route path="/" element={<Kiosco />} />
@@ -81,6 +92,7 @@ function App() {
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
 
         </Routes>
+        </Suspense>
       </BrowserRouter>
     </ErrorBoundary>
   );

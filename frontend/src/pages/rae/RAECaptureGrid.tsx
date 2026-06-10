@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+
 import { 
   Save, ArrowLeft
 } from 'lucide-react';
@@ -7,7 +7,9 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { raeApi } from '../../api/rae';
 import type { RAEAlumno } from '../../api/rae';
+import { ErrorState } from '../../components/Skeletons';
 import { useLoading } from '../../context/LoadingContext';
+import { useRAEDrafts } from '../../hooks/useRAEDrafts';
 
 const RAE_COLUMNS = {
     condiciones: {
@@ -62,62 +64,37 @@ const RAECaptureGrid = () => {
     const queryClient = useQueryClient();
     const { showLoading, hideLoading } = useLoading();
     
-    const storageKey = `rae_drafts_${id}`;
+    const { 
+        drafts, 
+        dirtyRows, 
+        updateField, 
+        clearDrafts, 
+        getFieldValue 
+    } = useRAEDrafts(id || '');
 
-    const [drafts, setDrafts] = useState<Record<number, Partial<RAEAlumno>>>(() => {
-        const saved = localStorage.getItem(storageKey);
-        return saved ? JSON.parse(saved) : {};
-    });
-    const [dirtyRows, setDirtyRows] = useState<Set<number>>(() => {
-        const saved = localStorage.getItem(`${storageKey}_dirty`);
-        return saved ? new Set(JSON.parse(saved)) : new Set();
-    });
-
-    useEffect(() => {
-        localStorage.setItem(storageKey, JSON.stringify(drafts));
-    }, [drafts, storageKey]);
-
-    useEffect(() => {
-        localStorage.setItem(`${storageKey}_dirty`, JSON.stringify(Array.from(dirtyRows)));
-    }, [dirtyRows, storageKey]);
-
-    const { data: initData, isLoading } = useQuery({
+    const { data: initData, isLoading, isError, error } = useQuery({
         queryKey: ['rae_capture', id],
         queryFn: raeApi.initCapture,
         enabled: !!id,
     });
 
     const saveMutation = useMutation({
-        mutationFn: (payload: { registro_id: number, alumnos: any[] }) => raeApi.saveBulk(payload),
+        mutationFn: (payload: { registro_id: number, alumnos: RAEAlumno[] }) => raeApi.saveBulk(payload),
         onMutate: () => showLoading(),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['rae_capture', id] });
-            setDrafts({});
-            setDirtyRows(new Set());
-            localStorage.removeItem(storageKey);
-            localStorage.removeItem(`${storageKey}_dirty`);
-            toast.success('Datos Guardados', { description: 'La captura de RAE ha sido sincronizada con el servidor.' });
+            clearDrafts();
+            toast.success('¡Guardado! ✅', { description: 'La captura de RAE ha sido sincronizada con el servidor.' });
         },
         onError: () => {
-            toast.error('Error al Guardar', { description: 'Hubo un problema al guardar los cambios.' });
+            toast.error('Error ❌', { description: 'Hubo un problema al guardar los cambios.' });
         },
         onSettled: () => hideLoading(),
     });
 
-    const handleCheckboxChange = (alumnoId: number, field: string, value: boolean) => {
-        setDrafts(prev => {
-            const current = prev[alumnoId] || {};
-            return {
-                ...prev,
-                [alumnoId]: { ...current, [field]: value }
-            };
-        });
-        setDirtyRows(prev => new Set(prev).add(alumnoId));
-    };
-
     const handleSave = () => {
-        const updates = Object.entries(drafts).map(([id, changes]) => ({
-            id: Number(id),
+        const updates = Object.entries(drafts).map(([alumId, changes]) => ({
+            id: Number(alumId),
             ...changes
         }));
 
@@ -131,6 +108,8 @@ const RAECaptureGrid = () => {
             alumnos: updates
         });
     };
+
+    if (isError) return <ErrorState error={error} message="Error al cargar la captura RAE. Intenta de nuevo." />;
 
     if (isLoading) {
         return (
@@ -166,13 +145,7 @@ const RAECaptureGrid = () => {
                     <div className="flex gap-3">
                         <button 
                             className="btn btn-ghost bg-white/10 hover:bg-white/20 border-white/20 text-white"
-                            onClick={() => {
-                                setDrafts({});
-                                setDirtyRows(new Set());
-                                localStorage.removeItem(storageKey);
-                                localStorage.removeItem(`${storageKey}_dirty`);
-                                toast.info('Borradores eliminados', { description: 'Se han limpiado los cambios locales.' });
-                            }}
+                            onClick={clearDrafts}
                             disabled={dirtyRows.size === 0}
                         >
                             Limpiar Borradores
@@ -212,7 +185,7 @@ const RAECaptureGrid = () => {
                                 <th className="sticky left-0 bg-base-100 z-20 border-r text-left text-xs font-bold">Nombre Completo</th>
                                 {Object.values(RAE_COLUMNS).flatMap(cat => 
                                     cat.fields.map(f => (
-                                        <th key={f.id} className="text-center text-[10px] font-bold w-12 border-r">
+                                        <th key={f.id} className="text-center text-xs font-bold w-12 border-r">
                                             {f.label}
                                         </th>
                                     ))
@@ -229,14 +202,15 @@ const RAECaptureGrid = () => {
                                         </td>
                                         {Object.values(RAE_COLUMNS).flatMap(cat => 
                                             cat.fields.map(f => {
-                                                const val = (drafts[alum.id] as any)?.[f.id] ?? (alum as any)[f.id] as boolean;
+                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                                const val = getFieldValue(alum.id, f.id, (alum as any)[f.id]);
                                                 return (
                                                     <td key={f.id} className="text-center border-r">
                                                         <input 
                                                             type="checkbox" 
                                                             className="checkbox checkbox-primary checkbox-sm" 
                                                             checked={!!val} 
-                                                            onChange={(e) => handleCheckboxChange(alum.id, f.id, e.target.checked)}
+                                                            onChange={(e) => updateField(alum.id, f.id, e.target.checked)}
                                                         />
                                                     </td>
                                                 );

@@ -5,7 +5,8 @@ import {
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
-import { TableSkeleton } from '../../components/Skeletons';
+import { TableSkeleton, EmptyState, ErrorState } from '../../components/Skeletons';
+import Modal from '../../components/Modal';
 import { getOficios, uploadOficio, deleteOficio } from '../../api/oficios';
 
 const OficiosList = () => {
@@ -16,7 +17,7 @@ const OficiosList = () => {
     
     const queryClient = useQueryClient();
 
-    const { data: paginatedOficios, isLoading } = useQuery({
+    const { data: paginatedOficios, isLoading, isError, error } = useQuery({
         queryKey: ['oficios', page, busquedaDebounced],
         queryFn: () => getOficios(page, busquedaDebounced),
     });
@@ -29,16 +30,16 @@ const OficiosList = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['oficios'] });
             setIsModalOpen(false);
-            toast.success('Éxito', { description: 'Oficio subido correctamente.' });
+            toast.success('¡Subido! ✅', { description: 'Oficio subido correctamente.' });
         },
-        onError: () => toast.error('Error', { description: 'No se pudo subir el archivo.' }),
+        onError: () => toast.error('Error ❌', { description: 'No se pudo subir el archivo.' }),
     });
 
     const deleteMutation = useMutation({
         mutationFn: deleteOficio,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['oficios'] });
-            toast.success('Eliminado', { description: 'El oficio ha sido borrado.' });
+            toast.success('¡Eliminado! 🗑️', { description: 'El oficio ha sido borrado.' });
         },
     });
 
@@ -54,6 +55,8 @@ const OficiosList = () => {
             deleteMutation.mutate(id);
         }
     };
+
+    if (isError) return <ErrorState error={error} message="Error al cargar los oficios. Intenta de nuevo." />;
 
     if (isLoading) {
         return (
@@ -149,10 +152,7 @@ const OficiosList = () => {
                         </tbody>
                     </table>
                     {oficios.length === 0 && (
-                        <div className="p-12 text-center flex flex-col items-center gap-4 text-base-content/40 italic">
-                            <UploadCloud size={48} />
-                            <p>No hay oficios registrados en el archivo.</p>
-                        </div>
+                        <EmptyState icon={UploadCloud} title="No hay oficios registrados en el archivo." />
                     )}
                 </div>
                 
@@ -165,52 +165,50 @@ const OficiosList = () => {
                 </div>
             </div>
 
-            {/* MODAL SUBIDA */}
-            {isModalOpen && (
-                <div className="modal modal-open">
-                    <div className="modal-box max-w-md p-0 overflow-hidden">
-                        <div className="bg-primary p-6 text-primary-content flex items-center gap-3">
-                            <UploadCloud size={24} className="text-yellow-300" />
-                            <h3 className="text-xl font-black">📤 Subir Documento Oficial</h3>
-                        </div>
-                        <form onSubmit={handleFileUpload} className="p-6 space-y-6">
-                            <div className="form-control">
-                                <label className="label"><span className="label-text font-bold">Título del Oficio</span></label>
-                                <input name="titulo" required className="input input-bordered w-full" placeholder="Ej. Reporte Trimestral de Alumnos" />
-                            </div>
-                            <div className="form-control">
-                                <label className="label"><span className="label-text font-bold">Descripción / Notas</span></label>
-                                <input name="descripcion" className="input input-bordered w-full" placeholder="Ej. Enviado a la supervisión escolar zona 01" />
-                            </div>
-                            <div className="form-control">
-                                <label className="label"><span className="label-text font-bold">Archivo (PDF, Imagen)</span></label>
-                                <input 
-                                    name="archivo" 
-                                    type="file" 
-                                    required 
-                                    accept="application/pdf,image/*" 
-                                    className="file-input file-input-bordered w-full" 
-                                />
-                            </div>
-                            <div className="flex justify-end gap-3 pt-4 border-t border-base-300">
-                                <button type="button" className="btn btn-ghost" onClick={() => setIsModalOpen(false)}>Cancelar</button>
-                                <button 
-                                    type="submit" 
-                                    className="btn btn-primary px-8 flex items-center gap-2"
-                                    disabled={uploadMutation.isPending}
-                                >
-                                    {uploadMutation.isPending ? (
-                                        <span className="loading loading-spinner loading-xs" />
-                                    ) : (
-                                        <><UploadCloud size={18} /> Subir Archivo</>
-                                    )}
-                                </button>
-                            </div>
-                        </form>
+            <Modal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                title="Subir Documento Oficial"
+                icon={<UploadCloud size={24} />}
+                size="sm"
+            >
+                <form onSubmit={handleFileUpload} className="space-y-6" data-testid="upload-form">
+                    <div className="form-control">
+                        <label className="label" htmlFor="titulo"><span className="label-text font-bold">Título del Oficio</span></label>
+                        <input id="titulo" name="titulo" required className="input input-bordered w-full" placeholder="Ej. Reporte Trimestral de Alumnos" aria-label="Título del Oficio" />
                     </div>
-                    <div className="modal-backdrop" onClick={() => setIsModalOpen(false)}></div>
-                </div>
-            )}
+                    <div className="form-control">
+                        <label className="label" htmlFor="descripcion"><span className="label-text font-bold">Descripción / Notas</span></label>
+                        <input id="descripcion" name="descripcion" className="input input-bordered w-full" placeholder="Ej. Enviado a la supervisión escolar zona 01" />
+                    </div>
+                    <div className="form-control">
+                        <label className="label" htmlFor="archivo"><span className="label-text font-bold">Archivo (PDF, Imagen)</span></label>
+                        <input 
+                            id="archivo"
+                            name="archivo" 
+                            type="file" 
+                            required 
+                            accept="application/pdf,image/*" 
+                            className="file-input file-input-bordered w-full" 
+                            aria-label="Archivo (PDF, Imagen)"
+                        />
+                    </div>
+                    <div className="flex justify-end gap-3 pt-4 border-t border-base-300">
+                        <button type="button" className="btn btn-ghost" onClick={() => setIsModalOpen(false)}>Cancelar</button>
+                        <button 
+                            type="submit" 
+                            className="btn btn-primary px-8 flex items-center gap-2"
+                            disabled={uploadMutation.isPending}
+                        >
+                            {uploadMutation.isPending ? (
+                                <span className="loading loading-spinner loading-xs" />
+                            ) : (
+                                <><UploadCloud size={18} /> Subir Archivo</>
+                            )}
+                        </button>
+                    </div>
+                </form>
+            </Modal>
         </div>
     );
 };

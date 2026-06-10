@@ -3,6 +3,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
+import { isAxiosError } from 'axios';
 import { 
   Clock, UserCheck, LogIn, LogOut, ShieldCheck, 
   ArrowRight
@@ -37,7 +38,7 @@ const Kiosco = () => {
             }
 
             if (attendanceBuffer.getAll().length === 0) {
-                toast.success('Sincronización completa', { 
+                toast.success('¡Sincronizado! ✅', { 
                     description: 'Todos los registros pendientes han sido enviados.',
                     duration: 3000 
                 });
@@ -47,7 +48,9 @@ const Kiosco = () => {
         syncAttendance();
     }, []);
 
-    const { register, handleSubmit, reset, setFocus } = useForm<{ numero_empleado: string }>();
+    const { register, handleSubmit, reset, setFocus } = useForm<{ numero_empleado: string }>({
+        resolver: undefined // Not needed if we don't use Zod here, but we want consistency
+    });
 
     const mutation = useMutation({
         mutationFn: registrarAsistencia,
@@ -55,7 +58,7 @@ const Kiosco = () => {
             const isEntrada = data.tipo === 'ENTRADA';
             
             toast.success(
-                isEntrada ? '¡Bienvenido a la USAER 7607!' : '¡Hasta luego, buen descanso!', 
+                isEntrada ? '¡Registrado! ✅' : '¡Registrada! ✅', 
                 { 
                     description: `${data.profesor} • ${data.hora}`,
                     duration: 4000 
@@ -65,8 +68,9 @@ const Kiosco = () => {
             reset();
             setTimeout(() => setFocus('numero_empleado'), 500); 
         },
-        onError: (err: any) => {
-            const isNetworkError = !err.response;
+        onError: (err) => {
+            const axiosErr = isAxiosError(err) ? err : null;
+            const isNetworkError = axiosErr ? !axiosErr.response : true;
 
             if (isNetworkError) {
                 const numeroEmpleado = (document.querySelector('input[name="numero_empleado"]') as HTMLInputElement)?.value;
@@ -78,9 +82,9 @@ const Kiosco = () => {
                         duration: 5000 
                     });
                 }
-            } else {
-                toast.error('No registrado', { 
-                    description: err.response?.data?.detail || 'Error en el registro',
+            } else if (axiosErr) {
+                toast.error('Error ❌', { 
+                    description: axiosErr.response?.data?.detail || 'Error en el registro de asistencia.',
                     duration: 4000 
                 });
             }
@@ -130,7 +134,7 @@ const Kiosco = () => {
                     <div className="space-y-3 sm:space-y-4 w-full">
                         <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 rounded-full">
                             <Clock size={14} className="text-primary" />
-                            <p className="text-[10px] sm:text-xs font-bold text-primary uppercase tracking-widest">
+                            <p className="text-xs sm:text-xs font-bold text-primary uppercase tracking-widest">
                                 Hora Oficial USAER 7607
                             </p>
                         </div>
@@ -157,52 +161,54 @@ const Kiosco = () => {
                     <div className="w-full space-y-6 sm:space-y-8">
                         <form onSubmit={handleSubmit(onSubmit)} className="w-full space-y-4 sm:space-y-6">
                             <div className="form-control w-full">
-                                <label className="label justify-center">
+                                <label className="label justify-center" htmlFor="numero_empleado">
                                     <span className="label-text font-black text-base-content text-base sm:text-lg">Ingrese su N° de Empleado</span>
                                 </label>
                                 <div className="relative group">
                                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-primary group-focus-within:scale-110 transition-transform">
                                         <UserCheck size={24} strokeWidth={3} />
                                     </div>
-                                    <input 
-                                        {...register('numero_empleado', { required: true })}
-                                        autoFocus
-                                        autoComplete="off"
-                                        className="input input-bordered w-full pl-12 pr-32 text-center text-2xl sm:text-3xl font-black tracking-[0.15em] sm:tracking-[0.2em] font-mono h-16 sm:h-24 border-2 sm:border-4 focus:border-primary transition-all"
-                                        placeholder="000000"
-                                    />
+                                     <input 
+                                         id="numero_empleado"
+                                         {...register('numero_empleado')}
+                                         autoFocus
+                                         autoComplete="off"
+                                         className="input input-bordered w-full pl-12 pr-32 text-center text-2xl sm:text-3xl font-black tracking-[0.15em] sm:tracking-[0.2em] font-mono h-16 sm:h-24 border-2 sm:border-4 focus:border-primary transition-all"
+                                         placeholder="000000"
+                                     />
                                     <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                                        <button 
-                                            type="submit" 
-                                            className="btn btn-primary h-12 sm:h-16 px-4 sm:px-8 rounded-xl sm:rounded-2xl shadow-lg hover:scale-105 active:scale-95 transition-all text-base sm:text-xl font-black"
-                                            disabled={mutation.isPending}
-                                        >
-                                            {mutation.isPending ? (
-                                                <Clock className="animate-spin" size={24} />
-                                            ) : (
-                                                <><span className="font-black">CHECAR</span> <ArrowRight size={20} className="hidden sm:inline" /></>
-                                            )}
-                                        </button>
+                                         <button 
+                                             type="submit" 
+                                             className="btn btn-primary h-12 sm:h-16 px-4 sm:px-8 rounded-xl sm:rounded-2xl shadow-lg hover:scale-105 active:scale-95 transition-all text-base sm:text-xl font-black"
+                                             disabled={mutation.isPending}
+                                             aria-label={mutation.isPending ? "Procesando registro..." : "Checar asistencia"}
+                                         >
+                                             {mutation.isPending ? (
+                                                 <Clock className="animate-spin" size={24} />
+                                             ) : (
+                                                 <><span className="font-black">CHECAR</span> <ArrowRight size={20} className="hidden sm:inline" /></>
+                                             )}
+                                         </button>
                                     </div>
                                 </div>
                             </div>
-                        </form>
 
-                        <div className="flex flex-col sm:flex-row justify-center gap-3 w-full">
-                            <div className="badge badge-success badge-lg gap-2 py-3 sm:py-4 px-4 text-white font-bold shadow-md w-full sm:w-auto">
-                                <LogIn size={18} />
-                                Entrada (1ra vez)
+                            <div className="flex flex-col sm:flex-row justify-center gap-3 w-full">
+                                <div className="badge badge-success badge-lg gap-2 py-3 sm:py-4 px-4 text-white font-bold shadow-md w-full sm:w-auto">
+                                    <LogIn size={18} />
+                                    Entrada (1ra vez)
+                                </div>
+                                <div className="badge badge-info badge-lg gap-2 py-3 sm:py-4 px-4 text-white font-bold shadow-md w-full sm:w-auto">
+                                    <LogOut size={18} />
+                                    Salida (2da vez)
+                                </div>
                             </div>
-                            <div className="badge badge-info badge-lg gap-2 py-3 sm:py-4 px-4 text-white font-bold shadow-md w-full sm:w-auto">
-                                <LogOut size={18} />
-                                Salida (2da vez)
-                            </div>
-                        </div>
+                        </form>
                     </div>
                 </div>
             </div>
             
-            <footer className="absolute bottom-4 sm:bottom-6 text-white/60 text-[10px] sm:text-xs font-bold">
+            <footer className="absolute bottom-4 sm:bottom-6 text-white/60 text-xs sm:text-xs font-bold">
                 Sistema de Gestión Escolar USAER 7607 &copy; {new Date().getFullYear()}
             </footer>
         </div>

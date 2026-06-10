@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Outlet, useNavigate, useLocation, Link } from 'react-router-dom';
 import { 
   LayoutDashboard, Users, School, Calendar, 
@@ -43,40 +43,35 @@ const MENU_CONFIG = [
   ];
 
 
+const loadUserFromStorage = () => {
+  const userStr = localStorage.getItem('user');
+  if (!userStr) return { userName: 'Usuario', userRol: '', userRoleCode: '', isSuperUser: false };
+  try {
+    const user = JSON.parse(userStr);
+    let nombre = 'Usuario';
+    if (user.first_name || user.last_name) {
+      nombre = `${user.first_name || ''} ${user.last_name || ''}`.trim();
+    } else if (user.username) {
+      nombre = user.username;
+    }
+    const rolCodigo = user.role || '';
+    let rolBonito = ROLES_MAP[rolCodigo] || 'Personal USAER';
+    if (user.is_superuser) rolBonito = 'Administrador (Super)';
+    return { userName: nombre, userRol: rolBonito, userRoleCode: rolCodigo, isSuperUser: user.is_superuser || false };
+  } catch {
+    return { userName: 'Usuario', userRol: '', userRoleCode: '', isSuperUser: false };
+  }
+};
+
 const MainLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [userName, setUserName] = useState('Usuario');
-  const [userRol, setUserRol] = useState('');
-  const [userRoleCode, setUserRoleCode] = useState('');
-  const [isSuperUser, setIsSuperUser] = useState(false);
+  const [userName] = useState(() => loadUserFromStorage().userName);
+  const [userRol] = useState(() => loadUserFromStorage().userRol);
+  const [userRoleCode] = useState(() => loadUserFromStorage().userRoleCode);
+  const [isSuperUser] = useState(() => loadUserFromStorage().isSuperUser);
 
   const navigate = useNavigate();
   const location = useLocation();
-
-  useEffect(() => {
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-      try {
-        const user = JSON.parse(userStr);
-        let nombre = 'Usuario';
-        if (user.first_name || user.last_name) {
-             nombre = `${user.first_name || ''} ${user.last_name || ''}`.trim();
-        } else if (user.username) {
-            nombre = user.username;
-        }
-        const rolCodigo = user.role || '';
-        let rolBonito = ROLES_MAP[rolCodigo] || 'Personal USAER';
-        if (user.is_superuser) rolBonito = 'Administrador (Super)';
-
-        setUserName(nombre);
-        setUserRol(rolBonito);
-        setUserRoleCode(rolCodigo);
-        setIsSuperUser(user.is_superuser || false);
-      } catch (e) {
-        console.error("Error leyendo usuario", e);
-      }
-    }
-  }, []);
 
   const filteredMenuItems = MENU_CONFIG.filter(item => {
     if (isSuperUser) return true;
@@ -113,13 +108,13 @@ const MainLayout = () => {
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white font-black">U</div>
             <span className="text-xl font-black tracking-tight">USAER <span className="text-primary">7607</span></span>
           </div>
-          <button className="btn btn-ghost btn-xs md:hidden" onClick={() => setIsSidebarOpen(false)}>
-            <X size={20} />
-          </button>
+<button className="btn btn-ghost btn-xs md:hidden" onClick={() => setIsSidebarOpen(false)} aria-label="Cerrar menú">
+                <X size={20} aria-hidden="true" />
+              </button>
         </div>
 
         <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
-          <p className="text-[10px] font-bold text-base-content/40 uppercase tracking-widest px-3 mb-4">
+          <p className="text-xs font-bold text-base-content/40 uppercase tracking-widest px-3 mb-4">
             Menú Principal
           </p>
           {filteredMenuItems.map((item) => {
@@ -154,7 +149,7 @@ const MainLayout = () => {
             </div>
             <div className="overflow-hidden">
               <p className="text-sm font-bold truncate">{userName}</p>
-              <p className="text-[10px] opacity-60 truncate">{userRol}</p>
+              <p className="text-xs opacity-60 truncate">{userRol}</p>
             </div>
           </div>
         </div>
@@ -169,12 +164,13 @@ const MainLayout = () => {
             <button 
               className="btn btn-ghost btn-square md:hidden" 
               onClick={() => setIsSidebarOpen(true)}
+              aria-label="Abrir menú"
             >
-              <Menu size={24} />
+              <Menu size={24} aria-hidden="true" />
             </button>
             <div className="hidden md:block">
               <h2 className="text-sm font-bold opacity-50 uppercase tracking-widest">
-                {location.pathname === '/' ? 'Inicio' : MENU_CONFIG.find(i => i.path === location.pathname)?.label || 'Sistema'}
+                {location.pathname === '/' ? 'Inicio' : MENU_CONFIG.find(i => location.pathname.startsWith(i.path))?.label || 'Sistema'}
               </h2>
             </div>
           </div>

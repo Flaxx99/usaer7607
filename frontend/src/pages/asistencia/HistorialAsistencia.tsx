@@ -2,15 +2,17 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Clock, Calendar, MapPin } from 'lucide-react';
 import { getHistorialAsistencia } from '../../api/asistencia';
-import { TableSkeleton } from '../../components/Skeletons';
+import { TableSkeleton, EmptyState, ErrorState } from '../../components/Skeletons';
 
 const HistorialAsistencia = () => {
     const [fechaFiltro, setFechaFiltro] = useState<string | null>(null);
 
-    const { data: asistencias, isLoading } = useQuery({
+    const { data: asistencias, isLoading, isError, error } = useQuery({
         queryKey: ['asistencias', fechaFiltro],
         queryFn: () => getHistorialAsistencia(fechaFiltro ? { fecha: fechaFiltro } : {}),
     });
+
+    if (isError) return <ErrorState error={error} message="Error al cargar el historial de asistencia. Intenta de nuevo." />;
 
     return (
         <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
@@ -100,10 +102,7 @@ const HistorialAsistencia = () => {
                             </tbody>
                         </table>
                         {!isLoading && asistencias?.length === 0 && (
-                            <div className="p-12 text-center flex flex-col items-center gap-4 text-base-content/40 italic">
-                                <Clock size={48} />
-                                <p className="font-medium">No hay registros de asistencia para este periodo.</p>
-                            </div>
+                            <EmptyState icon={Clock} title="No hay registros de asistencia para este periodo." />
                         )}
                     </div>
                 )}

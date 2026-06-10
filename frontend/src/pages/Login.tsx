@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { loginSchema, type LoginForm } from '../schemas/auth';
 import { User, Lock, Loader2, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
+import { isAxiosError } from 'axios';
 import client from '../api/client';
 
 const Login = () => {
@@ -10,30 +13,32 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   
-  const { register, handleSubmit, formState: { errors } } = useForm();
+  const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>({
+    resolver: zodResolver(loginSchema),
+  });
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: LoginForm) => {
     setLoading(true);
 
     try {
-      const response = await client.post('/usuarios/auth/login/', data);
+      const response = await client.post<{ token: string; user: { first_name: string; email: string } }>('/usuarios/auth/login/', data);
       const { token, user } = response.data;
 
       localStorage.setItem('access_token', token); 
       localStorage.setItem('user', JSON.stringify(user));
 
-      toast.success('Bienvenido', {
+      toast.success('¡Bienvenido! ✅', {
         description: `Hola ${user.first_name}, has ingresado correctamente.`,
       });
 
       navigate('/dashboard');
       
-    } catch (error: any) {
-      const message = error.response?.status === 400 
+    } catch (error: unknown) {
+      const message = isAxiosError(error) && error.response?.status === 400
         ? 'Credenciales incorrectas. Verifique su usuario y contraseña.' 
         : 'Error de conexión. Intente más tarde.';
 
-      toast.error('Error de acceso', {
+      toast.error('Error ❌', {
         description: message,
       });
     } finally {
@@ -66,10 +71,11 @@ const Login = () => {
                 <legend className="fieldset-legend">Usuario o No. Empleado</legend>
                 <div className="input validator w-full">
                   <User className="w-4 h-4 opacity-60" />
-                  <input
+                    <input
                     type="text"
                     placeholder="Ingrese su usuario"
-                    {...register('username', { required: "El usuario es obligatorio" })}
+                    aria-label="Usuario o No. Empleado"
+                    {...register('username')}
                   />
                 </div>
                 {errors.username && (
@@ -81,16 +87,17 @@ const Login = () => {
                 <legend className="fieldset-legend">Contrase&ntilde;a</legend>
                 <div className="input validator w-full">
                   <Lock className="w-4 h-4 opacity-60" />
-                  <input
+                    <input
                     type={showPassword ? 'text' : 'password'}
                     placeholder="••••••••"
-                    {...register('password', { required: "La contraseña es obligatoria" })}
+                    aria-label="Contraseña"
+                    {...register('password')}
                   />
                   <button
                     type="button"
                     className="btn btn-ghost btn-xs"
                     onClick={() => setShowPassword(!showPassword)}
-                    tabIndex={-1}
+                    aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -127,3 +134,4 @@ const Login = () => {
 };
 
 export default Login;
+

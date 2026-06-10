@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { 
-  ArrowLeft, Download, Eye
+  ArrowLeft, Download, Eye, Users
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { raeApi } from '../../api/rae';
 import type { RAEAlumno } from '../../api/rae';
 import { useLoading } from '../../context/LoadingContext';
+import { ValidationSkeleton, EmptyState, ErrorState } from '../../components/Skeletons';
 
 const RAEValidationPanel = () => {
     const { id } = useParams();
@@ -15,7 +16,7 @@ const RAEValidationPanel = () => {
     const { showLoading, hideLoading } = useLoading();
     const [selectedTotal, setSelectedTotal] = useState<{ field: string, value: boolean } | null>(null);
 
-    const { data: initData, isLoading } = useQuery({
+    const { data: initData, isLoading, isError, error } = useQuery({
         queryKey: ['rae_capture', id],
         queryFn: raeApi.initCapture,
         enabled: !!id,
@@ -32,9 +33,9 @@ const RAEValidationPanel = () => {
             document.body.appendChild(link);
             link.click();
             link.remove();
-            toast.success('Documento Generado', { description: 'El archivo oficial RAE ha sido descargado.' });
+            toast.success('¡Generado! ✅', { description: 'El archivo oficial RAE ha sido descargado.' });
         } catch {
-            toast.error('Error', { description: 'No se pudo generar el archivo.' });
+            toast.error('Error ❌', { description: 'No se pudo generar el archivo.' });
         } finally {
             hideLoading();
         }
@@ -56,12 +57,9 @@ const RAEValidationPanel = () => {
         { label: 'Portafolio', fields: ['diagnostico', 'educativo', 'deteccion', 'psicopedagogico', 'plan', 'modelo'] },
     ];
 
-    if (isLoading) return (
-        <div className="flex items-center justify-center h-[70vh] flex-col gap-4">
-            <span className="loading loading-spinner loading-lg text-primary" />
-            <p className="font-bold text-primary animate-pulse">Cargando validación...</p>
-        </div>
-    );
+    if (isError) return <ErrorState error={error} message="Error al cargar el panel de validación. Intenta de nuevo." />;
+
+    if (isLoading) return <ValidationSkeleton />;
 
     return (
         <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
@@ -139,9 +137,7 @@ const RAEValidationPanel = () => {
                             </div>
                         ))}
                         {getAlumnosForField(selectedTotal.field as keyof RAEAlumno).length === 0 && (
-                            <p className="col-span-full text-center py-8 text-base-content/40 italic">
-                                No hay alumnos asignados a esta categoría.
-                            </p>
+                            <EmptyState icon={Users} title="No hay alumnos asignados a esta categoría." />
                         )}
                     </div>
                 </div>
