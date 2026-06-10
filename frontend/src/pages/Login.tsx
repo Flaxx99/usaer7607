@@ -2,29 +2,27 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation } from '@tanstack/react-query';
 import { loginSchema, type LoginForm } from '../schemas/auth';
-import { User, Lock, Loader2, ArrowLeft, Eye, EyeOff, CheckCircle, XCircle } from 'lucide-react';
+import { User, Lock, ArrowLeft, Eye, EyeOff, CheckCircle, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { isAxiosError } from 'axios';
 import client from '../api/client';
+import { LoadingButton } from '../components/LoadingButton';
 
 const Login = () => {
-  const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
-  
-  const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>({
-    resolver: zodResolver(loginSchema),
-  });
 
-  const onSubmit = async (data: LoginForm) => {
-    setLoading(true);
-
-    try {
-      const response = await client.post<{ token: string; user: { first_name: string; email: string } }>('/usuarios/auth/login/', data);
+  const loginMutation = useMutation({
+    mutationFn: (data: LoginForm) =>
+      client.post<{ token: string; user: { first_name: string; email: string } }>(
+        '/usuarios/auth/login/', data
+      ),
+    onSuccess: (response) => {
       const { token, user } = response.data;
 
-      localStorage.setItem('access_token', token); 
+      localStorage.setItem('access_token', token);
       localStorage.setItem('user', JSON.stringify(user));
 
       toast.success(<span className="inline-flex items-center gap-1.5"><CheckCircle size={16} /> ¡Bienvenido!</span>, {
@@ -32,19 +30,21 @@ const Login = () => {
       });
 
       navigate('/dashboard');
-      
-    } catch (error: unknown) {
+    },
+    onError: (error: unknown) => {
       const message = isAxiosError(error) && error.response?.status === 400
-        ? 'Credenciales incorrectas. Verifique su usuario y contraseña.' 
+        ? 'Credenciales incorrectas. Verifique su usuario y contraseña.'
         : 'Error de conexión. Intente más tarde.';
 
       toast.error(<span className="inline-flex items-center gap-1.5"><XCircle size={16} /> Error</span>, {
         description: message,
       });
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+  });
+
+  const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>({
+    resolver: zodResolver(loginSchema),
+  });
 
   return (
     <div className="min-h-screen bg-base-200 flex items-center justify-center p-4">
@@ -66,7 +66,7 @@ const Login = () => {
               Iniciar Sesi&oacute;n
             </h3>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+            <form onSubmit={handleSubmit((data) => loginMutation.mutate(data))} className="flex flex-col gap-4">
               <fieldset className="fieldset">
                 <legend className="fieldset-legend">Usuario o No. Empleado</legend>
                 <div className="input validator w-full">
@@ -107,14 +107,14 @@ const Login = () => {
                 )}
               </fieldset>
 
-              <button
+              <LoadingButton
                 type="submit"
                 className="btn btn-primary mt-2"
-                disabled={loading}
+                loading={loginMutation.isPending}
+                icon={User}
               >
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                {loading ? 'Ingresando...' : 'Acceder al Sistema'}
-              </button>
+                {loginMutation.isPending ? 'Ingresando...' : 'Acceder al Sistema'}
+              </LoadingButton>
 
               <div className="divider" />
 
