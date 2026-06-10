@@ -275,5 +275,8 @@ pyrightconfig.json
 Thumbs.db
 desktop.ini
 
+# Scripts de utilidad one-off
+/scripts/
+
 # End of https://www.toptal.com/developers/gitignore/api/python,django
 

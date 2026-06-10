@@ -9,10 +9,10 @@ from escuelas.models import Escuela
 from faker import Faker
 from rac.models import (
     APTITUDES_SUB,
-    DISCAPACIDAD_SUB,
     DIFICULTADES_SUB,
-    RegistroRAC,
+    DISCAPACIDAD_SUB,
     TRASTORNOS_SUB,
+    RegistroRAC,
 )
 
 User = get_user_model()
@@ -164,9 +164,7 @@ class Command(BaseCommand):
                 grupo=random.choice(["A", "B", "C"]),
                 escuela=school,
                 profesor=teacher,
-                clasificacion=random.choice(
-                    [c[0] for c in Alumno.CLASIFICACION_CHOICES]
-                ),
+                clasificacion=random.choice([c[0] for c in Alumno.CLASIFICACION_CHOICES]),
             )
 
             self._create_random_rac(alumno, teacher, ciclo, escuelas)
