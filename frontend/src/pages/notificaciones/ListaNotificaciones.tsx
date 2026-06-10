@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Bell, CheckCheck, Loader2, Inbox, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { EmptyState, ErrorState } from '../../components/Skeletons';
+import { LoadingButton } from '../../components/LoadingButton';
 import { notificacionesApi } from '../../api/notificaciones';
 
 const ListaNotificaciones = () => {
@@ -64,14 +65,14 @@ const ListaNotificaciones = () => {
                 </div>
                 
                 {notificaciones.length > 0 && (
-                    <button 
+                    <LoadingButton
                         onClick={() => markAllReadMutation.mutate()}
-                        disabled={markAllReadMutation.isPending}
+                        loading={markAllReadMutation.isPending}
                         className="btn btn-ghost btn-sm gap-2"
+                        icon={CheckCheck}
                     >
-                        <CheckCheck size={18} />
                         Marcar todas como leídas
-                    </button>
+                    </LoadingButton>
                 )}
             </div>
 

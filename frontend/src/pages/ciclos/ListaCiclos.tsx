@@ -16,6 +16,7 @@ import {
 } from '../../api/ciclos';
 import { TableSkeleton, ErrorState } from '../../components/Skeletons';
 import Modal from '../../components/Modal';
+import { LoadingButton } from '../../components/LoadingButton';
 import { useLoading } from '../../context/LoadingContext';
 import type { CicloEscolar } from '../../interfaces/ciclo';
 import { DataTable } from '../../components/DataTable';
@@ -427,17 +428,15 @@ const ListaCiclos = () => {
 
                 <div className="flex justify-end gap-3 pt-6 border-t border-base-300">
                     <button className="btn btn-ghost" onClick={() => setIsPromocionOpen(false)}>Cancelar</button>
-                    <button 
-                        className="btn btn-error px-8 gap-2" 
-                        onClick={handleConfirmarPromocion}
+                    <LoadingButton
+                        className="btn btn-error px-8 gap-2"
+                        icon={TrendingUp}
+                        loading={ejecutarPromocionMutation.isPending}
                         disabled={loadingPreview || !!errorPreview || ejecutarPromocionMutation.isPending || !!promotionTaskId}
+                        onClick={handleConfirmarPromocion}
                     >
-                        {ejecutarPromocionMutation.isPending ? (
-                            <span className="loading loading-spinner loading-xs" />
-                        ) : (
-                                <span className="flex items-center gap-2"><TrendingUp size={18} /> Ejecutar Cierre</span>
-                        )}
-                    </button>
+                        Ejecutar Cierre
+                    </LoadingButton>
                 </div>
             </div>
         </Modal>

@@ -10,6 +10,7 @@ import type { RAEAlumno } from '../../api/rae';
 import { ErrorState } from '../../components/Skeletons';
 import { useLoading } from '../../context/LoadingContext';
 import { useRAEDrafts } from '../../hooks/useRAEDrafts';
+import { LoadingButton } from '../../components/LoadingButton';
 
 const RAE_COLUMNS = {
     condiciones: {
@@ -150,17 +151,15 @@ const RAECaptureGrid = () => {
                         >
                             Limpiar Borradores
                         </button>
-                        <button 
+                        <LoadingButton
                             className="btn btn-white btn-lg shadow-md hover:scale-105 transition-transform"
-                            onClick={handleSave}
+                            icon={Save}
+                            loading={saveMutation.isPending}
                             disabled={saveMutation.isPending || dirtyRows.size === 0}
+                            onClick={handleSave}
                         >
-                            {saveMutation.isPending ? (
-                                <span className="loading loading-spinner loading-xs" />
-                            ) : (
-                                <><Save size={20} /> Guardar Cambios ({dirtyRows.size})</>
-                            )}
-                        </button>
+                            Guardar Cambios ({dirtyRows.size})
+                        </LoadingButton>
                     </div>
                 </div>
             </div>

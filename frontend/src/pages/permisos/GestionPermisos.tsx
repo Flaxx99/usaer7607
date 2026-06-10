@@ -16,6 +16,7 @@ import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { TableSkeleton, ErrorState } from '../../components/Skeletons';
 import { DataTable } from '../../components/DataTable';
 import Modal from '../../components/Modal';
+import { LoadingButton } from '../../components/LoadingButton';
 import type { ColumnDef } from '@tanstack/react-table';
 import { getPermisos, getMetricasPermisos, createPermiso, responderPermiso, deletePermiso } from '../../api/permisos';
 import type { Permiso, EstadoPermiso, TipoPermiso } from '../../interfaces/permisos';
@@ -500,9 +501,9 @@ const GestionPermisos = () => {
                     </div>
                     <div className="flex justify-end gap-3 pt-4 border-t border-base-300">
                         <button type="button" className="btn btn-ghost" onClick={() => setIsCreateModalOpen(false)}>Cancelar</button>
-                        <button type="submit" className="btn btn-primary gap-2" disabled={createMutation.isPending}>
-                            {createMutation.isPending ? <span className="loading loading-spinner loading-xs" /> : <><Plus size={18} /> Enviar Solicitud</>}
-                        </button>
+                        <LoadingButton type="submit" className="btn btn-primary gap-2" icon={Plus} loading={createMutation.isPending}>
+                            Enviar Solicitud
+                        </LoadingButton>
                     </div>
                 </form>
             </Modal>
@@ -528,12 +529,12 @@ const GestionPermisos = () => {
                             {errorsRes.motivo_respuesta && <span className="text-error text-xs mt-1">{errorsRes.motivo_respuesta.message}</span>}
                         </div>
                         <div className="flex gap-3 pt-4 border-t border-base-300">
-                            <button className="btn btn-error btn-outline flex-1 gap-2" onClick={handleSubmitRes((d) => handleResponder(d, 'RECHAZADO'))} disabled={respondMutation.isPending}>
-                                <XCircle size={18} /> Rechazar
-                            </button>
-                            <button className="btn btn-success flex-1 gap-2" onClick={handleSubmitRes((d) => handleResponder(d, 'APROBADO'))} disabled={respondMutation.isPending}>
-                                {respondMutation.isPending ? <span className="loading loading-spinner loading-xs" /> : <><CheckCircle size={18} /> Autorizar</>}
-                            </button>
+                            <LoadingButton className="btn btn-error btn-outline flex-1 gap-2" icon={XCircle} loading={respondMutation.isPending} onClick={handleSubmitRes((d) => handleResponder(d, 'RECHAZADO'))}>
+                                Rechazar
+                            </LoadingButton>
+                            <LoadingButton className="btn btn-success flex-1 gap-2" icon={CheckCircle} loading={respondMutation.isPending} onClick={handleSubmitRes((d) => handleResponder(d, 'APROBADO'))}>
+                                Autorizar
+                            </LoadingButton>
                         </div>
                     </div>
                 )}

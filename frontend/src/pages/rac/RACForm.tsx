@@ -11,6 +11,7 @@ import { racSchema, CLASIFICACION_SUB, CLASIFICACIONES, type RACFormData } from 
 import { toast } from 'sonner';
 import { isAxiosError } from 'axios';
 import { racApi } from '../../api/rac';
+import { LoadingButton } from '../../components/LoadingButton';
 import type { RegistroRAC } from '../../api/rac';
 import { useLoading } from '../../context/LoadingContext';
 import { getAlumnos } from '../../api/alumnos';
@@ -125,17 +126,14 @@ const RACForm = () => {
                         {id ? 'Editar Registro RAC' : 'Nuevo Registro RAC'}
                     </h1>
                 </div>
-                <button 
-                    className="btn btn-primary px-8 gap-2" 
+                <LoadingButton
+                    className="btn btn-primary px-8 gap-2"
+                    icon={Save}
+                    loading={saveMutation.isPending}
                     onClick={handleSubmit(onSubmit)}
-                    disabled={saveMutation.isPending}
                 >
-                    {saveMutation.isPending ? (
-                        <span className="loading loading-spinner loading-xs" />
-                    ) : (
-                        <><Save size={18} /> Guardar Registro</>
-                    )}
-                </button>
+                    Guardar Registro
+                </LoadingButton>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

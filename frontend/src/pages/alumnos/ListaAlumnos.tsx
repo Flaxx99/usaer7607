@@ -18,6 +18,7 @@ import { getMaestros } from '../../api/usuarios';
 import type { Alumno } from '../../interfaces/alumno';
 import { DataTable } from '../../components/DataTable';
 import Modal from '../../components/Modal';
+import { LoadingButton } from '../../components/LoadingButton';
 import type { ColumnDef } from '@tanstack/react-table';
 
 const ListaAlumnos = () => {
@@ -520,17 +521,14 @@ const ListaAlumnos = () => {
               
               <div className="flex justify-end gap-3 pt-4 border-t border-base-300">
                 <button type="button" className="btn btn-ghost" onClick={cerrarModal}>Cancelar</button>
-                <button 
-                  type="submit" 
-                  className="btn btn-primary px-8" 
-                  disabled={createMutation.isPending || updateMutation.isPending}
+                <LoadingButton
+                  type="submit"
+                  className="btn btn-primary px-8"
+                  icon={Save}
+                  loading={createMutation.isPending || updateMutation.isPending}
                 >
-                  {createMutation.isPending || updateMutation.isPending ? (
-                    <span className="loading loading-spinner loading-xs" />
-                  ) : (
-                    <><Save size={18} /> Guardar Ficha</>
-                  )}
-                </button>
+                  Guardar Ficha
+                </LoadingButton>
               </div>
             </form>
         </Modal>

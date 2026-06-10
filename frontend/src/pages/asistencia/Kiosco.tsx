@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { registrarAsistencia } from '../../api/asistencia';
 import { attendanceBuffer } from '../../utils/attendanceBuffer';
+import { LoadingButton } from '../../components/LoadingButton';
 
 const Kiosco = () => {
     const [horaActual, setHoraActual] = useState(new Date());
@@ -177,18 +178,18 @@ const Kiosco = () => {
                                          placeholder="000000"
                                      />
                                     <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                                         <button 
-                                             type="submit" 
-                                             className="btn btn-primary h-12 sm:h-16 px-4 sm:px-8 rounded-xl sm:rounded-2xl shadow-lg hover:scale-105 active:scale-95 transition-all text-base sm:text-xl font-black"
-                                             disabled={mutation.isPending}
-                                             aria-label={mutation.isPending ? "Procesando registro..." : "Checar asistencia"}
-                                         >
-                                             {mutation.isPending ? (
-                                                 <Clock className="animate-spin" size={24} />
-                                             ) : (
-                                                 <><span className="font-black">CHECAR</span> <ArrowRight size={20} className="hidden sm:inline" /></>
-                                             )}
-                                         </button>
+                                         <LoadingButton
+                                              type="submit"
+                                              className="btn btn-primary h-12 sm:h-16 px-4 sm:px-8 rounded-xl sm:rounded-2xl shadow-lg hover:scale-105 active:scale-95 transition-all text-base sm:text-xl font-black"
+                                              loading={mutation.isPending}
+                                              aria-label={mutation.isPending ? "Procesando registro..." : "Checar asistencia"}
+                                          >
+                                              {mutation.isPending ? (
+                                                  <Clock className="animate-spin" size={24} />
+                                              ) : (
+                                                  <><span className="font-black">CHECAR</span> <ArrowRight size={20} className="hidden sm:inline" /></>
+                                              )}
+                                          </LoadingButton>
                                     </div>
                                 </div>
                             </div>
