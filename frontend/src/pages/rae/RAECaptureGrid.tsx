@@ -1,16 +1,18 @@
 
+import { useState, useMemo } from 'react';
 import { 
-  Save, ArrowLeft, CheckCircle, XCircle
+  Save, ArrowLeft, CheckCircle, XCircle, Search
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { raeApi } from '../../api/rae';
 import type { RAEAlumno } from '../../api/rae';
-import { ErrorState } from '../../components/Skeletons';
+import { ErrorState, EmptyState } from '../../components/Skeletons';
 import { useLoading } from '../../context/LoadingContext';
 import { useRAEDrafts } from '../../hooks/useRAEDrafts';
 import { LoadingButton } from '../../components/LoadingButton';
+import { SearchBar } from '../../components/SearchBar';
 
 const RAE_COLUMNS = {
     condiciones: {
@@ -64,6 +66,7 @@ const RAECaptureGrid = () => {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const { showLoading, hideLoading } = useLoading();
+    const [searchQuery, setSearchQuery] = useState('');
     
     const { 
         drafts, 
@@ -92,6 +95,14 @@ const RAECaptureGrid = () => {
         },
         onSettled: () => hideLoading(),
     });
+
+    const filteredAlumnos = useMemo(() => {
+        if (!searchQuery) return initData?.alumnos || [];
+        const q = searchQuery.toLowerCase();
+        return (initData?.alumnos || []).filter(a =>
+            a.alumno_nombre?.toLowerCase().includes(q)
+        );
+    }, [initData, searchQuery]);
 
     const handleSave = () => {
         const updates = Object.entries(drafts).map(([alumId, changes]) => ({
@@ -165,9 +176,12 @@ const RAECaptureGrid = () => {
             </div>
 
             <div className="card bg-base-100 shadow-sm border border-base-300 p-6">
-                <p className="text-xs text-base-content/50 font-medium italic mb-4">
-                    Instrucciones: Marque los cuadros correspondientes. Las filas resaltadas en amarillo indican cambios pendientes de guardado.
-                </p>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+                    <p className="text-xs text-base-content/50 font-medium italic">
+                        Instrucciones: Marque los cuadros correspondientes. Las filas resaltadas en amarillo indican cambios pendientes de guardado.
+                    </p>
+                    <div className="w-full sm:w-64"><SearchBar value={searchQuery} onChange={setSearchQuery} placeholder="Buscar alumno por nombre..." /></div>
+                </div>
 
                 <div className="overflow-x-auto border rounded-xl">
                     <table className="table table-zebra w-full border-collapse">
@@ -192,7 +206,9 @@ const RAECaptureGrid = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {initData?.alumnos.map((alum: RAEAlumno) => {
+                            {filteredAlumnos.length === 0 ? (
+                                <tr><td colSpan={Object.values(RAE_COLUMNS).reduce((s, c) => s + c.fields.length, 0) + 1} className="text-center py-12"><EmptyState icon={Search} title="No se encontraron alumnos con ese nombre." /></td></tr>
+                            ) : (filteredAlumnos.map((alum: RAEAlumno) => {
                                 const isDirty = dirtyRows.has(alum.id);
                                 return (
                                     <tr key={alum.id} className={isDirty ? 'bg-yellow-50' : ''}>
@@ -217,7 +233,7 @@ const RAECaptureGrid = () => {
                                         )}
                                     </tr>
                                 );
-                            })}
+                            }))}
                         </tbody>
                     </table>
                 </div>

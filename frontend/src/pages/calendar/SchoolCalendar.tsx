@@ -1,15 +1,16 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { 
   useQuery, useMutation, useQueryClient 
 } from '@tanstack/react-query';
 import { 
   Calendar as CalendarIcon, Plus, Clock, 
-  AlertCircle, Trash2, Edit2, CheckCircle, XCircle
+  AlertCircle, Trash2, Edit2, CheckCircle, XCircle, Search
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { isAxiosError } from 'axios';
 import { useLoading } from '../../context/LoadingContext';
 import { EmptyState, ErrorState } from '../../components/Skeletons';
+import { SearchBar } from '../../components/SearchBar';
 import TaskModal from './TaskModal';
 import { getUsuarios } from '../../api/usuarios';
 import { getAlumnos } from '../../api/alumnos';
@@ -22,11 +23,22 @@ const SchoolCalendar = () => {
     const { showLoading, hideLoading } = useLoading();
     const [modalOpened, setModalOpened] = useState(false);
     const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
+    const [searchQuery, setSearchQuery] = useState('');
 
     const { data: events, isLoading: loadingEvents, isError, error } = useQuery({
         queryKey: ['calendar_events'],
         queryFn: () => calendarApi.getEvents(),
     });
+
+    const filteredEvents = useMemo(() => {
+        if (!searchQuery) return events?.results;
+        const q = searchQuery.toLowerCase();
+        return events?.results?.filter(e =>
+            e.title.toLowerCase().includes(q) ||
+            (e.description?.toLowerCase() || '').includes(q) ||
+            (e.assigned_to_nombre?.toLowerCase() || '').includes(q)
+        );
+    }, [events, searchQuery]);
 
     const { data: users } = useQuery({ queryKey: ['users'], queryFn: () => getUsuarios() });
     const { data: alunos } = useQuery({ queryKey: ['alumnos'], queryFn: () => getAlumnos() });
@@ -150,7 +162,11 @@ const SchoolCalendar = () => {
                             <h3 className="text-lg font-bold">Cronograma de Actividades</h3>
                         </div>
                         <div className="divider my-0"></div>
-                        <div className="overflow-x-auto mt-4">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mt-4 mb-2">
+                            <p className="text-sm text-base-content/60">{filteredEvents?.length || 0} eventos</p>
+                            <SearchBar value={searchQuery} onChange={setSearchQuery} placeholder="Buscar por evento, descripción o asignado..." />
+                        </div>
+                        <div className="overflow-x-auto">
                             <table className="table table-zebra w-full">
                                 <thead>
                                     <tr className="text-xs uppercase opacity-60">
@@ -163,7 +179,9 @@ const SchoolCalendar = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {events?.results?.map(e => (
+                                    {filteredEvents?.length === 0 ? (
+                                        <tr><td colSpan={6} className="text-center py-12"><EmptyState icon={Search} title="No se encontraron eventos con ese término." /></td></tr>
+                                    ) : (filteredEvents?.map(e => (
                                         <tr key={e.id} className="hover">
                                             <td>
                                                 <div className="flex flex-col">
@@ -214,7 +232,7 @@ const SchoolCalendar = () => {
                                                 </div>
                                             </td>
                                         </tr>
-                                    ))}
+                                    )))}
                                 </tbody>
                             </table>
                         </div>
