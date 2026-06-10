@@ -13,6 +13,8 @@ import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { TableSkeleton, EmptyState, ErrorState } from '../../components/Skeletons';
 import Modal from '../../components/Modal';
 import { LoadingButton } from '../../components/LoadingButton';
+import { SearchBar } from '../../components/SearchBar';
+import { FilterTabs } from '../../components/FilterTabs';
 import { getIncidencias, createIncidencia, resolverIncidencia, getMaestrosParaSelect } from '../../api/incidencias';
 import type { Incidencia } from '../../interfaces/incidencia';
 
@@ -129,24 +131,20 @@ const GestionIncidencias = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="form-control w-full">
                         <label className="label"><span className="label-text font-bold">Estado del Reporte</span></label>
-                        <div className="tabs tabs-boxed justify-start gap-2">
-                            {['TODOS', 'PENDIENTE', 'RESUELTA'].map((est) => (
-                                <button
-                                    key={est}
-                                    className={`tab transition-all ${filtroEstado === est ? 'tab-active !bg-warning !text-warning-content' : 'tab-inactive'}`}
-                                    onClick={() => setFiltroEstado(est)}
-                                >
-                                    {est === 'TODOS' ? <><Folder size={16} /> Todos</> : est === 'PENDIENTE' ? <><Clock size={16} /> Pendientes</> : <><CheckCircle size={16} /> Resueltas</>}
-                                </button>
-                            ))}
-                        </div>
+                        <FilterTabs
+                            tabs={[
+                                { value: 'TODOS', label: 'Todos', icon: Folder },
+                                { value: 'PENDIENTE', label: 'Pendientes', icon: Clock },
+                                { value: 'RESUELTA', label: 'Resueltas', icon: CheckCircle },
+                            ]}
+                            value={filtroEstado}
+                            onChange={setFiltroEstado}
+                            color="warning"
+                        />
                     </div>
                     <div className="form-control w-full">
                         <label className="label" htmlFor="buscar_bitacora"><span className="label-text font-bold">Buscar en la Bitácora</span></label>
-                        <div className="input input-bordered flex items-center gap-2">
-                            <Search size={18} className="opacity-50" />
-                            <input id="buscar_bitacora" type="text" placeholder="Buscar por título, persona o descripción..." className="grow" value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
-                        </div>
+                        <SearchBar value={busqueda} onChange={setBusqueda} placeholder="Buscar por título, persona o descripción..." />
                     </div>
                 </div>
             </div>

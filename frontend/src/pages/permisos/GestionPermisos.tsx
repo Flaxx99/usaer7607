@@ -17,6 +17,8 @@ import { TableSkeleton, ErrorState } from '../../components/Skeletons';
 import { DataTable } from '../../components/DataTable';
 import Modal from '../../components/Modal';
 import { LoadingButton } from '../../components/LoadingButton';
+import { SearchBar } from '../../components/SearchBar';
+import { FilterTabs } from '../../components/FilterTabs';
 import type { ColumnDef } from '@tanstack/react-table';
 import { getPermisos, getMetricasPermisos, createPermiso, responderPermiso, deletePermiso } from '../../api/permisos';
 import type { Permiso, EstadoPermiso, TipoPermiso } from '../../interfaces/permisos';
@@ -350,24 +352,21 @@ const GestionPermisos = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="form-control w-full">
                         <label className="label" htmlFor="buscar_solicitud"><span className="label-text font-bold">Buscar Solicitud</span></label>
-                        <div className="input input-bordered flex items-center gap-2">
-                            <Search size={18} className="opacity-50" />
-                            <input id="buscar_solicitud" type="text" placeholder="Nombre del docente o motivo..." className="grow" value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
-                        </div>
+                        <SearchBar value={busqueda} onChange={setBusqueda} placeholder="Nombre del docente o motivo..." />
                     </div>
                     <div className="form-control w-full">
                         <label className="label"><span className="label-text font-bold">Estado de la Solicitud</span></label>
-                        <div className="tabs tabs-boxed justify-start gap-2">
-                            {['TODOS', 'PENDIENTE', 'APROBADO', 'RECHAZADO'].map((est) => (
-                                <button
-                                    key={est}
-                                    className={`tab transition-all ${filtroEstado === est ? 'tab-active !bg-primary !text-primary-content' : ''}`}
-                                    onClick={() => setFiltroEstado(est)}
-                                >
-                                    {est === 'TODOS' ? 'Todos' : est === 'PENDIENTE' ? 'Espera' : est === 'APROBADO' ? 'Aprob.' : 'Rechaz.'}
-                                </button>
-                            ))}
-                        </div>
+                        <FilterTabs
+                            tabs={[
+                                { value: 'TODOS', label: 'Todos' },
+                                { value: 'PENDIENTE', label: 'Espera' },
+                                { value: 'APROBADO', label: 'Aprob.' },
+                                { value: 'RECHAZADO', label: 'Rechaz.' },
+                            ]}
+                            value={filtroEstado}
+                            onChange={setFiltroEstado}
+                            color="primary"
+                        />
                     </div>
                 </div>
             </div>
