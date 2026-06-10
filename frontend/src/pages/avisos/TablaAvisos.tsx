@@ -5,7 +5,7 @@ import { avisoFormSchema, type AvisoForm } from '../../schemas/aviso';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { 
     Megaphone, Plus, Calendar, Edit2, Trash2, 
-    AlertCircle, Search, Filter
+    AlertCircle, Search, Filter, XCircle, Pencil
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { isAxiosError } from 'axios';
@@ -39,12 +39,12 @@ const TablonAvisos = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['avisos'] });
       cerrarModal();
-      toast.success('¡Publicado! 📢', { description: 'El aviso ha sido creado y se enviarán notificaciones al personal.' });
+      toast.success(<span className="inline-flex items-center gap-1.5"><Megaphone size={16} /> ¡Publicado!</span>, { description: 'El aviso ha sido creado y se enviarán notificaciones al personal.' });
     },
     onError: (err) => {
         const errorData = isAxiosError(err) ? err.response?.data as Record<string, unknown> | undefined : undefined;
         const msg = errorData?.fecha_expiracion as string | undefined || 'Revisa los datos.';
-        toast.error('Error ❌', { description: msg });
+        toast.error(<span className="inline-flex items-center gap-1.5"><XCircle size={16} /> Error</span>, { description: msg });
     }
   });
 
@@ -53,16 +53,16 @@ const TablonAvisos = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['avisos'] });
       cerrarModal();
-      toast.success('¡Actualizado! ✏️', { description: 'Aviso modificado correctamente.' });
+      toast.success(<span className="inline-flex items-center gap-1.5"><Pencil size={16} /> ¡Actualizado!</span>, { description: 'Aviso modificado correctamente.' });
     },
-    onError: () => toast.error('Error ❌', { description: 'No se pudo actualizar.' })
+    onError: () => toast.error(<span className="inline-flex items-center gap-1.5"><XCircle size={16} /> Error</span>, { description: 'No se pudo actualizar.' })
   });
 
   const deleteMutation = useMutation({
     mutationFn: deleteAviso,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['avisos'] });
-      toast.success('¡Eliminado! 🗑️', { description: 'Aviso borrado del tablón.' });
+      toast.success(<span className="inline-flex items-center gap-1.5"><Trash2 size={16} /> ¡Eliminado!</span>, { description: 'Aviso borrado del tablón.' });
     }
   });
 
@@ -203,11 +203,11 @@ const TablonAvisos = () => {
                         <button 
                             className={`btn btn-sm join-item ${!verMisAvisos ? 'btn-primary' : 'btn-outline'}`}
                             onClick={() => setVerMisAvisos(false)}
-                        >📢 Tablón General</button>
+                        ><Megaphone size={16} /> Tablón General</button>
                         <button 
                             className={`btn btn-sm join-item ${verMisAvisos ? 'btn-primary' : 'btn-outline'}`}
                             onClick={() => setVerMisAvisos(true)}
-                        >✏️ Mis Publicaciones</button>
+                        ><Pencil size={16} /> Mis Publicaciones</button>
                     </div>
                 </div>
             </div>

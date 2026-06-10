@@ -1,6 +1,6 @@
 
 import { 
-  Save, ArrowLeft
+  Save, ArrowLeft, CheckCircle, XCircle
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -84,10 +84,10 @@ const RAECaptureGrid = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['rae_capture', id] });
             clearDrafts();
-            toast.success('¡Guardado! ✅', { description: 'La captura de RAE ha sido sincronizada con el servidor.' });
+            toast.success(<span className="inline-flex items-center gap-1.5"><CheckCircle size={16} /> ¡Guardado!</span>, { description: 'La captura de RAE ha sido sincronizada con el servidor.' });
         },
         onError: () => {
-            toast.error('Error ❌', { description: 'Hubo un problema al guardar los cambios.' });
+            toast.error(<span className="inline-flex items-center gap-1.5"><XCircle size={16} /> Error</span>, { description: 'Hubo un problema al guardar los cambios.' });
         },
         onSettled: () => hideLoading(),
     });

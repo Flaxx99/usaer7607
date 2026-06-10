@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { incidenciaSchema, resolverSchema, type IncidenciaForm, type ResolverForm } from '../../schemas/incidencia';
 import { 
     AlertTriangle, CheckCircle, Plus, Search, 
-    MessageSquare, FileText, Settings
+    MessageSquare, FileText, Settings, XCircle, Folder, Clock
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { isAxiosError } from 'axios';
@@ -61,11 +61,11 @@ const GestionIncidencias = () => {
             queryClient.invalidateQueries({ queryKey: ['incidencias'] });
             setIsCreateOpen(false);
             resetCreate();
-            toast.success('¡Reportada! ⚠️', { description: 'El reporte ha sido guardado en la bitácora.' });
+            toast.success(<span className="inline-flex items-center gap-1.5"><AlertTriangle size={16} /> ¡Reportada!</span>, { description: 'El reporte ha sido guardado en la bitácora.' });
         },
         onError: (err) => {
             const errorData = isAxiosError(err) ? err.response?.data as Record<string, unknown> | undefined : undefined;
-            toast.error('Error ❌', { description: (errorData?.detail as string) || 'Verifique los datos.' });
+            toast.error(<span className="inline-flex items-center gap-1.5"><XCircle size={16} /> Error</span>, { description: (errorData?.detail as string) || 'Verifique los datos.' });
         }
     });
 
@@ -76,7 +76,7 @@ const GestionIncidencias = () => {
             queryClient.invalidateQueries({ queryKey: ['incidencias'] });
             setResolveItem(null);
             resetResolve();
-            toast.success('¡Resuelto! ✅', { description: 'La resolución ha sido guardada y notificada.' });
+            toast.success(<span className="inline-flex items-center gap-1.5"><CheckCircle size={16} /> ¡Resuelto!</span>, { description: 'La resolución ha sido guardada y notificada.' });
         }
     });
 
@@ -135,7 +135,7 @@ const GestionIncidencias = () => {
                                     className={`tab transition-all ${filtroEstado === est ? 'tab-active !bg-warning !text-warning-content' : 'tab-inactive'}`}
                                     onClick={() => setFiltroEstado(est)}
                                 >
-                                    {est === 'TODOS' ? '📂 Todos' : est === 'PENDIENTE' ? '⏳ Pendientes' : '✅ Resueltas'}
+                                    {est === 'TODOS' ? <><Folder size={16} /> Todos</> : est === 'PENDIENTE' ? <><Clock size={16} /> Pendientes</> : <><CheckCircle size={16} /> Resueltas</>}
                                 </button>
                             ))}
                         </div>

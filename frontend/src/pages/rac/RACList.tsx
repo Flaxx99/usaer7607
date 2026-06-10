@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { 
-  FileText, Edit2, Plus, Download, FileSpreadsheet
+  FileText, Edit2, Plus, Download, FileSpreadsheet,
+  CheckCircle, XCircle
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
@@ -50,9 +51,9 @@ const RACList = () => {
             showLoading();
             const blob = await racApi.exportMyRecords();
             downloadBlob(blob, `RAC_${new Date().toISOString().split('T')[0]}.xlsx`);
-            toast.success('¡Generado! ✅', { description: 'Tu registro RAC ha sido exportado exitosamente.' });
+            toast.success(<span className="inline-flex items-center gap-1.5"><CheckCircle size={16} /> ¡Generado!</span>, { description: 'Tu registro RAC ha sido exportado exitosamente.' });
         } catch {
-            toast.error('Error ❌', { description: 'No se pudo generar el archivo Excel.' });
+            toast.error(<span className="inline-flex items-center gap-1.5"><XCircle size={16} /> Error</span>, { description: 'No se pudo generar el archivo Excel.' });
         } finally {
             hideLoading();
         }
@@ -63,9 +64,9 @@ const RACList = () => {
             showLoading();
             const blob = await racApi.exportGlobal();
             downloadBlob(blob, `RAC_Concentrado_${new Date().toISOString().split('T')[0]}.xlsx`);
-            toast.success('¡Exportado! ✅', { description: 'El concentrado RAC ha sido generado.' });
+            toast.success(<span className="inline-flex items-center gap-1.5"><CheckCircle size={16} /> ¡Exportado!</span>, { description: 'El concentrado RAC ha sido generado.' });
         } catch {
-            toast.error('Error ❌', { description: 'No se pudo generar el archivo Excel.' });
+            toast.error(<span className="inline-flex items-center gap-1.5"><XCircle size={16} /> Error</span>, { description: 'No se pudo generar el archivo Excel.' });
         } finally {
             hideLoading();
         }

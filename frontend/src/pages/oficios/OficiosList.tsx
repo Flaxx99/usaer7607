@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { 
-    Plus, Search, Trash2, FileText, Download, UploadCloud 
+    Plus, Search, Trash2, FileText, Download, UploadCloud,
+    CheckCircle, XCircle
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -30,16 +31,16 @@ const OficiosList = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['oficios'] });
             setIsModalOpen(false);
-            toast.success('¡Subido! ✅', { description: 'Oficio subido correctamente.' });
+            toast.success(<span className="inline-flex items-center gap-1.5"><CheckCircle size={16} /> ¡Subido!</span>, { description: 'Oficio subido correctamente.' });
         },
-        onError: () => toast.error('Error ❌', { description: 'No se pudo subir el archivo.' }),
+        onError: () => toast.error(<span className="inline-flex items-center gap-1.5"><XCircle size={16} /> Error</span>, { description: 'No se pudo subir el archivo.' }),
     });
 
     const deleteMutation = useMutation({
         mutationFn: deleteOficio,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['oficios'] });
-            toast.success('¡Eliminado! 🗑️', { description: 'El oficio ha sido borrado.' });
+            toast.success(<span className="inline-flex items-center gap-1.5"><Trash2 size={16} /> ¡Eliminado!</span>, { description: 'El oficio ha sido borrado.' });
         },
     });
 

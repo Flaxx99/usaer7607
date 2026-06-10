@@ -6,7 +6,7 @@ import { cicloSchema, type CicloFormData } from '../../schemas/ciclo';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { 
     Plus, Calendar, Edit2, Trash2, CheckCircle, AlertTriangle, Layers, ArrowRightCircle,
-    GraduationCap, TrendingUp, Save 
+    GraduationCap, TrendingUp, Save, XCircle, Pencil
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { isAxiosError } from 'axios';
@@ -72,11 +72,11 @@ const ListaCiclos = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ciclos'] });
       cerrarModal();
-      toast.success('¡Creado! ✅', { description: 'El ciclo escolar ha sido registrado.' });
+      toast.success(<span className="inline-flex items-center gap-1.5"><CheckCircle size={16} /> ¡Creado!</span>, { description: 'El ciclo escolar ha sido registrado.' });
     },
     onError: (err) => {
         const msg = isAxiosError(err) ? (err.response?.data as Record<string, unknown>)?.non_field_errors as string | undefined : undefined;
-        toast.error('Error ❌', { description: String(msg || 'Revisa las fechas.') });
+        toast.error(<span className="inline-flex items-center gap-1.5"><XCircle size={16} /> Error</span>, { description: String(msg || 'Revisa las fechas.') });
     },
     onSettled: () => hideLoading()
   });
@@ -87,11 +87,11 @@ const ListaCiclos = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ciclos'] });
       cerrarModal();
-      if (isModalOpen) toast.success('¡Actualizado! ✏️', { description: 'Datos actualizados.' });
+      if (isModalOpen) toast.success(<span className="inline-flex items-center gap-1.5"><Pencil size={16} /> ¡Actualizado!</span>, { description: 'Datos actualizados.' });
     },
     onError: (err) => {
         const msg = isAxiosError(err) ? (err.response?.data as Record<string, unknown>)?.non_field_errors as string | undefined : undefined;
-        toast.error('Error ❌', { description: String(msg || 'No se pudo actualizar.') });
+        toast.error(<span className="inline-flex items-center gap-1.5"><XCircle size={16} /> Error</span>, { description: String(msg || 'No se pudo actualizar.') });
     },
     onSettled: () => hideLoading()
   });
@@ -101,9 +101,9 @@ const ListaCiclos = () => {
     onMutate: () => showLoading(),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ciclos'] });
-      toast.success('¡Eliminado! 🗑️', { description: 'El ciclo ha sido borrado.' });
+      toast.success(<span className="inline-flex items-center gap-1.5"><Trash2 size={16} /> ¡Eliminado!</span>, { description: 'El ciclo ha sido borrado.' });
     },
-    onError: () => toast.error('Error ❌', { description: 'No se puede eliminar este ciclo.' }),
+    onError: () => toast.error(<span className="inline-flex items-center gap-1.5"><XCircle size={16} /> Error</span>, { description: 'No se puede eliminar este ciclo.' }),
     onSettled: () => hideLoading()
   });
 
@@ -117,12 +117,12 @@ const ListaCiclos = () => {
             setIsPromocionOpen(false);
             setPromotionTaskId(null);
             queryClient.invalidateQueries({ queryKey: ['alumnos'] }); 
-            toast.success('¡Promoción Exitosa! 🎓', { 
+            toast.success(<span className="inline-flex items-center gap-1.5"><GraduationCap size={16} /> ¡Promoción Exitosa!</span>, { 
                 description: `Promovidos: ${data.promovidos} | Graduados: ${data.graduados}` 
             });
         }
     },
-    onError: () => toast.error('Error ❌', { description: 'Hubo un problema al iniciar la promoción.' }),
+    onError: () => toast.error(<span className="inline-flex items-center gap-1.5"><XCircle size={16} /> Error</span>, { description: 'Hubo un problema al iniciar la promoción.' }),
     onSettled: () => hideLoading()
   });
 
@@ -139,13 +139,13 @@ const ListaCiclos = () => {
         setIsPromocionOpen(false);
         setPromotionTaskId(null);
         queryClient.invalidateQueries({ queryKey: ['alumnos'] }); 
-        toast.success('¡Promoción Exitosa! 🎓', { 
+        toast.success(<span className="inline-flex items-center gap-1.5"><GraduationCap size={16} /> ¡Promoción Exitosa!</span>, { 
             description: `Promovidos: ${promotionStatus.data?.promovidos} | Graduados: ${promotionStatus.data?.graduados}` 
         });
     } else if (promotionStatus?.status === 'FAILED') {
         setIsPromocionOpen(false);
         setPromotionTaskId(null);
-        toast.error('Error ❌', { description: promotionStatus.error || 'La promoción falló durante el proceso.' });
+        toast.error(<span className="inline-flex items-center gap-1.5"><XCircle size={16} /> Error</span>, { description: promotionStatus.error || 'La promoción falló durante el proceso.' });
     }
   }, [promotionStatus, queryClient]);
   /* eslint-enable react-hooks/set-state-in-effect */

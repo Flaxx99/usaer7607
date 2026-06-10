@@ -5,7 +5,7 @@ import { documentoFormSchema, type DocumentoForm } from '../../schemas/documento
 import { zodResolver } from '@hookform/resolvers/zod';
 import { 
     Plus, Search, FolderOpen, Edit2, Trash2, 
-    Save, Paperclip, X, UploadCloud
+    Save, Paperclip, X, UploadCloud, XCircle, Pencil
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { 
@@ -70,9 +70,9 @@ const ListaDocumentos = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documentos'] });
       cerrarModal();
-      toast.success('¡Registrado! 📂', { description: 'Expediente creado correctamente' });
+      toast.success(<span className="inline-flex items-center gap-1.5"><FolderOpen size={16} /> ¡Registrado!</span>, { description: 'Expediente creado correctamente' });
     },
-    onError: () => toast.error('Error ❌', { description: 'No se pudo crear el expediente' })
+    onError: () => toast.error(<span className="inline-flex items-center gap-1.5"><XCircle size={16} /> Error</span>, { description: 'No se pudo crear el expediente' })
   });
 
   const updateMutation = useMutation({
@@ -80,16 +80,16 @@ const ListaDocumentos = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documentos'] });
       cerrarModal();
-      toast.success('¡Actualizado! ✏️', { description: 'Expediente actualizado' });
+      toast.success(<span className="inline-flex items-center gap-1.5"><Pencil size={16} /> ¡Actualizado!</span>, { description: 'Expediente actualizado' });
     },
-    onError: () => toast.error('Error ❌', { description: 'No se pudo actualizar' })
+    onError: () => toast.error(<span className="inline-flex items-center gap-1.5"><XCircle size={16} /> Error</span>, { description: 'No se pudo actualizar' })
   });
 
   const deleteMutation = useMutation({
     mutationFn: deleteDocumento,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documentos'] });
-      toast.success('¡Eliminado! 🗑️', { description: 'Expediente borrado' });
+      toast.success(<span className="inline-flex items-center gap-1.5"><Trash2 size={16} /> ¡Eliminado!</span>, { description: 'Expediente borrado' });
     }
   });
 
@@ -98,7 +98,7 @@ const ListaDocumentos = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documentos'] });
       if (docEditar) {
-          toast.success('¡Eliminado! 🗑️', { description: 'Archivo anexo eliminado.' });
+          toast.success(<span className="inline-flex items-center gap-1.5"><Trash2 size={16} /> ¡Eliminado!</span>, { description: 'Archivo anexo eliminado.' });
           cerrarModal();
       }
     }

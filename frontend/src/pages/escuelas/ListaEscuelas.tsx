@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { escuelaSchema, type EscuelaFormData, NIVELES_OPCIONES } from '../../schemas/escuela';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Plus, School, Edit2, Trash2, Save } from 'lucide-react';
+import { Plus, School, Edit2, Trash2, Save, XCircle, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { isAxiosError } from 'axios';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
@@ -53,12 +53,12 @@ const ListaEscuelas = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['escuelas'] });
       cerrarModal();
-      toast.success('¡Creada! 🏫', { description: 'La escuela se registró correctamente en el sistema.' });
+      toast.success(<span className="inline-flex items-center gap-1.5"><School size={16} /> ¡Creada!</span>, { description: 'La escuela se registró correctamente en el sistema.' });
     },
     onError: (error) => {
       const errorData = isAxiosError(error) ? error.response?.data as Record<string, unknown> | undefined : undefined;
       const mensaje = errorData?.detail as string | undefined || 'Verifique los datos.';
-      toast.error('Error ❌', { description: mensaje });
+      toast.error(<span className="inline-flex items-center gap-1.5"><XCircle size={16} /> Error</span>, { description: mensaje });
     }
   });
 
@@ -67,12 +67,12 @@ const ListaEscuelas = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['escuelas'] });
       cerrarModal();
-      toast.success('¡Actualizada! ✏️', { description: 'Los datos de la escuela han sido guardados.' });
+      toast.success(<span className="inline-flex items-center gap-1.5"><Pencil size={16} /> ¡Actualizada!</span>, { description: 'Los datos de la escuela han sido guardados.' });
     },
     onError: (error) => {
       const errorData = isAxiosError(error) ? error.response?.data as Record<string, unknown> | undefined : undefined;
       const mensaje = errorData?.detail as string | undefined || 'Verifique los datos.';
-      toast.error('Error ❌', { description: mensaje });
+      toast.error(<span className="inline-flex items-center gap-1.5"><XCircle size={16} /> Error</span>, { description: mensaje });
     }
   });
 
@@ -80,9 +80,9 @@ const ListaEscuelas = () => {
     mutationFn: deleteEscuela,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['escuelas'] });
-      toast.success('¡Eliminada! 🗑️', { description: 'La escuela ha sido dada de baja del sistema.' });
+      toast.success(<span className="inline-flex items-center gap-1.5"><Trash2 size={16} /> ¡Eliminada!</span>, { description: 'La escuela ha sido dada de baja del sistema.' });
     },
-    onError: () => toast.error('Error ❌', { description: 'No se pudo eliminar (posiblemente tiene alumnos asignados).' })
+    onError: () => toast.error(<span className="inline-flex items-center gap-1.5"><XCircle size={16} /> Error</span>, { description: 'No se pudo eliminar (posiblemente tiene alumnos asignados).' })
   });
 
   const cerrarModal = () => {

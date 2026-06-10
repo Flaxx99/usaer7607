@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { 
-  FileText, Edit2, CheckCircle, FileSpreadsheet
+  FileText, Edit2, CheckCircle, FileSpreadsheet, XCircle
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
@@ -47,9 +47,9 @@ const RAERecordsList = () => {
             showLoading();
             const blob = await raeApi.exportAll();
             downloadBlob(blob, `RAE_Concentrado_${new Date().toISOString().split('T')[0]}.xlsx`);
-            toast.success('¡Generado! ✅', { description: 'El reporte concentrado RAE ha sido generado.' });
+            toast.success(<span className="inline-flex items-center gap-1.5"><CheckCircle size={16} /> ¡Generado!</span>, { description: 'El reporte concentrado RAE ha sido generado.' });
         } catch {
-            toast.error('Error ❌', { description: 'No se pudo generar el archivo Excel.' });
+            toast.error(<span className="inline-flex items-center gap-1.5"><XCircle size={16} /> Error</span>, { description: 'No se pudo generar el archivo Excel.' });
         } finally {
             hideLoading();
         }

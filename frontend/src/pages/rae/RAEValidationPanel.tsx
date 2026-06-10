@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { 
-  ArrowLeft, Download, Eye, Users
+  ArrowLeft, Download, Eye, Users, CheckCircle, XCircle
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -33,9 +33,9 @@ const RAEValidationPanel = () => {
             document.body.appendChild(link);
             link.click();
             link.remove();
-            toast.success('¡Generado! ✅', { description: 'El archivo oficial RAE ha sido descargado.' });
+            toast.success(<span className="inline-flex items-center gap-1.5"><CheckCircle size={16} /> ¡Generado!</span>, { description: 'El archivo oficial RAE ha sido descargado.' });
         } catch {
-            toast.error('Error ❌', { description: 'No se pudo generar el archivo.' });
+            toast.error(<span className="inline-flex items-center gap-1.5"><XCircle size={16} /> Error</span>, { description: 'No se pudo generar el archivo.' });
         } finally {
             hideLoading();
         }

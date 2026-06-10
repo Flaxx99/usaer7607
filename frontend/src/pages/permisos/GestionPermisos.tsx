@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { createPermisoSchema, type CreatePermisoFormData, TIPOS_PERMISO, STATE_COLORS } from '../../schemas/permiso';
 import { 
   FileText, Plus, CheckCircle, XCircle, Clock, 
-  Search, Settings, Eye
+  Search, Settings, Eye, Trash2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { isAxiosError } from 'axios';
@@ -89,11 +89,11 @@ const GestionPermisos = () => {
             queryClient.invalidateQueries({ queryKey: ['permisos-metricas'] });
             setIsCreateModalOpen(false);
             reset();
-            toast.success('¡Solicitado! ✅', { description: 'Tu permiso ha sido registrado y enviado a la dirección.' });
+            toast.success(<span className="inline-flex items-center gap-1.5"><CheckCircle size={16} /> ¡Solicitado!</span>, { description: 'Tu permiso ha sido registrado y enviado a la dirección.' });
         },
         onError: (err) => {
             const errorData = isAxiosError(err) ? err.response?.data as Record<string, unknown> | undefined : undefined;
-            toast.error('Error ❌', { description: (errorData?.detail as string) || 'Revisa las fechas.' });
+            toast.error(<span className="inline-flex items-center gap-1.5"><XCircle size={16} /> Error</span>, { description: (errorData?.detail as string) || 'Revisa las fechas.' });
         }
     });
 
@@ -105,7 +105,7 @@ const GestionPermisos = () => {
             queryClient.invalidateQueries({ queryKey: ['permisos-metricas'] });
             setIsResponseModalOpen(false);
             resetRes();
-            toast.success('¡Procesado! ✅', { description: 'La resolución de la solicitud fue guardada.' });
+            toast.success(<span className="inline-flex items-center gap-1.5"><CheckCircle size={16} /> ¡Procesado!</span>, { description: 'La resolución de la solicitud fue guardada.' });
         }
     });
 
@@ -113,9 +113,9 @@ const GestionPermisos = () => {
         mutationFn: deletePermiso,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['permisos'] });
-            toast.success('¡Cancelada! 🗑️', { description: 'Tu solicitud de permiso ha sido eliminada.' });
+            toast.success(<span className="inline-flex items-center gap-1.5"><Trash2 size={16} /> ¡Cancelada!</span>, { description: 'Tu solicitud de permiso ha sido eliminada.' });
         },
-        onError: () => toast.error('Error ❌', { description: 'No se pudo eliminar.' })
+        onError: () => toast.error(<span className="inline-flex items-center gap-1.5"><XCircle size={16} /> Error</span>, { description: 'No se pudo eliminar.' })
     });
 
     const handleCreate: SubmitHandler<CreatePermisoFormData> = (data) => {
@@ -434,7 +434,7 @@ const GestionPermisos = () => {
                         </div>
                         {permisoSeleccionado.respuesta_admin && (
                             <div className={`p-4 rounded-xl border ${permisoSeleccionado.estado?.toUpperCase() === 'APROBADO' ? 'bg-success/10 border-success/20' : 'bg-error/10 border-error/20'}`}>
-                                <p className="text-xs font-bold uppercase mb-1">{permisoSeleccionado.estado?.toUpperCase() === 'APROBADO' ? '✅ Respuesta de Dirección' : '❌ Respuesta de Dirección'}</p>
+                                <p className="text-xs font-bold uppercase mb-1">{permisoSeleccionado.estado?.toUpperCase() === 'APROBADO' ? <><CheckCircle size={14} /> Respuesta de Dirección</> : <><XCircle size={14} /> Respuesta de Dirección</>}</p>
                                 <p className="text-sm font-medium italic">"{permisoSeleccionado.respuesta_admin}"</p>
                                 <p className="text-xs opacity-50 mt-1">— {permisoSeleccionado.administrador_nombre}</p>
                             </div>

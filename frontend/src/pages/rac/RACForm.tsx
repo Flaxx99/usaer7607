@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { 
-  AlertCircle, ArrowLeft, Save, UserCheck, User
+  AlertCircle, ArrowLeft, Save, UserCheck, User,
+  CheckCircle, XCircle
 } from 'lucide-react';
 import { useForm, Controller } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -74,19 +75,19 @@ const RACForm = () => {
         onMutate: () => showLoading(),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['rac_records'] });
-            toast.success('¡Guardado! ✅', { description: 'La información del RAC ha sido actualizada correctamente.' });
+            toast.success(<span className="inline-flex items-center gap-1.5"><CheckCircle size={16} /> ¡Guardado!</span>, { description: 'La información del RAC ha sido actualizada correctamente.' });
             navigate('/rac');
         },
         onError: (err) => {
             const errorData = isAxiosError(err) ? err.response?.data as Record<string, unknown> | undefined : undefined;
-            toast.error('Error ❌', { description: (errorData?.detail as string) || 'Ocurrió un error al procesar el registro.' });
+            toast.error(<span className="inline-flex items-center gap-1.5"><XCircle size={16} /> Error</span>, { description: (errorData?.detail as string) || 'Ocurrió un error al procesar el registro.' });
         },
         onSettled: () => hideLoading(),
     });
 
     const onSubmit = (data: RACFormData) => {
         if (!selectedAlumno) {
-            toast.error('Error ❌', { description: 'Debes seleccionar un alumno antes de guardar.' });
+            toast.error(<span className="inline-flex items-center gap-1.5"><XCircle size={16} /> Error</span>, { description: 'Debes seleccionar un alumno antes de guardar.' });
             return;
         }
 

@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { isAxiosError } from 'axios';
 import { 
   Clock, UserCheck, LogIn, LogOut, ShieldCheck, 
-  ArrowRight
+  ArrowRight, CheckCircle, XCircle, WifiOff
 } from 'lucide-react';
 import { registrarAsistencia } from '../../api/asistencia';
 import { attendanceBuffer } from '../../utils/attendanceBuffer';
@@ -38,7 +38,7 @@ const Kiosco = () => {
             }
 
             if (attendanceBuffer.getAll().length === 0) {
-                toast.success('¡Sincronizado! ✅', { 
+                toast.success(<span className="inline-flex items-center gap-1.5"><CheckCircle size={16} /> ¡Sincronizado!</span>, { 
                     description: 'Todos los registros pendientes han sido enviados.',
                     duration: 3000 
                 });
@@ -58,7 +58,7 @@ const Kiosco = () => {
             const isEntrada = data.tipo === 'ENTRADA';
             
             toast.success(
-                isEntrada ? '¡Registrado! ✅' : '¡Registrada! ✅', 
+                <span className="inline-flex items-center gap-1.5"><CheckCircle size={16} /> {isEntrada ? '¡Registrado!' : '¡Registrada!'}</span>, 
                 { 
                     description: `${data.profesor} • ${data.hora}`,
                     duration: 4000 
@@ -77,13 +77,13 @@ const Kiosco = () => {
 
                 if (numeroEmpleado) {
                     attendanceBuffer.save(numeroEmpleado);
-                    toast.warning('Modo Offline 📶', { 
+                    toast.warning(<span className="inline-flex items-center gap-1.5"><WifiOff size={16} /> Modo Offline</span>, { 
                         description: 'Sin conexión. Tu checada se guardó localmente y se enviará automáticamente al recuperar la red.',
                         duration: 5000 
                     });
                 }
             } else if (axiosErr) {
-                toast.error('Error ❌', { 
+                toast.error(<span className="inline-flex items-center gap-1.5"><XCircle size={16} /> Error</span>, { 
                     description: axiosErr.response?.data?.detail || 'Error en el registro de asistencia.',
                     duration: 4000 
                 });

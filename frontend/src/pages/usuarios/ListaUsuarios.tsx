@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { usuarioSchema, type UsuarioFormData, ROLES_OPTIONS, SITUACION_OPTIONS } from '../../schemas/usuario';
 import { 
     Plus, Edit2, Trash2, Shield, Mail, Key, 
-    Briefcase, Phone, School as SchoolIcon, User as UserIcon, CheckCircle, XCircle, Save, User
+    Briefcase, Phone, School as SchoolIcon, User as UserIcon, CheckCircle, XCircle, Save, User, Pencil
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { isAxiosError } from 'axios';
@@ -66,12 +66,12 @@ const ListaUsuarios = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['usuarios'] });
       cerrarModal();
-      toast.success('¡Creado! 👤', { description: 'Usuario registrado exitosamente.' });
+      toast.success(<span className="inline-flex items-center gap-1.5"><User size={16} /> ¡Creado!</span>, { description: 'Usuario registrado exitosamente.' });
     },
     onError: (err) => {
         const errorData = isAxiosError(err) ? err.response?.data as Record<string, unknown> | undefined : undefined;
         const msg = errorData?.email ? 'El correo ya existe.' : 'Revisa los datos.';
-        toast.error('Error ❌', { description: msg });
+        toast.error(<span className="inline-flex items-center gap-1.5"><XCircle size={16} /> Error</span>, { description: msg });
     }
   });
 
@@ -80,16 +80,16 @@ const ListaUsuarios = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['usuarios'] });
       cerrarModal();
-      toast.success('¡Actualizado! ✏️', { description: 'Usuario modificado correctamente.' });
+      toast.success(<span className="inline-flex items-center gap-1.5"><Pencil size={16} /> ¡Actualizado!</span>, { description: 'Usuario modificado correctamente.' });
     },
-    onError: () => toast.error('Error ❌', { description: 'No se pudo actualizar.' })
+    onError: () => toast.error(<span className="inline-flex items-center gap-1.5"><XCircle size={16} /> Error</span>, { description: 'No se pudo actualizar.' })
   });
 
   const deleteMutation = useMutation({
     mutationFn: deleteUsuario,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['usuarios'] });
-      toast.success('¡Eliminado! 🗑️', { description: 'Usuario eliminado.' });
+      toast.success(<span className="inline-flex items-center gap-1.5"><Trash2 size={16} /> ¡Eliminado!</span>, { description: 'Usuario eliminado.' });
     }
   });
 

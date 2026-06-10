@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Bell, CheckCheck, Loader2, Inbox } from 'lucide-react';
+import { Bell, CheckCheck, Loader2, Inbox, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { EmptyState, ErrorState } from '../../components/Skeletons';
 import { notificacionesApi } from '../../api/notificaciones';
@@ -18,7 +18,7 @@ const ListaNotificaciones = () => {
         mutationFn: notificacionesApi.marcarComoLeida,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['notificaciones'] });
-            toast.success('¡Leída! ✅', { description: 'Notificación marcada como leída.' });
+            toast.success(<span className="inline-flex items-center gap-1.5"><CheckCircle size={16} /> ¡Leída!</span>, { description: 'Notificación marcada como leída.' });
         },
     });
 
@@ -26,7 +26,7 @@ const ListaNotificaciones = () => {
         mutationFn: notificacionesApi.marcarTodasComoLeidas,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['notificaciones'] });
-            toast.success('¡Todo leído! ✅', { description: 'Todas las notificaciones marcadas como leídas.' });
+            toast.success(<span className="inline-flex items-center gap-1.5"><CheckCircle size={16} /> ¡Todo leído!</span>, { description: 'Todas las notificaciones marcadas como leídas.' });
         },
     });
 

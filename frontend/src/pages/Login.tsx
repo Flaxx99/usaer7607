@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { loginSchema, type LoginForm } from '../schemas/auth';
-import { User, Lock, Loader2, ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { User, Lock, Loader2, ArrowLeft, Eye, EyeOff, CheckCircle, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { isAxiosError } from 'axios';
 import client from '../api/client';
@@ -27,7 +27,7 @@ const Login = () => {
       localStorage.setItem('access_token', token); 
       localStorage.setItem('user', JSON.stringify(user));
 
-      toast.success('¡Bienvenido! ✅', {
+      toast.success(<span className="inline-flex items-center gap-1.5"><CheckCircle size={16} /> ¡Bienvenido!</span>, {
         description: `Hola ${user.first_name}, has ingresado correctamente.`,
       });
 
@@ -38,7 +38,7 @@ const Login = () => {
         ? 'Credenciales incorrectas. Verifique su usuario y contraseña.' 
         : 'Error de conexión. Intente más tarde.';
 
-      toast.error('Error ❌', {
+      toast.error(<span className="inline-flex items-center gap-1.5"><XCircle size={16} /> Error</span>, {
         description: message,
       });
     } finally {

@@ -4,7 +4,7 @@ import {
 } from '@tanstack/react-query';
 import { 
   Calendar as CalendarIcon, Plus, Clock, 
-  AlertCircle, Trash, Edit2 
+  AlertCircle, Trash2, Edit2, CheckCircle, XCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { isAxiosError } from 'axios';
@@ -39,11 +39,11 @@ const SchoolCalendar = () => {
             queryClient.invalidateQueries({ queryKey: ['calendar_events'] });
             setModalOpened(false);
             setEditingEvent(null);
-            toast.success('¡Guardado! ✅', { description: 'El evento/tarea ha sido guardado correctamente.' });
+            toast.success(<span className="inline-flex items-center gap-1.5"><CheckCircle size={16} /> ¡Guardado!</span>, { description: 'El evento/tarea ha sido guardado correctamente.' });
         },
         onError: (err) => {
             const errorData = isAxiosError(err) ? err.response?.data as Record<string, unknown> | undefined : undefined;
-            toast.error('Error ❌', { description: (errorData?.detail as string) || 'No se pudo guardar el evento.' });
+            toast.error(<span className="inline-flex items-center gap-1.5"><XCircle size={16} /> Error</span>, { description: (errorData?.detail as string) || 'No se pudo guardar el evento.' });
         },
         onSettled: () => hideLoading(),
     });
@@ -53,7 +53,7 @@ const SchoolCalendar = () => {
         onMutate: () => showLoading(),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['calendar_events'] });
-            toast.success('¡Eliminado! 🗑️', { description: 'El evento ha sido borrado.' });
+            toast.success(<span className="inline-flex items-center gap-1.5"><Trash2 size={16} /> ¡Eliminado!</span>, { description: 'El evento ha sido borrado.' });
         },
         onSettled: () => hideLoading(),
     });
@@ -209,7 +209,7 @@ const SchoolCalendar = () => {
                                                         if (confirm('¿Eliminar este evento?')) deleteMutation.mutate(e.id);
                                                       }}
                                                     >
-                                                      <Trash size={14} />
+                                                      <Trash2 size={14} />
                                                     </button>
                                                 </div>
                                             </td>

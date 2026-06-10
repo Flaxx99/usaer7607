@@ -6,7 +6,8 @@ import { alumnoSchema, type AlumnoFormData, CLASIFICACIONES_OPCIONES } from '../
 import { zodResolver } from '@hookform/resolvers/zod';
 import { 
   Plus, Users, Edit2, Trash2, 
-  Save, School as SchoolIcon, Sparkles, Filter
+  Save, School as SchoolIcon, Sparkles, Filter,
+  CheckCircle, XCircle, Pencil
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
@@ -93,9 +94,9 @@ const ListaAlumnos = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['alumnos'] });
       cerrarModal();
-      toast.success('¡Registrado! ✅', { description: 'El alumno ha sido dado de alta exitosamente.' });
+      toast.success(<span className="inline-flex items-center gap-1.5"><CheckCircle size={16} /> ¡Registrado!</span>, { description: 'El alumno ha sido dado de alta exitosamente.' });
     },
-    onError: () => toast.error('Error ❌', { description: 'Revisa los datos (posible CURP ya registrada).' })
+    onError: () => toast.error(<span className="inline-flex items-center gap-1.5"><XCircle size={16} /> Error</span>, { description: 'Revisa los datos (posible CURP ya registrada).' })
   });
 
   const updateMutation = useMutation({
@@ -103,18 +104,18 @@ const ListaAlumnos = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['alumnos'] });
       cerrarModal();
-      toast.success('¡Actualizado! ✏️', { description: 'Datos escolares actualizados.' });
+      toast.success(<span className="inline-flex items-center gap-1.5"><Pencil size={16} /> ¡Actualizado!</span>, { description: 'Datos escolares actualizados.' });
     },
-    onError: () => toast.error('Error ❌', { description: 'No se pudo guardar la información.' })
+    onError: () => toast.error(<span className="inline-flex items-center gap-1.5"><XCircle size={16} /> Error</span>, { description: 'No se pudo guardar la información.' })
   });
 
   const deleteMutation = useMutation({
     mutationFn: deleteAlumno,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['alumnos'] });
-      toast.success('¡Eliminado! 🗑️', { description: 'El alumno ha sido dado de baja de la USAER.' });
+      toast.success(<span className="inline-flex items-center gap-1.5"><Trash2 size={16} /> ¡Eliminado!</span>, { description: 'El alumno ha sido dado de baja de la USAER.' });
     },
-    onError: () => toast.error('Error ❌', { description: 'No se puede eliminar (registros vinculados).' })
+    onError: () => toast.error(<span className="inline-flex items-center gap-1.5"><XCircle size={16} /> Error</span>, { description: 'No se puede eliminar (registros vinculados).' })
   });
 
   const cerrarModal = () => {
