@@ -22,7 +22,7 @@ describe('Login Page', () => {
 
     // Llenamos el formulario con datos incorrectos
     fireEvent.change(screen.getByLabelText(/Usuario/i), { target: { value: 'wrong_user' } });
-    fireEvent.change(screen.getByLabelText(/Contraseña/i), { target: { value: 'wrong_pass' } });
+    fireEvent.change(screen.getByLabelText('Contraseña', { exact: true }), { target: { value: 'wrong_pass' } });
     fireEvent.click(screen.getByRole('button', { name: /Acceder al Sistema/i }));
 
     // El token NO debe guardarse
@@ -36,7 +36,7 @@ describe('Login Page', () => {
 
     // Datos correctos (definidos en mocks/handlers.ts)
     fireEvent.change(screen.getByLabelText(/Usuario/i), { target: { value: 'admin' } });
-    fireEvent.change(screen.getByLabelText(/Contraseña/i), { target: { value: 'admin123' } });
+    fireEvent.change(screen.getByLabelText('Contraseña', { exact: true }), { target: { value: 'admin123' } });
     fireEvent.click(screen.getByRole('button', { name: /Acceder al Sistema/i }));
 
     // Verificamos que el token se guardó en localStorage
