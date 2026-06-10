@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { taskSchema, type TaskForm } from '../../schemas/calendar';
 import { Calendar, Save } from 'lucide-react';
 import Modal from '../../components/Modal';
+import { LoadingButton } from '../../components/LoadingButton';
 import type { CalendarEvent } from '../../api/calendar';
 
 interface SelectOption {
@@ -25,9 +26,10 @@ interface TaskModalProps {
     alunos: SelectOption[];
     escuelas: SelectOption[];
     currentUserRole: string;
+    saving?: boolean;
 }
 
-const TaskModal = ({ opened, onClose, onSave, initialData, users, alunos, escuelas, currentUserRole }: TaskModalProps) => {
+const TaskModal = ({ opened, onClose, onSave, initialData, users, alunos, escuelas, currentUserRole, saving = false }: TaskModalProps) => {
     const { register, handleSubmit, reset, setFocus } = useForm<TaskForm>({
         resolver: zodResolver(taskSchema),
         defaultValues: initialData ? {
@@ -149,10 +151,9 @@ const TaskModal = ({ opened, onClose, onSave, initialData, users, alunos, escuel
 
                     <div className="flex justify-end gap-3 pt-4 border-t border-base-300">
                         <button type="button" className="btn btn-ghost" onClick={onClose}>Cancelar</button>
-                        <button type="submit" className="btn btn-primary px-8 gap-2">
-                            <Save size={18} />
-                            {initialData ? 'Actualizar' : 'Crear Tarea'}
-                        </button>
+                        <LoadingButton type="submit" className="btn btn-primary px-8 gap-2" icon={Save} loading={saving}>
+                        {initialData ? 'Actualizar' : 'Crear Tarea'}
+                    </LoadingButton>
                     </div>
                 </form>
             </Modal>

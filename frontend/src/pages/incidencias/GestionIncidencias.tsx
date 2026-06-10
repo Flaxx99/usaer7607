@@ -12,6 +12,7 @@ import { isAxiosError } from 'axios';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { TableSkeleton, EmptyState, ErrorState } from '../../components/Skeletons';
 import Modal from '../../components/Modal';
+import { LoadingButton } from '../../components/LoadingButton';
 import { getIncidencias, createIncidencia, resolverIncidencia, getMaestrosParaSelect } from '../../api/incidencias';
 import type { Incidencia } from '../../interfaces/incidencia';
 
@@ -225,7 +226,9 @@ const GestionIncidencias = () => {
                     </div>
                     <div className="flex justify-end gap-3 pt-4 border-t border-base-300">
                         <button type="button" className="btn btn-ghost" onClick={() => setIsCreateOpen(false)}>Cancelar</button>
-                        <button type="submit" className="btn btn-warning gap-2"><FileText size={18} /> Guardar en Bitácora</button>
+                        <LoadingButton type="submit" className="btn btn-warning gap-2" icon={FileText} loading={createMutation.isPending}>
+                            Guardar en Bitácora
+                        </LoadingButton>
                     </div>
                 </form>
             </Modal>

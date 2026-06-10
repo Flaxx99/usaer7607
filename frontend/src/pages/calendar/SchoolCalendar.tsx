@@ -231,6 +231,7 @@ const SchoolCalendar = () => {
                 alunos={(alunos?.results || []).map(a => ({ id: a.id, nombre: a.nombres, nombres: a.nombres, apellido_paterno: a.apellido_paterno }))}
                 escuelas={escuelas || []}
                 currentUserRole={localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).role : ''}
+                saving={saveMutation.isPending}
             />
         </div>
     );

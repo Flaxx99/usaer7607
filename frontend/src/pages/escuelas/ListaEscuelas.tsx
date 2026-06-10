@@ -12,6 +12,7 @@ import { getEscuelas, deleteEscuela, createEscuela, updateEscuela } from '../../
 import type { Escuela } from '../../interfaces/escuela';
 import { DataTable } from '../../components/DataTable';
 import Modal from '../../components/Modal';
+import { LoadingButton } from '../../components/LoadingButton';
 import type { ColumnDef } from '@tanstack/react-table';
 
 
@@ -261,7 +262,9 @@ const ListaEscuelas = () => {
                 </div>
                 <div className="md:col-span-2 flex justify-end gap-3 pt-4 border-t border-base-300">
                     <button type="button" className="btn btn-ghost" onClick={cerrarModal}>Cancelar</button>
-                    <button type="submit" className="btn btn-primary gap-2"><Save size={18} /> {escuelaEditar ? 'Guardar Cambios' : 'Registrar Escuela'}</button>
+                    <LoadingButton type="submit" className="btn btn-primary gap-2" icon={Save} loading={createMutation.isPending || updateMutation.isPending}>
+                        {escuelaEditar ? 'Guardar Cambios' : 'Registrar Escuela'}
+                    </LoadingButton>
                 </div>
             </form>
         </Modal>

@@ -16,6 +16,7 @@ import { getAlumnos } from '../../api/alumnos';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import Modal from '../../components/Modal';
 import { EmptyState, ErrorState } from '../../components/Skeletons';
+import { LoadingButton } from '../../components/LoadingButton';
 import type { Expediente } from '../../interfaces/documentos';
 
 const DocStatus = ({ label, hasFile, url }: { label: string; hasFile: boolean; url?: string }) => (
@@ -389,10 +390,9 @@ const ListaDocumentos = () => {
 
                         <div className="flex justify-end gap-3 pt-4 border-t border-base-300">
                             <button type="button" className="btn btn-ghost" onClick={cerrarModal}>Cancelar</button>
-                            <button type="submit" className="btn btn-primary px-8 flex items-center gap-2">
-                                <Save size={18} />
+                            <LoadingButton type="submit" className="btn btn-primary px-8 flex items-center gap-2" icon={Save} loading={createMutation.isPending || updateMutation.isPending}>
                                 {docEditar ? 'Guardar Cambios' : 'Registrar Expediente'}
-                            </button>
+                            </LoadingButton>
                         </div>
                     </form>
                 </Modal>
