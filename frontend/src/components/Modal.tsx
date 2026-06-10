@@ -13,11 +13,11 @@ interface ModalProps {
     children: React.ReactNode;
 }
 
-const SIZE_MAP: Record<string, string> = {
-    sm: 'max-w-md',
-    md: 'max-w-lg',
-    lg: 'max-w-2xl',
-    xl: 'max-w-4xl',
+const RESPONSIVE_SIZE: Record<string, string> = {
+    sm: 'sm:max-w-md',
+    md: 'sm:max-w-lg',
+    lg: 'sm:max-w-2xl',
+    xl: 'sm:max-w-4xl',
 };
 
 const COLOR_HEADER_MAP: Record<string, string> = {
@@ -45,8 +45,8 @@ const Modal = ({ isOpen, onClose, title, icon, color = 'primary', size = 'md', c
     if (!isOpen) return null;
 
     return (
-        <div className="modal modal-open">
-            <div className={`modal-box ${SIZE_MAP[size]} p-0 overflow-hidden`}>
+        <div className="modal modal-open modal-bottom sm:modal-middle">
+            <div className={`modal-box ${RESPONSIVE_SIZE[size]} p-0 overflow-hidden`}>
                 {/* Colored header */}
                 <div className={`${COLOR_HEADER_MAP[color]} p-6 flex items-center justify-between`}>
                     <h3 className="text-xl font-bold flex items-center gap-2">

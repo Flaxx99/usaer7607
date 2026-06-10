@@ -102,13 +102,13 @@ describe('ListaUsuarios', () => {
 
         // Esperar a que los datos se rendericen (React Query resuelve asincrónicamente)
         await waitFor(() => {
-            expect(screen.getByText('juan@test.com')).toBeInTheDocument();
+            expect(screen.getAllByText('juan@test.com').length).toBeGreaterThan(0);
         });
 
         // Verificar datos renderizados (usar fuzzy match porque EMP001 está dentro de "Emp: EMP001")
-        expect(screen.getByText('maria@test.com')).toBeInTheDocument();
-        expect(screen.getByText(/EMP001/)).toBeInTheDocument();
-        expect(screen.getByText(/EMP002/)).toBeInTheDocument();
+        expect(screen.getAllByText('maria@test.com').length).toBeGreaterThan(0);
+        expect(screen.getAllByText(/EMP001/).length).toBeGreaterThan(0);
+        expect(screen.getAllByText(/EMP002/).length).toBeGreaterThan(0);
     });
 
     it('should open create modal', async () => {

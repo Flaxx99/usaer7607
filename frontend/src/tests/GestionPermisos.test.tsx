@@ -127,8 +127,8 @@ describe('GestionPermisos', () => {
         });
 
         // Verificar que los tipos de permiso se renderizan
-        expect(screen.getByText('PERSONAL')).toBeInTheDocument();
-        expect(screen.getByText('ENFERMEDAD')).toBeInTheDocument();
+        expect(screen.getAllByText('PERSONAL').length).toBeGreaterThan(0);
+        expect(screen.getAllByText('ENFERMEDAD').length).toBeGreaterThan(0);
     });
 
     it('should open create modal and submit a new permiso', async () => {

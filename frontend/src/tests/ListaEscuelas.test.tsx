@@ -85,10 +85,10 @@ describe('ListaEscuelas', () => {
         render(<ListaEscuelas />, { wrapper });
 
         await waitFor(() => {
-            expect(screen.getByText('08DPR0001A')).toBeInTheDocument();
+            expect(screen.getAllByText('08DPR0001A').length).toBeGreaterThan(0);
         });
 
-        expect(screen.getByText('08DJN0002B')).toBeInTheDocument();
+        expect(screen.getAllByText('08DJN0002B').length).toBeGreaterThan(0);
     });
 
     it('should open create modal', async () => {

@@ -61,7 +61,39 @@ export function DataTable<TData>({
             )}
 
             <div className="card bg-base-100 shadow-sm border border-base-300 overflow-hidden">
-                <div className="overflow-x-auto">
+                {/* ——— MOBILE CARD VIEW ——— */}
+                <div className="sm:hidden divide-y divide-base-200">
+                    {table.getRowModel().rows.length > 0 ? (
+                        table.getRowModel().rows.map(row => (
+                            <div key={row.id} className="p-4 space-y-2">
+                                {row.getVisibleCells().map(cell => {
+                                    const header = cell.column.columnDef.header;
+                                    const headerText = typeof header === 'string' ? header : '';
+                                    return (
+                                        <div key={cell.id} className="flex items-start gap-2 text-sm">
+                                            {headerText && (
+                                                <span className="font-semibold text-xs opacity-50 min-w-[72px] shrink-0 pt-0.5">
+                                                    {headerText}
+                                                </span>
+                                            )}
+                                            <span className="flex-1">
+                                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                            </span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ))
+                    ) : (
+                        <div className="flex flex-col items-center gap-3 py-12">
+                            <FileX size={48} className="text-base-content/20" />
+                            <p className="text-base-content/40 font-medium text-sm">{emptyMessage}</p>
+                        </div>
+                    )}
+                </div>
+
+                {/* ——— DESKTOP TABLE ——— */}
+                <div className="hidden sm:block overflow-x-auto">
                     <table className="table table-md table-zebra w-full">
                         <thead className="bg-base-200">
                             {table.getHeaderGroups().map(headerGroup => (
