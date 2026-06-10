@@ -19,6 +19,7 @@ import Modal from '../../components/Modal';
 import { LoadingButton } from '../../components/LoadingButton';
 import { SearchBar } from '../../components/SearchBar';
 import { FilterTabs } from '../../components/FilterTabs';
+import { useConfirmDialog } from '../../components/useConfirmDialog';
 import type { ColumnDef } from '@tanstack/react-table';
 import { getPermisos, getMetricasPermisos, createPermiso, responderPermiso, deletePermiso } from '../../api/permisos';
 import type { Permiso, EstadoPermiso, TipoPermiso } from '../../interfaces/permisos';
@@ -33,6 +34,7 @@ const GestionPermisos = () => {
     const [permisoSeleccionado, setPermisoSeleccionado] = useState<Permiso | null>(null);
     const [filtroEstado, setFiltroEstado] = useState<string>('TODOS');
     const [isAdminOrDirector, setIsAdminOrDirector] = useState(false);
+    const { confirm: confirmDelete, dialog: confirmDialog } = useConfirmDialog();
 
     const { register, handleSubmit, watch, reset, control, formState: { errors } } = useForm<CreatePermisoFormData>({
         resolver: zodResolver(createPermisoSchema),
@@ -138,11 +140,17 @@ const GestionPermisos = () => {
         }
     };
 
-    const handleDelete = useCallback((id: number) => {
-        if (window.confirm('¿Estás seguro de que deseas cancelar esta solicitud?')) {
+    const handleDelete = useCallback(async (id: number) => {
+        const ok = await confirmDelete({
+            title: 'Cancelar Solicitud',
+            message: '¿Estás seguro de que deseas cancelar esta solicitud?',
+            variant: 'danger',
+            confirmText: 'Cancelar Solicitud',
+        });
+        if (ok) {
             deleteMutation.mutate(id);
         }
-    }, [deleteMutation]);
+    }, [deleteMutation, confirmDelete]);
 
     const abrirDetalle = (permiso: Permiso) => {
         setPermisoSeleccionado(permiso);
@@ -538,6 +546,7 @@ const GestionPermisos = () => {
                     </div>
                 )}
             </Modal>
+            {confirmDialog}
         </>
     );
 };

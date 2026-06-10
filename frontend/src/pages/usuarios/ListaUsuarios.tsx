@@ -18,6 +18,7 @@ import { ErrorState } from '../../components/Skeletons';
 import { DataTable } from '../../components/DataTable';
 import Modal from '../../components/Modal';
 import { LoadingButton } from '../../components/LoadingButton';
+import { useConfirmDialog } from '../../components/useConfirmDialog';
 import type { ColumnDef } from '@tanstack/react-table';
 
 // --- ESQUEMA DE VALIDACIÓN ZOD ---
@@ -29,6 +30,7 @@ const ListaUsuarios = () => {
   const [page, setPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [usuarioEditar, setUsuarioEditar] = useState<Usuario | null>(null);
+  const { confirm: confirmDelete, dialog: confirmDialog } = useConfirmDialog();
   
   const queryClient = useQueryClient();
   const { register, handleSubmit, reset, control, formState: { errors } } = useForm<UsuarioFormData>({
@@ -149,8 +151,14 @@ const ListaUsuarios = () => {
     }
   };
 
-  const handleDelete = (id: number) => {
-    if (confirm('¿Eliminar usuario? Esta acción borrará el acceso permanentemente.')) {
+  const handleDelete = async (id: number) => {
+    const ok = await confirmDelete({
+        title: 'Eliminar Usuario',
+        message: '¿Eliminar usuario? Esta acción borrará el acceso permanentemente.',
+        variant: 'danger',
+        confirmText: 'Eliminar',
+    });
+    if (ok) {
         deleteMutation.mutate(id);
     }
   };
@@ -412,6 +420,7 @@ const ListaUsuarios = () => {
                     </div>
             </form>
         </Modal>
+        {confirmDialog}
     </>
   );
 };

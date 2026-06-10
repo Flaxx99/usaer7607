@@ -15,6 +15,7 @@ import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { CardGridSkeleton, EmptyState, ErrorState } from '../../components/Skeletons';
 import Modal from '../../components/Modal';
 import { LoadingButton } from '../../components/LoadingButton';
+import { useConfirmDialog } from '../../components/useConfirmDialog';
 import { getAvisos, createAviso, updateAviso, deleteAviso } from '../../api/avisos';
 import type { Anuncio } from '../../interfaces/aviso';
 
@@ -24,6 +25,7 @@ const TablonAvisos = () => {
   const busquedaDebounced = useDebouncedValue(busqueda, 300);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [avisoEditar, setAvisoEditar] = useState<Anuncio | null>(null);
+  const { confirm: confirmDelete, dialog: confirmDialog } = useConfirmDialog();
 
   const queryClient = useQueryClient();
   const { register, handleSubmit, control, reset, formState: { errors } } = useForm<AvisoForm>({
@@ -114,8 +116,14 @@ const TablonAvisos = () => {
     }
   };
 
-  const handleDelete = (id: number) => {
-    if (confirm('¿Eliminar aviso? Desaparecerá del tablón permanentemente.')) {
+  const handleDelete = async (id: number) => {
+    const ok = await confirmDelete({
+        title: 'Eliminar Aviso',
+        message: '¿Eliminar aviso? Desaparecerá del tablón permanentemente.',
+        variant: 'danger',
+        confirmText: 'Eliminar',
+    });
+    if (ok) {
         deleteMutation.mutate(id);
     }
   };
@@ -367,6 +375,7 @@ const TablonAvisos = () => {
                 </div>
             </form>
         </Modal>
+        {confirmDialog}
     </div>
   );
 };

@@ -11,6 +11,7 @@ import { isAxiosError } from 'axios';
 import { useLoading } from '../../context/LoadingContext';
 import { EmptyState, ErrorState } from '../../components/Skeletons';
 import { SearchBar } from '../../components/SearchBar';
+import { useConfirmDialog } from '../../components/useConfirmDialog';
 import TaskModal from './TaskModal';
 import { getUsuarios } from '../../api/usuarios';
 import { getAlumnos } from '../../api/alumnos';
@@ -24,6 +25,7 @@ const SchoolCalendar = () => {
     const [modalOpened, setModalOpened] = useState(false);
     const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const { confirm: confirmDelete, dialog: confirmDialog } = useConfirmDialog();
 
     const { data: events, isLoading: loadingEvents, isError, error } = useQuery({
         queryKey: ['calendar_events'],
@@ -85,6 +87,16 @@ const SchoolCalendar = () => {
             ...data,
             id: editingEvent?.id,
         });
+    };
+
+    const handleDeleteEvent = async (id: number) => {
+        const ok = await confirmDelete({
+            title: 'Eliminar Evento',
+            message: '¿Estás seguro de eliminar este evento?',
+            variant: 'danger',
+            confirmText: 'Eliminar',
+        });
+        if (ok) deleteMutation.mutate(id);
     };
 
     if (isError) return <ErrorState error={error} message="Error al cargar la agenda. Intenta de nuevo." />;
@@ -223,9 +235,7 @@ const SchoolCalendar = () => {
                                                     </button>
                                                     <button 
                                                       className="btn btn-ghost btn-xs text-error" 
-                                                      onClick={() => {
-                                                        if (confirm('¿Eliminar este evento?')) deleteMutation.mutate(e.id);
-                                                      }}
+                                                      onClick={() => handleDeleteEvent(e.id)}
                                                     >
                                                       <Trash2 size={14} />
                                                     </button>
@@ -251,6 +261,7 @@ const SchoolCalendar = () => {
                 currentUserRole={localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).role : ''}
                 saving={saveMutation.isPending}
             />
+            {confirmDialog}
         </div>
     );
 };

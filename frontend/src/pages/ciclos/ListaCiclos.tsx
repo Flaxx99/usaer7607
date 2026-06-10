@@ -20,6 +20,7 @@ import { LoadingButton } from '../../components/LoadingButton';
 import { useLoading } from '../../context/LoadingContext';
 import type { CicloEscolar } from '../../interfaces/ciclo';
 import { DataTable } from '../../components/DataTable';
+import { useConfirmDialog } from '../../components/useConfirmDialog';
 import type { ColumnDef } from '@tanstack/react-table';
 
 const ListaCiclos = () => {
@@ -29,6 +30,7 @@ const ListaCiclos = () => {
   const [promotionTaskId, setPromotionTaskId] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState('');
   const [page, setPage] = useState(1);
+  const { confirm: confirmDelete, dialog: confirmDialog } = useConfirmDialog();
   
   const queryClient = useQueryClient();
   const { showLoading, hideLoading } = useLoading();
@@ -178,15 +180,27 @@ const ListaCiclos = () => {
     }
   };
 
-  const handleActivarCiclo = (ciclo: CicloEscolar) => {
+  const handleActivarCiclo = async (ciclo: CicloEscolar) => {
     if (ciclo.activo) return;
-    if (confirm(`¿Activar Ciclo ${ciclo.nombre}? Este pasará a ser el ciclo actual. El anterior se desactivará.`)) {
+    const ok = await confirmDelete({
+        title: 'Activar Ciclo',
+        message: `¿Activar Ciclo ${ciclo.nombre}? Este pasará a ser el ciclo actual. El anterior se desactivará.`,
+        variant: 'warning',
+        confirmText: 'Activar',
+    });
+    if (ok) {
         updateMutation.mutate({ ...ciclo, activo: true });
     }
   };
 
-  const handleDelete = (id: number) => {
-    if (confirm('¿Eliminar ciclo? Esta acción no se puede deshacer.')) {
+  const handleDelete = async (id: number) => {
+    const ok = await confirmDelete({
+        title: 'Eliminar Ciclo',
+        message: '¿Eliminar ciclo? Esta acción no se puede deshacer.',
+        variant: 'danger',
+        confirmText: 'Eliminar',
+    });
+    if (ok) {
         deleteMutation.mutate(id);
     }
   };
@@ -440,6 +454,7 @@ const ListaCiclos = () => {
                 </div>
             </div>
         </Modal>
+        {confirmDialog}
     </div>
   );
 };

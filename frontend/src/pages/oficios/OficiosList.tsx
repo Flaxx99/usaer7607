@@ -9,6 +9,7 @@ import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { TableSkeleton, EmptyState, ErrorState } from '../../components/Skeletons';
 import Modal from '../../components/Modal';
 import { LoadingButton } from '../../components/LoadingButton';
+import { useConfirmDialog } from '../../components/useConfirmDialog';
 import { getOficios, uploadOficio, deleteOficio } from '../../api/oficios';
 
 const OficiosList = () => {
@@ -16,6 +17,7 @@ const OficiosList = () => {
     const busquedaDebounced = useDebouncedValue(busqueda, 300);
     const [page, setPage] = useState(1);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const { confirm: confirmDelete, dialog: confirmDialog } = useConfirmDialog();
     
     const queryClient = useQueryClient();
 
@@ -52,8 +54,14 @@ const OficiosList = () => {
         uploadMutation.mutate(formData);
     };
 
-    const handleDelete = (id: number) => {
-        if (confirm('¿Eliminar oficio? Esta acción no se puede deshacer.')) {
+    const handleDelete = async (id: number) => {
+        const ok = await confirmDelete({
+            title: 'Eliminar Oficio',
+            message: '¿Eliminar oficio? Esta acción no se puede deshacer.',
+            variant: 'danger',
+            confirmText: 'Eliminar',
+        });
+        if (ok) {
             deleteMutation.mutate(id);
         }
     };
@@ -208,6 +216,7 @@ const OficiosList = () => {
                     </div>
                 </form>
             </Modal>
+            {confirmDialog}
         </div>
     );
 };

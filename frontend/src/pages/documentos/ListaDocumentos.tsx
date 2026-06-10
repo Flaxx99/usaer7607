@@ -17,6 +17,7 @@ import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import Modal from '../../components/Modal';
 import { EmptyState, ErrorState } from '../../components/Skeletons';
 import { LoadingButton } from '../../components/LoadingButton';
+import { useConfirmDialog } from '../../components/useConfirmDialog';
 import type { Expediente } from '../../interfaces/documentos';
 
 const DocStatus = ({ label, hasFile, url }: { label: string; hasFile: boolean; url?: string }) => (
@@ -50,6 +51,7 @@ const ListaDocumentos = () => {
   
   const [extrasTemp, setExtrasTemp] = useState<{file: File, descripcion: string}[]>([]);
   const [tempDesc, setTempDesc] = useState('');
+  const { confirm: confirmDelete, dialog: confirmDialog } = useConfirmDialog();
 
   const queryClient = useQueryClient();
   const { register, handleSubmit, reset, formState: { errors } } = useForm<DocumentoForm>({
@@ -151,15 +153,27 @@ const ListaDocumentos = () => {
     }
   };
 
-  const handleDelete = (id: number) => {
-    if (confirm('¿Eliminar Expediente? Se borrarán todos los archivos asociados.')) {
+  const handleDelete = async (id: number) => {
+    const ok = await confirmDelete({
+        title: 'Eliminar Expediente',
+        message: '¿Eliminar Expediente? Se borrarán todos los archivos asociados.',
+        variant: 'danger',
+        confirmText: 'Eliminar',
+    });
+    if (ok) {
         deleteMutation.mutate(id);
     }
   };
 
-  const handleDeleteExtraReal = (archivoId: number) => {
+  const handleDeleteExtraReal = async (archivoId: number) => {
       if(!docEditar) return;
-      if (confirm('¿Borrar anexo? Se eliminará permanentemente.')) {
+      const ok = await confirmDelete({
+          title: 'Borrar Anexo',
+          message: '¿Borrar anexo? Se eliminará permanentemente.',
+          variant: 'danger',
+          confirmText: 'Eliminar',
+      });
+      if (ok) {
           deleteExtraMutation.mutate({ expId: docEditar.id, archId: archivoId });
       }
   };
@@ -396,6 +410,7 @@ const ListaDocumentos = () => {
                         </div>
                     </form>
                 </Modal>
+        {confirmDialog}
     </div>
   );
 };

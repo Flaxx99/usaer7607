@@ -19,6 +19,7 @@ import type { Alumno } from '../../interfaces/alumno';
 import { DataTable } from '../../components/DataTable';
 import Modal from '../../components/Modal';
 import { LoadingButton } from '../../components/LoadingButton';
+import { useConfirmDialog } from '../../components/useConfirmDialog';
 import type { ColumnDef } from '@tanstack/react-table';
 
 const ListaAlumnos = () => {
@@ -28,6 +29,7 @@ const ListaAlumnos = () => {
   const [filtroCondicion, setFiltroCondicion] = useState<string>('TODAS');
   const [filtroEstado, setFiltroEstado] = useState<string>('ACTIVOS');
   const [page, setPage] = useState(1);
+  const { confirm: confirmDelete, dialog: confirmDialog } = useConfirmDialog();
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [alumnoEditar, setAlumnoEditar] = useState<Alumno | null>(null);
@@ -258,8 +260,14 @@ const ListaAlumnos = () => {
     }
   };
 
-  const handleDelete = (id: number) => {
-    if (confirm('¿Dar de baja alumno? Se mantendrá el expediente histórico pero el alumno saldrá de atención activa.')) {
+  const handleDelete = async (id: number) => {
+    const ok = await confirmDelete({
+        title: 'Dar de Baja Alumno',
+        message: '¿Dar de baja alumno? Se mantendrá el expediente histórico pero el alumno saldrá de atención activa.',
+        variant: 'danger',
+        confirmText: 'Dar de Baja',
+    });
+    if (ok) {
         deleteMutation.mutate(id);
     }
   };
@@ -532,6 +540,7 @@ const ListaAlumnos = () => {
               </div>
             </form>
         </Modal>
+        {confirmDialog}
     </div>
   );
 };

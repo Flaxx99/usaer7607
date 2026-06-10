@@ -11,6 +11,7 @@ import { CardGridSkeleton, ErrorState } from '../../components/Skeletons';
 import { getEscuelas, deleteEscuela, createEscuela, updateEscuela } from '../../api/escuelas';
 import type { Escuela } from '../../interfaces/escuela';
 import { DataTable } from '../../components/DataTable';
+import { useConfirmDialog } from '../../components/useConfirmDialog';
 import Modal from '../../components/Modal';
 import { LoadingButton } from '../../components/LoadingButton';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -27,6 +28,7 @@ const ListaEscuelas = () => {
   const [page, setPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [escuelaEditar, setEscuelaEditar] = useState<Escuela | null>(null);
+  const { confirm: confirmDelete, dialog: confirmDialog } = useConfirmDialog();
   
   const queryClient = useQueryClient();
   const { register, handleSubmit, reset, formState: { errors } } = useForm<EscuelaFormData>({
@@ -119,8 +121,14 @@ const ListaEscuelas = () => {
     }
   };
 
-  const handleDelete = (id: number) => {
-    if (window.confirm('¿Eliminar escuela? Esta acción es irreversible.')) {
+  const handleDelete = async (id: number) => {
+    const ok = await confirmDelete({
+        title: 'Eliminar Escuela',
+        message: '¿Eliminar escuela? Esta acción es irreversible.',
+        variant: 'danger',
+        confirmText: 'Eliminar',
+    });
+    if (ok) {
       deleteMutation.mutate(id);
     }
   };
@@ -268,6 +276,7 @@ const ListaEscuelas = () => {
                 </div>
             </form>
         </Modal>
+        {confirmDialog}
     </div>
   );
 };
