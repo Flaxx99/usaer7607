@@ -1,49 +1,75 @@
-// src/components/Modal.tsx
-import { X } from 'lucide-react';
 import { useEffect } from 'react';
+import { X } from 'lucide-react';
+
+type ModalColor = 'primary' | 'warning' | 'neutral' | 'indigo';
 
 interface ModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  title: string;
-  children: React.ReactNode;
-  maxWidth?: string; // 1. Nueva propiedad opcional
+    isOpen: boolean;
+    onClose: () => void;
+    title: string;
+    icon?: React.ReactNode;
+    color?: ModalColor;
+    size?: 'sm' | 'md' | 'lg' | 'xl';
+    children: React.ReactNode;
 }
 
-// 2. Por defecto usamos 'max-w-lg' (pequeño), pero podemos cambiarlo
-const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-lg' }: ModalProps) => {
-  
-  // Cerrar con tecla ESC
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handleEsc);
-    return () => window.removeEventListener('keydown', handleEsc);
-  }, [onClose]);
+const SIZE_MAP: Record<string, string> = {
+    sm: 'max-w-md',
+    md: 'max-w-lg',
+    lg: 'max-w-2xl',
+    xl: 'max-w-4xl',
+};
 
-  if (!isOpen) return null;
+const COLOR_HEADER_MAP: Record<string, string> = {
+    primary: 'bg-primary text-primary-content',
+    warning: 'bg-warning text-warning-content',
+    neutral: 'bg-neutral text-neutral-content',
+    indigo: 'bg-indigo-600 text-white',
+};
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-      
-      <div className={`bg-white rounded-xl shadow-2xl w-full ${maxWidth} max-h-[90vh] flex flex-col overflow-hidden transform transition-all scale-100`}>
-        
-        {/* Encabezado */}
-        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
-          <h3 className="text-lg font-bold text-text-main">{title}</h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-red-500 transition-colors">
-            <X size={20} />
-          </button>
+const Modal = ({ isOpen, onClose, title, icon, color = 'primary', size = 'md', children }: ModalProps) => {
+    useEffect(() => {
+        const handleEsc = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') onClose();
+        };
+        if (isOpen) {
+            window.addEventListener('keydown', handleEsc);
+            document.body.style.overflow = 'hidden';
+        }
+        return () => {
+            window.removeEventListener('keydown', handleEsc);
+            document.body.style.overflow = '';
+        };
+    }, [isOpen, onClose]);
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="modal modal-open">
+            <div className={`modal-box ${SIZE_MAP[size]} p-0 overflow-hidden`}>
+                {/* Colored header */}
+                <div className={`${COLOR_HEADER_MAP[color]} p-6 flex items-center justify-between`}>
+                    <h3 className="text-xl font-bold flex items-center gap-2">
+                        {icon && <span className="opacity-80">{icon}</span>}
+                        {title}
+                    </h3>
+                    <button
+                        className="btn btn-ghost btn-circle btn-sm text-white/80 hover:text-white hover:bg-white/10"
+                        onClick={onClose}
+                        aria-label="Cerrar"
+                    >
+                        <X size={20} />
+                    </button>
+                </div>
+
+                {/* Scrollable content */}
+                <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+                    {children}
+                </div>
+            </div>
+            <div className="modal-backdrop" onClick={onClose}></div>
         </div>
-
-        {/* Contenido con Scroll si es necesario */}
-        <div className="p-6 overflow-y-auto custom-scrollbar">
-          {children}
-        </div>
-      </div>
-    </div>
-  );
+    );
 };
 
 export default Modal;

@@ -7,12 +7,12 @@ import {
     getSortedRowModel,
 } from '@tanstack/react-table';
 import type { ColumnDef } from '@tanstack/react-table';
-import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, FileX } from 'lucide-react';
 import { TableSkeleton } from './Skeletons';
 
 interface DataTableProps<TData> {
     data: TData[];
-    columns: ColumnDef<TData, any>[];
+    columns: ColumnDef<TData, unknown>[];
     isLoading?: boolean;
     totalCount?: number;
     page?: number;
@@ -50,16 +50,17 @@ export function DataTable<TData>({
     }
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-4" aria-live="polite">
             {onSearchChange && (
                 <div className="relative max-w-sm">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40" size={18} />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40" size={18} aria-hidden="true" />
                     <input 
                         type="text" 
                         placeholder={placeholder} 
                         className="input input-bordered pl-10 w-full" 
                         value={searchValue} 
                         onChange={(e) => onSearchChange?.(e.target.value)} 
+                        aria-label={placeholder}
                     />
                 </div>
             )}
@@ -71,7 +72,7 @@ export function DataTable<TData>({
                             {table.getHeaderGroups().map(headerGroup => (
                                 <tr key={headerGroup.id} className="text-xs uppercase opacity-60">
                                     {headerGroup.headers.map(header => (
-                                        <th key={header.id} className="text-left">
+                                        <th key={header.id} className="text-left" scope="col">
                                             {flexRender(header.column.columnDef.header, header.getContext())}
                                         </th>
                                     ))}
@@ -91,8 +92,11 @@ export function DataTable<TData>({
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan={columns.length} className="text-center py-12 opacity-50 italic">
-                                        {emptyMessage}
+                                    <td colSpan={columns.length} className="text-center py-12">
+                                        <div className="flex flex-col items-center gap-3">
+                                            <FileX size={48} className="text-base-content/20" />
+                                            <p className="text-base-content/40 font-medium">{emptyMessage}</p>
+                                        </div>
                                     </td>
                                 </tr>
                             )}
@@ -104,19 +108,21 @@ export function DataTable<TData>({
                     <div className="flex justify-center p-4 border-t border-base-200">
                         <div className="join">
                             <button 
-                                className="join-item btn btn-sm" 
+                                className="join-item btn btn-sm hover:scale-105 transition-transform" 
                                 disabled={page === 1} 
                                 onClick={() => onPageChange?.(page - 1)}
+                                aria-label="Página anterior"
                             >
                                 <ChevronLeft size={16} />
                             </button>
-                            <button className="join-item btn btn-sm no-animation">
+                            <span className="join-item btn btn-sm no-animation">
                                 {page} / {Math.ceil(totalCount / 10)}
-                            </button>
+                            </span>
                             <button 
-                                className="join-item btn btn-sm" 
+                                className="join-item btn btn-sm hover:scale-105 transition-transform" 
                                 disabled={page >= Math.ceil(totalCount / 10)} 
                                 onClick={() => onPageChange?.(page + 1)}
+                                aria-label="Página siguiente"
                             >
                                 <ChevronRight size={16} />
                             </button>
