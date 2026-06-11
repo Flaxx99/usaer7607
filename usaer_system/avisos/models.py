@@ -2,8 +2,11 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
+from .managers import AnuncioManager
+
 
 class Anuncio(models.Model):
+    objects = AnuncioManager()
     titulo = models.CharField(max_length=200)
     contenido = models.TextField()
     fecha_publicacion = models.DateTimeField(default=timezone.now)
@@ -16,6 +19,12 @@ class Anuncio(models.Model):
         verbose_name = "Anuncio"
         verbose_name_plural = "Anuncios"
         ordering = ["-fecha_publicacion"]
+        indexes = [
+            models.Index(
+                fields=["fecha_publicacion", "fecha_expiracion"], name="anuncio_vigencia_idx"
+            ),
+            models.Index(fields=["autor", "fecha_publicacion"], name="anuncio_autor_fecha_idx"),
+        ]
 
     def __str__(self):
         return self.titulo

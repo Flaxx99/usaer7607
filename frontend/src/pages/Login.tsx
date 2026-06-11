@@ -62,9 +62,9 @@ const Login = () => {
 
           {/* Formulario */}
           <div className="card-body">
-            <h3 className="card-title justify-center text-xl mb-4">
+            <h1 className="card-title justify-center text-xl mb-4">
               Iniciar Sesi&oacute;n
-            </h3>
+            </h1>
 
             <form onSubmit={handleSubmit((data) => loginMutation.mutate(data))} className="flex flex-col gap-4">
               <fieldset className="fieldset">

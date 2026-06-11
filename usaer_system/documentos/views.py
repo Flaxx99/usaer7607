@@ -26,6 +26,12 @@ class ExpedienteViewSet(viewsets.ModelViewSet):
     ordering_fields = ["fecha_subida", "alumno__apellido_paterno"]
     ordering = ["-fecha_subida"]
 
+    def initial(self, request, *args, **kwargs):
+        """Asigna throttle_scope según la acción, ANTES de check_throttles()."""
+        if self.action == "eliminar_archivo_extra":
+            self.throttle_scope = "sensitive_action"
+        super().initial(request, *args, **kwargs)
+
     def get_queryset(self):
         user = self.request.user
         # Optimizamos queries

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
@@ -102,8 +101,8 @@ describe('GestionPermisos', () => {
     });
 
     it('should render permisos list after loading', async () => {
-        (getPermisos as any).mockResolvedValue(mockPermisos);
-        (getMetricasPermisos as any).mockResolvedValue(mockMetricas);
+        vi.mocked(getPermisos).mockResolvedValue(mockPermisos);
+        vi.mocked(getMetricasPermisos).mockResolvedValue(mockMetricas);
 
         render(<GestionPermisos />, { wrapper });
 
@@ -117,8 +116,8 @@ describe('GestionPermisos', () => {
     });
 
     it('should render profesores from data', async () => {
-        (getPermisos as any).mockResolvedValue(mockPermisos);
-        (getMetricasPermisos as any).mockResolvedValue(mockMetricas);
+        vi.mocked(getPermisos).mockResolvedValue(mockPermisos);
+        vi.mocked(getMetricasPermisos).mockResolvedValue(mockMetricas);
 
         render(<GestionPermisos />, { wrapper });
 
@@ -132,9 +131,9 @@ describe('GestionPermisos', () => {
     });
 
     it('should open create modal and submit a new permiso', async () => {
-        (getPermisos as any).mockResolvedValue(mockPermisos);
-        (getMetricasPermisos as any).mockResolvedValue(mockMetricas);
-        (createPermiso as any).mockResolvedValue({ id: 3 });
+        vi.mocked(getPermisos).mockResolvedValue(mockPermisos);
+        vi.mocked(getMetricasPermisos).mockResolvedValue(mockMetricas);
+        vi.mocked(createPermiso).mockResolvedValue({ id: 3 });
 
         render(<GestionPermisos />, { wrapper });
 
@@ -167,8 +166,8 @@ describe('GestionPermisos', () => {
     });
 
     it('should handle empty state', async () => {
-        (getPermisos as any).mockResolvedValue([]);
-        (getMetricasPermisos as any).mockResolvedValue(mockMetricas);
+        vi.mocked(getPermisos).mockResolvedValue([]);
+        vi.mocked(getMetricasPermisos).mockResolvedValue(mockMetricas);
 
         render(<GestionPermisos />, { wrapper });
 

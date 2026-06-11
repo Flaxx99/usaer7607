@@ -6,10 +6,13 @@ from django.db import models
 from django.utils import timezone
 from escuelas.models import Escuela
 
+from .managers import IncidenciaManager
+
 User = get_user_model()
 
 
 class Incidencia(models.Model):
+    objects = IncidenciaManager()
     ESTADOS = [
         ("PENDIENTE", "Pendiente"),
         ("RESUELTA", "Resuelta"),
@@ -56,6 +59,10 @@ class Incidencia(models.Model):
         ordering = ["-fecha_reporte"]
         permissions = [
             ("can_resolve_incidence", "Puede resolver incidencias"),
+        ]
+        indexes = [
+            models.Index(fields=["escuela", "estado"], name="incidencia_escuela_estado_idx"),
+            models.Index(fields=["profesor"], name="incidencia_profesor_idx"),
         ]
 
     def __str__(self):

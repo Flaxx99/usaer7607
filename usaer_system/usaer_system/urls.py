@@ -43,6 +43,9 @@ urlpatterns = [
     path("api/asistencias/", include("asistencias.urls")),
     path("api/incidencias/", include("incidencias.urls")),
     path("api/permisos/", include("permisos.urls")),
+    # django-axes (brute-force protection): no requiere URLs propias en v8.x
+    # Funciona vía middleware + panel de admin. Los intentos fallidos se
+    # registran automáticamente.
 ]
 
 if settings.DEBUG:

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
@@ -80,7 +79,7 @@ describe('ListaEscuelas', () => {
     });
 
     it('should render escuelas list after loading', async () => {
-        (getEscuelas as any).mockResolvedValue(mockEscuelas);
+        vi.mocked(getEscuelas).mockResolvedValue(mockEscuelas);
 
         render(<ListaEscuelas />, { wrapper });
 
@@ -92,7 +91,7 @@ describe('ListaEscuelas', () => {
     });
 
     it('should open create modal', async () => {
-        (getEscuelas as any).mockResolvedValue([]);
+        vi.mocked(getEscuelas).mockResolvedValue([]);
 
         render(<ListaEscuelas />, { wrapper });
 
@@ -108,8 +107,8 @@ describe('ListaEscuelas', () => {
     });
 
     it('should create a new escuela', async () => {
-        (getEscuelas as any).mockResolvedValue([]);
-        (createEscuela as any).mockResolvedValue({ id: 3 });
+        vi.mocked(getEscuelas).mockResolvedValue([]);
+        vi.mocked(createEscuela).mockResolvedValue({ id: 3 });
 
         render(<ListaEscuelas />, { wrapper });
 
@@ -140,7 +139,7 @@ describe('ListaEscuelas', () => {
     });
 
     it('should handle empty state', async () => {
-        (getEscuelas as any).mockResolvedValue([]);
+        vi.mocked(getEscuelas).mockResolvedValue([]);
 
         render(<ListaEscuelas />, { wrapper });
 

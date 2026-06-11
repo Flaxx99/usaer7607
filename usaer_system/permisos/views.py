@@ -20,6 +20,12 @@ class PermisoViewSet(viewsets.ModelViewSet):
     ordering_fields = ["fecha_solicitud", "fecha_inicio", "estado"]
     ordering = ["-fecha_solicitud"]
 
+    def initial(self, request, *args, **kwargs):
+        """Asigna throttle_scope según la acción, ANTES de check_throttles()."""
+        if self.action == "responder":
+            self.throttle_scope = "sensitive_action"
+        super().initial(request, *args, **kwargs)
+
     def get_queryset(self):
         """
         Replica toda la lógica de filtrado de 'mis_permisos' y 'gestionar_permisos'.

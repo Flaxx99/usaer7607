@@ -136,7 +136,6 @@ const ListaCiclos = () => {
   // The promotion status is polled from a background task. When it transitions
   // to COMPLETED/FAILED we close the modal and show feedback.
   // This is a legitimate synchronisation between an external polling system and UI state.
-  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (promotionStatus?.status === 'COMPLETED') {
         setIsPromocionOpen(false);
@@ -151,7 +150,6 @@ const ListaCiclos = () => {
         toast.error(<span className="inline-flex items-center gap-1.5"><XCircle size={16} /> Error</span>, { description: promotionStatus.error || 'La promoción falló durante el proceso.' });
     }
   }, [promotionStatus, queryClient]);
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   const cerrarModal = () => {
     setIsModalOpen(false);

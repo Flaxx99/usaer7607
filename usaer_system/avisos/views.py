@@ -1,6 +1,4 @@
 # avisos/views.py
-from django.db.models import Q
-from django.utils import timezone
 from rest_framework import filters, permissions, viewsets
 
 from .models import Anuncio
@@ -54,7 +52,6 @@ class AnuncioViewSet(viewsets.ModelViewSet):
         EXCEPCIÓN: Si eres el autor o admin, ves todo (para poder editar/borrar).
         """
         user = self.request.user
-        now = timezone.now()
 
         # Si el usuario quiere ver "sus" anuncios para gestionarlos, devolvemos todo
         if self.action in ["update", "partial_update", "destroy"] or self.request.query_params.get(
@@ -62,17 +59,10 @@ class AnuncioViewSet(viewsets.ModelViewSet):
         ):
             if user.is_superuser:
                 return Anuncio.objects.all().select_related("autor")
-            return Anuncio.objects.filter(autor=user).select_related("autor")
+            return Anuncio.objects.de_autor(user).select_related("autor")
 
         # Para el listado general (tablón), aplicamos el filtro de vigencia
-        return (
-            Anuncio.objects.select_related("autor")
-            .filter(
-                (Q(fecha_expiracion__gte=now) | Q(fecha_expiracion__isnull=True)),
-                fecha_publicacion__lte=now,
-            )
-            .order_by("-fecha_publicacion")
-        )
+        return Anuncio.objects.vigentes().select_related("autor").order_by("-fecha_publicacion")
 
     def perform_create(self, serializer):
         """Asigna automáticamente el autor al crear."""

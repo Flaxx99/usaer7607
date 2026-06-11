@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
@@ -41,7 +40,7 @@ describe('Pagination & Filtering Integration', () => {
     });
 
     it('should fetch page 1 by default and page 2 when pagination is clicked', async () => {
-        (getAlumnos as any).mockResolvedValue({
+        vi.mocked(getAlumnos).mockResolvedValue({
             count: 25,
             next: '...',
             previous: null,
@@ -66,7 +65,7 @@ describe('Pagination & Filtering Integration', () => {
     });
 
     it('should reset to page 1 when a search query is entered', async () => {
-        (getAlumnos as any).mockResolvedValue({
+        vi.mocked(getAlumnos).mockResolvedValue({
             count: 25,
             next: null,
             previous: null,

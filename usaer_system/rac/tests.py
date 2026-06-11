@@ -51,7 +51,6 @@ class RegistroRACModelTest(APITestCase):
             nombres="Juan",
             curp="PERGJU123456HOMBXX",
             sexo="H",
-            edad=8,
             grado="3",
             clasificacion="DISCAPACIDAD",
         )
@@ -121,7 +120,7 @@ class RegistroRACViewsTest(APITestCase):
             nombres="Juan",
             curp="PERGJU123456HOMBXX",
             sexo="H",
-            edad=8,
+            fecha_nacimiento=date(2018, 6, 1),
             grado="3",
             clasificacion="DISCAPACIDAD",
         )
@@ -158,7 +157,7 @@ class RegistroRACViewsTest(APITestCase):
             nombres="Alumno",
             curp="NUEVORAC123456HOMBXX",
             sexo="H",
-            edad=7,
+            fecha_nacimiento=date(2019, 6, 1),
             grado="1",
             clasificacion="NINGUNO",
         )

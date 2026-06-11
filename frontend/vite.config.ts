@@ -40,7 +40,6 @@ export default defineConfig({
           'vendor-table': ['@tanstack/react-table'],
           'vendor-charts': ['recharts'],
           'vendor-icons': ['lucide-react'],
-          'vendor-radix': ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-popover', '@radix-ui/react-select'],
           'vendor-forms': ['react-hook-form', '@hookform/resolvers', 'zod'],
           'vendor-date': ['date-fns'],
         },

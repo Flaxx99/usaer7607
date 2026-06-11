@@ -1,6 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import RAECaptureGrid from '../pages/rae/RAECaptureGrid';
 import { raeApi } from '../api/rae';
@@ -72,7 +71,7 @@ describe('RAE Persistence & Auto-Save', () => {
                 { id: 1, alumno_nombre: 'Juan Perez', ceg: false, bv: false }
             ]
         };
-        (raeApi.initCapture as any).mockResolvedValue(mockInitData);
+        vi.mocked(raeApi.initCapture).mockResolvedValue(mockInitData);
 
         render(<RAECaptureGrid />, { wrapper });
 
@@ -101,7 +100,7 @@ describe('RAE Persistence & Auto-Save', () => {
                 { id: 1, alumno_nombre: 'Juan Perez', ceg: false, bv: false }
             ]
         };
-        (raeApi.initCapture as any).mockResolvedValue(mockInitData);
+        vi.mocked(raeApi.initCapture).mockResolvedValue(mockInitData);
 
         render(<RAECaptureGrid />, { wrapper });
 
@@ -121,8 +120,8 @@ describe('RAE Persistence & Auto-Save', () => {
             ciclo: '2024-2025',
             alumnos: [{ id: 1, alumno_nombre: 'Juan Perez', ceg: false }]
         };
-        (raeApi.initCapture as any).mockResolvedValue(mockInitData);
-        (raeApi.saveBulk as any).mockResolvedValue({ status: 'success' });
+        vi.mocked(raeApi.initCapture).mockResolvedValue(mockInitData);
+        vi.mocked(raeApi.saveBulk).mockResolvedValue({ status: 'success' });
 
         render(<RAECaptureGrid />, { wrapper });
 

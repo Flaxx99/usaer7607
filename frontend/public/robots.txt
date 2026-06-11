@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://usaer7607.netlify.app/sitemap.xml

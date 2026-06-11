@@ -48,6 +48,12 @@ class PromocionAlumnosView(views.APIView):
 
     permission_classes = [IsAdminUser]
 
+    def initial(self, request, *args, **kwargs):
+        """bulk_write solo aplica al POST (commit), no al GET (preview)."""
+        if request.method == "POST":
+            self.throttle_scope = "bulk_write"
+        super().initial(request, *args, **kwargs)
+
     def get_nivel_alumno(self, alumno):
         """
         Busca el nivel educativo.
@@ -122,7 +128,7 @@ class PromocionAlumnosView(views.APIView):
             data = self.get_alumnos_data()
 
             response_data = {
-                "total_activos": Alumno.objects.filter(activo=True).count(),
+                "total_activos": Alumno.objects.activos().count(),
                 "a_promover_count": len(data["promover"]),
                 "a_graduar_count": len(data["graduar"]),
                 "errores_count": len(data["errores"]),
@@ -144,7 +150,7 @@ class PromocionAlumnosView(views.APIView):
             return Response({"detail": "Se requiere confirmar la acción."}, status=400)
 
         with transaction.atomic():
-            alumnos_activos = Alumno.objects.filter(activo=True)
+            alumnos_activos = Alumno.objects.activos()
             promovidos = 0
             graduados = 0
 

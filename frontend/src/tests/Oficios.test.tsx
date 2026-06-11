@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
@@ -34,13 +33,13 @@ describe('Oficios File Upload Flow', () => {
     });
 
     it('should call uploadOficio with FormData when form is submitted', async () => {
-        (getOficios as any).mockResolvedValue({
+        vi.mocked(getOficios).mockResolvedValue({
             count: 0,
             next: null,
             previous: null,
             results: []
         });
-        (uploadOficio as any).mockResolvedValue({ id: 1, titulo: 'Test' });
+        vi.mocked(uploadOficio).mockResolvedValue({ id: 1, titulo: 'Test' });
 
         render(<OficiosList />, { wrapper });
 
@@ -62,7 +61,7 @@ describe('Oficios File Upload Flow', () => {
 
         await waitFor(() => {
             expect(uploadOficio).toHaveBeenCalled();
-            const callArgs = (uploadOficio as any).mock.calls[0][0];
+            const callArgs = vi.mocked(uploadOficio).mock.calls[0][0];
             expect(callArgs).toBeInstanceOf(FormData);
             expect(callArgs.get('titulo')).toBe('Oficio Prueba');
             expect(callArgs.get('archivo')).toBeInstanceOf(File);

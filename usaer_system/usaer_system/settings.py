@@ -1,8 +1,11 @@
+import logging
 import os
 from pathlib import Path
 
 import dj_database_url
 from dotenv import load_dotenv
+
+logger = logging.getLogger(__name__)
 
 load_dotenv()  # Carga las variables de entorno desde .env
 
@@ -238,12 +241,40 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-        "LOCATION": "unique-snowflake",
+REDIS_URL = os.environ.get("REDIS_URL")
+if REDIS_URL:
+    try:
+        import django_redis  # noqa: F401 — verifica que el paquete esté instalado
+
+        CACHES = {
+            "default": {
+                "BACKEND": "django_redis.cache.RedisCache",
+                "LOCATION": REDIS_URL,
+                "OPTIONS": {
+                    "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                },
+                "KEY_PREFIX": "usaer",
+            }
+        }
+    except ImportError:
+        logger.warning(
+            "REDIS_URL está definida pero django-redis no está instalado. "
+            "Usando LocMemCache como fallback. "
+            "Instala django-redis con: pip install django-redis"
+        )
+        CACHES = {
+            "default": {
+                "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+                "LOCATION": "unique-snowflake",
+            }
+        }
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "unique-snowflake",
+        }
     }
-}
 
 LOGIN_URL = "/accounts/login/"
 LOGIN_REDIRECT_URL = "/usuarios/redireccion/"
@@ -293,11 +324,16 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.AnonRateThrottle",
         "rest_framework.throttling.UserRateThrottle",
         "rest_framework.throttling.ScopedRateThrottle",
+        "usaer_system.throttling.WriteRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
-        "anon": "60/hour",  # Usuarios anónimos
-        "user": "1000/hour",  # Usuarios autenticados
-        "login": "10/minute",  # Endpoint de login (más restrictivo)
+        "anon": "60/hour",  # Anónimos: ~1/min promedio
+        "user": "1000/hour",  # Autenticados lecturas: ~16/min
+        "user_write": "200/hour",  # Escrituras autenticadas: ~3/min
+        "login": "5/minute",  # Login más restrictivo
+        "change_password": "3/minute",  # Cambio de contraseña
+        "sensitive_action": "10/minute",  # Acciones admin sensibles
+        "bulk_write": "2/minute",  # Operaciones masivas
     },
 }
 

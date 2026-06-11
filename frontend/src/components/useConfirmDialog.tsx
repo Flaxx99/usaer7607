@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, type ReactNode } from 'react';
+import { useState, useCallback, useRef, useEffect, type ReactNode } from 'react';
 import { AlertTriangle, X } from 'lucide-react';
 
 interface ConfirmOptions {
@@ -40,7 +40,9 @@ export function useConfirmDialog() {
 
     // Use a ref so handleConfirm/handleCancel always see the latest resolve
     const stateRef = useRef(state);
-    stateRef.current = state;
+    useEffect(() => {
+        stateRef.current = state;
+    }, [state]);
 
     const confirm = useCallback((options: ConfirmOptions): Promise<boolean> => {
         return new Promise((resolve) => {

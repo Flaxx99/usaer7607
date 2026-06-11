@@ -88,6 +88,13 @@ const MainLayout = () => {
 
   return (
     <div className="flex h-screen bg-base-200 overflow-hidden">
+      {/* SKIP LINK */}
+      <a 
+        href="#main-content"
+        className="fixed top-0 left-0 z-[100] -translate-y-full focus:translate-y-0 transition-transform bg-primary text-primary-content font-bold px-4 py-2 rounded-br-lg shadow-lg focus:outline-none"
+      >
+        Saltar al contenido principal
+      </a>
       
       {/* SIDEBAR MOBILE OVERLAY */}
       {isSidebarOpen && (
@@ -187,7 +194,7 @@ const MainLayout = () => {
         </header>
 
         {/* PAGE CONTENT */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-8 bg-base-200/50">
+        <main id="main-content" className="flex-1 overflow-y-auto p-4 md:p-8 bg-base-200/50">
           <div className="max-w-7xl mx-auto">
             <Outlet />
           </div>

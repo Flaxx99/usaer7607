@@ -82,7 +82,7 @@ class RAEInitCaptureView(views.APIView):
         )
 
         # Asegurar fichas de alumnos
-        alumnos_maestra = Alumno.objects.filter(profesor=user, activo=True)
+        alumnos_maestra = Alumno.objects.activos_de_profesor(user)
         rae_alumnos = []
         for alumno in alumnos_maestra:
             obj, _ = RAEAlumno.objects.get_or_create(

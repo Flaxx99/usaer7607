@@ -5,8 +5,12 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from escuelas.models import Escuela
 
+from .managers import PermisoManager
+
 
 class Permiso(models.Model):
+    objects = PermisoManager()
+
     class Tipo(models.TextChoices):
         PERSONAL = "PERSONAL", _("Personal")
         ENFERMEDAD = "ENFERMEDAD", _("Enfermedad")
@@ -86,6 +90,11 @@ class Permiso(models.Model):
         ordering = ["-fecha_solicitud"]
         permissions = [
             ("gestionar_permisos", "Puede aprobar/rechazar solicitudes de permiso"),
+        ]
+        indexes = [
+            models.Index(fields=["escuela", "estado"], name="permiso_escuela_estado_idx"),
+            models.Index(fields=["profesor", "estado"], name="permiso_profesor_estado_idx"),
+            models.Index(fields=["fecha_solicitud"], name="permiso_fecha_solicitud_idx"),
         ]
 
     def __str__(self):

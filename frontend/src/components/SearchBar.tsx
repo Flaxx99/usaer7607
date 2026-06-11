@@ -15,6 +15,11 @@ interface SearchBarProps {
 /**
  * Search input with icon, clear button, and internal debounce.
  * 
+ * Pattern: `pendingValue` tracks keystrokes locally. The `<input>` displays
+ * `pendingValue ?? value` — while the user is typing it shows their input,
+ * otherwise it reflects the external controlled `value`. This avoids
+ * a sync useEffect that triggers cascading re-renders.
+ * 
  * - `onChange` fires after debounce settles (for API calls).
  * - `onInput` fires on every keystroke (for local client-side filtering).
  * - Clear button (X) resets both.
@@ -26,33 +31,32 @@ export function SearchBar({
   placeholder = 'Buscar...',
   debounceMs = 300,
 }: SearchBarProps) {
-  const [local, setLocal] = useState(value);
-
-  // Sync external value changes into local state
-  useEffect(() => {
-    setLocal(value);
-  }, [value]);
+  const [pendingValue, setPendingValue] = useState<string | null>(null);
 
   // Debounce: fire onChange after user stops typing
   useEffect(() => {
-    if (local === value) return;
+    if (pendingValue === null) return;
     const timer = setTimeout(() => {
-      onChange(local);
+      onChange(pendingValue);
+      setPendingValue(null);
     }, debounceMs);
     return () => clearTimeout(timer);
-  }, [local, debounceMs, onChange, value]);
+  }, [pendingValue, debounceMs, onChange]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const next = e.target.value;
-    setLocal(next);
+    setPendingValue(next);
     onInput?.(next);
   };
 
   const handleClear = () => {
-    setLocal('');
+    setPendingValue(null);
     onChange('');
     onInput?.('');
   };
+
+  // Show pending input while typing, otherwise the controlled value
+  const displayValue = pendingValue !== null ? pendingValue : value;
 
   return (
     <div className="relative max-w-sm">
@@ -65,11 +69,11 @@ export function SearchBar({
         type="text"
         placeholder={placeholder}
         className="input input-bordered pl-10 pr-10 w-full"
-        value={local}
+        value={displayValue}
         onChange={handleChange}
         aria-label={placeholder}
       />
-      {local && (
+      {displayValue && (
         <button
           type="button"
           className="absolute right-2 top-1/2 -translate-y-1/2 btn btn-ghost btn-xs text-base-content/40 hover:text-base-content"

@@ -17,6 +17,7 @@ class EscuelaViewSet(viewsets.ModelViewSet):
     queryset = Escuela.objects.all().order_by("nombre")
     serializer_class = EscuelaSerializer
     permission_classes = [IsAdminOrSecretarioOrReadOnly]
+    throttle_scope = "sensitive_action"
 
     # Configuración de Búsqueda (Replica tu lógica de 'q')
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]

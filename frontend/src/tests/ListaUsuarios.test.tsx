@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
@@ -91,7 +90,7 @@ describe('ListaUsuarios', () => {
     });
 
     it('should render usuarios list after loading', async () => {
-        (getUsuarios as any).mockResolvedValue({
+        vi.mocked(getUsuarios).mockResolvedValue({
             count: 2,
             next: null,
             previous: null,
@@ -112,7 +111,7 @@ describe('ListaUsuarios', () => {
     });
 
     it('should open create modal', async () => {
-        (getUsuarios as any).mockResolvedValue({
+        vi.mocked(getUsuarios).mockResolvedValue({
             count: 0,
             next: null,
             previous: null,
@@ -135,13 +134,13 @@ describe('ListaUsuarios', () => {
     });
 
     it('should create a new usuario', async () => {
-        (getUsuarios as any).mockResolvedValue({
+        vi.mocked(getUsuarios).mockResolvedValue({
             count: 0,
             next: null,
             previous: null,
             results: [],
         });
-        (createUsuario as any).mockResolvedValue({ id: 3 });
+        vi.mocked(createUsuario).mockResolvedValue({ id: 3 });
 
         render(<ListaUsuarios />, { wrapper });
 

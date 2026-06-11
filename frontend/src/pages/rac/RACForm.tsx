@@ -98,7 +98,7 @@ const RACForm = () => {
             alumno: selectedAlumno.id,
         };
 
-        saveMutation.mutate(payload as any);
+        saveMutation.mutate(payload as Partial<RegistroRAC>);
     };
 
     if (loadingAlumnos || loadingInitial) {

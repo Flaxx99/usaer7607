@@ -19,9 +19,34 @@ class EscuelaSimpleSerializer(serializers.ModelSerializer):
         fields = ["id", "nombre", "clave_estatal", "nivel", "zona"]
 
 
+class UserListSerializer(serializers.ModelSerializer):
+    """
+    Serializer ligero para listados y dropdowns — sin PII.
+    """
+
+    escuela_detalle = EscuelaSimpleSerializer(source="escuela", read_only=True)
+    nombre_completo = serializers.ReadOnlyField()
+
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "email",
+            "numero_empleado",
+            "role",
+            "nombre_completo",
+            "escuela",
+            "escuela_detalle",
+            "activo",
+            "is_superuser",
+        ]
+
+
 class UserSerializer(serializers.ModelSerializer):
     """
-    Serializer principal para crear, listar y editar usuarios.
+    Serializer completo para crear, editar y ver detalle de usuarios.
+    Incluye datos sensibles (RFC, CURP, domicilio) — solo para operaciones
+    que los requieran explícitamente.
     """
 
     escuela_detalle = EscuelaSimpleSerializer(source="escuela", read_only=True)

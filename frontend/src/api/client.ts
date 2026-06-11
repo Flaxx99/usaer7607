@@ -1,5 +1,5 @@
 // src/api/client.ts
-import axios from 'axios';
+import axios, { type AxiosError } from 'axios';
 import { toast } from 'sonner';
 
 const client = axios.create({
@@ -22,9 +22,9 @@ client.interceptors.request.use(
 
 client.interceptors.response.use(
   (response) => response,
-  (error) => {
+  (error: AxiosError) => {
     if (error.response) {
-      const status = error.response.status;
+      const { status } = error.response;
 
       if (status === 401) {
         // SESIÓN EXPIRADA

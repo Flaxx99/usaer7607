@@ -22,6 +22,12 @@ class IncidenciaViewSet(viewsets.ModelViewSet):
     ordering_fields = ["fecha_reporte", "estado"]
     ordering = ["-fecha_reporte"]
 
+    def initial(self, request, *args, **kwargs):
+        """Asigna throttle_scope según la acción, ANTES de check_throttles()."""
+        if self.action == "resolver":
+            self.throttle_scope = "sensitive_action"
+        super().initial(request, *args, **kwargs)
+
     def get_queryset(self):
         """
         Strict filtering logic based on Roles and School.

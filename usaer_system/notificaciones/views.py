@@ -19,7 +19,7 @@ class NotificacionViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         """Filtra para mostrar solo las notificaciones del usuario logueado."""
-        return Notificacion.objects.filter(usuario=self.request.user).order_by("-fecha_creacion")
+        return Notificacion.objects.de_usuario(self.request.user).order_by("-fecha_creacion")
 
     @action(detail=False, methods=["get"])
     def no_leidas(self, request):

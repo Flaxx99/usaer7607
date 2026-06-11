@@ -56,7 +56,6 @@ class AlumnoAPITests(APITestCase):
             nombres="Juan",
             curp="PERGJU123456HOMBXX",
             sexo="H",
-            edad=8,
             grado="3",
             clasificacion="NINGUNO",
         )

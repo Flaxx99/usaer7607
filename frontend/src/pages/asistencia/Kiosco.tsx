@@ -26,8 +26,6 @@ const Kiosco = () => {
             const pending = attendanceBuffer.getAll();
             if (pending.length === 0) return;
 
-            console.log(`Sincronizando ${pending.length} registros pendientes...`);
-            
             for (const record of pending) {
                 try {
                     await registrarAsistencia(record.numero_empleado);

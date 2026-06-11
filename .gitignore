@@ -280,3 +280,12 @@ desktop.ini
 
 # End of https://www.toptal.com/developers/gitignore/api/python,django
 
+# Code intelligence / tooling artifacts
+.codegraph/
+
+# Debug / one-off scripts
+debug_*.py
+
+# SDD artifacts (track if used for team specs)
+openspec/
+

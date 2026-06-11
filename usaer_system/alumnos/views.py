@@ -24,6 +24,12 @@ class AlumnoViewSet(viewsets.ModelViewSet):
     ordering_fields = ["apellido_paterno", "nombres"]
     ordering = ["apellido_paterno", "nombres"]
 
+    def initial(self, request, *args, **kwargs):
+        """Asigna throttle_scope según la acción, ANTES de check_throttles()."""
+        if self.action == "promover" and request.method == "POST":
+            self.throttle_scope = "bulk_write"
+        super().initial(request, *args, **kwargs)
+
     def get_queryset(self):
         """
         Lógica de filtrado según el rol y parámetros de consulta para paginación/búsqueda.
@@ -150,9 +156,7 @@ class AlumnoViewSet(viewsets.ModelViewSet):
             return Response({"detail": f"Error al determinar ciclo escolar: {str(e)}"}, status=400)
 
         # FILTRO DE IDEMPOTENCIA: Solo alumnos activos que NO hayan sido promovidos en este ciclo
-        alumnos_activos = Alumno.objects.filter(activo=True).exclude(
-            last_promotion_cycle=ciclo_actual
-        )
+        alumnos_activos = Alumno.objects.activos().exclude(last_promotion_cycle=ciclo_actual)
 
         promovidos = []
         graduados = []

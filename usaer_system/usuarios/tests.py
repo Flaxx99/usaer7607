@@ -9,6 +9,7 @@ from escuelas.models import Escuela
 from rest_framework.test import APIClient, APITestCase
 
 from .models import CalendarEvent
+from .serializers import UserListSerializer, UserSerializer
 
 User = get_user_model()
 
@@ -168,3 +169,143 @@ class UserModelTests(APITestCase):
         )
         self.assertEqual(event.title, "Reunión Técnica")
         self.assertEqual(event.event_type, CalendarEvent.EventType.REUNION)
+
+
+class UserViewSetActionsTest(APITestCase):
+    """Tests para toggle_active y change_password de UserViewSet."""
+
+    def setUp(self):
+        self.escuela = Escuela.objects.create(
+            clave_estatal="ACT01",
+            cct="CCTACT01",
+            nombre="Escuela Actions Test",
+            nivel="Primaria",
+            domicilio="x",
+            colonia="y",
+            zona="z",
+        )
+        self.admin = User.objects.create_superuser(
+            email="admin_act@test.com",
+            numero_empleado="ADMACT",
+            password="TestPass1!",
+        )
+        self.maestro = User.objects.create_user(
+            email="maestro_act@test.com",
+            numero_empleado="MAEACT",
+            password="TestPass1!",
+            role=User.Role.MAESTRO_APOYO,
+            escuela=self.escuela,
+        )
+        self.client = APIClient()
+
+    def test_toggle_active_desactiva_usuario(self):
+        self.client.force_authenticate(user=self.admin)
+        url = reverse("usuarios:usuario-toggle-active", args=[self.maestro.pk])
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 200)
+        self.maestro.refresh_from_db()
+        self.assertFalse(self.maestro.activo)
+        self.assertIn("desactivado", response.json()["status"])
+
+    def test_toggle_active_reactiva_usuario(self):
+        self.maestro.activo = False
+        self.maestro.save()
+        self.client.force_authenticate(user=self.admin)
+        url = reverse("usuarios:usuario-toggle-active", args=[self.maestro.pk])
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 200)
+        self.maestro.refresh_from_db()
+        self.assertTrue(self.maestro.activo)
+        self.assertIn("activado", response.json()["status"])
+
+    def test_toggle_active_no_permite_auto_desactivacion(self):
+        self.client.force_authenticate(user=self.admin)
+        url = reverse("usuarios:usuario-toggle-active", args=[self.admin.pk])
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("No puedes desactivar tu propia cuenta", response.json()["error"])
+
+    def test_non_admin_cannot_toggle_active(self):
+        self.client.force_authenticate(user=self.maestro)
+        url = reverse("usuarios:usuario-toggle-active", args=[self.admin.pk])
+        response = self.client.post(url)
+        self.assertIn(response.status_code, [403, 401])
+
+    def test_change_password_actualiza_correctamente(self):
+        self.client.force_authenticate(user=self.admin)
+        url = reverse("usuarios:usuario-change-password", args=[self.maestro.pk])
+        response = self.client.post(
+            url,
+            {
+                "old_password": "TestPass1!",
+                "new_password": "NuevaPass123!",
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.maestro.refresh_from_db()
+        self.assertTrue(self.maestro.check_password("NuevaPass123!"))
+
+    def test_change_password_rechaza_old_password_incorrecta(self):
+        self.client.force_authenticate(user=self.admin)
+        url = reverse("usuarios:usuario-change-password", args=[self.maestro.pk])
+        response = self.client.post(
+            url,
+            {
+                "old_password": "WrongPass1!",
+                "new_password": "NuevaPass123!",
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("old_password", response.json())
+
+    def test_me_endpoint_returns_current_user(self):
+        self.client.force_authenticate(user=self.maestro)
+        url = reverse("usuarios:usuario-me")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["email"], self.maestro.email)
+
+
+class UserSerializerTest(APITestCase):
+    """Verifica que UserListSerializer excluya datos sensibles (PII)."""
+
+    def setUp(self):
+        self.escuela = Escuela.objects.create(
+            clave_estatal="SER01",
+            cct="CCTSER01",
+            nombre="Escuela Serializer Test",
+            nivel="Primaria",
+        )
+        self.user = User.objects.create_user(
+            email="pii@test.com",
+            numero_empleado="PII001",
+            password="pass",
+            role=User.Role.MAESTRO_APOYO,
+            escuela=self.escuela,
+            nombre="Juan",
+            apellido_paterno="Perez",
+            apellido_materno="Gomez",
+            curp="PEGJ123456HOMBXX",
+            celular="555-1234",
+        )
+
+    def test_list_serializer_excludes_sensitive_fields(self):
+        serializer = UserListSerializer(instance=self.user)
+        data = serializer.data
+        # Campos permitidos
+        self.assertIn("email", data)
+        self.assertIn("role", data)
+        self.assertIn("nombre_completo", data)
+        self.assertIn("activo", data)
+        # Campos sensibles NO deben estar
+        self.assertNotIn("curp", data)
+        self.assertNotIn("celular", data)
+        self.assertNotIn("password", data)
+
+    def test_full_serializer_includes_sensitive_fields(self):
+        serializer = UserSerializer(instance=self.user)
+        data = serializer.data
+        self.assertIn("curp", data)
+        self.assertIn("celular", data)
