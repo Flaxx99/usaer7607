@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 
 type ModalColor = 'primary' | 'warning' | 'neutral' | 'indigo';
@@ -28,7 +28,7 @@ const COLOR_HEADER_MAP: Record<string, string> = {
 };
 
 const Modal = ({ isOpen, onClose, title, icon, color = 'primary', size = 'md', children }: ModalProps) => {
-    const lastFocusedElement = React.useRef<HTMLElement | null>(null);
+    const lastFocusedElement = useRef<HTMLElement | null>(null);
 
     useEffect(() => {
         const handleEsc = (e: KeyboardEvent) => {
