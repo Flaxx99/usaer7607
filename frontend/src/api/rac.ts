@@ -1,43 +1,11 @@
 import client from './client';
-
-export interface PaginatedResponse<T> {
-    count: number;
-    next: string | null;
-    previous: string | null;
-    results: T[];
-}
-
-export interface RegistroRAC {
-    id: number;
-    alumno: number;
-    ciclo_escolar: number;
-    escuela_regular: number;
-    zona_regular: string;
-    curp: string;
-    sexo: string;
-    edad: number;
-    grado: string;
-    service_type: string;
-    sup_especial_cct: string;
-    sup_especial_zona: string;
-    centro_cct: string;
-    centro_nombre: string;
-    maestro_apoyo: number;
-    escuela_basica: number;
-    clasificacion: string;
-    subclasificacion: string;
-    observaciones: string;
-    fecha_registro: string;
-    alumno_nombre?: string;
-    escuela_nombre?: string;
-    maestro_nombre?: string;
-    service_type_display?: string;
-}
+import type { PaginatedResponse } from '../interfaces/common';
+import type { RegistroRAC } from '../interfaces/rac';
 
 export const racApi = {
-    getRecords: async (page = 1) => {
+    getRecords: async (page = 1): Promise<PaginatedResponse<RegistroRAC>> => {
         const response = await client.get(`/api/rac/?page=${page}`);
-        return response.data as PaginatedResponse<RegistroRAC>;
+        return response.data;
     },
     saveRecord: async (data: Partial<RegistroRAC>) => {
         if (data.id) {

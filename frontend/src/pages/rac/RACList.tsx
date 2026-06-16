@@ -7,7 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { racApi } from '../../api/rac';
-import type { RegistroRAC } from '../../api/rac';
+import type { RegistroRAC } from '../../interfaces/rac';
 import { useLoading } from '../../context/LoadingContext';
 import { ErrorState } from '../../components/Skeletons';
 import { DataTable } from '../../components/DataTable';

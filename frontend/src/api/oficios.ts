@@ -1,37 +1,20 @@
 import client from './client';
+import type { PaginatedResponse } from '../interfaces/common';
+import type { Oficio } from '../interfaces/oficio';
 
-export interface Oficio {
-    id: number;
-    titulo: string;
-    descripcion?: string;
-    archivo: string;
-    fecha_subida: string;
-    subido_por: number;
-}
-
-export interface PaginatedResponse<T> {
-    count: number;
-    next: string | null;
-    previous: string | null;
-    results: T[];
-}
-
-export const getOficios = async (page = 1, search = ''): Promise<PaginatedResponse<Oficio>> => {
-    let url = `/oficios/?page=${page}`;
-    if (search) url += `&search=${encodeURIComponent(search)}`;
-    const response = await client.get(url);
+export const getOficios = async (page = 1): Promise<PaginatedResponse<Oficio>> => {
+    const response = await client.get(`/api/oficios/?page=${page}`);
     return response.data;
 };
 
-export const uploadOficio = async (formData: FormData): Promise<Oficio> => {
-    const response = await client.post('/oficios/', formData, {
-        headers: {
-            'Content-Type': 'multipart/form-data',
-        },
+export const uploadOficio = async (formData: FormData) => {
+    const response = await client.post('/api/oficios/', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
     });
     return response.data;
 };
 
-export const deleteOficio = async (id: number): Promise<void> => {
-    await client.delete(`/oficios/${id}/`);
+export const deleteOficio = async (id: number) => {
+    const response = await client.delete(`/api/oficios/${id}/`);
+    return response.data;
 };

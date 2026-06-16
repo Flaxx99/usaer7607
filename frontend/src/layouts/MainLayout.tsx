@@ -128,20 +128,22 @@ const MainLayout = () => {
             const Icon = item.icon;
             const isActive = location.pathname.startsWith(item.path);
             return (
-              <Link 
-                key={item.path} 
-                to={item.path}
-                className={`
-                  flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group
-                  ${isActive 
-                    ? 'bg-primary text-white shadow-md shadow-primary/20' 
-                    : 'text-base-content/70 hover:bg-base-200 hover:text-primary'}
-                `}
-                onClick={() => setIsSidebarOpen(false)}
-              >
-                <Icon size={20} className={isActive ? 'text-white' : 'group-hover:text-primary transition-colors'} />
-                <span className="text-sm font-semibold">{item.label}</span>
-              </Link>
+               <Link 
+                 key={item.path} 
+                 to={item.path}
+                 className={`
+                   flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group
+                   ${isActive 
+                     ? 'bg-primary text-white shadow-md shadow-primary/20' 
+                     : 'text-base-content/70 hover:bg-base-200 hover:text-primary'}
+                 `}
+                 onClick={() => setIsSidebarOpen(false)}
+                 aria-current={isActive ? 'page' : undefined}
+               >
+                 <Icon size={20} className={isActive ? 'text-white' : 'group-hover:text-primary transition-colors'} />
+                 <span className="text-sm font-semibold">{item.label}</span>
+               </Link>
+
             );
           })}
         </nav>

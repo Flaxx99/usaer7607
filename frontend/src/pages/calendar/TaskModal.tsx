@@ -5,7 +5,7 @@ import { taskSchema, type TaskForm } from '../../schemas/calendar';
 import { Calendar, Save } from 'lucide-react';
 import Modal from '../../components/Modal';
 import { LoadingButton } from '../../components/LoadingButton';
-import type { CalendarEvent } from '../../api/calendar';
+import type { CalendarEvent } from '../../interfaces/calendar';
 
 interface SelectOption {
     id: number;

@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 import { isAxiosError } from 'axios';
 import { racApi } from '../../api/rac';
 import { LoadingButton } from '../../components/LoadingButton';
-import type { RegistroRAC } from '../../api/rac';
+import type { RegistroRAC } from '../../interfaces/rac';
 import { useLoading } from '../../context/LoadingContext';
 import { getAlumnos } from '../../api/alumnos';
 import type { Alumno } from '../../interfaces/alumno';

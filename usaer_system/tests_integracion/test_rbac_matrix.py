@@ -80,28 +80,72 @@ class RBACMatrixTest(BaseIntegrationTest):
                 "contenido": "Contenido test",
                 "fecha_publicacion": "2026-06-03",
             },
+            "usuarios": {
+                "email": f"newuser{c}@test.com",
+                "numero_empleado": f"NU{c:04d}",
+                "password": "pass123",
+                "role": "MAESTRO_APOYO",
+                "nombres": "Nuevo",
+                "apellido_paterno": f"Usuario{c}",
+            },
+            "ciclos": {
+                "nombre": f"2026-2027-{c:03d}",
+                "fecha_inicio": "2026-08-01",
+                "fecha_fin": "2027-07-31",
+                "activo": False,
+            },
         }
         return payloads.get(endpoint, {})
 
     def test_rbac_get_matrix(self):
         """Matriz GET: qué roles pueden leer qué endpoints."""
         cases = [
+            # === Escuelas ===
             ("ANON", "escuelas:escuelas-list", [], 401, "escuelas-GET"),
             ("MAESTRO_APOYO", "escuelas:escuelas-list", [], 200, "escuelas-GET-maestro"),
             ("ADMIN", "escuelas:escuelas-list", [], 200, "escuelas-GET-admin"),
+            # === Alumnos ===
             ("ADMIN", "alumnos:alumnos-list", [], 200, "alumnos-GET-admin"),
             ("MAESTRO_APOYO", "alumnos:alumnos-list", [], 200, "alumnos-GET-maestro"),
+            ("PSICOLOGO", "alumnos:alumnos-list", [], 403, "alumnos-GET-psicologo-deny"),
+            # === Incidencias ===
             ("ADMIN", "incidencias:incidencias-list", [], 200, "incidencias-GET-admin"),
             ("MAESTRO_APOYO", "incidencias:incidencias-list", [], 200, "incidencias-GET-maestro"),
+            # === Oficios ===
             ("MAESTRO_APOYO", "oficios:oficios-list", [], 200, "oficios-GET-maestro"),
             ("PSICOLOGO", "oficios:oficios-list", [], 200, "oficios-GET-psicologo"),
+            ("ADMIN", "oficios:oficios-list", [], 200, "oficios-GET-admin"),
+            # === Permisos ===
             ("ADMIN", "permisos:permisos-list", [], 200, "permisos-GET-admin"),
             ("MAESTRO_APOYO", "permisos:permisos-list", [], 200, "permisos-GET-maestro"),
+            # === Avisos ===
             ("ADMIN", "avisos:anuncios-list", [], 200, "avisos-GET-admin"),
             ("MAESTRO_APOYO", "avisos:anuncios-list", [], 200, "avisos-GET-maestro"),
-            ("SECRETARIO", "usuarios:usuario-list", [], 200, "usuarios-GET-secretario"),
+            # === Usuarios (REVISADO: SECRETARIO ya no tiene acceso) ===
+            ("ADMIN", "usuarios:usuario-list", [], 200, "usuarios-GET-admin"),
+            ("SECRETARIO", "usuarios:usuario-list", [], 403, "usuarios-GET-secretario-deny"),
             ("MAESTRO_APOYO", "usuarios:usuario-list", [], 403, "usuarios-GET-maestro-deny"),
             ("ANON", "usuarios:usuario-list", [], 401, "usuarios-GET-anon-deny"),
+            # === Ciclos Escolares (NUEVO) ===
+            ("ADMIN", "ciclos:ciclos-list", [], 200, "ciclos-GET-admin"),
+            ("SECRETARIO", "ciclos:ciclos-list", [], 200, "ciclos-GET-secretario"),
+            ("MAESTRO_APOYO", "ciclos:ciclos-list", [], 403, "ciclos-GET-maestro-deny"),
+            ("PSICOLOGO", "ciclos:ciclos-list", [], 403, "ciclos-GET-psicologo-deny"),
+            ("ANON", "ciclos:ciclos-list", [], 401, "ciclos-GET-anon-deny"),
+            # === R.A.E. (NUEVO) ===
+            ("ADMIN", "rae:registros-list", [], 200, "rae-GET-admin"),
+            ("MAESTRO_APOYO", "rae:registros-list", [], 200, "rae-GET-maestro"),
+            ("ANON", "rae:registros-list", [], 401, "rae-GET-anon-deny"),
+            # === R.A.C. (NUEVO) ===
+            ("ADMIN", "rac:registros-list", [], 200, "rac-GET-admin"),
+            ("MAESTRO_APOYO", "rac:registros-list", [], 200, "rac-GET-maestro"),
+            ("ANON", "rac:registros-list", [], 401, "rac-GET-anon-deny"),
+            # === Notificaciones (NUEVO) ===
+            ("ADMIN", "notificaciones:notificaciones-list", [], 200, "notif-GET-admin"),
+            ("MAESTRO_APOYO", "notificaciones:notificaciones-list", [], 200, "notif-GET-maestro"),
+            # === Asistencias (NUEVO) ===
+            ("ADMIN", "asistencias:asistencias-list", [], 200, "asis-GET-admin"),
+            ("MAESTRO_APOYO", "asistencias:asistencias-list", [], 200, "asis-GET-maestro"),
         ]
         for role, viewname, args, expected, label in cases:
             with self.subTest(label=label, role=role, method="GET"):
@@ -190,6 +234,26 @@ class RBACMatrixTest(BaseIntegrationTest):
                 (201, 200),
                 "docs-POST-psicologo",
             ),
+            # === Usuarios (NUEVO): solo ADMIN puede crear ===
+            ("ADMIN", "usuarios:usuario-list", "usuarios", (201, 200), "usuarios-POST-admin"),
+            (
+                "SECRETARIO",
+                "usuarios:usuario-list",
+                "usuarios",
+                403,
+                "usuarios-POST-secretario-deny",
+            ),
+            (
+                "MAESTRO_APOYO",
+                "usuarios:usuario-list",
+                "usuarios",
+                403,
+                "usuarios-POST-maestro-deny",
+            ),
+            # === Ciclos (NUEVO): Admin y Secretario ===
+            ("ADMIN", "ciclos:ciclos-list", "ciclos", (201, 200), "ciclos-POST-admin"),
+            ("SECRETARIO", "ciclos:ciclos-list", "ciclos", (201, 200), "ciclos-POST-secretario"),
+            ("MAESTRO_APOYO", "ciclos:ciclos-list", "ciclos", 403, "ciclos-POST-maestro-deny"),
         ]
         for role, viewname, endpoint_key, expected, label in cases:
             with self.subTest(label=label, role=role, method="POST"):

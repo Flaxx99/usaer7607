@@ -13,20 +13,20 @@ from .models import CicloEscolar
 from .serializers import CicloEscolarSerializer, PromocionPreviewSerializer
 
 
-class IsAdminUser(permissions.BasePermission):
-    """Solo administradores pueden tocar ciclos escolares."""
+class IsAdminOrSecretario(permissions.BasePermission):
+    """Administradores y Secretarios pueden gestionar ciclos (coincide con el frontend)."""
 
     def has_permission(self, request, view):
         return request.user.is_authenticated and getattr(request.user, "role", "") in [
             "ADMIN",
-            "ADMINISTRADOR",
+            "SECRETARIO",
         ]
 
 
 class CicloEscolarViewSet(viewsets.ModelViewSet):
     queryset = CicloEscolar.objects.all().order_by("-fecha_inicio")
     serializer_class = CicloEscolarSerializer
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminOrSecretario]
 
     @action(detail=False, methods=["get"])
     def activo(self, request):
@@ -46,7 +46,7 @@ class PromocionAlumnosView(views.APIView):
     POST: Ejecución Real (Commit)
     """
 
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminOrSecretario]
 
     def initial(self, request, *args, **kwargs):
         """bulk_write solo aplica al POST (commit), no al GET (preview)."""

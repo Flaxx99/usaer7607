@@ -9,7 +9,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from services.dashboard_service import build_dashboard_data
 
-from usuarios.permissions import IsAdminOrSecretario
+from usuarios.permissions import IsAdminOrSecretario, IsAdminUserOnly
 
 logger = logging.getLogger(__name__)
 
@@ -108,10 +108,19 @@ class UserViewSet(viewsets.ModelViewSet):
         return qs.order_by("apellido_paterno", "nombre")
 
     def get_permissions(self):
-        """Only admins may list and toggle users; other actions require authentication."""
-        restricted_actions = {"list", "toggle_active", "change_password", "destroy"}
-        if getattr(self, "action", None) in restricted_actions:
-            return [IsAuthenticated(), IsAdminOrSecretario()]
+        """Admin-only for user management; other actions require auth."""
+        admin_only = {
+            "list",
+            "retrieve",
+            "create",
+            "update",
+            "partial_update",
+            "destroy",
+            "toggle_active",
+            "change_password",
+        }
+        if getattr(self, "action", None) in admin_only:
+            return [IsAuthenticated(), IsAdminUserOnly()]
         return [IsAuthenticated()]
 
     @action(detail=False, methods=["get"])

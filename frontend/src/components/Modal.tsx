@@ -28,28 +28,42 @@ const COLOR_HEADER_MAP: Record<string, string> = {
 };
 
 const Modal = ({ isOpen, onClose, title, icon, color = 'primary', size = 'md', children }: ModalProps) => {
+    const lastFocusedElement = React.useRef<HTMLElement | null>(null);
+
     useEffect(() => {
         const handleEsc = (e: KeyboardEvent) => {
             if (e.key === 'Escape') onClose();
         };
         if (isOpen) {
+            lastFocusedElement.current = document.activeElement as HTMLElement;
             window.addEventListener('keydown', handleEsc);
             document.body.style.overflow = 'hidden';
+            
+            // Focus the first focusable element
+            setTimeout(() => {
+                const focusable = document.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+                if (focusable.length > 0) {
+                    (focusable[0] as HTMLElement).focus();
+                }
+            }, 10);
         }
         return () => {
             window.removeEventListener('keydown', handleEsc);
             document.body.style.overflow = '';
+            if (lastFocusedElement.current) {
+                lastFocusedElement.current.focus();
+            }
         };
     }, [isOpen, onClose]);
 
     if (!isOpen) return null;
 
     return (
-        <div className="modal modal-open modal-bottom sm:modal-middle">
+        <div className="modal modal-open modal-bottom sm:modal-middle" role="dialog" aria-modal="true" aria-labelledby="modal-title">
             <div className={`modal-box ${RESPONSIVE_SIZE[size]} p-0 overflow-hidden`}>
                 {/* Colored header */}
                 <div className={`${COLOR_HEADER_MAP[color]} p-6 flex items-center justify-between`}>
-                    <h3 className="text-xl font-bold flex items-center gap-2">
+                    <h3 id="modal-title" className="text-xl font-bold flex items-center gap-2">
                         {icon && <span className="opacity-80">{icon}</span>}
                         {title}
                     </h3>

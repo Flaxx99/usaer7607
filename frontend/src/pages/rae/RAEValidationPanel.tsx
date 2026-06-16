@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { raeApi } from '../../api/rae';
-import type { RAEAlumno } from '../../api/rae';
+import type { RAEAlumno } from '../../interfaces/rae';
 import { useLoading } from '../../context/LoadingContext';
 import { ValidationSkeleton, EmptyState, ErrorState } from '../../components/Skeletons';
 import { LoadingButton } from '../../components/LoadingButton';

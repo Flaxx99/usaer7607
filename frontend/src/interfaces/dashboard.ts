@@ -15,19 +15,25 @@ export interface Aviso {
     fecha: string;
 }
 
+export interface GraficaEscuela {
+    escuela__nombre: string;
+    total: number;
+}
+
 export interface ChartEntry {
     clasificacion: string;
     total: number;
 }
 
-// Esta es la respuesta completa que manda tu DashboardView
-export interface DashboardResponse {
-    stats?: DashboardStats; // Es opcional porque solo el ADMIN/DIRECTOR lo ve
+/** Respuesta del endpoint GET /usuarios/dashboard-data/ */
+export interface DashboardData {
+    ciclo_actual: string;
+    stats: DashboardStats;
+    grafica_clasificacion: ChartEntry[];
+    grafica_escuelas: GraficaEscuela[];
     ultimos_avisos: Aviso[];
-    permisos_pendientes: number;
     incidencias_pendientes: number;
-    ciclo_actual?: string;
-    grafica_clasificacion?: ChartEntry[];
+    permisos_pendientes: number;
 }
 
 export interface StatCardProps {

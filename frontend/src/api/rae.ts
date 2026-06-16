@@ -1,87 +1,17 @@
 import client from './client';
-
-export interface PaginatedResponse<T> {
-    count: number;
-    next: string | null;
-    previous: string | null;
-    results: T[];
-}
-
-export interface RAEAlumno {
-    id: number;
-    registro: number;
-    alumno: number;
-    capturado_por: number;
-    curp: string;
-    genero: string;
-    edad: number;
-    grado: string;
-    ceg: boolean;
-    bv: boolean;
-    so: boolean;
-    hp: boolean;
-    scg: boolean;
-    dmo: boolean;
-    di: boolean;
-    dme: boolean;
-    psicosocial: boolean;
-    dm: boolean;
-    dsc: boolean;
-    dsco: boolean;
-    dsa: boolean;
-    tda: boolean;
-    tea: boolean;
-    asi: boolean;
-    asc: boolean;
-    asa: boolean;
-    asp: boolean;
-    ass: boolean;
-    ot: boolean;
-    psicologia: boolean;
-    comunicacion: boolean;
-    psicomotricidad: boolean;
-    trabajo_social: boolean;
-    aprendizaje: boolean;
-    nuevo_ingreso: boolean;
-    subsecuente: boolean;
-    diagnostico: boolean;
-    educativo: boolean;
-    deteccion: boolean;
-    psicopedagogico: boolean;
-    plan: boolean;
-    modelo: boolean;
-    alumno_nombre?: string;
-}
-
-export interface RegistroRAE {
-    id: number;
-    escuela: number;
-    ciclo_escolar: number;
-    creado_por: number;
-    fecha_creacion: string;
-    docente_hombres: number;
-    docente_mujeres: number;
-    escuela_nombre?: string;
-    ciclo_nombre?: string;
-}
-
-export interface RAEInitResponse {
-    registro_id: number;
-    ciclo: string;
-    escuela: string;
-    alumnos: RAEAlumno[];
-}
+import type { PaginatedResponse } from '../interfaces/common';
+import type { RegistroRAE, RAEAlumno, RAEInitResponse } from '../interfaces/rae';
 
 export const raeApi = {
-    getMyRecords: async (page = 1) => {
+    getMyRecords: async (page = 1): Promise<PaginatedResponse<RegistroRAE>> => {
         const response = await client.get(`/api/rae/mis_registros/?page=${page}`);
-        return response.data as PaginatedResponse<RegistroRAE>;
+        return response.data;
     },
-    initCapture: async () => {
+    initCapture: async (): Promise<RAEInitResponse> => {
         const response = await client.get('/api/rae/captura/');
-        return response.data as RAEInitResponse;
+        return response.data;
     },
-    saveBulk: async (data: { registro_id: number, alumnos: RAEAlumno[] }) => {
+    saveBulk: async (data: { registro_id: number; alumnos: RAEAlumno[] }) => {
         const response = await client.post('/api/rae/guardar_bulk/', data);
         return response.data;
     },

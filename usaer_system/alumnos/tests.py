@@ -4,6 +4,7 @@ from datetime import date, timedelta
 
 from ciclos_escolares.models import CicloEscolar
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.urls import reverse
 from escuelas.models import Escuela
 from rest_framework import status
@@ -16,6 +17,7 @@ User = get_user_model()
 
 class AlumnoAPITests(APITestCase):
     def setUp(self):
+        cache.clear()
         # Setup Base Data
         self.escuela = Escuela.objects.create(
             clave_estatal="ESC1",

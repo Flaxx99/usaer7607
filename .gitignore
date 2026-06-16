@@ -289,3 +289,10 @@ debug_*.py
 # SDD artifacts (track if used for team specs)
 openspec/
 
+
+# E2E test database
+usaer_system/e2e_test_db.sqlite3
+
+# Playwright reports
+frontend/playwright-report/
+frontend/test-results/

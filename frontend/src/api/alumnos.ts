@@ -1,12 +1,6 @@
 import client from './client';
 import type { Alumno } from '../interfaces/alumno';
-
-export interface PaginatedResponse<T> {
-    count: number;
-    next: string | null;
-    previous: string | null;
-    results: T[];
-}
+import type { PaginatedResponse } from '../interfaces/common';
 
 // Obtener lista paginada y filtrada
 export const getAlumnos = async (page = 1, search = '', escuela = '', condicion = '', estado = 'ACTIVOS'): Promise<PaginatedResponse<Alumno>> => {

@@ -1,5 +1,9 @@
 import { http, HttpResponse, delay } from 'msw';
 
+const alumnosMock = { count: 1, next: null, previous: null, results: [{ id: 1, nombres: 'Juan', apellido_paterno: 'Pérez', apellido_materno: 'López', curp: 'PELJ010101HDFRRT01', fecha_nacimiento: '2001-01-01', usuario_id: 10, activo: true }] };
+const clasifMock = [{ id: 1, nombre: 'DISCAPACIDAD_MOTRIZ', descripcion: 'Discapacidad motriz o física', activo: true }];
+const subclasifMock = [{ id: 1, nombre: 'PARÁLISIS_CEREBRAL', descripcion: 'Parálisis cerebral', clasificacion_id: 1, activo: true }];
+
 export const handlers = [
   http.post('*/usuarios/auth/login/', async ({ request }) => {
     await delay(100); 
@@ -55,6 +59,18 @@ export const handlers = [
         { clasificacion: 'AUTISMO', total: 50 },
       ],
     });
+  }),
+
+  http.get('*/alumnos/', () => HttpResponse.json(alumnosMock)),
+  http.get('*/alumnos/clasificaciones/', () => HttpResponse.json(clasifMock)),
+  http.get('*/alumnos/subclasificaciones/', ({ request }) => {
+    const url = new URL(request.url);
+    const id = url.searchParams.get('clasificacion_id');
+    return HttpResponse.json(id === '1' ? subclasifMock : []);
+  }),
+  http.post('*/asistencias/rac/', async () => {
+    await delay(30);
+    return HttpResponse.json({ message: 'RAC registrado correctamente', id: 1 }, { status: 201 });
   }),
 ];
 

@@ -1,30 +1,18 @@
 import client from './client';
-
-export interface Notificacion {
-    id: number;
-    titulo: string;
-    contenido: string;
-    leido: boolean;
-    fecha_creacion: string;
-    usuario_nombre?: string;
-}
-
-export interface PaginatedResponse<T> {
-    count: number;
-    next: string | null;
-    previous: string | null;
-    results: T[];
-}
+import type { PaginatedResponse } from '../interfaces/common';
+import type { Notificacion } from '../interfaces/notificacion';
 
 export const notificacionesApi = {
     getNotificaciones: async (page = 1): Promise<PaginatedResponse<Notificacion>> => {
         const response = await client.get(`/notificaciones/?page=${page}`);
         return response.data;
     },
-    marcarComoLeida: async (id: number): Promise<void> => {
-        await client.patch(`/notificaciones/${id}/marcar_leida/`);
+    marcarComoLeida: async (id: number) => {
+        const response = await client.patch(`/notificaciones/${id}/`, { leida: true });
+        return response.data;
     },
-    marcarTodasComoLeidas: async (): Promise<void> => {
-        await client.post('/notificaciones/marcar_todas_leidas/');
-    }
+    marcarTodasComoLeidas: async () => {
+        const response = await client.post('/notificaciones/marcar-todas-leidas/');
+        return response.data;
+    },
 };

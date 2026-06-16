@@ -17,7 +17,7 @@ import { getUsuarios } from '../../api/usuarios';
 import { getAlumnos } from '../../api/alumnos';
 import { getEscuelas } from '../../api/escuelas';
 import { calendarApi } from '../../api/calendar';
-import type { CalendarEvent } from '../../api/calendar';
+import type { CalendarEvent } from '../../interfaces/calendar';
 
 const SchoolCalendar = () => {
     const queryClient = useQueryClient();

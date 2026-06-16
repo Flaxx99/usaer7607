@@ -7,7 +7,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { raeApi } from '../../api/rae';
-import type { RAEAlumno } from '../../api/rae';
+import type { RAEAlumno } from '../../interfaces/rae';
 import { ErrorState, EmptyState } from '../../components/Skeletons';
 import { useLoading } from '../../context/LoadingContext';
 import { useRAEDrafts } from '../../hooks/useRAEDrafts';

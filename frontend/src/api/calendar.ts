@@ -1,31 +1,6 @@
 import client from './client';
-
-export interface PaginatedResponse<T> {
-    count: number;
-    next: string | null;
-    previous: string | null;
-    results: T[];
-}
-
-export interface CalendarEvent {
-    id: number;
-    title: string;
-    description: string;
-    start_time: string;
-    end_time: string;
-    event_type: 'EVALUACION' | 'REUNION' | 'VISITA' | 'TAREA' | 'OTRO';
-    status: 'PENDIENTE' | 'COMPLETADO' | 'CANCELADO';
-    priority: 'BAJA' | 'MEDIA' | 'ALTA';
-    created_by: number;
-    assigned_to: number;
-    alumno?: number;
-    escuela?: number;
-    color: string;
-    created_by_nombre?: string;
-    assigned_to_nombre?: string;
-    alumno_nombre?: string;
-    escuela_nombre?: string;
-}
+import type { PaginatedResponse } from '../interfaces/common';
+import type { CalendarEvent } from '../interfaces/calendar';
 
 export const calendarApi = {
     getEvents: async (page = 1) => {

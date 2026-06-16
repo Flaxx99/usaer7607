@@ -1,12 +1,6 @@
 import client from './client';
 import type { Usuario } from '../interfaces/usuario';
-
-export interface PaginatedResponse<T> {
-    count: number;
-    next: string | null;
-    previous: string | null;
-    results: T[];
-}
+import type { PaginatedResponse } from '../interfaces/common';
 
 // --- LEER TODOS PAGINADOS (Para el Admin) ---
 export const getUsuarios = async (page = 1, search = '', role = '', escuela = '', activo = ''): Promise<PaginatedResponse<Usuario>> => {

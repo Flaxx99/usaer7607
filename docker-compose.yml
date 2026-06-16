@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: usaer_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=usaer_db
+      - POSTGRES_USER=usaer_user
+      - POSTGRES_PASSWORD=usaer_pass
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U usaer_user -d usaer_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./usaer_system
+    container_name: usaer_backend
+    volumes:
+      - ./usaer_system:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=True
+      - SECRET_KEY=django-insecure-docker-key-12345
+      - DATABASE_URL=postgres://usaer_user:usaer_pass@db:5432/usaer_db
+      - DB_ENGINE=django.db.backends.postgresql
+      - DB_NAME=usaer_db
+      - DB_USER=usaer_user
+      - DB_PASSWORD=usaer_pass
+      - DB_HOST=db
+      - DB_PORT=5432
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    container_name: usaer_frontend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules # Evita que el volumen local sobreescriba node_modules del contenedor
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8000/api
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:

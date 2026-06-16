@@ -127,7 +127,7 @@ class BaseIntegrationTest(APITestCase):
             apellido_paterno="García",
             apellido_materno="Hernández",
             nombres="María",
-            curp="GAHMMAR123456MOMBXX",
+            curp="GAHMAR123456MOMXX",
             sexo="M",
             edad=8,
             grado="2",
