@@ -66,6 +66,5 @@ test.describe('Students Value Flow', () => {
     const studentRow = page.locator('tr').filter({ hasText: `Promovible ${randomId}` });
     await expect(studentRow).toContainText('2');
   });
-});
 
 });

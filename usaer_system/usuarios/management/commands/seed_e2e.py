@@ -5,6 +5,7 @@ from ciclos_escolares.models import CicloEscolar
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from escuelas.models import Escuela
+from rae.models import RAEAlumno, RegistroRAE
 
 User = get_user_model()
 
@@ -92,4 +93,39 @@ class Command(BaseCommand):
             )
 
         self.stdout.write("Alumnos creados.")
+
+        # 5. Crear Registro RAE y RAEAlumnos (para exportación E2E)
+        admin = User.objects.filter(email=admin_email).first()
+        if admin:
+            registro_rae, created = RegistroRAE.objects.get_or_create(
+                escuela=escuela,
+                ciclo_escolar=ciclo,
+                defaults={
+                    "creado_por": admin,
+                    "docente_hombres": 1,
+                    "docente_mujeres": 1,
+                },
+            )
+            if created:
+                self.stdout.write(f"Registro RAE creado: {registro_rae}")
+
+            for alumno in Alumno.objects.filter(escuela=escuela):
+                RAEAlumno.objects.get_or_create(
+                    registro=registro_rae,
+                    alumno=alumno,
+                    defaults={
+                        "capturado_por": admin,
+                        "curp": alumno.curp,
+                        "edad": alumno.edad,
+                        "grado": f"{alumno.grado}°A",
+                        "ceg": alumno.curp == "PERJUA01",
+                        "dsc": alumno.curp == "LOPMAR02",
+                        "psicologia": alumno.curp == "PERJUA01",
+                        "diagnostico": True,
+                        "modelo": True,
+                    },
+                )
+                self.stdout.write(f"  RAEAlumno para {alumno.get_full_name()}")
+            self.stdout.write("Datos RAE creados.")
+
         self.stdout.write("Seeding complete!")
