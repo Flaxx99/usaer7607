@@ -6,8 +6,10 @@ Verifica que:
 2. Las respuestas 429 incluyen header Retry-After
 3. El throttle NO se activa falsamente con rates altos
 
-NOTA: DRF cachea api_settings._user_settings. @override_settings no lo refresca
-automáticamente. Por eso invalidamos el cache manualmente en setUp.
+NOTA: DRF's APISettings.__getattr__ llama a setattr() para cachear cada valor
+como atributo de instancia. @override_settings no los refresca automáticamente
+porque Python encuentra el attr en self.__dict__ y saltea __getattr__.
+Usamos api_settings.reload() que hace delattr() de cada attr cacheado.
 """
 
 from unittest.mock import MagicMock
@@ -97,10 +99,16 @@ def escola_payload(i: int) -> dict:
 
 
 def _invalidate_drf_settings():
-    """Fuerza a DRF a re-leer REST_FRAMEWORK de django.conf.settings."""
-    drf_api_settings._cached_attrs.clear()
-    if hasattr(drf_api_settings, "_user_settings"):
-        del drf_api_settings._user_settings
+    """Fuerza a DRF a re-leer REST_FRAMEWORK de django.conf.settings.
+
+    NOTA: DRF's APISettings.__getattr__ llama a setattr(self, attr, val)
+    para cachear. `reload()` es el método oficial que hace delattr() de cada
+    attr cacheado ANTES de limpiar _cached_attrs. Si solo limpiamos
+    _cached_attrs sin delattr, los attrs siguen en self.__dict__ y Python
+    nunca llama a __getattr__ — el valor queda obsoleto incluso después de
+    @override_settings + _invalidate_drf_settings.
+    """
+    drf_api_settings.reload()
 
 
 class TestOverrideSettingsWorks(TestCase):
@@ -169,16 +177,13 @@ class TestWriteRateThrottleIntegration(TestCase):
     def test_write_throttle_blocks_excess_posts(self):
         """POST en exceso retorna 429 con WriteRateThrottle (1/hour)."""
         _invalidate_drf_settings()
+        cache.clear()
         r1 = self._post(escola_payload(0))
         self.assertNotEqual(
             r1.status_code,
             status.HTTP_429_TOO_MANY_REQUESTS,
             msg="Primer POST no debe ser throttleado",
         )
-
-        # Forzamos que el cache registre el primer request antes del segundo
-        # en algunos entornos de test el cache puede ser perezoso
-        cache.clear()  # No, clear() borraría el primer request. Solo invalidamos settings.
 
         r2 = self._post(escola_payload(1))
         self.assertEqual(r2.status_code, status.HTTP_429_TOO_MANY_REQUESTS)

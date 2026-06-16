@@ -149,7 +149,7 @@ class DocumentosAPITests(APITestCase):
             apellido_paterno="L",
             apellido_materno="M",
             nombres="X",
-            curp="CURP_OTRO_123456HOMBXX",
+            curp="LOPEZ1123456HOMBXX",
             sexo="H",
             edad=8,
             grado="3",

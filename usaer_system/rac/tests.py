@@ -155,7 +155,7 @@ class RegistroRACViewsTest(APITestCase):
             apellido_paterno="Nuevo",
             apellido_materno="RAC",
             nombres="Alumno",
-            curp="NUEVORAC123456HOMBXX",
+            curp="NUEVOR123456HOMBXX",
             sexo="H",
             fecha_nacimiento=date(2019, 6, 1),
             grado="1",

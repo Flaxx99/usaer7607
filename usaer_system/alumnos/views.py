@@ -162,6 +162,7 @@ class AlumnoViewSet(viewsets.ModelViewSet):
         graduados = []
         omitidos = []
 
+        _grade_exceptions = (ValueError, TypeError)
         for alumno in alumnos_activos:
             try:
                 grado_actual = int(alumno.grado)
@@ -182,7 +183,7 @@ class AlumnoViewSet(viewsets.ModelViewSet):
                             "grado_siguiente": str(grado_actual + 1),
                         }
                     )
-            except ValueError, TypeError:
+            except _grade_exceptions:
                 omitidos.append(
                     {
                         "id": alumno.id,
@@ -235,7 +236,7 @@ class AlumnoViewSet(viewsets.ModelViewSet):
                     alumno.grupo = ""
                     alumno.save()
                     promovidos_count += 1
-            except ValueError, TypeError:
+            except _grade_exceptions:
                 errores.append(
                     f"Alumno '{alumno.get_full_name()}' omitido: grado '{alumno.grado}' no válido."
                 )
