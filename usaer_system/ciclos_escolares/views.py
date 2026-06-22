@@ -17,10 +17,14 @@ class IsAdminOrSecretario(permissions.BasePermission):
     """Administradores y Secretarios pueden gestionar ciclos (coincide con el frontend)."""
 
     def has_permission(self, request, view):
-        return request.user.is_authenticated and getattr(request.user, "role", "") in [
-            "ADMIN",
-            "SECRETARIO",
-        ]
+        return request.user.is_authenticated and (
+            request.user.is_superuser
+            or getattr(request.user, "role", "")
+            in [
+                "ADMIN",
+                "SECRETARIO",
+            ]
+        )
 
 
 class CicloEscolarViewSet(viewsets.ModelViewSet):

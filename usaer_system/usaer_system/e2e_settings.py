@@ -19,3 +19,11 @@ SENTRY_DSN = None
 SECURE_SSL_REDIRECT = False
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
+
+# Elevamos rate limits para que E2E tests no sufran throttling
+REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"] = {  # noqa: F405
+    **REST_FRAMEWORK.get("DEFAULT_THROTTLE_RATES", {}),  # noqa: F405
+    "login": "100/minute",
+    "anon": "600/hour",
+    "user_write": "1000/hour",
+}
