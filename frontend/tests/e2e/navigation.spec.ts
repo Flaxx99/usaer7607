@@ -2,6 +2,8 @@ import { test, expect } from '@playwright/test';
 import { login } from './utils';
 
 test.describe('Role-Based Navigation', () => {
+  // Start fresh — navigation tests need to login as different roles
+  test.use({ storageState: undefined });
   test('Admin should see all menu items including Users', async ({ page }) => {
     await login(page, 'admin@test.com', 'pass123');
     await expect(page.getByRole('link', { name: /usuarios/i })).toBeVisible();

@@ -2,6 +2,8 @@ import { test, expect } from '@playwright/test';
 import { login } from './utils';
 
 test.describe('Login Flow', () => {
+  test.use({ storageState: undefined });
+
   test('should login successfully with valid credentials', async ({ page }) => {
     await login(page, 'admin@test.com', 'pass123');
     await expect(page).toHaveURL(/.*dashboard/);

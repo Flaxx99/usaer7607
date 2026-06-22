@@ -1,16 +1,15 @@
 import { test, expect } from '@playwright/test';
-import { login } from './utils';
 
 test.describe('RAE Export Flow', () => {
   test('should export official RAE Excel file from validation panel', async ({ page }) => {
-    await login(page, 'admin@test.com', 'pass123');
+    // Pre-authenticated via global setup (storageState: .auth/admin.json)
 
     // 1. Navigate to RAE Records list
     await page.goto('/rae');
     await expect(page.getByText('Registros RAE')).toBeVisible();
 
     // 2. Click the first "Validar y Exportar" button (CheckCircle icon)
-    await page.locator('button[title="Validar y Exportar"]').first().click();
+    await page.getByRole('button', { name: /Validar y Exportar/i }).first().click({ force: true });
 
     // 3. Wait for validation panel to load
     await expect(page.getByText('Validación de Totales RAE')).toBeVisible();

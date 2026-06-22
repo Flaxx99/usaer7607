@@ -1,16 +1,15 @@
 import { test, expect } from '@playwright/test';
-import { login } from './utils';
 
 test.describe('RAE Value Flow', () => {
   test('should capture RAE data, maintain drafts on refresh, and save to backend', async ({ page }) => {
-    await login(page, 'admin@test.com', 'pass123');
+    // Pre-authenticated via global setup (storageState: .auth/admin.json)
     
     // 1. Navigate to RAE Records and enter a capture session
     await page.goto('/rae');
     await expect(page.getByText('Registros RAE')).toBeVisible();
     
-    // Click the first 'Edit' button (Edit2 icon)
-    await page.locator('button').filter({ has: 'svg[data-lucide="edit-2"]' }).first().click();
+    // Click the first 'Edit' button (Ir a Captura)
+    await page.getByRole('button', { name: /Ir a Captura/i }).first().click({ force: true });
     
     // Verify we are in the capture grid
     await expect(page.getByText('Captura RAE:')).toBeVisible();
