@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from './layouts/MainLayout';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { LoadingProvider } from './context/LoadingContext';
 
 // --- Lazy-loaded page chunks ---
 const Login = lazy(() => import('./pages/Login'));
@@ -43,7 +44,8 @@ function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
-        <Suspense fallback={<PageLoader />}>
+        <LoadingProvider>
+          <Suspense fallback={<PageLoader />}>
           <Routes>
           
           {/* --- RUTA PRINCIPAL (PÚBLICA): EL KIOSCO --- */}
@@ -93,6 +95,7 @@ function App() {
 
         </Routes>
         </Suspense>
+        </LoadingProvider>
       </BrowserRouter>
     </ErrorBoundary>
   );
