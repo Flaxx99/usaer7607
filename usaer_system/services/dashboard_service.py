@@ -10,6 +10,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import Any
 
+from django.db import models
 from django.db.models import Count, Q
 
 logger = logging.getLogger(__name__)
@@ -76,6 +77,30 @@ def get_permisos_pendientes(user) -> int:
         return qs.count()
     except Exception:
         logger.exception("Error contando permisos pendientes")
+        return 0
+
+
+def get_incidencias_pendientes(user) -> int:
+    """Cuenta incidencias pendientes según el rol del usuario."""
+    from incidencias.models import Incidencia
+
+    try:
+        qs = Incidencia.objects.pendientes()
+        es_admin = user.role in ("ADMIN", "ADMINISTRADOR") or user.is_superuser
+        es_director = user.role == "DIRECTOR"
+        es_secretario = user.role == "SECRETARIO"
+
+        if not es_admin:
+            if (es_director or es_secretario) and user.escuela_id:
+                qs = qs.filter(escuela=user.escuela)
+            elif not es_director and not es_secretario:
+                # Maestros y roles de equipo: ven donde son reportado_por o profesor
+                qs = qs.filter(models.Q(reportado_por=user) | models.Q(profesor=user))
+            else:
+                qs = qs.none()
+        return qs.count()
+    except Exception:
+        logger.exception("Error contando incidencias pendientes")
         return 0
 
 
@@ -161,6 +186,7 @@ def build_dashboard_data(user) -> DashboardData:
         ciclo_actual=get_ciclo_actual(),
         ultimos_avisos=get_ultimos_avisos(),
         permisos_pendientes=get_permisos_pendientes(user),
+        incidencias_pendientes=get_incidencias_pendientes(user),
         stats=get_stats(),
     )
     data.grafica_clasificacion, data.grafica_escuelas = get_graficas()

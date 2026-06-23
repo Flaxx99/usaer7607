@@ -15,6 +15,7 @@ from .dashboard_service import (
     build_dashboard_data,
     get_ciclo_actual,
     get_graficas,
+    get_incidencias_pendientes,
     get_permisos_pendientes,
     get_stats,
     get_ultimos_avisos,
@@ -97,6 +98,87 @@ class GetPermisosPendientesTest(TestCase):
         with patch("permisos.models.Permiso") as mock_perm:
             mock_perm.objects.pendientes.side_effect = Exception("boom")
             result = get_permisos_pendientes(user)
+        self.assertEqual(result, 0)
+
+
+class GetIncidenciasPendientesTest(TestCase):
+    def _user(self, **kwargs):
+        """Crea un MagicMock de usuario con is_superuser=False por defecto."""
+        defaults = {"is_superuser": False}
+        defaults.update(kwargs)
+        return MagicMock(**defaults)
+
+    def _mock_qs_with_filter_chain(self, count_value):
+        """Crea un mock de queryset donde filter() retorna el mismo mock."""
+        mock_qs = MagicMock()
+        mock_qs.count.return_value = count_value
+        mock_qs.filter.return_value = mock_qs
+        return mock_qs
+
+    def test_admin_ve_todas(self):
+        """Admin ve todas las incidencias pendientes sin filtrar."""
+        user = self._user(role="ADMINISTRADOR")
+        mock_qs = self._mock_qs_with_filter_chain(3)
+        with patch("incidencias.models.Incidencia") as mock_inc:
+            mock_inc.objects.pendientes.return_value = mock_qs
+            result = get_incidencias_pendientes(user)
+        self.assertEqual(result, 3)
+        mock_qs.filter.assert_not_called()
+
+    def test_director_ve_de_su_escuela(self):
+        """DIRECTOR ve incidencias pendientes filtradas por su escuela."""
+        escuela_mock = MagicMock(nombre="Esc Test")
+        user = self._user(role="DIRECTOR", escuela_id=1, escuela=escuela_mock)
+        mock_qs = self._mock_qs_with_filter_chain(2)
+        with patch("incidencias.models.Incidencia") as mock_inc:
+            mock_inc.objects.pendientes.return_value = mock_qs
+            result = get_incidencias_pendientes(user)
+        self.assertEqual(result, 2)
+        mock_qs.filter.assert_called_once_with(escuela=escuela_mock)
+
+    def test_secretario_ve_de_su_escuela(self):
+        """SECRETARIO ve incidencias pendientes filtradas por su escuela."""
+        escuela_mock = MagicMock(nombre="Esc Test")
+        user = self._user(role="SECRETARIO", escuela_id=1, escuela=escuela_mock)
+        mock_qs = self._mock_qs_with_filter_chain(1)
+        with patch("incidencias.models.Incidencia") as mock_inc:
+            mock_inc.objects.pendientes.return_value = mock_qs
+            result = get_incidencias_pendientes(user)
+        self.assertEqual(result, 1)
+        mock_qs.filter.assert_called_once_with(escuela=escuela_mock)
+
+    def test_maestro_ve_sus_incidencias(self):
+        """MAESTRO ve incidencias donde es reportado_por o profesor."""
+        user = self._user(role="MAESTRO_APOYO", escuela_id=1)
+        from django.db import models
+
+        mock_qs = self._mock_qs_with_filter_chain(1)
+        with patch("incidencias.models.Incidencia") as mock_inc:
+            mock_inc.objects.pendientes.return_value = mock_qs
+            result = get_incidencias_pendientes(user)
+        self.assertEqual(result, 1)
+        mock_qs.filter.assert_called_once_with(
+            models.Q(reportado_por=user) | models.Q(profesor=user)
+        )
+
+    def test_director_sin_escuela_ve_cero(self):
+        """DIRECTOR sin escuela asignada ve 0 incidencias."""
+        user = self._user(role="DIRECTOR", escuela_id=None, escuela=None)
+        mock_qs = MagicMock()
+        mock_qs.count.return_value = 5
+        mock_qs.filter.return_value = mock_qs
+        mock_qs.none.return_value.count.return_value = 0
+        with patch("incidencias.models.Incidencia") as mock_inc:
+            mock_inc.objects.pendientes.return_value = mock_qs
+            result = get_incidencias_pendientes(user)
+        self.assertEqual(result, 0)
+
+    def test_retorna_0_cuando_error(self):
+        """Si hay excepción, retorna 0 sin crash."""
+        user = self._user(role="ADMIN")
+        with patch("incidencias.models.Incidencia") as mock_inc:
+            mock_inc.objects.pendientes.side_effect = Exception("boom")
+            result = get_incidencias_pendientes(user)
         self.assertEqual(result, 0)
 
 
