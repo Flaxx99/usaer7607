@@ -2,6 +2,8 @@ import traceback
 
 from alumnos.models import Alumno
 from django.db import transaction
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import permissions, views, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -59,58 +61,38 @@ class PromocionAlumnosView(views.APIView):
         super().initial(request, *args, **kwargs)
 
     def get_nivel_alumno(self, alumno):
-        """
-        Busca el nivel educativo.
-        Como el modelo Alumno no tiene 'nivel', lo buscamos en su Escuela.
-        """
+        """Busca el nivel educativo en la Escuela del alumno."""
         try:
-            # Validamos que tenga escuela asignada y que la escuela tenga el campo nivel
             if alumno.escuela and hasattr(alumno.escuela, "nivel"):
                 return str(alumno.escuela.nivel).upper()
         except Exception:
             pass
-
-        return "PRIMARIA"  # Default seguro si algo falla
+        return "PRIMARIA"
 
     def get_max_grado(self, nivel_str):
         """Devuelve el grado máximo según el nivel detectado."""
         n = str(nivel_str).upper()
         if "PREESCOLAR" in n:
             return 3
-        if "SECUNDARIA" in n:
+        if "SECUNDARIA" in n or "TELESECUNDARIA" in n:
             return 3
-        if "TELESECUNDARIA" in n:
-            return 3
-        return 6  # Primaria y default
+        return 6
 
     def get_alumnos_data(self):
         """Calcula la lógica de promoción sin guardar."""
-        # Filtramos alumnos activos.
-        # Nota: Tu modelo tiene activo=True por default, así que esto es correcto.
         alumnos_activos = Alumno.objects.filter(activo=True)
-
         resultado = {"promover": [], "graduar": [], "errores": []}
-
         for alumno in alumnos_activos:
-            # 1. CORRECCIÓN NOMBRE: Usamos tu método del modelo o el campo 'nombres' (plural)
-            nombre_str = alumno.get_full_name()  # Tu modelo ya tiene este método, ¡usémoslo!
-
+            nombre_str = alumno.get_full_name()
             try:
-                # 2. Validación de grado
                 if not alumno.grado:
                     continue
-
-                # Limpieza de grado (tu modelo usa choices '1', '2', etc, pero prevenimos basura)
                 numeros = "".join(filter(str.isdigit, str(alumno.grado)))
                 if not numeros:
                     raise ValueError(f"Grado inválido: {alumno.grado}")
-
                 grado_actual = int(numeros)
-
-                # 3. CORRECCIÓN NIVEL: Buscamos el nivel en la ESCUELA
                 nivel_detectado = self.get_nivel_alumno(alumno)
                 tope_grado = self.get_max_grado(nivel_detectado)
-
                 if grado_actual >= tope_grado:
                     resultado["graduar"].append(
                         f"{nombre_str} ({nivel_detectado} {grado_actual}° -> Egresado)"
@@ -119,18 +101,42 @@ class PromocionAlumnosView(views.APIView):
                     resultado["promover"].append(
                         f"{nombre_str} ({nivel_detectado} {grado_actual}° -> {grado_actual + 1}°)"
                     )
-
             except Exception as e:
                 print(f"Error procesando alumno {alumno.id}: {e}")
                 resultado["errores"].append(f"{nombre_str}: {str(e)}")
-
         return resultado
 
+    @swagger_auto_schema(
+        operation_description="Simulación de promoción: calcula cuántos alumnos serían promovidos o graduados sin guardar cambios.",
+        responses={
+            200: openapi.Response(
+                description="Resultado de la simulación",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "total_activos": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "a_promover_count": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "a_graduar_count": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "errores_count": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "detalles_promover": openapi.Schema(
+                            type=openapi.TYPE_ARRAY, items=openapi.Schema(type=openapi.TYPE_STRING)
+                        ),
+                        "detalles_graduar": openapi.Schema(
+                            type=openapi.TYPE_ARRAY, items=openapi.Schema(type=openapi.TYPE_STRING)
+                        ),
+                        "detalles_errores": openapi.Schema(
+                            type=openapi.TYPE_ARRAY, items=openapi.Schema(type=openapi.TYPE_STRING)
+                        ),
+                    },
+                ),
+            ),
+            500: openapi.Response("Error interno en la simulación"),
+        },
+    )
     def get(self, request):
         """Simulación (Preview)"""
         try:
             data = self.get_alumnos_data()
-
             response_data = {
                 "total_activos": Alumno.objects.activos().count(),
                 "a_promover_count": len(data["promover"]),
@@ -140,7 +146,6 @@ class PromocionAlumnosView(views.APIView):
                 "detalles_graduar": data["graduar"],
                 "detalles_errores": data["errores"],
             }
-
             serializer = PromocionPreviewSerializer(response_data)
             return Response(serializer.data)
         except Exception as e:
@@ -148,6 +153,34 @@ class PromocionAlumnosView(views.APIView):
             traceback.print_exc()
             return Response({"detail": f"Error interno: {str(e)}"}, status=500)
 
+    @swagger_auto_schema(
+        operation_description="Ejecución real de la promoción masiva de alumnos.",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "confirmed": openapi.Schema(
+                    type=openapi.TYPE_BOOLEAN,
+                    description="Debe ser True para ejecutar la promoción real",
+                )
+            },
+            required=["confirmed"],
+        ),
+        responses={
+            200: openapi.Response(
+                description="Promoción ejecutada exitosamente",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "status": openapi.Schema(type=openapi.TYPE_STRING),
+                        "detail": openapi.Schema(type=openapi.TYPE_STRING),
+                        "promovidos": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "graduados": openapi.Schema(type=openapi.TYPE_INTEGER),
+                    },
+                ),
+            ),
+            400: openapi.Response("Falta la confirmación o valor inválido"),
+        },
+    )
     def post(self, request):
         """Ejecución Real"""
         if not request.data.get("confirmed"):
@@ -167,20 +200,14 @@ class PromocionAlumnosView(views.APIView):
                         continue
 
                     grado_actual = int(numeros)
-
-                    # Detectar nivel
                     nivel_detectado = self.get_nivel_alumno(alumno)
                     tope_grado = self.get_max_grado(nivel_detectado)
 
                     if grado_actual >= tope_grado:
-                        # Graduación (Baja lógica)
                         alumno.activo = False
-                        # Tu modelo no tiene campo 'situacion', así que solo lo desactivamos.
                         graduados += 1
                     else:
-                        # Promoción
                         alumno.grado = str(grado_actual + 1)
-                        # Tu modelo tiene campo 'grupo', lo limpiamos al cambiar de grado
                         alumno.grupo = ""
                         promovidos += 1
 
@@ -188,7 +215,6 @@ class PromocionAlumnosView(views.APIView):
                 except Exception:
                     continue
 
-            # Desactivar ciclo actual
             CicloEscolar.objects.filter(activo=True).update(activo=False)
 
             return Response(

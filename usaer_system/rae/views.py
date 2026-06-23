@@ -10,6 +10,8 @@ from django.conf import settings
 from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 from openpyxl import load_workbook
 from rest_framework import filters, permissions, views, viewsets
 from rest_framework.response import Response
@@ -65,6 +67,36 @@ class RAEInitCaptureView(views.APIView):
 
     permission_classes = [permissions.IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_description="Inicializa la captura de RAE para la escuela del usuario",
+        responses={
+            200: openapi.Response(
+                description="Datos de inicialización",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "registro_id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "ciclo": openapi.Schema(type=openapi.TYPE_STRING),
+                        "escuela": openapi.Schema(type=openapi.TYPE_STRING),
+                        "alumnos": openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                    "curp": openapi.Schema(type=openapi.TYPE_STRING),
+                                    "genero": openapi.Schema(type=openapi.TYPE_STRING),
+                                    "edad": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                    "grado": openapi.Schema(type=openapi.TYPE_STRING),
+                                },
+                            ),
+                        ),
+                    },
+                ),
+            ),
+            400: openapi.Response("Error de datos o configuración (ej. sin escuela asignada)"),
+        },
+    )
     def get(self, request):
         user = request.user
         escuela = user.escuela
@@ -104,6 +136,7 @@ class RAEInitCaptureView(views.APIView):
                 "registro_id": registro.id,
                 "ciclo": ciclo.nombre,
                 "escuela": escuela.nombre,
+                "cerrado": registro.cerrado,
                 "alumnos": serializer.data,
             }
         )
@@ -117,6 +150,64 @@ class RAEBulkSaveView(views.APIView):
 
     permission_classes = [permissions.IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_description="Guardado masivo de datos RAE",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "registro_id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                "alumnos": openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                            "ceg": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "bv": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "so": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "hp": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "scg": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "dmo": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "di": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "dme": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "psicosocial": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "dm": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "dsc": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "dsco": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "dsa": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "tea": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "tda": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "asi": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "asc": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "ass": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "asa": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "asp": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "ot": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "psicologia": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "comunicacion": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "psicomotricidad": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "trabajo_social": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "aprendizaje": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "nuevo_ingreso": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "subsecuente": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "diagnostico": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "educativo": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "deteccion": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "psicopedagogico": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "plan": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "modelo": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        },
+                    ),
+                ),
+            },
+            required=["registro_id", "alumnos"],
+        ),
+        responses={
+            200: openapi.Response("Datos guardados exitosamente"),
+            400: openapi.Response("Error de validación en los datos"),
+            404: openapi.Response("Registro RAE no encontrado"),
+        },
+    )
     def post(self, request):
         serializer = BulkRAESaveSerializer(data=request.data)
         if not serializer.is_valid():
@@ -131,6 +222,15 @@ class RAEBulkSaveView(views.APIView):
             qs_reg = qs_reg.filter(escuela=request.user.escuela)
 
         registro = get_object_or_404(qs_reg)
+
+        # Verificar si el registro está cerrado
+        if registro.cerrado:
+            return Response(
+                {
+                    "detail": "Este registro RAE está cerrado. No se pueden modificar los datos. Solicita a un administrador que lo reabra."
+                },
+                status=403,
+            )
 
         # Campos permitidos
         campos = [
@@ -209,6 +309,17 @@ class ExportRAEView(views.APIView):
 
     permission_classes = [permissions.IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_description="Exporta el reporte RAE de una escuela en formato Excel",
+        responses={
+            200: openapi.Response(
+                description="Archivo Excel generado",
+                content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            ),
+            404: openapi.Response("Registro no encontrado"),
+            500: openapi.Response("Error interno al generar el archivo"),
+        },
+    )
     def get(self, request, pk):
         registro_id = pk
         try:
@@ -513,6 +624,18 @@ class ExportAllRAEView(views.APIView):
         ws["C76"] = config.ubicacion_centro if config else "Juan Aldama, Chihuahua"
         ws["N76"] = date.today().strftime("%d/%m/%Y")
 
+    @swagger_auto_schema(
+        operation_description="Exporta TODOS los registros RAE del ciclo actual en un solo archivo Excel multi-hoja",
+        responses={
+            200: openapi.Response(
+                description="Archivo Excel multi-hoja generado",
+                content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            ),
+            403: openapi.Response("No tienes permisos para exportar todos los registros"),
+            404: openapi.Response("No hay registros para exportar"),
+            500: openapi.Response("Error interno al generar el archivo"),
+        },
+    )
     def get(self, request):
         roles_totales = ["ADMIN", "SECRETARIO"]
         if not (request.user.is_superuser or getattr(request.user, "role", "") in roles_totales):
@@ -592,3 +715,159 @@ class ExportAllRAEView(views.APIView):
         )
         response["Content-Disposition"] = "attachment; filename=Todos_los_Registros_RAE.xlsx"
         return response
+
+
+# --- 6. PROGRESO RAE (Dashboard) ---
+
+
+class RAEProgressView(views.APIView):
+    """
+    Devuelve el progreso de captura RAE.
+    GET /rae/progreso/ -> lista de escuelas con total/completados/porcentaje
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    # Todos los campos booleanos que definen "completitud"
+    CAMPOS_COMPLETITUD = [
+        "ceg",
+        "bv",
+        "so",
+        "hp",
+        "scg",
+        "dmo",
+        "di",
+        "dme",
+        "psicosocial",
+        "dm",
+        "dsc",
+        "dsco",
+        "dsa",
+        "tda",
+        "tea",
+        "asi",
+        "asc",
+        "asa",
+        "asp",
+        "ass",
+        "ot",
+        "psicologia",
+        "comunicacion",
+        "psicomotricidad",
+        "trabajo_social",
+        "aprendizaje",
+        "nuevo_ingreso",
+        "subsecuente",
+        "diagnostico",
+        "educativo",
+        "deteccion",
+        "psicopedagogico",
+        "plan",
+        "modelo",
+    ]
+
+    @swagger_auto_schema(
+        operation_description="Devuelve el progreso de captura RAE por escuela",
+        responses={200: "Lista de progreso por escuela"},
+    )
+    def get(self, request):
+        try:
+            ciclo = get_current_ciclo_escolar_instance()
+        except Exception as e:
+            return Response({"detail": str(e)}, status=400)
+
+        qs = RegistroRAE.objects.filter(ciclo_escolar=ciclo).select_related("escuela")
+
+        # Filtrar por rol
+        roles_totales = ["ADMIN", "SECRETARIO"]
+        if not (request.user.is_superuser or getattr(request.user, "role", "") in roles_totales):
+            if hasattr(request.user, "escuela") and request.user.escuela:
+                qs = qs.filter(escuela=request.user.escuela)
+            else:
+                return Response([])
+
+        resultados = []
+        for registro in qs:
+            total = registro.detalles_alumnos.count()
+            if total == 0:
+                continue
+
+            # Construir Q OR para cualquier campo en True
+            q_completitud = Q()
+            for campo in self.CAMPOS_COMPLETITUD:
+                q_completitud |= Q(**{campo: True})
+
+            completados = registro.detalles_alumnos.filter(q_completitud).count()
+            porcentaje = round((completados / total) * 100, 1)
+
+            resultados.append(
+                {
+                    "escuela_id": registro.escuela.id,
+                    "escuela_nombre": registro.escuela.nombre,
+                    "escuela_cct": registro.escuela.cct,
+                    "registro_id": registro.id,
+                    "total_alumnos": total,
+                    "completados": completados,
+                    "porcentaje": porcentaje,
+                    "cerrado": registro.cerrado,
+                }
+            )
+
+        resultados.sort(key=lambda r: r["escuela_nombre"])
+        return Response(resultados)
+
+
+# --- 7. CERRAR / REABRIR REGISTRO RAE ---
+
+
+class RAECerrarView(views.APIView):
+    """
+    Cierra o reabre un registro RAE.
+    POST /rae/cerrar/<pk>/  con {"cerrado": true/false}
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_description="Cierra o reabre un registro RAE",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "cerrado": openapi.Schema(
+                    type=openapi.TYPE_BOOLEAN,
+                    description="true para cerrar, false para reabrir",
+                ),
+            },
+            required=["cerrado"],
+        ),
+        responses={
+            200: "Estado actualizado",
+            403: "No tienes permiso",
+            404: "Registro no encontrado",
+        },
+    )
+    def post(self, request, pk):
+        roles_totales = ["ADMIN", "SECRETARIO"]
+        if not (request.user.is_superuser or getattr(request.user, "role", "") in roles_totales):
+            return Response(
+                {"detail": "Solo administradores y secretarios pueden cerrar/reabrir registros."},
+                status=403,
+            )
+
+        registro = get_object_or_404(RegistroRAE, pk=pk)
+        cerrado = request.data.get("cerrado", False)
+
+        if not isinstance(cerrado, bool):
+            return Response({"detail": "El campo 'cerrado' debe ser true o false."}, status=400)
+
+        registro.cerrado = cerrado
+        registro.save(update_fields=["cerrado"])
+
+        accion = "cerrado" if cerrado else "reabierto"
+        return Response(
+            {
+                "detail": f"Registro {accion} exitosamente.",
+                "registro_id": registro.id,
+                "cerrado": registro.cerrado,
+            }
+        )

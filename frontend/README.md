@@ -1,73 +1,28 @@
-# React + TypeScript + Vite
+# USAER 7607 - Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Frontend application for the USAER 7607 system, built with React, TypeScript, and Vite.
 
-Currently, two official plugins are available:
+## Setup & Development
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+1. Install dependencies: `npm install`
+2. Start the development server: `npm run dev`
 
-## React Compiler
+## E2E Testing
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+The project uses Playwright for end-to-end testing.
 
-## Expanding the ESLint configuration
+### Local Execution
+To run tests locally, ensure the backend is running (e.g., via `start-backend.bat`).
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+**CRITICAL**: In local development with SQLite, run tests with a single worker to avoid race conditions, database locks, and rate-limit spikes:
+```bash
+npx playwright test --workers=1
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Auth Strategy
+The suite uses a **setup project** (`tests/e2e/auth.setup.ts`) that authenticates an admin user once and saves the state to `.auth/admin.json`, which is then reused by other tests to speed up execution.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### Troubleshooting
+- **429 Too Many Requests**: Check `usaer_system/usaer_system/e2e_settings.py` for throttle rate overrides.
+- **LoadingProvider Errors**: Ensure `LoadingProvider` wraps the application routes in `App.tsx` to avoid context errors during lazy loading.
+- **DataTable Flakiness**: Use row-based locators (`page.locator('tr').filter({ hasText: ... })`) instead of generic `getByText` to avoid strict mode violations between mobile and desktop views.

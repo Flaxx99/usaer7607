@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { 
-  FileText, Edit2, CheckCircle, FileSpreadsheet, XCircle
+  FileText, Edit2, CheckCircle, FileSpreadsheet, XCircle, Lock, BarChart3, School
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { raeApi } from '../../api/rae';
-import type { RegistroRAE } from '../../interfaces/rae';
+import type { RAEProgressItem, RegistroRAE } from '../../interfaces/rae';
 import { useLoading } from '../../context/LoadingContext';
 import { ErrorState } from '../../components/Skeletons';
 import { DataTable } from '../../components/DataTable';
@@ -24,14 +24,37 @@ const RAERecordsList = () => {
         queryFn: () => raeApi.getMyRecords(page),
     });
 
+    const { data: progressData } = useQuery({
+        queryKey: ['rae_progress'],
+        queryFn: raeApi.getProgress,
+        refetchInterval: 30_000, // refresh each 30s
+    });
+
     const results = recordsData?.results || [];
     const totalCount = recordsData?.count || 0;
 
-    // Local filter since getMyRecords might not support server-side search
-    const filteredRecords = results.filter((r: RegistroRAE) => 
+    // Merge progress info into records
+    const progressMap = new Map<number, RAEProgressItem>();
+    (progressData || []).forEach(p => progressMap.set(p.registro_id, p));
+
+    const recordsWithProgress = results.map(r => ({
+        ...r,
+        _progress: progressMap.get(r.id),
+    }));
+
+    // Local filter
+    const filteredRecords = recordsWithProgress.filter((r: RegistroRAE & { _progress?: RAEProgressItem }) => 
         r.escuela_nombre?.toLowerCase().includes(search.toLowerCase()) || 
         r.ciclo_nombre?.toLowerCase().includes(search.toLowerCase())
     );
+
+    // Overall stats
+    const totalEscuelas = progressData?.length || 0;
+    const escuelasCompletas = progressData?.filter(p => p.porcentaje === 100 && !p.cerrado).length || 0;
+    const escuelasCerradas = progressData?.filter(p => p.cerrado).length || 0;
+    const progresoGlobal = totalEscuelas > 0
+        ? Math.round(progressData!.reduce((s, p) => s + p.porcentaje, 0) / totalEscuelas)
+        : 0;
 
     const downloadBlob = (blob: Blob, filename: string) => {
         const url = window.URL.createObjectURL(blob);
@@ -60,11 +83,43 @@ const RAERecordsList = () => {
         }
     };
 
-    const columns: ColumnDef<RegistroRAE>[] = [
+    const columns: ColumnDef<RegistroRAE & { _progress?: RAEProgressItem }>[] = [
         {
             accessorKey: 'escuela_nombre',
             header: 'Escuela',
-            cell: ({ row }) => <span className="font-bold text-sm">{row.original.escuela_nombre || 'N/A'}</span>
+            cell: ({ row }) => (
+                <div className="flex items-center gap-2">
+                    <span className="font-bold text-sm">{row.original.escuela_nombre || 'N/A'}</span>
+                    {row.original.cerrado && (
+                        <Lock size={14} className="text-warning" aria-label="Registro cerrado" />
+                    )}
+                </div>
+            )
+        },
+        {
+            id: 'progreso',
+            header: 'Captura',
+            cell: ({ row }) => {
+                const prog = row.original._progress;
+                if (!prog) return <span className="text-xs opacity-40">—</span>;
+                const pct = prog.porcentaje;
+                const color = pct === 100 ? 'progress-success' : pct >= 50 ? 'progress-info' : 'progress-warning';
+                return (
+                    <div className="flex items-center gap-2 min-w-[120px]">
+                        <progress
+                            className={`progress ${color} w-20 h-3`}
+                            value={pct}
+                            max={100}
+                        />
+                        <span className={`text-xs font-bold ${pct === 100 ? 'text-success' : 'opacity-60'}`}>
+                            {pct}%
+                        </span>
+                        <span className="text-[10px] opacity-40">
+                            ({prog.completados}/{prog.total_alumnos})
+                        </span>
+                    </div>
+                );
+            }
         },
         {
             accessorKey: 'ciclo_nombre',
@@ -143,6 +198,56 @@ const RAERecordsList = () => {
                     </div>
                 </div>
             </div>
+
+            {/* PROGRESS OVERVIEW */}
+            {progressData && progressData.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="card bg-base-100 shadow-sm border border-base-300">
+                        <div className="card-body p-4 flex flex-row items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                                <BarChart3 size={20} className="text-primary" />
+                            </div>
+                            <div>
+                                <p className="text-2xl font-black">{progresoGlobal}%</p>
+                                <p className="text-xs opacity-50 font-semibold">Progreso Global</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="card bg-base-100 shadow-sm border border-base-300">
+                        <div className="card-body p-4 flex flex-row items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center">
+                                <CheckCircle size={20} className="text-success" />
+                            </div>
+                            <div>
+                                <p className="text-2xl font-black">{escuelasCompletas}</p>
+                                <p className="text-xs opacity-50 font-semibold">Completas</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="card bg-base-100 shadow-sm border border-base-300">
+                        <div className="card-body p-4 flex flex-row items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-warning/10 flex items-center justify-center">
+                                <Lock size={20} className="text-warning" />
+                            </div>
+                            <div>
+                                <p className="text-2xl font-black">{escuelasCerradas}</p>
+                                <p className="text-xs opacity-50 font-semibold">Cerradas</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="card bg-base-100 shadow-sm border border-base-300">
+                        <div className="card-body p-4 flex flex-row items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-info/10 flex items-center justify-center">
+                                <School size={20} className="text-info" />
+                            </div>
+                            <div>
+                                <p className="text-2xl font-black">{totalEscuelas}</p>
+                                <p className="text-xs opacity-50 font-semibold">Escuelas</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <DataTable 
                 data={filteredRecords} 

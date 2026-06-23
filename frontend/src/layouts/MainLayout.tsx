@@ -5,6 +5,8 @@ import {
   Settings, AlertTriangle, FileCheck, Mail, Megaphone, 
   FolderOpen, ClipboardList, BookOpen, Clock, Layers, LogOut, Menu, X, Bell
 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import client from '../api/client';
 
 const ROLES_MAP: Record<string, string> = {
     'DIRECTOR': 'Director(a)',
@@ -72,6 +74,18 @@ const MainLayout = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
+
+  const { data: racPendientes } = useQuery({
+      queryKey: ['rac_pendientes'],
+      queryFn: async () => {
+          const res = await client.get('/rac/pendientes/');
+          return res.data as { total_pendientes: number; ciclo: string };
+      },
+      refetchInterval: 60_000,
+      enabled: !!userRoleCode && (userRoleCode === 'ADMIN' || userRoleCode === 'SECRETARIO' || userRoleCode === 'MAESTRO_APOYO'),
+  });
+
+  const racBadgeCount = racPendientes?.total_pendientes ?? 0;
 
   const filteredMenuItems = MENU_CONFIG.filter(item => {
     if (isSuperUser) return true;
@@ -141,7 +155,12 @@ const MainLayout = () => {
                  aria-current={isActive ? 'page' : undefined}
                >
                  <Icon size={20} className={isActive ? 'text-white' : 'group-hover:text-primary transition-colors'} />
-                 <span className="text-sm font-semibold">{item.label}</span>
+                 <span className="text-sm font-semibold flex-1">{item.label}</span>
+                 {item.label === 'R.A.C.' && racBadgeCount > 0 && (
+                   <span className="badge badge-error badge-xs font-bold animate-pulse">
+                     {racBadgeCount > 99 ? '99+' : racBadgeCount}
+                   </span>
+                 )}
                </Link>
 
             );

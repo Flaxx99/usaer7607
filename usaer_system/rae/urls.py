@@ -6,7 +6,9 @@ from .views import (
     ExportAllRAEView,
     ExportRAEView,
     RAEBulkSaveView,
+    RAECerrarView,
     RAEInitCaptureView,
+    RAEProgressView,
     RegistroRAEViewSet,
 )
 
@@ -28,6 +30,10 @@ urlpatterns = [
     path("exportar_excel/<int:pk>/", ExportRAEView.as_view(), name="exportar_rae_excel"),
     # 5. Exportar Todo
     path("exportar_todo_excel/", ExportAllRAEView.as_view(), name="exportar_todo_rae_excel"),
+    # 6. Progreso (Dashboard)
+    path("progreso/", RAEProgressView.as_view(), name="rae_progreso"),
+    # 7. Cerrar / Reabrir
+    path("cerrar/<int:pk>/", RAECerrarView.as_view(), name="rae_cerrar"),
     # Rutas por defecto del router (opcional, para /api/rae/pk/ etc)
     path("", include(router.urls)),
 ]

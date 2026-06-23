@@ -54,6 +54,7 @@ export interface RegistroRAE {
     docente_mujeres: number;
     escuela_nombre?: string;
     ciclo_nombre?: string;
+    cerrado?: boolean;
 }
 
 export interface RAEInitResponse {
@@ -61,4 +62,16 @@ export interface RAEInitResponse {
     ciclo: string;
     escuela: string;
     alumnos: RAEAlumno[];
+    cerrado: boolean;
+}
+
+export interface RAEProgressItem {
+    escuela_id: number;
+    escuela_nombre: string;
+    escuela_cct: string;
+    registro_id: number;
+    total_alumnos: number;
+    completados: number;
+    porcentaje: number;
+    cerrado: boolean;
 }

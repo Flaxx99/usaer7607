@@ -242,10 +242,10 @@ const ListaCiclos = () => {
                         <CheckCircle size={14} /> Activar
                     </button>
                 )}
-                <button className="btn btn-ghost btn-xs text-primary" onClick={() => handleOpenEdit(row.original)}>
+                <button className="btn btn-outline btn-xs btn-primary" onClick={() => handleOpenEdit(row.original)}>
                     <Edit2 size={14} />
                 </button>
-                <button className="btn btn-ghost btn-xs text-error" onClick={() => handleDelete(row.original.id)}>
+                <button className="btn btn-outline btn-xs btn-error" onClick={() => handleDelete(row.original.id)}>
                     <Trash2 size={14} />
                 </button>
             </div>

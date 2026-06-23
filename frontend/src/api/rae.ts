@@ -1,6 +1,6 @@
 import client from './client';
 import type { PaginatedResponse } from '../interfaces/common';
-import type { RegistroRAE, RAEAlumno, RAEInitResponse } from '../interfaces/rae';
+import type { RAEProgressItem, RegistroRAE, RAEAlumno, RAEInitResponse } from '../interfaces/rae';
 
 export const raeApi = {
     getMyRecords: async (page = 1): Promise<PaginatedResponse<RegistroRAE>> => {
@@ -25,6 +25,14 @@ export const raeApi = {
         const response = await client.get('/rae/exportar_todo_excel/', {
             responseType: 'blob',
         });
+        return response.data;
+    },
+    getProgress: async (): Promise<RAEProgressItem[]> => {
+        const response = await client.get('/rae/progreso/');
+        return response.data;
+    },
+    cerrarRegistro: async (id: number, cerrado: boolean) => {
+        const response = await client.post(`/rae/cerrar/${id}/`, { cerrado });
         return response.data;
     },
 };

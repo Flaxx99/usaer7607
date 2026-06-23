@@ -201,6 +201,47 @@ class RegistroRACViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(qs, many=True)
         return Response(serializer.data)
 
+    @action(detail=False, methods=["get"])
+    def pendientes(self, request):
+        """
+        Devuelve el conteo de alumnos activos SIN registro RAC en el ciclo actual.
+        GET /rac/pendientes/
+        """
+        from alumnos.models import Alumno
+
+        try:
+            ciclo_actual = get_current_ciclo_escolar_instance()
+        except Exception:
+            return Response({"detail": "No hay ciclo escolar activo."}, status=400)
+
+        user = self.request.user
+        qs_alumnos = Alumno.objects.activos()
+
+        # Filtro por escuela según rol
+        if getattr(user, "role", "") == "MAESTRO_APOYO":
+            qs_alumnos = qs_alumnos.filter(profesor=user)
+        elif not (user.is_superuser or getattr(user, "role", "") in ["ADMIN", "SECRETARIO"]):
+            if hasattr(user, "escuela") and user.escuela:
+                qs_alumnos = qs_alumnos.filter(escuela=user.escuela)
+            else:
+                qs_alumnos = Alumno.objects.none()
+
+        # IDs de alumnos que YA tienen RAC en el ciclo actual
+        ids_con_rac = RegistroRAC.objects.filter(
+            ciclo_escolar=ciclo_actual,
+            alumno__in=qs_alumnos,
+        ).values_list("alumno_id", flat=True)
+
+        pendientes = qs_alumnos.exclude(id__in=ids_con_rac)
+        total = pendientes.count()
+
+        return Response(
+            {
+                "total_pendientes": total,
+                "ciclo": ciclo_actual.nombre,
+            }
+        )
+
 
 # --- CLASE BASE PARA EXPORTACIÓN (DRY) ---
 

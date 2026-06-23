@@ -171,8 +171,8 @@ const ListaEscuelas = () => {
         header: 'Acciones',
         cell: ({ row }) => (
             <div className="flex justify-center gap-2">
-                <button className="btn btn-ghost btn-xs text-primary" onClick={() => handleOpenEdit(row.original)}><Edit2 size={14} /></button>
-                <button className="btn btn-ghost btn-xs text-error" onClick={() => handleDelete(row.original.id)}><Trash2 size={14} /></button>
+                <button className="btn btn-outline btn-xs btn-primary" onClick={() => handleOpenEdit(row.original)}><Edit2 size={14} /></button>
+                <button className="btn btn-outline btn-xs btn-error" onClick={() => handleDelete(row.original.id)}><Trash2 size={14} /></button>
             </div>
         )
     }

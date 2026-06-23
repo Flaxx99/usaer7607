@@ -28,6 +28,11 @@ class RegistroRAE(models.Model):
         verbose_name="Creado por",
     )
     fecha_creacion = models.DateTimeField(auto_now_add=True)
+    cerrado = models.BooleanField(
+        "Registro cerrado",
+        default=False,
+        help_text="Una vez cerrado, no se puede modificar la captura. Solo se puede reabrir desde administración.",
+    )
     docente_hombres = models.PositiveSmallIntegerField(
         default=0, verbose_name="Número de Docentes Hombres"
     )

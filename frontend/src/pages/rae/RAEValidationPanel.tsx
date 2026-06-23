@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { 
-  ArrowLeft, Download, Eye, Users, CheckCircle, XCircle
+  ArrowLeft, Download, Eye, Users, CheckCircle, XCircle, Lock, Unlock
 } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { raeApi } from '../../api/rae';
@@ -14,6 +14,7 @@ import { LoadingButton } from '../../components/LoadingButton';
 const RAEValidationPanel = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
     const { showLoading, hideLoading } = useLoading();
     const [selectedTotal, setSelectedTotal] = useState<{ field: string, value: boolean } | null>(null);
 
@@ -23,7 +24,32 @@ const RAEValidationPanel = () => {
         enabled: !!id,
     });
 
+    const cerrado = initData?.cerrado ?? false;
+
+    const cerrarMutation = useMutation({
+        mutationFn: (nuevoEstado: boolean) => raeApi.cerrarRegistro(Number(id), nuevoEstado),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['rae_capture', id] });
+            queryClient.invalidateQueries({ queryKey: ['rae_records'] });
+            queryClient.invalidateQueries({ queryKey: ['rae_progress'] });
+        },
+    });
+
     const [exporting, setExporting] = useState(false);
+
+    const handleCerrar = async () => {
+        const accion = cerrado ? 'reabrir' : 'cerrar';
+        if (!confirm(`¿Estás seguro de ${accion} este registro RAE?`)) return;
+        try {
+            showLoading();
+            await cerrarMutation.mutateAsync(!cerrado);
+            toast.success(`Registro ${cerrado ? 'reabierto' : 'cerrado'} exitosamente.`);
+        } catch {
+            toast.error('Error al cambiar el estado del registro.');
+        } finally {
+            hideLoading();
+        }
+    };
 
     const handleExport = async () => {
         try {
@@ -71,23 +97,46 @@ const RAEValidationPanel = () => {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div className="flex items-center gap-3">
                     <button 
-                        className="btn btn-ghost btn-sm gap-2" 
+                         className="btn btn-primary btn-sm gap-2"
                         onClick={() => navigate('/rae/capture/' + id)}
                     >
                         <ArrowLeft size={18} />
                         Volver a Captura
                     </button>
                     <h1 className="text-2xl font-black tracking-tight">Validación de Totales RAE</h1>
+                    {cerrado && (
+                        <span className="badge badge-warning gap-1">
+                            <Lock size={14} /> Cerrado
+                        </span>
+                    )}
                 </div>
-                <LoadingButton
-                    className="btn btn-success px-8 gap-2 shadow-lg hover:scale-105 transition-transform"
-                    icon={Download}
-                    loading={exporting}
-                    onClick={handleExport}
-                >
-                    Descargar Archivo Oficial
-                </LoadingButton>
+                <div className="flex gap-2">
+                    <button
+                        className={`btn gap-2 ${cerrado ? 'btn-warning' : 'btn-outline btn-warning'}`}
+                        onClick={handleCerrar}
+                        disabled={cerrarMutation.isPending}
+                    >
+                        {cerrado ? <Unlock size={16} /> : <Lock size={16} />}
+                        {cerrado ? 'Reabrir Registro' : 'Cerrar Registro'}
+                    </button>
+                    <LoadingButton
+                        className="btn btn-success px-8 gap-2 shadow-lg hover:scale-105 transition-transform"
+                        icon={Download}
+                        loading={exporting}
+                        onClick={handleExport}
+                    >
+                        Descargar Archivo Oficial
+                    </LoadingButton>
+                </div>
             </div>
+
+            {cerrado && (
+                <div className="alert alert-warning shadow-sm">
+                    <Lock size={20} />
+                    <span className="font-semibold">Este registro RAE está cerrado.</span>
+                    <span className="text-sm opacity-70">No se pueden modificar los datos de captura. Solo un administrador o secretario puede reabrirlo.</span>
+                </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
                 {categories.map(cat => (
