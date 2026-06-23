@@ -33,7 +33,7 @@ const RACStudentTimeline = () => {
     });
 
     // Cargar historial RAC del alumno
-    const { data: racRecords, isLoading: loadingRAC, refetch } = useQuery({
+    const { data: racRecords, isLoading: loadingRAC } = useQuery({
         queryKey: ['rac_student', alumnoId],
         queryFn: () => racApi.getByAlumno(Number(alumnoId)),
         enabled: !!alumnoId,

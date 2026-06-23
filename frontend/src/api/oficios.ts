@@ -2,8 +2,10 @@ import client from './client';
 import type { PaginatedResponse } from '../interfaces/common';
 import type { Oficio } from '../interfaces/oficio';
 
-export const getOficios = async (page = 1): Promise<PaginatedResponse<Oficio>> => {
-    const response = await client.get(`/api/oficios/?page=${page}`);
+export const getOficios = async (page = 1, search = ''): Promise<PaginatedResponse<Oficio>> => {
+    const params = new URLSearchParams({ page: String(page) });
+    if (search) params.append('search', search);
+    const response = await client.get(`/api/oficios/?${params}`);
     return response.data;
 };
 

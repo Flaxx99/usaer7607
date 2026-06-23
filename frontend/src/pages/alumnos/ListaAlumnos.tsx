@@ -8,7 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { 
   Plus, Users, Edit2, Trash2, 
   Save, School as SchoolIcon, Sparkles, Filter,
-  CheckCircle, XCircle, Pencil, FileText, ClipboardList
+  CheckCircle, XCircle, Pencil, ClipboardList
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
