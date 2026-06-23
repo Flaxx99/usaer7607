@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm, Controller } from 'react-hook-form';
 import type { SubmitHandler } from 'react-hook-form';
@@ -7,7 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { 
   Plus, Users, Edit2, Trash2, 
   Save, School as SchoolIcon, Sparkles, Filter,
-  CheckCircle, XCircle, Pencil
+  CheckCircle, XCircle, Pencil, FileText, ClipboardList
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
@@ -23,6 +24,7 @@ import { useConfirmDialog } from '../../components/useConfirmDialog';
 import type { ColumnDef } from '@tanstack/react-table';
 
 const ListaAlumnos = () => {
+  const navigate = useNavigate();
   const [busqueda, setBusqueda] = useState('');
   const busquedaDebounced = useDebouncedValue(busqueda, 300);
   const [filtroEscuela, setFiltroEscuela] = useState<string>('TODAS');
@@ -33,6 +35,7 @@ const ListaAlumnos = () => {
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [alumnoEditar, setAlumnoEditar] = useState<Alumno | null>(null);
+  const [highlightedStudentId, setHighlightedStudentId] = useState<number | null>(null);
   
   const queryClient = useQueryClient();
   const { register, handleSubmit, reset, watch, control, formState: { errors } } = useForm<AlumnoFormData>({
@@ -43,6 +46,21 @@ const ListaAlumnos = () => {
   useEffect(() => {
     setPage(1);
   }, [busquedaDebounced]);
+
+  useEffect(() => {
+    if (highlightedStudentId) {
+      // Esperamos un momento a que React Query termine de refetch y renderizar la tabla
+      const timer = setTimeout(() => {
+        const element = document.getElementById(`student-row-${highlightedStudentId}`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        // Limpiamos el resaltado después de un tiempo
+        setTimeout(() => setHighlightedStudentId(null), 3000);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [highlightedStudentId]);
 
   const { data: paginatedAlumnos, isLoading: loadingAlumnos, isError, error } = useQuery({
     queryKey: ['alumnos', page, busquedaDebounced, filtroEscuela, filtroCondicion, filtroEstado],
@@ -94,8 +112,9 @@ const ListaAlumnos = () => {
 
   const createMutation = useMutation({
     mutationFn: createAlumno,
-    onSuccess: () => {
+    onSuccess: (newAlumno) => {
       queryClient.invalidateQueries({ queryKey: ['alumnos'] });
+      setHighlightedStudentId(newAlumno.id);
       cerrarModal();
       toast.success(<span className="inline-flex items-center gap-1.5"><CheckCircle size={16} /> ¡Registrado!</span>, { description: 'El alumno ha sido dado de alta exitosamente.' });
     },
@@ -131,25 +150,29 @@ const ListaAlumnos = () => {
     {
         accessorKey: 'nombres',
         header: 'Estudiante / CURP',
-        cell: ({ row }) => {
-            const item = row.original;
-            return (
-                <div className="flex items-center gap-3">
-                    <div className="avatar placeholder">
-                        <div className={`avatar-placeholder ${item.sexo === 'H' ? 'bg-blue-200 text-blue-700' : 'bg-purple-200 text-purple-700'} rounded-full w-10 h-10 font-bold text-lg`}>
-                            {item.nombres.charAt(0)}
-                        </div>
-                    </div>
-                    <div>
-                        <p className="font-bold text-sm leading-tight">{item.nombres} {item.apellido_paterno} {item.apellido_materno}</p>
-                        <div className="flex gap-1 mt-1">
-                            <span className="badge badge-ghost badge-xs font-mono opacity-60">{item.curp}</span>
-                            <span className="badge badge-ghost badge-xs opacity-60">{item.sexo === 'H' ? 'Niño' : 'Niña'}</span>
-                        </div>
-                    </div>
-                </div>
-            );
-        }
+         cell: ({ row }) => {
+             const item = row.original;
+             const isHighlighted = item.id === highlightedStudentId;
+             return (
+                 <div 
+                   id={`student-row-${item.id}`}
+                   className={`flex items-center gap-3 transition-all duration-1000 ${isHighlighted ? 'bg-yellow-200 animate-pulse rounded-lg p-1' : ''}`}
+                 >
+                     <div className="avatar placeholder">
+                         <div className={`avatar-placeholder ${item.sexo === 'H' ? 'bg-blue-200 text-blue-700' : 'bg-purple-200 text-purple-700'} rounded-full w-10 h-10 font-bold text-lg`}>
+                             {item.nombres.charAt(0)}
+                         </div>
+                     </div>
+                     <div>
+                         <p className="font-bold text-sm leading-tight">{item.nombres} {item.apellido_paterno} {item.apellido_materno}</p>
+                         <div className="flex gap-1 mt-1">
+                             <span className="badge badge-ghost badge-xs font-mono opacity-60">{item.curp}</span>
+                             <span className="badge badge-ghost badge-xs opacity-60">{item.sexo === 'H' ? 'Niño' : 'Niña'}</span>
+                         </div>
+                     </div>
+                 </div>
+             );
+         }
     },
     {
         accessorKey: 'escuela',
@@ -204,12 +227,20 @@ const ListaAlumnos = () => {
         id: 'actions',
         header: 'Acciones',
         cell: ({ row }) => (
-            <div className="flex justify-center gap-2">
-                <button className="btn btn-ghost btn-xs text-primary" onClick={() => handleOpenEdit(row.original)}>
-                    <Edit2 size={14} />
+            <div className="flex justify-start gap-1">
+                <button className="btn btn-outline btn-xs btn-primary" onClick={() => handleOpenEdit(row.original)} title="Editar alumno">
+                    <Edit2 size={13} />
                 </button>
-                <button className="btn btn-ghost btn-xs text-error" onClick={() => handleDelete(row.original.id)}>
-                    <Trash2 size={14} />
+                <button className="btn btn-outline btn-xs btn-error" onClick={() => handleDelete(row.original.id)} title="Dar de baja">
+                    <Trash2 size={13} />
+                </button>
+                <div className="divider divider-horizontal mx-0.5" />
+                <button 
+                    className="btn btn-ghost btn-xs text-indigo-600" 
+                    onClick={() => navigate(`/rac/alumno/${row.original.id}`)}
+                    title="Ver RAC del alumno"
+                >
+                    <ClipboardList size={13} />
                 </button>
             </div>
         )
@@ -276,19 +307,11 @@ const ListaAlumnos = () => {
 
   if (isError) return <ErrorState error={error} message="Error al cargar los alumnos. Intenta de nuevo." />;
 
-  if (loadingAlumnos) {
-    return (
-      <div className="max-w-7xl mx-auto p-4 md:p-6">
-        <TableSkeleton rows={10} />
-      </div>
-    );
-  }
-
   return (
-    <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
-      
-      {/* CABECERA */}
-      <div className="card bg-primary text-primary-content shadow-lg border-l-8 border-primary-dark">
+      <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
+        {/* CABECERA */}
+        <div className="card bg-primary text-primary-content shadow-lg border-l-8 border-primary-dark">
+          {/* ... resto del contenido de la cabecera ... */}
         <div className="card-body p-8 flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-6">
             <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shadow-inner">
@@ -365,17 +388,21 @@ const ListaAlumnos = () => {
         </div>
       </div>
       
-      <DataTable 
-        data={alumnos} 
-        columns={columns} 
-        isLoading={loadingAlumnos}
-        totalCount={totalCount}
-        page={page}
-        onPageChange={setPage}
-        onSearchChange={setBusqueda}
-        searchValue={busqueda}
-        placeholder="Apellido, Nombre o CURP..."
-      />
+      {loadingAlumnos ? (
+        <TableSkeleton rows={10} />
+      ) : (
+        <DataTable 
+          data={alumnos} 
+          columns={columns} 
+          isLoading={loadingAlumnos}
+          totalCount={totalCount}
+          page={page}
+          onPageChange={setPage}
+          onSearchChange={setBusqueda}
+          searchValue={busqueda}
+          placeholder="Apellido, Nombre o CURP..."
+        />
+      )}
       
       <Modal
           isOpen={isModalOpen}

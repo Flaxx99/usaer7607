@@ -67,6 +67,7 @@ const RAECaptureGrid = () => {
     const queryClient = useQueryClient();
     const { showLoading, hideLoading } = useLoading();
     const [searchQuery, setSearchQuery] = useState('');
+    const [gradeFilter, setGradeFilter] = useState('TODOS');
     
     const { 
         drafts, 
@@ -96,13 +97,22 @@ const RAECaptureGrid = () => {
         onSettled: () => hideLoading(),
     });
 
+    const uniqueGrades = useMemo(() => {
+        const grades = new Set((initData?.alumnos || []).map(a => a.grado));
+        return ['TODOS', ...Array.from(grades).sort()];
+    }, [initData]);
+
     const filteredAlumnos = useMemo(() => {
-        if (!searchQuery) return initData?.alumnos || [];
-        const q = searchQuery.toLowerCase();
-        return (initData?.alumnos || []).filter(a =>
-            a.alumno_nombre?.toLowerCase().includes(q)
-        );
-    }, [initData, searchQuery]);
+        let list = initData?.alumnos || [];
+        if (searchQuery) {
+            const q = searchQuery.toLowerCase();
+            list = list.filter(a => a.alumno_nombre?.toLowerCase().includes(q));
+        }
+        if (gradeFilter !== 'TODOS') {
+            list = list.filter(a => a.grado === gradeFilter);
+        }
+        return list;
+    }, [initData, searchQuery, gradeFilter]);
 
     const handleSave = () => {
         const updates = Object.entries(drafts).map(([alumId, changes]) => ({
@@ -138,7 +148,7 @@ const RAECaptureGrid = () => {
                 <div className="card-body p-8 flex-row items-center justify-between gap-4 flex-wrap">
                     <div className="flex items-center gap-3">
                         <button 
-                            className="btn btn-ghost btn-sm gap-2" 
+                             className="btn btn-primary btn-sm gap-2"
                             onClick={() => navigate('/rae')}
                         >
                             <ArrowLeft size={18} />
@@ -180,7 +190,18 @@ const RAECaptureGrid = () => {
                     <p className="text-xs text-base-content/50 font-medium italic">
                         Instrucciones: Marque los cuadros correspondientes. Las filas resaltadas en amarillo indican cambios pendientes de guardado.
                     </p>
-                    <div className="w-full sm:w-64"><SearchBar value={searchQuery} onChange={setSearchQuery} placeholder="Buscar alumno por nombre..." /></div>
+                    <div className="flex items-center gap-2">
+                        <select 
+                            className="select select-bordered select-sm"
+                            value={gradeFilter}
+                            onChange={(e) => setGradeFilter(e.target.value)}
+                        >
+                            {uniqueGrades.map(g => (
+                                <option key={g} value={g}>{g === 'TODOS' ? '🎯 Todos los Grados' : `${g}° Grado`}</option>
+                            ))}
+                        </select>
+                        <div className="w-full sm:w-56"><SearchBar value={searchQuery} onChange={setSearchQuery} placeholder="Buscar alumno..." /></div>
+                    </div>
                 </div>
 
                 <div className="overflow-x-auto border rounded-xl">
