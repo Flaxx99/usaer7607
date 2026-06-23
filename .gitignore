@@ -296,3 +296,6 @@ usaer_system/e2e_test_db.sqlite3
 # Playwright reports
 frontend/playwright-report/
 frontend/test-results/
+
+# Playwright auth state
+frontend/.auth/
