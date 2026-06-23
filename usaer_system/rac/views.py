@@ -7,8 +7,10 @@ from ciclos_escolares.utils import get_current_ciclo_escolar_instance
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
 from openpyxl import load_workbook
 from rest_framework import filters, permissions, status, views, viewsets
+from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from .models import RegistroRAC
@@ -175,6 +177,29 @@ class RegistroRACViewSet(viewsets.ModelViewSet):
         if getattr(user, "role", "") == "MAESTRO_APOYO":
             qs = qs.filter(maestro_apoyo=user)
         return qs
+
+    @action(detail=False, methods=["get"])
+    def por_alumno(self, request):
+        """
+        Devuelve todos los registros RAC de un alumno específico (todos los ciclos).
+        GET /rac/por_alumno/?alumno_id=<id>
+        """
+        from alumnos.models import Alumno
+
+        alumno_id = request.query_params.get("alumno_id")
+        if not alumno_id:
+            return Response({"detail": "Falta el parámetro 'alumno_id'."}, status=400)
+
+        get_object_or_404(Alumno, pk=alumno_id)
+
+        qs = (
+            RegistroRAC.objects.filter(alumno_id=alumno_id)
+            .select_related("alumno", "escuela_regular", "maestro_apoyo", "ciclo_escolar")
+            .order_by("-ciclo_escolar__fecha_inicio")
+        )
+
+        serializer = self.get_serializer(qs, many=True)
+        return Response(serializer.data)
 
 
 # --- CLASE BASE PARA EXPORTACIÓN (DRY) ---
