@@ -30,6 +30,10 @@ const RACForm = () => {
     
     const [selectedAlumno, setSelectedAlumno] = useState<Alumno | null>(null);
 
+    // Pre-seleccionar alumno desde query param (si viene de la timeline)
+    const searchParams = new URLSearchParams(window.location.search);
+    const alumnoFromUrl = searchParams.get('alumno');
+
     const { data: alumnos, isLoading: loadingAlumnos } = useQuery({
         queryKey: ['alumnos'],
         queryFn: () => getAlumnos(),
@@ -66,6 +70,14 @@ const RACForm = () => {
             if (alumno) setSelectedAlumno(alumno);
         }
     }, [initialData, alumnos, reset]);
+
+    // Auto-seleccionar alumno desde query param
+    useEffect(() => {
+        if (alumnoFromUrl && alumnos?.results && !id) {
+            const alumno = alumnos?.results?.find(a => String(a.id) === alumnoFromUrl);
+            if (alumno) setSelectedAlumno(alumno);
+        }
+    }, [alumnoFromUrl, alumnos, id]);
 
     useEffect(() => {
         setValue('subclasificacion', '');

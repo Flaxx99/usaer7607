@@ -21,6 +21,7 @@ const GestionIncidencias = lazy(() => import('./pages/incidencias/GestionInciden
 const OficiosList = lazy(() => import('./pages/oficios/OficiosList'));
 const RACList = lazy(() => import('./pages/rac/RACList'));
 const RACForm = lazy(() => import('./pages/rac/RACForm'));
+const RACStudentTimeline = lazy(() => import('./pages/rac/RACStudentTimeline'));
 const RAERecordsList = lazy(() => import('./pages/rae/RAERecordsList'));
 const RAECaptureGrid = lazy(() => import('./pages/rae/RAECaptureGrid'));
 const RAEValidationPanel = lazy(() => import('./pages/rae/RAEValidationPanel'));
@@ -71,8 +72,9 @@ function App() {
                <Route path="/alumnos" element= {<ListaAlumnos/>}/>
                <Route path="/documentos" element={<ListaDocumentos />} />
                <Route path="/rac" element={<RACList />} />
-               <Route path="/rac/nuevo" element={<RACForm />} />
-               <Route path="/rac/editar/:id" element={<RACForm />} />
+                <Route path="/rac/nuevo" element={<RACForm />} />
+                <Route path="/rac/editar/:id" element={<RACForm />} />
+                <Route path="/rac/alumno/:alumnoId" element={<RACStudentTimeline />} />
                <Route path="/rae" element={<RAERecordsList />} />
                <Route path="/rae/capture/:id" element={<RAECaptureGrid />} />
                <Route path="/rae/validate/:id" element={<RAEValidationPanel />} />

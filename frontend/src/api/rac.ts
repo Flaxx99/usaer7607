@@ -7,6 +7,10 @@ export const racApi = {
         const response = await client.get(`/api/rac/?page=${page}`);
         return response.data;
     },
+    getByAlumno: async (alumnoId: number): Promise<RegistroRAC[]> => {
+        const response = await client.get(`/api/rac/por_alumno/?alumno_id=${alumnoId}`);
+        return response.data;
+    },
     saveRecord: async (data: Partial<RegistroRAC>) => {
         if (data.id) {
             const response = await client.patch(`/api/rac/${data.id}/`, data);
