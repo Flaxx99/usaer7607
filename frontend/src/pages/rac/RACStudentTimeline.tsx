@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
     Clock, FileText, Plus, User, ArrowLeft,
-    CheckCircle, XCircle, AlertCircle
+    AlertCircle
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -9,8 +9,6 @@ import { racApi } from '../../api/rac';
 import { getAlumnos } from '../../api/alumnos';
 import { PageSkeleton } from '../../components/Skeletons';
 import { LoadingButton } from '../../components/LoadingButton';
-import { toast } from 'sonner';
-import { useConfirmDialog } from '../../components/useConfirmDialog';
 import type { RegistroRAC } from '../../interfaces/rac';
 import type { Alumno } from '../../interfaces/alumno';
 
@@ -25,7 +23,6 @@ const CLASIFICACION_COLORS: Record<string, string> = {
 const RACStudentTimeline = () => {
     const { alumnoId } = useParams<{ alumnoId: string }>();
     const navigate = useNavigate();
-    const { confirm: confirmDelete, dialog: confirmDialog } = useConfirmDialog();
 
     const [selectedAlumno, setSelectedAlumno] = useState<Alumno | null>(null);
 
