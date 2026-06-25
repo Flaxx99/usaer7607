@@ -80,7 +80,7 @@ class PromocionAlumnosView(views.APIView):
 
     def get_alumnos_data(self):
         """Calcula la lógica de promoción sin guardar."""
-        alumnos_activos = Alumno.objects.filter(activo=True)
+        alumnos_activos = Alumno.objects.filter(activo=True).select_related("escuela")
         resultado = {"promover": [], "graduar": [], "errores": []}
         for alumno in alumnos_activos:
             nombre_str = alumno.get_full_name()
@@ -187,7 +187,7 @@ class PromocionAlumnosView(views.APIView):
             return Response({"detail": "Se requiere confirmar la acción."}, status=400)
 
         with transaction.atomic():
-            alumnos_activos = Alumno.objects.activos()
+            alumnos_activos = Alumno.objects.activos().select_related("escuela")
             promovidos = 0
             graduados = 0
 
