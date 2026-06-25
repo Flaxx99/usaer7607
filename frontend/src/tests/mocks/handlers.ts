@@ -72,5 +72,8 @@ export const handlers = [
     await delay(30);
     return HttpResponse.json({ message: 'RAC registrado correctamente', id: 1 }, { status: 201 });
   }),
+
+  http.get('*/rac/pendientes/', () => HttpResponse.json([])),
+  http.get('*/rae/progreso/', () => HttpResponse.json([])),
 ];
 

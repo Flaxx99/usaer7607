@@ -26,6 +26,13 @@ class ResizeObserverMock {
 }
 global.ResizeObserver = ResizeObserverMock;
 
+// Suprimir warnings de recharts en jsdom (no afectan los tests)
+const originalWarn = console.warn.bind(console);
+console.warn = (msg, ...args) => {
+  if (typeof msg === 'string' && msg.includes('width(0) and height(0) of chart')) return;
+  originalWarn(msg, ...args);
+};
+
 // Iniciar el servidor de MSW antes de todos los tests
 beforeAll(() => server.listen());
 
