@@ -144,17 +144,11 @@ describe('TablonAvisos', () => {
 
         // Ahora deberían aparecer los botones de editar (Edit2)
         await waitFor(() => {
-            // Hay dos avisos, cada uno con botón editar
-            const editButtons = screen.getAllByRole('button', { name: '' });
-            // Buscamos específicamente el icono Edit2 asociado al primer aviso
-            // Más fácil: verificamos que el botón editar existe dentro de la card
+            const editButtons = document.querySelectorAll('.btn-ghost.btn-xs');
+            expect(editButtons.length).toBeGreaterThan(0);
         });
 
-        // Encontramos todos los botones de editar (son los que tienen icono Edit2)
-        // Como no tienen texto, buscamos por aria-label o por número
         const editButtons = document.querySelectorAll('.btn-ghost.btn-xs');
-        expect(editButtons.length).toBeGreaterThan(0);
-
         // Hacemos clic en el primero
         fireEvent.click(editButtons[0]);
 

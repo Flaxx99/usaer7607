@@ -2,14 +2,14 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import ListaDocumentos from '../pages/documentos/ListaDocumentos';
-import { getDocumentos, createDocumento, updateDocumento, deleteDocumento, deleteArchivoExtra } from '../api/documentos';
+import { getDocumentos, createDocumento, deleteDocumento } from '../api/documentos';
 import { getAlumnos } from '../api/alumnos';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 // ── Mocks ──
 vi.mock('../api/documentos', async (importOriginal) => {
     const actual = await importOriginal<typeof import('../api/documentos')>();
-    return { ...actual, getDocumentos: vi.fn(), createDocumento: vi.fn(), updateDocumento: vi.fn(), deleteDocumento: vi.fn(), deleteArchivoExtra: vi.fn() };
+    return { ...actual, getDocumentos: vi.fn(), createDocumento: vi.fn(), deleteDocumento: vi.fn() };
 });
 
 vi.mock('../api/alumnos', async (importOriginal) => {
@@ -177,7 +177,7 @@ describe('ListaDocumentos', () => {
     it('creates a new documento via form submission', async () => {
         vi.mocked(getDocumentos).mockResolvedValue([]);
         vi.mocked(getAlumnos).mockResolvedValue(mockAlumnosList);
-        vi.mocked(createDocumento).mockResolvedValue({ id: 3 } as any);
+        vi.mocked(createDocumento).mockResolvedValue({ id: 3 } as { id: number });
 
         render(<ListaDocumentos />, { wrapper });
 

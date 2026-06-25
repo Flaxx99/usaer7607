@@ -1,5 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import MainLayout from '../layouts/MainLayout';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
@@ -55,17 +56,23 @@ const userTemplate = {
     is_superuser: false,
 };
 
+const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+});
+
 const renderLayout = (route = '/dashboard', userData: Record<string, unknown> | null = userTemplate) => {
     localStorage.clear();
     if (userData) {
         localStorage.setItem('user', JSON.stringify(userData));
     }
     return render(
-        <MemoryRouter initialEntries={[route]}>
-            <Routes>
-                <Route path="*" element={<MainLayout />} />
-            </Routes>
-        </MemoryRouter>
+        <QueryClientProvider client={queryClient}>
+            <MemoryRouter initialEntries={[route]}>
+                <Routes>
+                    <Route path="*" element={<MainLayout />} />
+                </Routes>
+            </MemoryRouter>
+        </QueryClientProvider>
     );
 };
 
@@ -248,13 +255,16 @@ describe('MainLayout', () => {
     });
 
     it('handles invalid localStorage JSON gracefully', () => {
+        queryClient.clear();
         localStorage.setItem('user', 'not-json-at-all');
         render(
-            <MemoryRouter initialEntries={['/dashboard']}>
-                <Routes>
-                    <Route path="*" element={<MainLayout />} />
-                </Routes>
-            </MemoryRouter>
+            <QueryClientProvider client={queryClient}>
+                <MemoryRouter initialEntries={['/dashboard']}>
+                    <Routes>
+                        <Route path="*" element={<MainLayout />} />
+                    </Routes>
+                </MemoryRouter>
+            </QueryClientProvider>
         );
         expect(screen.getByText('Usuario')).toBeInTheDocument();
     });

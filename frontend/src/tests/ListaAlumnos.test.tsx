@@ -2,7 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import ListaAlumnos from '../pages/alumnos/ListaAlumnos';
-import { getAlumnos, createAlumno, updateAlumno, deleteAlumno } from '../api/alumnos';
+import { getAlumnos, createAlumno, deleteAlumno } from '../api/alumnos';
 import { getEscuelas } from '../api/escuelas';
 import { getMaestros } from '../api/usuarios';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
@@ -138,10 +138,9 @@ describe('ListaAlumnos', () => {
 
         render(<ListaAlumnos />, { wrapper });
 
-        // Component returns EARLY with only TableSkeleton during loading
-        // Header and content are NOT rendered
-        expect(screen.queryByText(/Control de Alumnos/i)).not.toBeInTheDocument();
-        expect(screen.queryByText(/Nuevo Ingreso Alumno/i)).not.toBeInTheDocument();
+        // Component renders header + "Nuevo Ingreso" button during loading
+        // but NOT error states
+        expect(screen.getByText(/Control de Alumnos/i)).toBeInTheDocument();
         expect(screen.queryByText(/Error al cargar los alumnos/i)).not.toBeInTheDocument();
     });
 
@@ -201,7 +200,7 @@ describe('ListaAlumnos', () => {
         vi.mocked(getAlumnos).mockResolvedValue({ count: 0, next: null, previous: null, results: [] });
         vi.mocked(getEscuelas).mockResolvedValue(mockEscuelas);
         vi.mocked(getMaestros).mockResolvedValue(mockMaestros);
-        vi.mocked(createAlumno).mockResolvedValue({ id: 3 } as any);
+        vi.mocked(createAlumno).mockResolvedValue({ id: 3 } as { id: number });
 
         const { container } = render(<ListaAlumnos />, { wrapper });
 
@@ -266,8 +265,9 @@ describe('ListaAlumnos', () => {
             expect(screen.getByRole('heading', { name: /Dar de Baja Alumno/i })).toBeInTheDocument();
         });
 
-        // Click the "Dar de Baja" button (exact text to avoid matching heading)
-        fireEvent.click(screen.getByRole('button', { name: /Dar de Baja/i }));
+        // Click the "Dar de Baja" button in the modal (last matching button)
+        // The test has 4 trash buttons (mobile + desktop) and 1 modal confirm button
+        fireEvent.click(screen.getAllByRole('button', { name: /Dar de Baja/i }).slice(-1)[0]);
 
         await waitFor(() => {
             // React Query v5 passes MutationFunctionContext as 2nd arg

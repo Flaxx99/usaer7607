@@ -217,7 +217,7 @@ describe('ListaCiclos', () => {
         });
 
         // Find and click the edit button (rendered as a button with Edit2 icon)
-        const editButtons = document.querySelectorAll('.btn-ghost.btn-xs.text-primary');
+        const editButtons = document.querySelectorAll('.btn-outline.btn-xs.btn-primary');
         expect(editButtons.length).toBeGreaterThan(0);
         fireEvent.click(editButtons[0]);
 
@@ -257,7 +257,7 @@ describe('ListaCiclos', () => {
 
     it('should create a new ciclo', async () => {
         vi.mocked(getCiclos).mockResolvedValue([]);
-        vi.mocked(createCiclo).mockResolvedValue({ id: 3 } as any);
+        vi.mocked(createCiclo).mockResolvedValue({ id: 3 } as { id: number });
 
         render(<ListaCiclos />, { wrapper });
 
@@ -287,7 +287,7 @@ describe('ListaCiclos', () => {
 
     it('should update an existing ciclo', async () => {
         vi.mocked(getCiclos).mockResolvedValue(mockCiclos);
-        vi.mocked(updateCiclo).mockResolvedValue({ id: 1 } as any);
+        vi.mocked(updateCiclo).mockResolvedValue({ id: 1 } as { id: number });
 
         render(<ListaCiclos />, { wrapper });
 
@@ -296,7 +296,7 @@ describe('ListaCiclos', () => {
         });
 
         // Click edit button on the first ciclo
-        const editButtons = document.querySelectorAll('.btn-ghost.btn-xs.text-primary');
+        const editButtons = document.querySelectorAll('.btn-outline.btn-xs.btn-primary');
         fireEvent.click(editButtons[0]);
 
         await waitFor(() => {
@@ -317,7 +317,7 @@ describe('ListaCiclos', () => {
 
     it('should activate a ciclo with confirm dialog', async () => {
         vi.mocked(getCiclos).mockResolvedValue(mockCiclos);
-        vi.mocked(updateCiclo).mockResolvedValue({ id: 2 } as any);
+        vi.mocked(updateCiclo).mockResolvedValue({ id: 2 } as { id: number });
 
         render(<ListaCiclos />, { wrapper });
 
@@ -357,8 +357,8 @@ describe('ListaCiclos', () => {
             expect(screen.getAllByText(/2024-2025/).length).toBeGreaterThan(0);
         });
 
-        // Find delete buttons (btn-ghost btn-xs.text-error)
-        const deleteButtons = document.querySelectorAll('.btn-ghost.btn-xs.text-error');
+        // Find delete buttons (btn-outline btn-xs.btn-error)
+        const deleteButtons = document.querySelectorAll('.btn-outline.btn-xs.btn-error');
         expect(deleteButtons.length).toBeGreaterThan(0);
         fireEvent.click(deleteButtons[0]);
 
@@ -388,7 +388,7 @@ describe('ListaCiclos', () => {
         });
 
         // Click delete on first ciclo
-        const deleteButtons = document.querySelectorAll('.btn-ghost.btn-xs.text-error');
+        const deleteButtons = document.querySelectorAll('.btn-outline.btn-xs.btn-error');
         fireEvent.click(deleteButtons[0]);
 
         await waitFor(() => {

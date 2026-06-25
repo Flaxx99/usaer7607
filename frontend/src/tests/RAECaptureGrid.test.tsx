@@ -58,14 +58,12 @@ vi.mock('../components/LoadingButton', () => ({
             loading,
             disabled,
             className,
-            ...props
         }: {
             children: React.ReactNode;
             onClick?: () => void;
             loading?: boolean;
             disabled?: boolean;
             className?: string;
-            [key: string]: unknown;
         }) => (
             <button
                 className={className}

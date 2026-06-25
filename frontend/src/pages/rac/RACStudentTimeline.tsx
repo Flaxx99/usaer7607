@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import {
     Clock, FileText, Plus, User, ArrowLeft,
     AlertCircle
@@ -24,8 +24,6 @@ const RACStudentTimeline = () => {
     const { alumnoId } = useParams<{ alumnoId: string }>();
     const navigate = useNavigate();
 
-    const [selectedAlumno, setSelectedAlumno] = useState<Alumno | null>(null);
-
     // Cargar datos del alumno
     const { data: alumnosData, isLoading: loadingAlumnos } = useQuery({
         queryKey: ['alumnos'],
@@ -39,12 +37,12 @@ const RACStudentTimeline = () => {
         enabled: !!alumnoId,
     });
 
-    // Setear alumno seleccionado cuando carguen los datos
-    useEffect(() => {
+    // Derivar alumno seleccionado desde los datos cargados
+    const selectedAlumno = useMemo(() => {
         if (alumnosData?.results && alumnoId) {
-            const found = alumnosData.results.find((a: Alumno) => String(a.id) === alumnoId);
-            if (found) setSelectedAlumno(found);
+            return alumnosData.results.find((a: Alumno) => String(a.id) === alumnoId) || null;
         }
+        return null;
     }, [alumnosData, alumnoId]);
 
     if (loadingAlumnos || loadingRAC) {
