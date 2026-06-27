@@ -4,8 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "gentypes": "python ../scripts/generate_types.py",
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "dev:full": "python ../scripts/generate_types.py && vite",
+    "build": "python ../scripts/generate_types.py && tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest",

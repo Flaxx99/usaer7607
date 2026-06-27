@@ -3,9 +3,13 @@ from django.contrib.auth import get_user_model
 from django.db.models import ProtectedError
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
+from pydantic import ValidationError
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from services.dto import AlumnoPromoverCommitResponse, AlumnoPromoverResponse, PromoverPayload
+from services.error_handling import error_400, error_403, pydantic_error_response
+from services.promocion_service import ejecutar_promocion_simple, simular_promocion_simple
 
 from .models import Alumno
 from .permissions import IsMaestroOAdmin
@@ -145,110 +149,55 @@ class AlumnoViewSet(viewsets.ModelViewSet):
         user = request.user
         roles_autorizados = [User.Role.ADMINISTRADOR.value, User.Role.SECRETARIO.value]
         if not (user.is_superuser or user.role in roles_autorizados):
-            return Response(
-                {"detail": "Solo administradores y secretarios pueden promover alumnos."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+            return error_403("Solo administradores y secretarios pueden promover alumnos.")
 
         try:
             ciclo_actual = get_current_ciclo_escolar_instance()
         except Exception as e:
-            return Response({"detail": f"Error al determinar ciclo escolar: {str(e)}"}, status=400)
+            return error_400(f"Error al determinar ciclo escolar: {e}")
 
         # FILTRO DE IDEMPOTENCIA: Solo alumnos activos que NO hayan sido promovidos en este ciclo
         alumnos_activos = Alumno.objects.activos().exclude(last_promotion_cycle=ciclo_actual)
 
-        promovidos = []
-        graduados = []
-        omitidos = []
-
-        _grade_exceptions = (ValueError, TypeError)
-        for alumno in alumnos_activos:
-            try:
-                grado_actual = int(alumno.grado)
-                if grado_actual >= 6:
-                    graduados.append(
-                        {
-                            "id": alumno.id,
-                            "nombre": alumno.get_full_name(),
-                            "grado_actual": alumno.grado,
-                        }
-                    )
-                else:
-                    promovidos.append(
-                        {
-                            "id": alumno.id,
-                            "nombre": alumno.get_full_name(),
-                            "grado_actual": alumno.grado,
-                            "grado_siguiente": str(grado_actual + 1),
-                        }
-                    )
-            except _grade_exceptions:
-                omitidos.append(
-                    {
-                        "id": alumno.id,
-                        "nombre": alumno.get_full_name(),
-                        "razon": f"Grado '{alumno.grado}' no es un número válido.",
-                    }
-                )
-
         # GET = simulación
         if request.method == "GET":
+            promovidos, graduados, omitidos = simular_promocion_simple(alumnos_activos)
             return Response(
-                {
-                    "simulation": True,
-                    "ciclo_actual": ciclo_actual.nombre,
-                    "total_pendientes": alumnos_activos.count(),
-                    "a_promover": len(promovidos),
-                    "a_graduar": len(graduados),
-                    "omitidos": len(omitidos),
-                    "promovidos": promovidos,
-                    "graduados": graduados,
-                    "omitidos_detalle": omitidos,
-                }
+                AlumnoPromoverResponse(
+                    simulation=True,
+                    ciclo_actual=ciclo_actual.nombre,
+                    total_pendientes=alumnos_activos.count(),
+                    a_promover=len(promovidos),
+                    a_graduar=len(graduados),
+                    omitidos=len(omitidos),
+                    promovidos=promovidos,
+                    graduados=graduados,
+                    omitidos_detalle=omitidos,
+                ).model_dump()
             )
 
-        # POST = ejecución real
-        confirmed = request.data.get("confirmed", False)
-        if not confirmed:
-            return Response(
-                {"detail": "Debes enviar {'confirmed': true} para ejecutar la promoción."},
-                status=status.HTTP_400_BAD_REQUEST,
+        # POST = ejecución real — validar payload con pydantic
+        try:
+            payload = PromoverPayload(**request.data)
+        except ValidationError as e:
+            return pydantic_error_response(
+                e, default_detail="Datos inválidos en la solicitud de promoción."
             )
 
-        promovidos_count = 0
-        graduados_count = 0
-        errores = []
+        if not payload.confirmed:
+            return error_400("Debes enviar {'confirmed': true} para ejecutar la promoción.")
 
-        for alumno in alumnos_activos:
-            try:
-                grado_actual = int(alumno.grado)
-                # Marcamos la promoción para este ciclo
-                alumno.last_promotion_cycle = ciclo_actual
-
-                if grado_actual >= 6:
-                    alumno.activo = False
-                    alumno.grupo = ""
-                    alumno.save()
-                    graduados_count += 1
-                else:
-                    alumno.grado = str(grado_actual + 1)
-                    alumno.grupo = ""
-                    alumno.save()
-                    promovidos_count += 1
-            except _grade_exceptions:
-                errores.append(
-                    f"Alumno '{alumno.get_full_name()}' omitido: grado '{alumno.grado}' no válido."
-                )
+        promovidos_count, graduados_count, errores = ejecutar_promocion_simple(
+            alumnos_activos, ciclo_actual
+        )
 
         return Response(
-            {
-                "simulation": False,
-                "ciclo_promocion": ciclo_actual.nombre,
-                "promovidos_count": promovidos_count,
-                "graduados_count": graduados_count,
-                "errores": errores,
-                "detail": f"{promovidos_count} alumnos promovidos, {graduados_count} graduados en el ciclo {ciclo_actual.nombre}.",
-            },
-            status=status.HTTP_200_OK,
+            AlumnoPromoverCommitResponse(
+                simulation=False,
+                ciclo_promocion=ciclo_actual.nombre,
+                promovidos_count=promovidos_count,
+                graduados_count=graduados_count,
+                errores=errores,
+                detail=f"{promovidos_count} alumnos promovidos, {graduados_count} graduados en el ciclo {ciclo_actual.nombre}.",
+            ).model_dump()
         )

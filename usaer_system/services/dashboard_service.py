@@ -7,40 +7,14 @@ un valor seguro (nunca lanza). El DashboardView las coordina.
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
 from typing import Any
 
 from django.db import models
 from django.db.models import Count, Q
 
+from .dto import AvisoDTO, DashboardData, StatsDTO
+
 logger = logging.getLogger(__name__)
-
-
-# ─── Tipos ───────────────────────────────────────────────────────────────────
-
-
-@dataclass
-class DashboardData:
-    """Estructura tipada para la respuesta del dashboard."""
-
-    ciclo_actual: str = "Sin Ciclo Activo"
-    ultimos_avisos: list[dict[str, Any]] = field(default_factory=list)
-    permisos_pendientes: int = 0
-    incidencias_pendientes: int = 0
-    stats: dict[str, int] = field(default_factory=dict)
-    grafica_clasificacion: list[dict[str, Any]] = field(default_factory=list)
-    grafica_escuelas: list[dict[str, Any]] = field(default_factory=list)
-
-    def to_dict(self) -> dict[str, Any]:
-        return {
-            "ciclo_actual": self.ciclo_actual,
-            "ultimos_avisos": self.ultimos_avisos,
-            "permisos_pendientes": self.permisos_pendientes,
-            "incidencias_pendientes": self.incidencias_pendientes,
-            "stats": self.stats,
-            "grafica_clasificacion": self.grafica_clasificacion,
-            "grafica_escuelas": self.grafica_escuelas,
-        }
 
 
 # ─── Servicios ───────────────────────────────────────────────────────────────
@@ -104,7 +78,7 @@ def get_incidencias_pendientes(user) -> int:
         return 0
 
 
-def get_ultimos_avisos() -> list[dict[str, Any]]:
+def get_ultimos_avisos() -> list[AvisoDTO]:
     """Últimos 5 avisos activos con autor."""
     from avisos.models import Anuncio
 
@@ -113,15 +87,15 @@ def get_ultimos_avisos() -> list[dict[str, Any]]:
             Anuncio.objects.vigentes().select_related("autor").order_by("-fecha_publicacion")[:5]
         )
         return [
-            {
-                "id": a.id,
-                "titulo": a.titulo,
-                "contenido": a.contenido,
-                "autor": a.autor.get_full_name()
+            AvisoDTO(
+                id=a.id,
+                titulo=a.titulo,
+                contenido=a.contenido,
+                autor=a.autor.get_full_name()
                 if hasattr(a.autor, "get_full_name")
                 else str(a.autor),
-                "fecha": a.fecha_publicacion,
-            }
+                fecha=a.fecha_publicacion,
+            )
             for a in avisos
         ]
     except Exception:
@@ -129,7 +103,7 @@ def get_ultimos_avisos() -> list[dict[str, Any]]:
         return []
 
 
-def get_stats() -> dict[str, int]:
+def get_stats() -> StatsDTO:
     """Estadísticas globales: alumnos, escuelas, usuarios, maestros."""
     from alumnos.models import Alumno
     from django.contrib.auth import get_user_model
@@ -146,15 +120,15 @@ def get_stats() -> dict[str, int]:
             total_usuarios=Count("id"),
             total_maestros=Count("id", filter=Q(role="MAESTRO_APOYO")),
         )
-        return {
-            "total_alumnos": stats_alumnos["total_alumnos"] or 0,
-            "total_escuelas": total_escuelas,
-            "total_usuarios": stats_usuarios["total_usuarios"] or 0,
-            "total_maestros": stats_usuarios["total_maestros"] or 0,
-        }
+        return StatsDTO(
+            total_alumnos=stats_alumnos["total_alumnos"] or 0,
+            total_escuelas=total_escuelas,
+            total_usuarios=stats_usuarios["total_usuarios"] or 0,
+            total_maestros=stats_usuarios["total_maestros"] or 0,
+        )
     except Exception:
         logger.exception("Error calculando stats")
-        return {"total_alumnos": 0, "total_escuelas": 0, "total_usuarios": 0, "total_maestros": 0}
+        return StatsDTO()
 
 
 def get_graficas() -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:

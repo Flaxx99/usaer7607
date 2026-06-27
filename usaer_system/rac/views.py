@@ -9,9 +9,12 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from openpyxl import load_workbook
+from pydantic import ValidationError
 from rest_framework import filters, permissions, status, views, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from services.dto import AlumnoIdQuery
+from services.error_handling import error_400
 
 from .models import RegistroRAC
 from .permissions import RACPermission
@@ -186,14 +189,19 @@ class RegistroRACViewSet(viewsets.ModelViewSet):
         """
         from alumnos.models import Alumno
 
-        alumno_id = request.query_params.get("alumno_id")
-        if not alumno_id:
-            return Response({"detail": "Falta el parámetro 'alumno_id'."}, status=400)
+        # Validar query params con pydantic
+        try:
+            query = AlumnoIdQuery.model_validate(request.query_params.dict())
+        except ValidationError as e:
+            return Response(
+                {"detail": "; ".join(err["msg"] for err in e.errors())},
+                status=400,
+            )
 
-        get_object_or_404(Alumno, pk=alumno_id)
+        get_object_or_404(Alumno, pk=query.alumno_id)
 
         qs = (
-            RegistroRAC.objects.filter(alumno_id=alumno_id)
+            RegistroRAC.objects.filter(alumno_id=query.alumno_id)
             .select_related("alumno", "escuela_regular", "maestro_apoyo", "ciclo_escolar")
             .order_by("-ciclo_escolar__fecha_inicio")
         )
@@ -212,7 +220,7 @@ class RegistroRACViewSet(viewsets.ModelViewSet):
         try:
             ciclo_actual = get_current_ciclo_escolar_instance()
         except Exception:
-            return Response({"detail": "No hay ciclo escolar activo."}, status=400)
+            return error_400("No hay ciclo escolar activo.")
 
         user = self.request.user
         qs_alumnos = Alumno.objects.activos()

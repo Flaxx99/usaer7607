@@ -8,6 +8,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from services.dashboard_service import build_dashboard_data
+from services.dto import FiltrosUsuario, StatusDetailResponse, ToggleActiveResponse
 
 from usuarios.permissions import IsAdminOrSecretario, IsAdminUserOnly
 
@@ -93,16 +94,14 @@ class UserViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         qs = super().get_queryset()
 
-        role = self.request.query_params.get("role")
-        escuela = self.request.query_params.get("escuela")
-        activo = self.request.query_params.get("activo")
+        filtros = FiltrosUsuario.model_validate(self.request.query_params.dict())
 
-        if role:
-            qs = qs.filter(role=role)
-        if escuela:
-            qs = qs.filter(escuela__id=escuela)
-        if activo:
-            is_active = activo.lower() in ["1", "true"]
+        if filtros.role:
+            qs = qs.filter(role=filtros.role)
+        if filtros.escuela:
+            qs = qs.filter(escuela__id=filtros.escuela)
+        if filtros.activo:
+            is_active = filtros.activo.lower() in ["1", "true"]
             qs = qs.filter(activo=is_active)
 
         return qs.order_by("apellido_paterno", "nombre")
@@ -137,7 +136,9 @@ class UserViewSet(viewsets.ModelViewSet):
         user.activo = not user.activo
         user.save()
         estado = "activado" if user.activo else "desactivado"
-        return Response({"status": f"Usuario {estado}", "activo": user.activo})
+        return Response(
+            ToggleActiveResponse(status=f"Usuario {estado}", activo=user.activo).model_dump()
+        )
 
     @action(detail=True, methods=["post"], url_path="change-password")
     def change_password(self, request, pk=None):
@@ -150,7 +151,9 @@ class UserViewSet(viewsets.ModelViewSet):
 
             user.set_password(serializer.data.get("new_password"))
             user.save()
-            return Response({"status": "Contraseña actualizada"})
+            return Response(
+                StatusDetailResponse(status="success", detail="Contraseña actualizada").model_dump()
+            )
 
         return Response(serializer.errors, status=400)
 
@@ -169,7 +172,7 @@ class DashboardView(views.APIView):
 
     def get(self, request):
         dashboard_data = build_dashboard_data(request.user)
-        return Response(dashboard_data.to_dict())
+        return Response(dashboard_data.model_dump())
 
 
 class CalendarEventViewSet(viewsets.ModelViewSet):

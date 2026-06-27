@@ -1,40 +1,15 @@
 // src/interfaces/dashboard.ts
+//
+// Tipos de datos re-exportados desde api.ts (generado desde pydantic).
+// StatCardProps es un tipo puramente de UI, sin equivalente en backend.
 
-export interface DashboardStats {
-    total_alumnos: number;
-    total_escuelas: number;
-    total_usuarios: number;
-    total_maestros: number;
-}
-
-export interface Aviso {
-    id: number;
-    titulo: string;
-    contenido: string;
-    autor: string;
-    fecha: string;
-}
-
-export interface GraficaEscuela {
-    escuela__nombre: string;
-    total: number;
-}
-
-export interface ChartEntry {
-    clasificacion: string;
-    total: number;
-}
-
-/** Respuesta del endpoint GET /usuarios/dashboard-data/ */
-export interface DashboardData {
-    ciclo_actual: string;
-    stats: DashboardStats;
-    grafica_clasificacion: ChartEntry[];
-    grafica_escuelas: GraficaEscuela[];
-    ultimos_avisos: Aviso[];
-    incidencias_pendientes: number;
-    permisos_pendientes: number;
-}
+export type {
+    AvisoDTO as Aviso,
+    StatsDTO as DashboardStats,
+    GraficaEscuelaEntry as GraficaEscuela,
+    ChartEntry,
+    DashboardData,
+} from './api';
 
 export interface StatCardProps {
     title: string;

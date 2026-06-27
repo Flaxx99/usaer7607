@@ -1,10 +1,12 @@
 from django.contrib.auth import get_user_model
 from django.db.models import Q
 from django.utils import timezone
+from pydantic import ValidationError as PydanticValidationError
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import PermissionDenied, ValidationError  # Imported ValidationError
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
+from services.dto import ResolverIncidenciaPayload
 
 from .models import Incidencia
 from .permissions import IncidenciaPermission
@@ -107,15 +109,17 @@ class IncidenciaViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        respuesta = request.data.get("respuesta_admin")
-        if not respuesta:
+        # Validar payload con pydantic
+        try:
+            payload = ResolverIncidenciaPayload(**request.data)
+        except PydanticValidationError as e:
             return Response(
-                {"detail": "You must provide an administrative response."},
+                {"detail": "; ".join(err["msg"] for err in e.errors())},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         incidencia.estado = "RESUELTA"
-        incidencia.respuesta_admin = respuesta.upper()
+        incidencia.respuesta_admin = payload.respuesta_admin.upper()
         incidencia.fecha_resolucion = timezone.now()
         incidencia.save()
 

@@ -2,6 +2,7 @@
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from services.dto import UnreadCountResponse
 
 from .models import Notificacion
 from .serializers import NotificacionSerializer
@@ -45,7 +46,7 @@ class NotificacionViewSet(viewsets.ReadOnlyModelViewSet):
         URL: /api/notificaciones/conteo/
         """
         count = self.get_queryset().filter(leida=False).count()
-        return Response({"unread_count": count})
+        return Response(UnreadCountResponse(unread_count=count).model_dump())
 
     @action(detail=True, methods=["post"])
     def marcar_leida(self, request, pk=None):

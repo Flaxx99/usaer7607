@@ -209,8 +209,8 @@ class GetUltimosAvisosTest(TestCase):
 
         result = get_ultimos_avisos()
         self.assertEqual(len(result), 1)
-        self.assertEqual(result[0]["titulo"], "Aviso 1")
-        self.assertEqual(result[0]["autor"], "Juan Pérez")
+        self.assertEqual(result[0].titulo, "Aviso 1")
+        self.assertEqual(result[0].autor, "Juan Pérez")
 
     @patch("avisos.models.Anuncio")
     def test_retorna_lista_vacia_sin_avisos(self, mock_anuncio):
@@ -245,10 +245,10 @@ class GetStatsTest(TestCase):
         mock_user_model.return_value = mock_user
 
         result = get_stats()
-        self.assertEqual(result["total_alumnos"], 42)
-        self.assertEqual(result["total_escuelas"], 5)
-        self.assertEqual(result["total_usuarios"], 10)
-        self.assertEqual(result["total_maestros"], 3)
+        self.assertEqual(result.total_alumnos, 42)
+        self.assertEqual(result.total_escuelas, 5)
+        self.assertEqual(result.total_usuarios, 10)
+        self.assertEqual(result.total_maestros, 3)
 
 
 class GetGraficasTest(TestCase):
@@ -303,10 +303,10 @@ class BuildDashboardDataTest(TestCase):
         result = build_dashboard_data(user)
         self.assertIsInstance(result, DashboardData)
 
-    def test_dashboarddata_to_dict_tiene_todas_las_llaves(self):
-        """DashboardData.to_dict incluye todas las secciones."""
+    def test_dashboarddata_model_dump_tiene_todas_las_llaves(self):
+        """DashboardData.model_dump() incluye todas las secciones."""
         data = DashboardData()
-        d = data.to_dict()
+        d = data.model_dump()
         expected_keys = {
             "ciclo_actual",
             "ultimos_avisos",

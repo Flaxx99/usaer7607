@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import type { SubmitHandler } from 'react-hook-form';
@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 import { isAxiosError } from 'axios';
 import { 
     getCiclos, createCiclo, updateCiclo, deleteCiclo, 
-    previewPromocion, ejecutarPromocion, getPromocionStatus
+    previewPromocion, ejecutarPromocion,
 } from '../../api/ciclos';
 import { TableSkeleton, ErrorState } from '../../components/Skeletons';
 import Modal from '../../components/Modal';
@@ -27,7 +27,6 @@ const ListaCiclos = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [cicloEditar, setCicloEditar] = useState<CicloEscolar | null>(null);
   const [isPromocionOpen, setIsPromocionOpen] = useState(false);
-  const [promotionTaskId, setPromotionTaskId] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState('');
   const [page, setPage] = useState(1);
   const { confirm: confirmDelete, dialog: confirmDialog } = useConfirmDialog();
@@ -60,13 +59,6 @@ const ListaCiclos = () => {
     queryFn: previewPromocion,
     enabled: isPromocionOpen,
     retry: false
-  });
-
-  const { data: promotionStatus } = useQuery({
-    queryKey: ['promocionStatus', promotionTaskId],
-    queryFn: () => getPromocionStatus(promotionTaskId!),
-    enabled: !!promotionTaskId,
-    refetchInterval: (query) => (query.state.data?.status === 'PROCESSING' ? 2000 : false),
   });
 
   const createMutation = useMutation({
@@ -114,16 +106,11 @@ const ListaCiclos = () => {
     mutationFn: ejecutarPromocion,
     onMutate: () => showLoading(),
     onSuccess: (data) => {
-        if (data.task_id) {
-            setPromotionTaskId(data.task_id);
-        } else {
-            setIsPromocionOpen(false);
-            setPromotionTaskId(null);
-            queryClient.invalidateQueries({ queryKey: ['alumnos'] }); 
-            toast.success(<span className="inline-flex items-center gap-1.5"><GraduationCap size={16} /> ¡Promoción Exitosa!</span>, { 
-                description: `Promovidos: ${data.promovidos} | Graduados: ${data.graduados}` 
-            });
-        }
+        setIsPromocionOpen(false);
+        queryClient.invalidateQueries({ queryKey: ['alumnos'] }); 
+        toast.success(<span className="inline-flex items-center gap-1.5"><GraduationCap size={16} /> ¡Promoción Exitosa!</span>, { 
+            description: `Promovidos: ${data.promovidos} | Graduados: ${data.graduados}` 
+        });
     },
     onError: () => toast.error(<span className="inline-flex items-center gap-1.5"><XCircle size={16} /> Error</span>, { description: 'Hubo un problema al iniciar la promoción.' }),
     onSettled: () => hideLoading()
@@ -132,24 +119,6 @@ const ListaCiclos = () => {
   const handleConfirmarPromocion = () => {
     ejecutarPromocionMutation.mutate();
   };
-
-  // The promotion status is polled from a background task. When it transitions
-  // to COMPLETED/FAILED we close the modal and show feedback.
-  // This is a legitimate synchronisation between an external polling system and UI state.
-  useEffect(() => {
-    if (promotionStatus?.status === 'COMPLETED') {
-        setIsPromocionOpen(false);
-        setPromotionTaskId(null);
-        queryClient.invalidateQueries({ queryKey: ['alumnos'] }); 
-        toast.success(<span className="inline-flex items-center gap-1.5"><GraduationCap size={16} /> ¡Promoción Exitosa!</span>, { 
-            description: `Promovidos: ${promotionStatus.data?.promovidos} | Graduados: ${promotionStatus.data?.graduados}` 
-        });
-    } else if (promotionStatus?.status === 'FAILED') {
-        setIsPromocionOpen(false);
-        setPromotionTaskId(null);
-        toast.error(<span className="inline-flex items-center gap-1.5"><XCircle size={16} /> Error</span>, { description: promotionStatus.error || 'La promoción falló durante el proceso.' });
-    }
-  }, [promotionStatus, queryClient]);
 
   const cerrarModal = () => {
     setIsModalOpen(false);
@@ -424,27 +393,13 @@ const ListaCiclos = () => {
                     </div>
                 )}
 
-                {promotionTaskId && (
-                    <div className="card bg-primary text-white p-8 text-center space-y-4 animate-pulse">
-                        <span className="loading loading-ring loading-lg mx-auto" />
-                        <h4 className="text-xl font-black">Procesando Promoción...</h4>
-                        <div className="w-full bg-white/20 rounded-full h-3 overflow-hidden">
-                            <div 
-                                className="bg-white h-full transition-all duration-500" 
-                                style={{ width: `${promotionStatus?.progress || 0}%` }} 
-                            />
-                        </div>
-                        <p className="text-xs font-medium">Estado: {promotionStatus?.status || 'Sincronizando...'}</p>
-                    </div>
-                )}
-
                 <div className="flex justify-end gap-3 pt-6 border-t border-base-300">
                     <button className="btn btn-ghost" onClick={() => setIsPromocionOpen(false)}>Cancelar</button>
                     <LoadingButton
                         className="btn btn-error px-8 gap-2"
                         icon={TrendingUp}
                         loading={ejecutarPromocionMutation.isPending}
-                        disabled={loadingPreview || !!errorPreview || ejecutarPromocionMutation.isPending || !!promotionTaskId}
+                        disabled={loadingPreview || !!errorPreview || ejecutarPromocionMutation.isPending}
                         onClick={handleConfirmarPromocion}
                     >
                         Ejecutar Cierre

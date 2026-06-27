@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { LoadingProvider } from '../context/LoadingContext';
 import ListaCiclos from '../pages/ciclos/ListaCiclos';
 import { getCiclos, createCiclo, updateCiclo, deleteCiclo, previewPromocion, ejecutarPromocion, getPromocionStatus } from '../api/ciclos';
+import { toast } from 'sonner';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 vi.mock('../api/ciclos', async (importOriginal) => {
@@ -515,10 +516,10 @@ describe('ListaCiclos', () => {
         });
     });
 
-    it('should execute promocion and show async processing', async () => {
+    it('should execute promocion successfully (sync)', async () => {
         vi.mocked(getCiclos).mockResolvedValue(mockCiclos);
         vi.mocked(previewPromocion).mockResolvedValue(mockPreview);
-        vi.mocked(ejecutarPromocion).mockResolvedValue({ task_id: 'task-123', promovidos: 0, graduados: 0 });
+        vi.mocked(ejecutarPromocion).mockResolvedValue({ promovidos: 28, graduados: 15 });
 
         render(<ListaCiclos />, { wrapper });
 
@@ -534,58 +535,20 @@ describe('ListaCiclos', () => {
         });
 
         // Click "Ejecutar Cierre"
-        const ejecutarButton = screen.getByText('Ejecutar Cierre');
-        fireEvent.click(ejecutarButton);
+        fireEvent.click(screen.getByText('Ejecutar Cierre'));
 
+        // Modal should close on success (role="dialog" removed from DOM)
         await waitFor(() => {
-            expect(ejecutarPromocion).toHaveBeenCalled();
+            expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
         });
 
-        // Should now show processing screen
-        await waitFor(() => {
-            expect(screen.getByText('Procesando Promoción...')).toBeInTheDocument();
-        });
+        expect(ejecutarPromocion).toHaveBeenCalled();
     });
 
-    it('should handle promocion completion via polling', async () => {
+    it('should show error toast when promocion fails', async () => {
         vi.mocked(getCiclos).mockResolvedValue(mockCiclos);
         vi.mocked(previewPromocion).mockResolvedValue(mockPreview);
-        vi.mocked(ejecutarPromocion).mockResolvedValue({ task_id: 'task-123', promovidos: 0, graduados: 0 });
-        vi.mocked(getPromocionStatus).mockResolvedValue({
-            status: 'COMPLETED',
-            data: { promovidos: 28, graduados: 15 },
-        });
-
-        render(<ListaCiclos />, { wrapper });
-
-        await waitFor(() => {
-            expect(screen.getByText('Promoción de Grado')).toBeInTheDocument();
-        });
-
-        // Open and execute
-        fireEvent.click(screen.getByText('Promoción de Grado'));
-
-        await waitFor(() => {
-            expect(screen.getByText('30')).toBeInTheDocument();
-        });
-
-        const ejecutarButton = screen.getByText('Ejecutar Cierre');
-        fireEvent.click(ejecutarButton);
-
-        // The useEffect should handle the COMPLETED status and close the modal
-        await waitFor(() => {
-            expect(screen.queryByText('Procesando Promoción...')).not.toBeInTheDocument();
-        });
-    });
-
-    it('should handle promocion failure via polling', async () => {
-        vi.mocked(getCiclos).mockResolvedValue(mockCiclos);
-        vi.mocked(previewPromocion).mockResolvedValue(mockPreview);
-        vi.mocked(ejecutarPromocion).mockResolvedValue({ task_id: 'task-456', promovidos: 0, graduados: 0 });
-        vi.mocked(getPromocionStatus).mockResolvedValue({
-            status: 'FAILED',
-            error: 'Error durante el procesamiento.',
-        });
+        vi.mocked(ejecutarPromocion).mockRejectedValue(new Error('Error en promoción'));
 
         render(<ListaCiclos />, { wrapper });
 
@@ -601,9 +564,9 @@ describe('ListaCiclos', () => {
 
         fireEvent.click(screen.getByText('Ejecutar Cierre'));
 
-        // After failure, modal should close
+        // Verify toast.error was called (sonner is mocked, so no DOM rendering)
         await waitFor(() => {
-            expect(screen.queryByText('Procesando Promoción...')).not.toBeInTheDocument();
+            expect(toast.error).toHaveBeenCalled();
         });
     });
 });

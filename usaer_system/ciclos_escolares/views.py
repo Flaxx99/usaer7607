@@ -4,15 +4,22 @@ from alumnos.models import Alumno
 from django.db import transaction
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
+from pydantic import ValidationError
 from rest_framework import permissions, views, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from services.dto import PromocionExecResponse, PromocionPreviewResponse, PromoverPayload
+from services.error_handling import error_400, error_404, error_500, pydantic_error_response
+from services.promocion_service import (
+    ejecutar_promocion_por_nivel,
+    simular_promocion_por_nivel,
+)
 
 # Modelos
 from .models import CicloEscolar
 
 # Serializers
-from .serializers import CicloEscolarSerializer, PromocionPreviewSerializer
+from .serializers import CicloEscolarSerializer
 
 
 class IsAdminOrSecretario(permissions.BasePermission):
@@ -42,7 +49,7 @@ class CicloEscolarViewSet(viewsets.ModelViewSet):
             serializer = self.get_serializer(ciclo)
             return Response(serializer.data)
         except CicloEscolar.DoesNotExist:
-            return Response({"detail": "No hay ciclo activo configurado."}, status=404)
+            return error_404("No hay ciclo activo configurado.")
 
 
 class PromocionAlumnosView(views.APIView):
@@ -59,52 +66,6 @@ class PromocionAlumnosView(views.APIView):
         if request.method == "POST":
             self.throttle_scope = "bulk_write"
         super().initial(request, *args, **kwargs)
-
-    def get_nivel_alumno(self, alumno):
-        """Busca el nivel educativo en la Escuela del alumno."""
-        try:
-            if alumno.escuela and hasattr(alumno.escuela, "nivel"):
-                return str(alumno.escuela.nivel).upper()
-        except Exception:
-            pass
-        return "PRIMARIA"
-
-    def get_max_grado(self, nivel_str):
-        """Devuelve el grado máximo según el nivel detectado."""
-        n = str(nivel_str).upper()
-        if "PREESCOLAR" in n:
-            return 3
-        if "SECUNDARIA" in n or "TELESECUNDARIA" in n:
-            return 3
-        return 6
-
-    def get_alumnos_data(self):
-        """Calcula la lógica de promoción sin guardar."""
-        alumnos_activos = Alumno.objects.filter(activo=True).select_related("escuela")
-        resultado = {"promover": [], "graduar": [], "errores": []}
-        for alumno in alumnos_activos:
-            nombre_str = alumno.get_full_name()
-            try:
-                if not alumno.grado:
-                    continue
-                numeros = "".join(filter(str.isdigit, str(alumno.grado)))
-                if not numeros:
-                    raise ValueError(f"Grado inválido: {alumno.grado}")
-                grado_actual = int(numeros)
-                nivel_detectado = self.get_nivel_alumno(alumno)
-                tope_grado = self.get_max_grado(nivel_detectado)
-                if grado_actual >= tope_grado:
-                    resultado["graduar"].append(
-                        f"{nombre_str} ({nivel_detectado} {grado_actual}° -> Egresado)"
-                    )
-                else:
-                    resultado["promover"].append(
-                        f"{nombre_str} ({nivel_detectado} {grado_actual}° -> {grado_actual + 1}°)"
-                    )
-            except Exception as e:
-                print(f"Error procesando alumno {alumno.id}: {e}")
-                resultado["errores"].append(f"{nombre_str}: {str(e)}")
-        return resultado
 
     @swagger_auto_schema(
         operation_description="Simulación de promoción: calcula cuántos alumnos serían promovidos o graduados sin guardar cambios.",
@@ -136,22 +97,23 @@ class PromocionAlumnosView(views.APIView):
     def get(self, request):
         """Simulación (Preview)"""
         try:
-            data = self.get_alumnos_data()
-            response_data = {
-                "total_activos": Alumno.objects.activos().count(),
-                "a_promover_count": len(data["promover"]),
-                "a_graduar_count": len(data["graduar"]),
-                "errores_count": len(data["errores"]),
-                "detalles_promover": data["promover"],
-                "detalles_graduar": data["graduar"],
-                "detalles_errores": data["errores"],
-            }
-            serializer = PromocionPreviewSerializer(response_data)
-            return Response(serializer.data)
+            alumnos_activos = Alumno.objects.filter(activo=True).select_related("escuela")
+            data = simular_promocion_por_nivel(alumnos_activos)
+            return Response(
+                PromocionPreviewResponse(
+                    total_activos=Alumno.objects.activos().count(),
+                    a_promover_count=len(data["promover"]),
+                    a_graduar_count=len(data["graduar"]),
+                    errores_count=len(data["errores"]),
+                    detalles_promover=data["promover"],
+                    detalles_graduar=data["graduar"],
+                    detalles_errores=data["errores"],
+                ).model_dump()
+            )
         except Exception as e:
             print("!!! ERROR CRITICO EN PROMOCION (GET) !!!")
             traceback.print_exc()
-            return Response({"detail": f"Error interno: {str(e)}"}, status=500)
+            return error_500(f"Error interno en la simulación: {e}")
 
     @swagger_auto_schema(
         operation_description="Ejecución real de la promoción masiva de alumnos.",
@@ -183,45 +145,26 @@ class PromocionAlumnosView(views.APIView):
     )
     def post(self, request):
         """Ejecución Real"""
-        if not request.data.get("confirmed"):
-            return Response({"detail": "Se requiere confirmar la acción."}, status=400)
+        # Validar payload con pydantic
+        try:
+            payload = PromoverPayload(**request.data)
+        except ValidationError as e:
+            return pydantic_error_response(
+                e, default_detail="Datos inválidos en la solicitud de promoción."
+            )
+
+        if not payload.confirmed:
+            return error_400("Se requiere confirmar la acción.")
 
         with transaction.atomic():
             alumnos_activos = Alumno.objects.activos().select_related("escuela")
-            promovidos = 0
-            graduados = 0
-
-            for alumno in alumnos_activos:
-                try:
-                    if not alumno.grado:
-                        continue
-                    numeros = "".join(filter(str.isdigit, str(alumno.grado)))
-                    if not numeros:
-                        continue
-
-                    grado_actual = int(numeros)
-                    nivel_detectado = self.get_nivel_alumno(alumno)
-                    tope_grado = self.get_max_grado(nivel_detectado)
-
-                    if grado_actual >= tope_grado:
-                        alumno.activo = False
-                        graduados += 1
-                    else:
-                        alumno.grado = str(grado_actual + 1)
-                        alumno.grupo = ""
-                        promovidos += 1
-
-                    alumno.save()
-                except Exception:
-                    continue
-
+            promovidos, graduados = ejecutar_promocion_por_nivel(alumnos_activos)
             CicloEscolar.objects.filter(activo=True).update(activo=False)
 
             return Response(
-                {
-                    "status": "success",
-                    "detail": f"Proceso finalizado. {promovidos} promovidos, {graduados} graduados.",
-                    "promovidos": promovidos,
-                    "graduados": graduados,
-                }
+                PromocionExecResponse(
+                    detail=f"Proceso finalizado. {promovidos} promovidos, {graduados} graduados.",
+                    promovidos=promovidos,
+                    graduados=graduados,
+                ).model_dump()
             )

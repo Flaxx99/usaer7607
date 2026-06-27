@@ -6,6 +6,7 @@ from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
+from services.error_handling import error_404
 
 from .models import Expediente, OtroArchivo
 from .permissions import ExpedientePermission
@@ -84,7 +85,7 @@ class ExpedienteViewSet(viewsets.ModelViewSet):
             archivo_extra.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         except OtroArchivo.DoesNotExist:
-            return Response({"detail": "Archivo no encontrado."}, status=status.HTTP_404_NOT_FOUND)
+            return error_404("Archivo no encontrado.")
 
     # --- ZONA DE SEGURIDAD SWAGGER ---
     # Ocultamos estos métodos de la documentación para evitar el error "FileField is supported only in formData"

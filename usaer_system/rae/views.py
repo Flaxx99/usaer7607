@@ -13,8 +13,11 @@ from django.shortcuts import get_object_or_404
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from openpyxl import load_workbook
+from pydantic import ValidationError
 from rest_framework import filters, permissions, views, viewsets
 from rest_framework.response import Response
+from services.dto import CerrarRegistroResponse, ToggleCerradoPayload
+from services.error_handling import error_400, error_403, error_404, error_500
 from usuarios.models import SystemConfiguration
 
 # ... (rest of imports)
@@ -101,12 +104,12 @@ class RAEInitCaptureView(views.APIView):
         user = request.user
         escuela = user.escuela
         if not escuela:
-            return Response({"detail": "No tienes escuela asignada."}, status=400)
+            return error_400("No tienes escuela asignada.")
 
         try:
             ciclo = get_current_ciclo_escolar_instance()
         except Exception as e:
-            return Response({"detail": str(e)}, status=400)
+            return error_400(str(e))
 
         # Get or Create Registro
         registro, _ = RegistroRAE.objects.get_or_create(
@@ -328,19 +331,19 @@ class ExportRAEView(views.APIView):
             )
             config = SystemConfiguration.objects.first()
         except Exception as e:
-            return Response({"detail": str(e)}, status=404)
+            return error_404(str(e))
 
         template_path = os.path.join(
             settings.BASE_DIR, "rae", "static", "excel_templates", "rae_template.xlsx"
         )
         if not os.path.exists(template_path):
-            return Response({"detail": "Plantilla no encontrada."}, status=500)
+            return error_500("Plantilla no encontrada.")
 
         try:
             wb = load_workbook(template_path)
             ws = wb["Sheet1"]
         except Exception as e:
-            return Response({"detail": f"Error cargando plantilla: {e}", "status": 500})
+            return error_500(f"Error cargando plantilla: {e}")
 
         # --- LLENADO DE DATOS DINÁMICOS ---
         ws["D6"] = registro.escuela.nombre
@@ -639,26 +642,26 @@ class ExportAllRAEView(views.APIView):
     def get(self, request):
         roles_totales = ["ADMIN", "SECRETARIO"]
         if not (request.user.is_superuser or getattr(request.user, "role", "") in roles_totales):
-            return Response({"detail": "No tienes permiso."}, status=403)
+            return error_403("No tienes permiso.")
 
         config = SystemConfiguration.objects.first()
 
         try:
             ciclo = get_current_ciclo_escolar_instance()
         except Exception as e:
-            return Response({"detail": str(e)}, status=400)
+            return error_400(str(e))
 
         template_path = os.path.join(
             settings.BASE_DIR, "rae", "static", "excel_templates", "rae_template.xlsx"
         )
         if not os.path.exists(template_path):
-            return Response({"detail": "Plantilla no encontrada."}, status=500)
+            return error_500("Plantilla no encontrada.")
 
         try:
             master_workbook = load_workbook(template_path)
             template_sheet = master_workbook["Sheet1"]
         except Exception as e:
-            return Response({"detail": f"Error cargando plantilla: {e}"}, status=500)
+            return error_500(f"Error cargando plantilla: {e}")
 
         registros = (
             RegistroRAE.objects.filter(ciclo_escolar=ciclo)
@@ -668,7 +671,7 @@ class ExportAllRAEView(views.APIView):
         )
 
         if not registros.exists():
-            return Response({"detail": "No hay registros para exportar."}, status=404)
+            return error_404("No hay registros para exportar.")
 
         for registro in registros:
             new_sheet = master_workbook.copy_worksheet(template_sheet)
@@ -774,7 +777,7 @@ class RAEProgressView(views.APIView):
         try:
             ciclo = get_current_ciclo_escolar_instance()
         except Exception as e:
-            return Response({"detail": str(e)}, status=400)
+            return error_400(str(e))
 
         qs = RegistroRAE.objects.filter(ciclo_escolar=ciclo).select_related("escuela")
 
@@ -854,20 +857,24 @@ class RAECerrarView(views.APIView):
                 status=403,
             )
 
+        # Validar payload con pydantic
+        try:
+            payload = ToggleCerradoPayload(**request.data)
+        except ValidationError as e:
+            return Response(
+                {"detail": "; ".join(err["msg"] for err in e.errors())},
+                status=400,
+            )
+
         registro = get_object_or_404(RegistroRAE, pk=pk)
-        cerrado = request.data.get("cerrado", False)
-
-        if not isinstance(cerrado, bool):
-            return Response({"detail": "El campo 'cerrado' debe ser true o false."}, status=400)
-
-        registro.cerrado = cerrado
+        registro.cerrado = payload.cerrado
         registro.save(update_fields=["cerrado"])
 
-        accion = "cerrado" if cerrado else "reabierto"
+        accion = "cerrado" if payload.cerrado else "reabierto"
         return Response(
-            {
-                "detail": f"Registro {accion} exitosamente.",
-                "registro_id": registro.id,
-                "cerrado": registro.cerrado,
-            }
+            CerrarRegistroResponse(
+                detail=f"Registro {accion} exitosamente.",
+                registro_id=registro.id,
+                cerrado=registro.cerrado,
+            ).model_dump()
         )

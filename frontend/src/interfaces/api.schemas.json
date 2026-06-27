@@ -1,0 +1,609 @@
+{
+  "AvisoDTO": {
+    "description": "DTO para avisos del dashboard.",
+    "properties": {
+      "id": {
+        "title": "Id",
+        "type": "integer"
+      },
+      "titulo": {
+        "title": "Titulo",
+        "type": "string"
+      },
+      "contenido": {
+        "title": "Contenido",
+        "type": "string"
+      },
+      "autor": {
+        "title": "Autor",
+        "type": "string"
+      },
+      "fecha": {
+        "format": "date-time",
+        "title": "Fecha",
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "titulo",
+      "contenido",
+      "autor",
+      "fecha"
+    ],
+    "title": "AvisoDTO",
+    "type": "object"
+  },
+  "StatsDTO": {
+    "description": "DTO para estad\u00edsticas globales del dashboard.",
+    "properties": {
+      "total_alumnos": {
+        "default": 0,
+        "title": "Total Alumnos",
+        "type": "integer"
+      },
+      "total_escuelas": {
+        "default": 0,
+        "title": "Total Escuelas",
+        "type": "integer"
+      },
+      "total_usuarios": {
+        "default": 0,
+        "title": "Total Usuarios",
+        "type": "integer"
+      },
+      "total_maestros": {
+        "default": 0,
+        "title": "Total Maestros",
+        "type": "integer"
+      }
+    },
+    "title": "StatsDTO",
+    "type": "object"
+  },
+  "DashboardData": {
+    "$defs": {
+      "AvisoDTO": {
+        "description": "DTO para avisos del dashboard.",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "titulo": {
+            "title": "Titulo",
+            "type": "string"
+          },
+          "contenido": {
+            "title": "Contenido",
+            "type": "string"
+          },
+          "autor": {
+            "title": "Autor",
+            "type": "string"
+          },
+          "fecha": {
+            "format": "date-time",
+            "title": "Fecha",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "titulo",
+          "contenido",
+          "autor",
+          "fecha"
+        ],
+        "title": "AvisoDTO",
+        "type": "object"
+      },
+      "ChartEntry": {
+        "description": "Entrada individual de la gr\u00e1fica de clasificaci\u00f3n.",
+        "properties": {
+          "clasificacion": {
+            "default": "",
+            "title": "Clasificacion",
+            "type": "string"
+          },
+          "total": {
+            "default": 0,
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "title": "ChartEntry",
+        "type": "object"
+      },
+      "GraficaEscuelaEntry": {
+        "description": "Entrada individual de la gr\u00e1fica de escuelas.",
+        "properties": {
+          "escuela__nombre": {
+            "default": "",
+            "title": "Escuela  Nombre",
+            "type": "string"
+          },
+          "total": {
+            "default": 0,
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "title": "GraficaEscuelaEntry",
+        "type": "object"
+      },
+      "StatsDTO": {
+        "description": "DTO para estad\u00edsticas globales del dashboard.",
+        "properties": {
+          "total_alumnos": {
+            "default": 0,
+            "title": "Total Alumnos",
+            "type": "integer"
+          },
+          "total_escuelas": {
+            "default": 0,
+            "title": "Total Escuelas",
+            "type": "integer"
+          },
+          "total_usuarios": {
+            "default": 0,
+            "title": "Total Usuarios",
+            "type": "integer"
+          },
+          "total_maestros": {
+            "default": 0,
+            "title": "Total Maestros",
+            "type": "integer"
+          }
+        },
+        "title": "StatsDTO",
+        "type": "object"
+      }
+    },
+    "description": "DTO principal del dashboard.\n\nReemplaza el dataclass anterior \u2014 usa model_dump() para serializar.",
+    "properties": {
+      "ciclo_actual": {
+        "default": "Sin Ciclo Activo",
+        "title": "Ciclo Actual",
+        "type": "string"
+      },
+      "ultimos_avisos": {
+        "items": {
+          "$ref": "#/$defs/AvisoDTO"
+        },
+        "title": "Ultimos Avisos",
+        "type": "array"
+      },
+      "permisos_pendientes": {
+        "default": 0,
+        "title": "Permisos Pendientes",
+        "type": "integer"
+      },
+      "incidencias_pendientes": {
+        "default": 0,
+        "title": "Incidencias Pendientes",
+        "type": "integer"
+      },
+      "stats": {
+        "$ref": "#/$defs/StatsDTO"
+      },
+      "grafica_clasificacion": {
+        "items": {
+          "$ref": "#/$defs/ChartEntry"
+        },
+        "title": "Grafica Clasificacion",
+        "type": "array"
+      },
+      "grafica_escuelas": {
+        "items": {
+          "$ref": "#/$defs/GraficaEscuelaEntry"
+        },
+        "title": "Grafica Escuelas",
+        "type": "array"
+      }
+    },
+    "title": "DashboardData",
+    "type": "object"
+  },
+  "GraficaEscuelaEntry": {
+    "description": "Entrada individual de la gr\u00e1fica de escuelas.",
+    "properties": {
+      "escuela__nombre": {
+        "default": "",
+        "title": "Escuela  Nombre",
+        "type": "string"
+      },
+      "total": {
+        "default": 0,
+        "title": "Total",
+        "type": "integer"
+      }
+    },
+    "title": "GraficaEscuelaEntry",
+    "type": "object"
+  },
+  "ChartEntry": {
+    "description": "Entrada individual de la gr\u00e1fica de clasificaci\u00f3n.",
+    "properties": {
+      "clasificacion": {
+        "default": "",
+        "title": "Clasificacion",
+        "type": "string"
+      },
+      "total": {
+        "default": 0,
+        "title": "Total",
+        "type": "integer"
+      }
+    },
+    "title": "ChartEntry",
+    "type": "object"
+  },
+  "StatusDetailResponse": {
+    "description": "Respuesta simple con estado y detalle.",
+    "properties": {
+      "status": {
+        "default": "success",
+        "title": "Status",
+        "type": "string"
+      },
+      "detail": {
+        "default": "",
+        "title": "Detail",
+        "type": "string"
+      }
+    },
+    "title": "StatusDetailResponse",
+    "type": "object"
+  },
+  "UnreadCountResponse": {
+    "description": "Respuesta del conteo de notificaciones no le\u00eddas.",
+    "properties": {
+      "unread_count": {
+        "title": "Unread Count",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "unread_count"
+    ],
+    "title": "UnreadCountResponse",
+    "type": "object"
+  },
+  "ToggleActiveResponse": {
+    "description": "Respuesta de activar/desactivar usuario.",
+    "properties": {
+      "status": {
+        "title": "Status",
+        "type": "string"
+      },
+      "activo": {
+        "title": "Activo",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "status",
+      "activo"
+    ],
+    "title": "ToggleActiveResponse",
+    "type": "object"
+  },
+  "MetricasPermisoResponse": {
+    "description": "M\u00e9tricas de permisos para el dashboard.",
+    "properties": {
+      "total": {
+        "default": 0,
+        "title": "Total",
+        "type": "integer"
+      },
+      "pendientes": {
+        "default": 0,
+        "title": "Pendientes",
+        "type": "integer"
+      },
+      "aprobados": {
+        "default": 0,
+        "title": "Aprobados",
+        "type": "integer"
+      },
+      "rechazados": {
+        "default": 0,
+        "title": "Rechazados",
+        "type": "integer"
+      },
+      "ultima_semana": {
+        "default": 0,
+        "title": "Ultima Semana",
+        "type": "integer"
+      }
+    },
+    "title": "MetricasPermisoResponse",
+    "type": "object"
+  },
+  "PromocionExecResponse": {
+    "description": "Respuesta de una promoci\u00f3n ejecutada.",
+    "properties": {
+      "status": {
+        "default": "success",
+        "title": "Status",
+        "type": "string"
+      },
+      "detail": {
+        "default": "",
+        "title": "Detail",
+        "type": "string"
+      },
+      "promovidos": {
+        "default": 0,
+        "title": "Promovidos",
+        "type": "integer"
+      },
+      "graduados": {
+        "default": 0,
+        "title": "Graduados",
+        "type": "integer"
+      }
+    },
+    "title": "PromocionExecResponse",
+    "type": "object"
+  },
+  "AlumnoPromoverResponse": {
+    "description": "Respuesta de simulaci\u00f3n (GET) de promover alumnos.",
+    "properties": {
+      "simulation": {
+        "title": "Simulation",
+        "type": "boolean"
+      },
+      "ciclo_actual": {
+        "default": "",
+        "title": "Ciclo Actual",
+        "type": "string"
+      },
+      "total_pendientes": {
+        "default": 0,
+        "title": "Total Pendientes",
+        "type": "integer"
+      },
+      "a_promover": {
+        "default": 0,
+        "title": "A Promover",
+        "type": "integer"
+      },
+      "a_graduar": {
+        "default": 0,
+        "title": "A Graduar",
+        "type": "integer"
+      },
+      "omitidos": {
+        "default": 0,
+        "title": "Omitidos",
+        "type": "integer"
+      },
+      "promovidos": {
+        "items": {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        "title": "Promovidos",
+        "type": "array"
+      },
+      "graduados": {
+        "items": {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        "title": "Graduados",
+        "type": "array"
+      },
+      "omitidos_detalle": {
+        "items": {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        "title": "Omitidos Detalle",
+        "type": "array"
+      }
+    },
+    "required": [
+      "simulation"
+    ],
+    "title": "AlumnoPromoverResponse",
+    "type": "object"
+  },
+  "AlumnoPromoverCommitResponse": {
+    "description": "Respuesta de ejecuci\u00f3n (POST) de promover alumnos.",
+    "properties": {
+      "simulation": {
+        "const": false,
+        "default": false,
+        "title": "Simulation",
+        "type": "boolean"
+      },
+      "ciclo_promocion": {
+        "default": "",
+        "title": "Ciclo Promocion",
+        "type": "string"
+      },
+      "promovidos_count": {
+        "default": 0,
+        "title": "Promovidos Count",
+        "type": "integer"
+      },
+      "graduados_count": {
+        "default": 0,
+        "title": "Graduados Count",
+        "type": "integer"
+      },
+      "errores": {
+        "items": {
+          "type": "string"
+        },
+        "title": "Errores",
+        "type": "array"
+      },
+      "detail": {
+        "default": "",
+        "title": "Detail",
+        "type": "string"
+      }
+    },
+    "title": "AlumnoPromoverCommitResponse",
+    "type": "object"
+  },
+  "PromocionPreviewResponse": {
+    "description": "Respuesta de preview (simulaci\u00f3n) de promoci\u00f3n de ciclo.",
+    "properties": {
+      "total_activos": {
+        "default": 0,
+        "title": "Total Activos",
+        "type": "integer"
+      },
+      "a_promover_count": {
+        "default": 0,
+        "title": "A Promover Count",
+        "type": "integer"
+      },
+      "a_graduar_count": {
+        "default": 0,
+        "title": "A Graduar Count",
+        "type": "integer"
+      },
+      "errores_count": {
+        "default": 0,
+        "title": "Errores Count",
+        "type": "integer"
+      },
+      "detalles_promover": {
+        "items": {
+          "type": "string"
+        },
+        "title": "Detalles Promover",
+        "type": "array"
+      },
+      "detalles_graduar": {
+        "items": {
+          "type": "string"
+        },
+        "title": "Detalles Graduar",
+        "type": "array"
+      },
+      "detalles_errores": {
+        "items": {
+          "type": "string"
+        },
+        "title": "Detalles Errores",
+        "type": "array"
+      }
+    },
+    "title": "PromocionPreviewResponse",
+    "type": "object"
+  },
+  "CerrarRegistroResponse": {
+    "description": "Respuesta de cerrar/reabrir un registro RAE.",
+    "properties": {
+      "detail": {
+        "title": "Detail",
+        "type": "string"
+      },
+      "registro_id": {
+        "title": "Registro Id",
+        "type": "integer"
+      },
+      "cerrado": {
+        "title": "Cerrado",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "detail",
+      "registro_id",
+      "cerrado"
+    ],
+    "title": "CerrarRegistroResponse",
+    "type": "object"
+  },
+  "ErrorResponse": {
+    "description": "Cuerpo de respuesta est\u00e1ndar para errores.\n\nReemplaza los dicts sueltos `{\"detail\": \"...\"}` por un modelo\ntrazable. code permite clasificar el error en el frontend.",
+    "properties": {
+      "detail": {
+        "title": "Detail",
+        "type": "string"
+      },
+      "code": {
+        "default": "error",
+        "title": "Code",
+        "type": "string"
+      }
+    },
+    "required": [
+      "detail"
+    ],
+    "title": "ErrorResponse",
+    "type": "object"
+  },
+  "ValidationErrorDetail": {
+    "description": "Un field-error individual (campo + mensaje).",
+    "properties": {
+      "field": {
+        "default": "",
+        "title": "Field",
+        "type": "string"
+      },
+      "message": {
+        "title": "Message",
+        "type": "string"
+      }
+    },
+    "required": [
+      "message"
+    ],
+    "title": "ValidationErrorDetail",
+    "type": "object"
+  },
+  "ValidationErrorResponse": {
+    "$defs": {
+      "ValidationErrorDetail": {
+        "description": "Un field-error individual (campo + mensaje).",
+        "properties": {
+          "field": {
+            "default": "",
+            "title": "Field",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "title": "ValidationErrorDetail",
+        "type": "object"
+      }
+    },
+    "description": "Cuerpo de respuesta para errores de validaci\u00f3n (400).",
+    "properties": {
+      "detail": {
+        "default": "Error de validaci\u00f3n",
+        "title": "Detail",
+        "type": "string"
+      },
+      "code": {
+        "default": "validation_error",
+        "title": "Code",
+        "type": "string"
+      },
+      "errors": {
+        "items": {
+          "$ref": "#/$defs/ValidationErrorDetail"
+        },
+        "title": "Errors",
+        "type": "array"
+      }
+    },
+    "title": "ValidationErrorResponse",
+    "type": "object"
+  }
+}

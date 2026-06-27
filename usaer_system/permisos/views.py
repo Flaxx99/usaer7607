@@ -1,8 +1,11 @@
 from django.contrib.auth import get_user_model
 from django.utils import timezone
-from rest_framework import filters, serializers, status, viewsets
+from pydantic import ValidationError
+from rest_framework import filters, serializers, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from services.dto import MetricasPermisoResponse, ResponderPermisoPayload
+from services.error_handling import error_400, error_403, pydantic_error_response
 
 from .models import Permiso
 from .permissions import IsAdminDirectorOrOwner
@@ -102,38 +105,20 @@ class PermisoViewSet(viewsets.ModelViewSet):
         """
         permiso = self.get_object()
 
-        # VALIDACIÓN DE IDEMPOTENCIA: Solo se puede responder a permisos PENDIENTES
-        if permiso.estado != Permiso.Estado.PENDIENTE:
-            return Response(
-                {
-                    "detail": f"Este permiso ya ha sido gestionado y se encuentra en estado {permiso.get_estado_display()}. No se puede modificar."
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        # Validar payload con pydantic
+        try:
+            payload = ResponderPermisoPayload(**request.data)
+        except ValidationError as e:
+            return pydantic_error_response(e, default_detail="Datos inválidos en la solicitud.")
 
-        # Validar autoridad (Director/Admin)
-        roles_autoridad = [User.Role.ADMINISTRADOR.value, User.Role.DIRECTOR.value]
-        if request.user.role not in roles_autoridad and not request.user.is_superuser:
-            return Response(
-                {"detail": "No tienes permiso para responder."}, status=status.HTTP_403_FORBIDDEN
-            )
+        from services.permiso_service import responder_permiso
 
-        estado = request.data.get("estado")
-        respuesta = request.data.get("respuesta_admin", "")
-
-        if estado not in [Permiso.Estado.APROBADO, Permiso.Estado.RECHAZADO]:
-            return Response({"detail": "Estado inválido."}, status=status.HTTP_400_BAD_REQUEST)
-
-        if estado == Permiso.Estado.RECHAZADO and not respuesta:
-            return Response(
-                {"detail": "Debe justificar el rechazo."}, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        permiso.estado = estado
-        permiso.respuesta_admin = respuesta.upper()
-        permiso.administrador = request.user
-        permiso.fecha_respuesta = timezone.now()
-        permiso.save()
+        try:
+            responder_permiso(permiso, payload, request.user)
+        except ValueError as e:
+            return error_400(str(e))
+        except PermissionError as e:
+            return error_403(str(e))
 
         return Response(self.get_serializer(permiso).data)
 
@@ -156,11 +141,11 @@ class PermisoViewSet(viewsets.ModelViewSet):
         ).count()
 
         return Response(
-            {
-                "total": total,
-                "pendientes": pendientes,
-                "aprobados": aprobados,
-                "rechazados": rechazados,
-                "ultima_semana": ultima_semana,
-            }
+            MetricasPermisoResponse(
+                total=total,
+                pendientes=pendientes,
+                aprobados=aprobados,
+                rechazados=rechazados,
+                ultima_semana=ultima_semana,
+            ).model_dump()
         )

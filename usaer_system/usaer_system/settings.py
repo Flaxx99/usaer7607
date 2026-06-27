@@ -1,18 +1,19 @@
 import logging
-import os
 from pathlib import Path
 
 import dj_database_url
 from dotenv import load_dotenv
 
+from usaer_system.config import settings as config
+
 logger = logging.getLogger(__name__)
 
-load_dotenv()  # Carga las variables de entorno desde .env
+load_dotenv()  # Carga las variables de entorno desde .env (necesario para DATABASE_URL, etc.)
 
 # ─────────────────────────────────────────────
 # Sentry: Monitoreo de errores en producción
 # ─────────────────────────────────────────────
-SENTRY_DSN = os.environ.get("SENTRY_DSN")
+SENTRY_DSN = config.sentry_dsn
 if SENTRY_DSN:
     import sentry_sdk
     from sentry_sdk.integrations.django import DjangoIntegration
@@ -22,7 +23,7 @@ if SENTRY_DSN:
         integrations=[DjangoIntegration()],
         traces_sample_rate=0.05,
         send_default_pii=False,  # No enviar PII por defecto
-        environment="production" if os.environ.get("DEBUG", "False") != "True" else "development",
+        environment=config.sentry_environment,
     )
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -31,13 +32,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 LOG_DIR = BASE_DIR / "logs"
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 
-# En producción, DEBUG debe ser False. Se lee de una variable de entorno.
-DEBUG = os.environ.get("DEBUG", "False") == "True"
+# En producción, DEBUG debe ser False. Validado via pydantic-settings.
+DEBUG = config.debug
 
 # Retrieve secret key from environment for production.
-SECRET_KEY = os.environ.get("SECRET_KEY")
+# Validado via pydantic-settings — fallback solo en modo DEBUG.
+SECRET_KEY = config.secret_key
 if not SECRET_KEY and DEBUG:
-    # Solo permitimos una clave insegura si estamos en modo DEBUG
     SECRET_KEY = "django-insecure-fallback-for-dev-only"
 elif not SECRET_KEY:
     raise RuntimeError("SECRET_KEY environment variable is required in production!")
@@ -103,7 +104,7 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10 MB
 
 # Lee los hosts permitidos de una variable de entorno.
 # En producción, debes poner aquí tu dominio, ej: 'www.misitio.com'
-ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
+ALLOWED_HOSTS = config.allowed_hosts_list
 
 
 # ─────────────────────────────────────────────
@@ -241,7 +242,7 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-REDIS_URL = os.environ.get("REDIS_URL")
+REDIS_URL = config.redis_url
 if REDIS_URL:
     try:
         import django_redis  # noqa: F401 — verifica que el paquete esté instalado
@@ -283,21 +284,9 @@ LOGOUT_REDIRECT_URL = "/"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
-CORS_ALLOWED_ORIGINS = [
-    origin.strip()
-    for origin in os.environ.get(
-        "CORS_ALLOWED_ORIGINS",
-        "http://localhost:5173",
-    ).split(",")
-]
+CORS_ALLOWED_ORIGINS = config.cors_allowed_origins_list
 
-CSRF_TRUSTED_ORIGINS = [
-    origin.strip()
-    for origin in os.environ.get(
-        "CSRF_TRUSTED_ORIGINS",
-        "http://localhost:5173",
-    ).split(",")
-]
+CSRF_TRUSTED_ORIGINS = config.csrf_trusted_origins_list
 
 REST_FRAMEWORK = {
     # PRIORIDAD DE AUTENTICACIÓN:
