@@ -280,6 +280,10 @@ class RAEViewsTest(APITestCase):
         }
         response = self.client.post(reverse("rae:guardar_rae_bulk"), data=data, format="json")
         self.assertIn(response.status_code, (200, 201))
+        self.assertEqual(
+            response.json(),
+            {"status": "success", "detail": "1 alumnos actualizados"},
+        )
 
         # Verificar que el cambio se aplicó
         rae_alumno.refresh_from_db()
@@ -405,6 +409,10 @@ class RAEExportTest(APITestCase):
         self.client.force_authenticate(self.teacher1)
         response = self.client.get(reverse("rae:exportar_todo_rae_excel"))
         self.assertEqual(response.status_code, 403)
+        self.assertEqual(
+            response.json(),
+            {"detail": "No tienes permiso.", "code": "forbidden"},
+        )
 
     def test_export_all_button_visibility(self):
         self.client.force_authenticate(self.admin_user)

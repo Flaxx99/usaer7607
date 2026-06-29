@@ -88,6 +88,33 @@ export interface PermisoResponse {
     duracion_dias: number;
 }
 
+export interface IncidenciaResponse {
+    id: number;
+    titulo: string;
+    descripcion: string;
+    escuela: number;
+    escuela_nombre: string;
+    profesor: number;
+    profesor_nombre: string;
+    reportado_por: number;
+    reportado_por_nombre: string;
+    estado: 'PENDIENTE' | 'RESUELTA';
+    respuesta_admin: string | undefined;
+    fecha_reporte: string;
+    fecha_resolucion: string | undefined;
+}
+
+export interface AnuncioResponse {
+    id: number;
+    titulo: string;
+    contenido: string;
+    fecha_publicacion: string;
+    fecha_expiracion: string | undefined;
+    autor: number;
+    autor_nombre: string;
+    es_activo: boolean;
+}
+
 export interface PromocionExecResponse {
     status: string | undefined;
     detail: string | undefined;

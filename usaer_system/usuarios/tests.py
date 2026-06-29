@@ -122,6 +122,10 @@ class UserAPITests(APITestCase):
         self.client.force_authenticate(user=self.maestro)
         response = self.client.post(url_logout)
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            {"status": "success", "detail": "Sesión cerrada correctamente."},
+        )
 
     def test_login_with_none_username(self):
         """Verify that login doesn't crash when username is missing."""
@@ -247,6 +251,10 @@ class UserViewSetActionsTest(APITestCase):
             format="json",
         )
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            {"status": "success", "detail": "Contraseña actualizada"},
+        )
         self.maestro.refresh_from_db()
         self.assertTrue(self.maestro.check_password("NuevaPass123!"))
 

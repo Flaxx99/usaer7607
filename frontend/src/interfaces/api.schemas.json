@@ -450,6 +450,154 @@
     "title": "PermisoResponse",
     "type": "object"
   },
+  "IncidenciaResponse": {
+    "description": "DTO que refleja la salida del IncidenciaSerializer.\n\nIncluye los ReadOnlyFields computados (escuela_nombre,\nprofesor_nombre, reportado_por_nombre) y los formatos de fecha.",
+    "properties": {
+      "id": {
+        "title": "Id",
+        "type": "integer"
+      },
+      "titulo": {
+        "title": "Titulo",
+        "type": "string"
+      },
+      "descripcion": {
+        "title": "Descripcion",
+        "type": "string"
+      },
+      "escuela": {
+        "title": "Escuela",
+        "type": "integer"
+      },
+      "escuela_nombre": {
+        "title": "Escuela Nombre",
+        "type": "string"
+      },
+      "profesor": {
+        "title": "Profesor",
+        "type": "integer"
+      },
+      "profesor_nombre": {
+        "title": "Profesor Nombre",
+        "type": "string"
+      },
+      "reportado_por": {
+        "title": "Reportado Por",
+        "type": "integer"
+      },
+      "reportado_por_nombre": {
+        "title": "Reportado Por Nombre",
+        "type": "string"
+      },
+      "estado": {
+        "enum": [
+          "PENDIENTE",
+          "RESUELTA"
+        ],
+        "title": "Estado",
+        "type": "string"
+      },
+      "respuesta_admin": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Respuesta Admin"
+      },
+      "fecha_reporte": {
+        "title": "Fecha Reporte",
+        "type": "string"
+      },
+      "fecha_resolucion": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Fecha Resolucion"
+      }
+    },
+    "required": [
+      "id",
+      "titulo",
+      "descripcion",
+      "escuela",
+      "escuela_nombre",
+      "profesor",
+      "profesor_nombre",
+      "reportado_por",
+      "reportado_por_nombre",
+      "estado",
+      "fecha_reporte"
+    ],
+    "title": "IncidenciaResponse",
+    "type": "object"
+  },
+  "AnuncioResponse": {
+    "description": "DTO que refleja la salida del AnuncioSerializer.\n\nIncluye los ReadOnlyFields (autor_nombre, es_activo).",
+    "properties": {
+      "id": {
+        "title": "Id",
+        "type": "integer"
+      },
+      "titulo": {
+        "title": "Titulo",
+        "type": "string"
+      },
+      "contenido": {
+        "title": "Contenido",
+        "type": "string"
+      },
+      "fecha_publicacion": {
+        "title": "Fecha Publicacion",
+        "type": "string"
+      },
+      "fecha_expiracion": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Fecha Expiracion"
+      },
+      "autor": {
+        "title": "Autor",
+        "type": "integer"
+      },
+      "autor_nombre": {
+        "title": "Autor Nombre",
+        "type": "string"
+      },
+      "es_activo": {
+        "title": "Es Activo",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "id",
+      "titulo",
+      "contenido",
+      "fecha_publicacion",
+      "autor",
+      "autor_nombre",
+      "es_activo"
+    ],
+    "title": "AnuncioResponse",
+    "type": "object"
+  },
   "PromocionExecResponse": {
     "description": "Respuesta de una promoci\u00f3n ejecutada.",
     "properties": {

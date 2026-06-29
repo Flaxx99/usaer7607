@@ -189,6 +189,48 @@ class PermisoResponse(BaseModel):
     duracion_dias: int
 
 
+IncidenciaEstado = Literal["PENDIENTE", "RESUELTA"]
+"""Valores posibles para el campo estado de una incidencia."""
+
+
+class IncidenciaResponse(BaseModel):
+    """DTO que refleja la salida del IncidenciaSerializer.
+
+    Incluye los ReadOnlyFields computados (escuela_nombre,
+    profesor_nombre, reportado_por_nombre) y los formatos de fecha.
+    """
+
+    id: int
+    titulo: str
+    descripcion: str
+    escuela: int
+    escuela_nombre: str
+    profesor: int
+    profesor_nombre: str
+    reportado_por: int
+    reportado_por_nombre: str
+    estado: IncidenciaEstado
+    respuesta_admin: str | None = None
+    fecha_reporte: str
+    fecha_resolucion: str | None = None
+
+
+class AnuncioResponse(BaseModel):
+    """DTO que refleja la salida del AnuncioSerializer.
+
+    Incluye los ReadOnlyFields (autor_nombre, es_activo).
+    """
+
+    id: int
+    titulo: str
+    contenido: str
+    fecha_publicacion: str
+    fecha_expiracion: str | None = None
+    autor: int
+    autor_nombre: str
+    es_activo: bool
+
+
 class PromocionExecResponse(BaseModel):
     """Respuesta de una promoción ejecutada."""
 

@@ -1,18 +1,5 @@
-export interface Incidencia {
-    id: number;
-    titulo: string;
-    descripcion: string;
-    escuela: number;
-    escuela_nombre: string;
-    profesor: number;      // ID del profesor involucrado
-    profesor_nombre: string;
-    reportado_por: number;
-    reportado_por_nombre: string;
-    estado: 'PENDIENTE' | 'RESUELTA';
-    respuesta_admin?: string;
-    fecha_reporte: string;
-    fecha_resolucion?: string;
-}
+// Re-exportado desde api.ts (generado de pydantic IncidenciaResponse).
+export type { IncidenciaResponse as Incidencia } from './api';
 
 export interface IncidenciaInput {
     titulo: string;
