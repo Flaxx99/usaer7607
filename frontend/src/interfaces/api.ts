@@ -69,6 +69,25 @@ export interface MetricasPermisoResponse {
     ultima_semana: number | undefined;
 }
 
+export interface PermisoResponse {
+    id: number;
+    tipo: 'PERSONAL' | 'ENFERMEDAD' | 'COMISION' | 'LLEGADA_TARDE' | 'SALIDA_TEMPRANA';
+    fecha_inicio: string;
+    fecha_fin: string;
+    horas_solicitadas: string | undefined;
+    motivo: string;
+    estado: 'PENDIENTE' | 'APROBADO' | 'RECHAZADO';
+    respuesta_admin: string | undefined;
+    profesor: number;
+    profesor_nombre: string;
+    escuela: number;
+    escuela_nombre: string;
+    administrador_nombre: string | undefined;
+    fecha_solicitud: string;
+    fecha_respuesta: string | undefined;
+    duracion_dias: number;
+}
+
 export interface PromocionExecResponse {
     status: string | undefined;
     detail: string | undefined;

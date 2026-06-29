@@ -321,6 +321,135 @@
     "title": "MetricasPermisoResponse",
     "type": "object"
   },
+  "PermisoResponse": {
+    "description": "DTO que refleja la salida del PermisoSerializer.\n\nCoincide campo a campo con lo que devuelve el DRF ModelSerializer,\nincluyendo los ReadOnlyFields computados (profesor_nombre, etc.)\ny los formatos de fecha/hora.",
+    "properties": {
+      "id": {
+        "title": "Id",
+        "type": "integer"
+      },
+      "tipo": {
+        "enum": [
+          "PERSONAL",
+          "ENFERMEDAD",
+          "COMISION",
+          "LLEGADA_TARDE",
+          "SALIDA_TEMPRANA"
+        ],
+        "title": "Tipo",
+        "type": "string"
+      },
+      "fecha_inicio": {
+        "title": "Fecha Inicio",
+        "type": "string"
+      },
+      "fecha_fin": {
+        "title": "Fecha Fin",
+        "type": "string"
+      },
+      "horas_solicitadas": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Horas Solicitadas"
+      },
+      "motivo": {
+        "title": "Motivo",
+        "type": "string"
+      },
+      "estado": {
+        "enum": [
+          "PENDIENTE",
+          "APROBADO",
+          "RECHAZADO"
+        ],
+        "title": "Estado",
+        "type": "string"
+      },
+      "respuesta_admin": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Respuesta Admin"
+      },
+      "profesor": {
+        "title": "Profesor",
+        "type": "integer"
+      },
+      "profesor_nombre": {
+        "title": "Profesor Nombre",
+        "type": "string"
+      },
+      "escuela": {
+        "title": "Escuela",
+        "type": "integer"
+      },
+      "escuela_nombre": {
+        "title": "Escuela Nombre",
+        "type": "string"
+      },
+      "administrador_nombre": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Administrador Nombre"
+      },
+      "fecha_solicitud": {
+        "title": "Fecha Solicitud",
+        "type": "string"
+      },
+      "fecha_respuesta": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Fecha Respuesta"
+      },
+      "duracion_dias": {
+        "title": "Duracion Dias",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "id",
+      "tipo",
+      "fecha_inicio",
+      "fecha_fin",
+      "motivo",
+      "estado",
+      "profesor",
+      "profesor_nombre",
+      "escuela",
+      "escuela_nombre",
+      "fecha_solicitud",
+      "duracion_dias"
+    ],
+    "title": "PermisoResponse",
+    "type": "object"
+  },
   "PromocionExecResponse": {
     "description": "Respuesta de una promoci\u00f3n ejecutada.",
     "properties": {

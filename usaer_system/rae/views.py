@@ -16,7 +16,7 @@ from openpyxl import load_workbook
 from pydantic import ValidationError
 from rest_framework import filters, permissions, views, viewsets
 from rest_framework.response import Response
-from services.dto import CerrarRegistroResponse, ToggleCerradoPayload
+from services.dto import CerrarRegistroResponse, StatusDetailResponse, ToggleCerradoPayload
 from services.error_handling import error_400, error_403, error_404, error_500
 from usuarios.models import SystemConfiguration
 
@@ -228,11 +228,8 @@ class RAEBulkSaveView(views.APIView):
 
         # Verificar si el registro está cerrado
         if registro.cerrado:
-            return Response(
-                {
-                    "detail": "Este registro RAE está cerrado. No se pueden modificar los datos. Solicita a un administrador que lo reabra."
-                },
-                status=403,
+            return error_403(
+                "Este registro RAE está cerrado. No se pueden modificar los datos. Solicita a un administrador que lo reabra."
             )
 
         # Campos permitidos
@@ -298,7 +295,9 @@ class RAEBulkSaveView(views.APIView):
         if instances:
             RAEAlumno.objects.bulk_update(instances, fields=campos)
 
-        return Response({"status": "success", "updated": updated_count})
+        return Response(
+            StatusDetailResponse(detail=f"{updated_count} alumnos actualizados").model_dump()
+        )
 
 
 # --- 3. EXPORTACIÓN EXCEL (Lógica Original Integrada) ---
@@ -852,19 +851,13 @@ class RAECerrarView(views.APIView):
     def post(self, request, pk):
         roles_totales = ["ADMIN", "SECRETARIO"]
         if not (request.user.is_superuser or getattr(request.user, "role", "") in roles_totales):
-            return Response(
-                {"detail": "Solo administradores y secretarios pueden cerrar/reabrir registros."},
-                status=403,
-            )
+            return error_403("Solo administradores y secretarios pueden cerrar/reabrir registros.")
 
         # Validar payload con pydantic
         try:
             payload = ToggleCerradoPayload(**request.data)
         except ValidationError as e:
-            return Response(
-                {"detail": "; ".join(err["msg"] for err in e.errors())},
-                status=400,
-            )
+            return error_400("; ".join(err["msg"] for err in e.errors()))
 
         registro = get_object_or_404(RegistroRAE, pk=pk)
         registro.cerrado = payload.cerrado

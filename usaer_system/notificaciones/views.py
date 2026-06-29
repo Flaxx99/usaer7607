@@ -1,8 +1,8 @@
 # notificaciones/views.py
-from rest_framework import permissions, status, viewsets
+from rest_framework import permissions, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from services.dto import UnreadCountResponse
+from services.dto import StatusDetailResponse, UnreadCountResponse
 
 from .models import Notificacion
 from .serializers import NotificacionSerializer
@@ -58,7 +58,7 @@ class NotificacionViewSet(viewsets.ReadOnlyModelViewSet):
         if not notificacion.leida:
             notificacion.leida = True
             notificacion.save()
-        return Response({"status": "marked as read"}, status=status.HTTP_200_OK)
+        return Response(StatusDetailResponse(detail="marked as read").model_dump())
 
     @action(detail=False, methods=["post"])
     def marcar_todas_leidas(self, request):
@@ -67,4 +67,4 @@ class NotificacionViewSet(viewsets.ReadOnlyModelViewSet):
         URL: /api/notificaciones/marcar_todas_leidas/
         """
         self.get_queryset().filter(leida=False).update(leida=True)
-        return Response({"status": "all marked as read"}, status=status.HTTP_200_OK)
+        return Response(StatusDetailResponse(detail="all marked as read").model_dump())

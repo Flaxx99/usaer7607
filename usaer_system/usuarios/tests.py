@@ -3,6 +3,7 @@
 from datetime import timedelta
 
 from django.contrib.auth import get_user_model
+from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
 from escuelas.models import Escuela
@@ -14,6 +15,7 @@ from .serializers import UserListSerializer, UserSerializer
 User = get_user_model()
 
 
+@override_settings(SECURE_SSL_REDIRECT=False)
 class UserAPITests(APITestCase):
     def setUp(self):
         # Setup Base Data
@@ -130,6 +132,7 @@ class UserAPITests(APITestCase):
         self.assertIn(response.status_code, [400, 401])
 
 
+@override_settings(SECURE_SSL_REDIRECT=False)
 class UserModelTests(APITestCase):
     def setUp(self):
         self.escuela = Escuela.objects.create(
@@ -171,6 +174,7 @@ class UserModelTests(APITestCase):
         self.assertEqual(event.event_type, CalendarEvent.EventType.REUNION)
 
 
+@override_settings(SECURE_SSL_REDIRECT=False)
 class UserViewSetActionsTest(APITestCase):
     """Tests para toggle_active y change_password de UserViewSet."""
 
@@ -223,7 +227,7 @@ class UserViewSetActionsTest(APITestCase):
         url = reverse("usuarios:usuario-toggle-active", args=[self.admin.pk])
         response = self.client.post(url)
         self.assertEqual(response.status_code, 400)
-        self.assertIn("No puedes desactivar tu propia cuenta", response.json()["error"])
+        self.assertIn("No puedes desactivar tu propia cuenta", response.json()["detail"])
 
     def test_non_admin_cannot_toggle_active(self):
         self.client.force_authenticate(user=self.maestro)
@@ -258,7 +262,7 @@ class UserViewSetActionsTest(APITestCase):
             format="json",
         )
         self.assertEqual(response.status_code, 400)
-        self.assertIn("old_password", response.json())
+        self.assertIn("Contraseña incorrecta", response.json()["detail"])
 
     def test_me_endpoint_returns_current_user(self):
         self.client.force_authenticate(user=self.maestro)
@@ -268,6 +272,7 @@ class UserViewSetActionsTest(APITestCase):
         self.assertEqual(response.json()["email"], self.maestro.email)
 
 
+@override_settings(SECURE_SSL_REDIRECT=False)
 class UserSerializerTest(APITestCase):
     """Verifica que UserListSerializer excluya datos sensibles (PII)."""
 

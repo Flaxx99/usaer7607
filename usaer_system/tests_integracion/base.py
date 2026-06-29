@@ -15,6 +15,7 @@ from datetime import date, timedelta
 from alumnos.models import Alumno
 from ciclos_escolares.models import CicloEscolar
 from django.contrib.auth import get_user_model
+from django.test import override_settings
 from escuelas.models import Escuela
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient, APITestCase
@@ -22,6 +23,7 @@ from rest_framework.test import APIClient, APITestCase
 User = get_user_model()
 
 
+@override_settings(SECURE_SSL_REDIRECT=False)
 class BaseIntegrationTest(APITestCase):
     """Clase base con datos compartidos para todos los tests de integración."""
 

@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import { LoadingProvider } from '../context/LoadingContext';
 import ListaCiclos from '../pages/ciclos/ListaCiclos';
-import { getCiclos, createCiclo, updateCiclo, deleteCiclo, previewPromocion, ejecutarPromocion, getPromocionStatus } from '../api/ciclos';
+import { getCiclos, createCiclo, updateCiclo, deleteCiclo, previewPromocion, ejecutarPromocion } from '../api/ciclos';
 import { toast } from 'sonner';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
@@ -17,7 +17,6 @@ vi.mock('../api/ciclos', async (importOriginal) => {
         deleteCiclo: vi.fn(),
         previewPromocion: vi.fn(),
         ejecutarPromocion: vi.fn(),
-        getPromocionStatus: vi.fn(),
     };
 });
 

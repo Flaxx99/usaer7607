@@ -21,6 +21,26 @@ class CicloPromocionFlowTest(BaseIntegrationTest):
 
     url = reverse("ciclos:promover_alumnos")
 
+    def setUp(self):
+        """Limpia last_promotion_cycle y parchea throttle."""
+        super().setUp()
+        Alumno.objects.filter(last_promotion_cycle=self.ciclo).update(last_promotion_cycle=None)
+        self._throttle_patcher = patch(
+            "rest_framework.throttling.ScopedRateThrottle.get_rate",
+            return_value="100/min",
+        )
+        self._throttle_patcher.start()
+        self._write_patcher = patch(
+            "usaer_system.throttling.WriteRateThrottle.get_rate",
+            return_value="100/min",
+        )
+        self._write_patcher.start()
+
+    def tearDown(self):
+        self._throttle_patcher.stop()
+        self._write_patcher.stop()
+        super().tearDown()
+
     def test_admin_ejecuta_promocion_completa(self):
         """Admin ejecuta promoción: preview → commit → verifica cambios."""
         self._auth(self.admin)

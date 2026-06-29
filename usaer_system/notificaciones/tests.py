@@ -1,6 +1,7 @@
 """Tests for Notificaciones app — basic and action coverage."""
 
 from django.contrib.auth import get_user_model
+from django.test import override_settings
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
@@ -9,6 +10,7 @@ from .models import Notificacion
 User = get_user_model()
 
 
+@override_settings(SECURE_SSL_REDIRECT=False)
 class NotificacionAPITests(APITestCase):
     def setUp(self):
         self.client = APIClient()
@@ -70,6 +72,10 @@ class NotificacionAPITests(APITestCase):
         url = f"/api/notificaciones/{self.notif1.pk}/marcar_leida/"
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.json(),
+            {"status": "success", "detail": "marked as read"},
+        )
 
         self.notif1.refresh_from_db()
         self.assertTrue(self.notif1.leida)
@@ -79,6 +85,10 @@ class NotificacionAPITests(APITestCase):
         url = "/api/notificaciones/marcar_todas_leidas/"
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.json(),
+            {"status": "success", "detail": "all marked as read"},
+        )
 
         self.notif1.refresh_from_db()
         self.notif2.refresh_from_db()

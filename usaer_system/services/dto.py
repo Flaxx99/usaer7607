@@ -112,6 +112,23 @@ class AlumnoIdQuery(BaseModel):
     alumno_id: int
 
 
+# ─── Tipos Literal ────────────────────────────────────────────────────────────
+
+
+PermisoTipo = Literal[
+    "PERSONAL",
+    "ENFERMEDAD",
+    "COMISION",
+    "LLEGADA_TARDE",
+    "SALIDA_TEMPRANA",
+]
+"""Valores posibles para el campo tipo de un permiso."""
+
+
+PermisoEstado = Literal["PENDIENTE", "APROBADO", "RECHAZADO"]
+"""Valores posibles para el campo estado de un permiso."""
+
+
 # ─── Response Models ─────────────────────────────────────────────────────────
 # Para endpoints que NO usan DRF serializers y devuelven dicts crudos.
 
@@ -144,6 +161,32 @@ class MetricasPermisoResponse(BaseModel):
     aprobados: int = 0
     rechazados: int = 0
     ultima_semana: int = 0
+
+
+class PermisoResponse(BaseModel):
+    """DTO que refleja la salida del PermisoSerializer.
+
+    Coincide campo a campo con lo que devuelve el DRF ModelSerializer,
+    incluyendo los ReadOnlyFields computados (profesor_nombre, etc.)
+    y los formatos de fecha/hora.
+    """
+
+    id: int
+    tipo: PermisoTipo
+    fecha_inicio: str
+    fecha_fin: str
+    horas_solicitadas: str | None = None
+    motivo: str
+    estado: PermisoEstado
+    respuesta_admin: str | None = None
+    profesor: int
+    profesor_nombre: str
+    escuela: int
+    escuela_nombre: str
+    administrador_nombre: str | None = None
+    fecha_solicitud: str
+    fecha_respuesta: str | None = None
+    duracion_dias: int
 
 
 class PromocionExecResponse(BaseModel):

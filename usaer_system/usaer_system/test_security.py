@@ -9,6 +9,7 @@ from django.conf import settings
 from django.test import TestCase, override_settings
 
 
+@override_settings(SECURE_SSL_REDIRECT=False)
 class SecurityHeadersTest(TestCase):
     """Verifica que los security headers esenciales estén configurados."""
 
@@ -59,6 +60,7 @@ class SecurityHeadersTest(TestCase):
         self.assertIn("X-Frame-Options", response)
 
 
+@override_settings(SECURE_SSL_REDIRECT=False)
 class CSPTest(TestCase):
     """Verifica que CSP esté configurado correctamente."""
 

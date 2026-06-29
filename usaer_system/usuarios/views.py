@@ -9,6 +9,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from services.dashboard_service import build_dashboard_data
 from services.dto import FiltrosUsuario, StatusDetailResponse, ToggleActiveResponse
+from services.error_handling import error_400
 
 from usuarios.permissions import IsAdminOrSecretario, IsAdminUserOnly
 
@@ -63,7 +64,7 @@ class LogoutView(views.APIView):
         if hasattr(request.user, "auth_token"):
             request.user.auth_token.delete()
         logout(request)
-        return Response({"detail": "Sesión cerrada correctamente."}, status=status.HTTP_200_OK)
+        return Response(StatusDetailResponse(detail="Sesión cerrada correctamente.").model_dump())
 
 
 # --- VIEWSET DE USUARIOS (¡ESTO ES LO QUE FALTABA!) ---
@@ -131,7 +132,7 @@ class UserViewSet(viewsets.ModelViewSet):
     def toggle_active(self, request, pk=None):
         user = self.get_object()
         if user == request.user:
-            return Response({"error": "No puedes desactivar tu propia cuenta."}, status=400)
+            return error_400("No puedes desactivar tu propia cuenta.")
 
         user.activo = not user.activo
         user.save()
@@ -147,7 +148,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
         if serializer.is_valid():
             if not user.check_password(serializer.data.get("old_password")):
-                return Response({"old_password": ["Contraseña incorrecta."]}, status=400)
+                return error_400("Contraseña incorrecta.")
 
             user.set_password(serializer.data.get("new_password"))
             user.save()
