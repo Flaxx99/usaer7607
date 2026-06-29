@@ -598,6 +598,168 @@
     "title": "AnuncioResponse",
     "type": "object"
   },
+  "LoginResponse": {
+    "description": "Respuesta de login exitoso con token y datos del usuario.",
+    "properties": {
+      "detail": {
+        "default": "Login exitoso",
+        "title": "Detail",
+        "type": "string"
+      },
+      "token": {
+        "title": "Token",
+        "type": "string"
+      },
+      "user": {
+        "additionalProperties": true,
+        "title": "User",
+        "type": "object"
+      }
+    },
+    "required": [
+      "token",
+      "user"
+    ],
+    "title": "LoginResponse",
+    "type": "object"
+  },
+  "CicloEscolarResponse": {
+    "description": "DTO que refleja la salida del CicloEscolarSerializer (fields='__all__').",
+    "properties": {
+      "id": {
+        "title": "Id",
+        "type": "integer"
+      },
+      "nombre": {
+        "title": "Nombre",
+        "type": "string"
+      },
+      "fecha_inicio": {
+        "title": "Fecha Inicio",
+        "type": "string"
+      },
+      "fecha_fin": {
+        "title": "Fecha Fin",
+        "type": "string"
+      },
+      "activo": {
+        "title": "Activo",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "id",
+      "nombre",
+      "fecha_inicio",
+      "fecha_fin",
+      "activo"
+    ],
+    "title": "CicloEscolarResponse",
+    "type": "object"
+  },
+  "EscuelaResponse": {
+    "description": "DTO que refleja la salida del EscuelaSerializer (fields='__all__').\n\nIncluye todos los campos del modelo, incluyendo director (FK).",
+    "properties": {
+      "id": {
+        "title": "Id",
+        "type": "integer"
+      },
+      "clave_estatal": {
+        "title": "Clave Estatal",
+        "type": "string"
+      },
+      "cct": {
+        "title": "Cct",
+        "type": "string"
+      },
+      "nombre": {
+        "title": "Nombre",
+        "type": "string"
+      },
+      "nivel": {
+        "enum": [
+          "PREESCOLAR",
+          "PRIMARIA",
+          "SECUNDARIA"
+        ],
+        "title": "Nivel",
+        "type": "string"
+      },
+      "domicilio": {
+        "title": "Domicilio",
+        "type": "string"
+      },
+      "colonia": {
+        "title": "Colonia",
+        "type": "string"
+      },
+      "telefono": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Telefono"
+      },
+      "zona": {
+        "title": "Zona",
+        "type": "string"
+      },
+      "inspector": {
+        "default": "",
+        "title": "Inspector",
+        "type": "string"
+      },
+      "telefono_inspector": {
+        "default": "",
+        "title": "Telefono Inspector",
+        "type": "string"
+      },
+      "correo_inspector": {
+        "default": "",
+        "title": "Correo Inspector",
+        "type": "string"
+      },
+      "director": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Director"
+      },
+      "celular_director": {
+        "default": "",
+        "title": "Celular Director",
+        "type": "string"
+      },
+      "correo_director": {
+        "default": "",
+        "title": "Correo Director",
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "clave_estatal",
+      "cct",
+      "nombre",
+      "nivel",
+      "domicilio",
+      "colonia",
+      "zona"
+    ],
+    "title": "EscuelaResponse",
+    "type": "object"
+  },
   "PromocionExecResponse": {
     "description": "Respuesta de una promoci\u00f3n ejecutada.",
     "properties": {

@@ -231,6 +231,50 @@ class AnuncioResponse(BaseModel):
     es_activo: bool
 
 
+class LoginResponse(BaseModel):
+    """Respuesta de login exitoso con token y datos del usuario."""
+
+    detail: str = "Login exitoso"
+    token: str
+    user: dict[str, Any]
+
+
+class CicloEscolarResponse(BaseModel):
+    """DTO que refleja la salida del CicloEscolarSerializer (fields='__all__')."""
+
+    id: int
+    nombre: str
+    fecha_inicio: str
+    fecha_fin: str
+    activo: bool
+
+
+EscuelaNivel = Literal["PREESCOLAR", "PRIMARIA", "SECUNDARIA"]
+
+
+class EscuelaResponse(BaseModel):
+    """DTO que refleja la salida del EscuelaSerializer (fields='__all__').
+
+    Incluye todos los campos del modelo, incluyendo director (FK).
+    """
+
+    id: int
+    clave_estatal: str
+    cct: str
+    nombre: str
+    nivel: EscuelaNivel
+    domicilio: str
+    colonia: str
+    telefono: str | None = None
+    zona: str
+    inspector: str = ""
+    telefono_inspector: str = ""
+    correo_inspector: str = ""
+    director: int | None = None
+    celular_director: str = ""
+    correo_director: str = ""
+
+
 class PromocionExecResponse(BaseModel):
     """Respuesta de una promoción ejecutada."""
 

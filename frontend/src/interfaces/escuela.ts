@@ -1,14 +1,5 @@
 // src/interfaces/escuela.ts
+//
+// Re-exportado desde api.ts (generado de pydantic EscuelaResponse).
 
-export interface Escuela {
-    id: number;
-    clave_estatal: string;
-    cct: string; 
-    nombre: string;
-    nivel: 'Primaria' | 'Preescolar' | 'Secundaria' | 'PRIMARIA' | 'PREESCOLAR' | 'SECUNDARIA' | string;
-    zona: string;
-    domicilio: string; 
-    colonia: string;   
-    telefono?: string;
-    
-}
+export type { EscuelaResponse as Escuela } from './api';

@@ -8,7 +8,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from services.dashboard_service import build_dashboard_data
-from services.dto import FiltrosUsuario, StatusDetailResponse, ToggleActiveResponse
+from services.dto import FiltrosUsuario, LoginResponse, StatusDetailResponse, ToggleActiveResponse
 from services.error_handling import error_400
 
 from usuarios.permissions import IsAdminOrSecretario, IsAdminUserOnly
@@ -54,7 +54,9 @@ class LoginView(generics.GenericAPIView):
         token, created = Token.objects.get_or_create(user=user)
         user_data = UserSerializer(user, context=self.get_serializer_context()).data
 
-        return Response({"detail": "Login exitoso", "token": token.key, "user": user_data})
+        return Response(
+            LoginResponse(detail="Login exitoso", token=token.key, user=user_data).model_dump()
+        )
 
 
 class LogoutView(views.APIView):

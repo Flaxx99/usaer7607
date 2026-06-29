@@ -115,6 +115,38 @@ export interface AnuncioResponse {
     es_activo: boolean;
 }
 
+export interface LoginResponse {
+    detail: string | undefined;
+    token: string;
+    user: Record<string, any>;
+}
+
+export interface CicloEscolarResponse {
+    id: number;
+    nombre: string;
+    fecha_inicio: string;
+    fecha_fin: string;
+    activo: boolean;
+}
+
+export interface EscuelaResponse {
+    id: number;
+    clave_estatal: string;
+    cct: string;
+    nombre: string;
+    nivel: 'PREESCOLAR' | 'PRIMARIA' | 'SECUNDARIA';
+    domicilio: string;
+    colonia: string;
+    telefono: string | undefined;
+    zona: string;
+    inspector: string | undefined;
+    telefono_inspector: string | undefined;
+    correo_inspector: string | undefined;
+    director: number | undefined;
+    celular_director: string | undefined;
+    correo_director: string | undefined;
+}
+
 export interface PromocionExecResponse {
     status: string | undefined;
     detail: string | undefined;
