@@ -26,19 +26,17 @@ const NOTIFICACIONES_DATA = {
     results: [
         {
             id: 1,
-            titulo: 'Revisión de expedientes',
-            contenido: 'Fecha límite: 30 de junio.',
-            leido: false,
+            mensaje: 'Revisión de expedientes — Fecha límite: 30 de junio.',
+            leida: false,
             fecha_creacion: '2026-06-10T10:00:00Z',
-            tipo: 'aviso',
+            url: null,
         },
         {
             id: 2,
-            titulo: 'Recordatorio de reunión',
-            contenido: 'Junta de consejo técnico el viernes.',
-            leido: true,
+            mensaje: 'Recordatorio de reunión — Junta de consejo técnico el viernes.',
+            leida: true,
             fecha_creacion: '2026-06-09T08:00:00Z',
-            tipo: 'recordatorio',
+            url: null,
         },
     ],
 };
@@ -50,9 +48,9 @@ describe('ListaNotificaciones', () => {
                 await delay(30);
                 return HttpResponse.json(NOTIFICACIONES_DATA);
             }),
-            http.patch('*/notificaciones/:id/', async ({ params }) => {
+            http.post('*/notificaciones/:id/marcar_leida/', async ({ params }) => {
                 await delay(30);
-                return HttpResponse.json({ id: Number(params.id), leido: true });
+                return HttpResponse.json({ detail: 'marked as read' });
             }),
             http.post('*/notificaciones/marcar-todas-leidas/', async () => {
                 await delay(30);
@@ -74,10 +72,10 @@ describe('ListaNotificaciones', () => {
         renderPage();
 
         await waitFor(() => {
-            expect(screen.getByText('Revisión de expedientes')).toBeInTheDocument();
+            expect(screen.getByText('Revisión de expedientes — Fecha límite: 30 de junio.')).toBeInTheDocument();
         });
 
-        expect(screen.getByText('Recordatorio de reunión')).toBeInTheDocument();
+        expect(screen.getByText('Recordatorio de reunión — Junta de consejo técnico el viernes.')).toBeInTheDocument();
         expect(screen.getByText('Notificaciones')).toBeInTheDocument();
         // El botón "Marcar todas como leídas" aparece solo si hay notificaciones
         expect(screen.getByText('Marcar todas como leídas')).toBeInTheDocument();
@@ -87,7 +85,7 @@ describe('ListaNotificaciones', () => {
         renderPage();
 
         await waitFor(() => {
-            expect(screen.getByText('Revisión de expedientes')).toBeInTheDocument();
+            expect(screen.getByText('Revisión de expedientes — Fecha límite: 30 de junio.')).toBeInTheDocument();
         });
 
         // No leída debe tener botón
@@ -98,7 +96,7 @@ describe('ListaNotificaciones', () => {
         renderPage();
 
         await waitFor(() => {
-            expect(screen.getByText('Recordatorio de reunión')).toBeInTheDocument();
+            expect(screen.getByText('Recordatorio de reunión — Junta de consejo técnico el viernes.')).toBeInTheDocument();
         });
 
         // La leída NO tiene botón "Marcar leída"

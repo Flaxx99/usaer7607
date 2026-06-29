@@ -147,6 +147,36 @@ export interface EscuelaResponse {
     correo_director: string | undefined;
 }
 
+export interface NotificacionResponse {
+    id: number;
+    mensaje: string;
+    leida: boolean;
+    fecha_creacion: string;
+    url: string | undefined;
+}
+
+export interface OficioResponse {
+    id: number;
+    titulo: string;
+    descripcion: string;
+    archivo: string;
+    fecha_subida: string;
+    subido_por: number;
+    subido_por_nombre: string;
+}
+
+export interface AsistenciaResponse {
+    id: number;
+    profesor: number;
+    profesor_nombre: string;
+    escuela: number;
+    escuela_nombre: string;
+    fecha: string;
+    presente: boolean;
+    hora_entrada: string | undefined;
+    hora_salida: string | undefined;
+}
+
 export interface PromocionExecResponse {
     status: string | undefined;
     detail: string | undefined;

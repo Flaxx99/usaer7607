@@ -139,7 +139,7 @@ class LoginSerializer(serializers.Serializer):
 
 
 class ChangePasswordSerializer(serializers.Serializer):
-    old_password = serializers.CharField(required=True)
+    old_password = serializers.CharField(required=False, default="")
     new_password = serializers.CharField(required=True)
 
 

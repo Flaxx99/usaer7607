@@ -1,12 +1,2 @@
-export interface Notificacion {
-    id: number;
-    titulo: string;
-    contenido: string;
-    leido: boolean;
-    fecha_creacion: string;
-    tipo: string;
-    destinatario?: number;
-    destinatario_nombre?: string;
-    creado_por?: number;
-    creado_por_nombre?: string;
-}
+// Re-exportado desde api.ts (generado de pydantic NotificacionResponse).
+export type { NotificacionResponse as Notificacion } from './api';

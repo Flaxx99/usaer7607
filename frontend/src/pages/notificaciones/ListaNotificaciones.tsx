@@ -84,23 +84,20 @@ const ListaNotificaciones = () => {
                         <div 
                             key={n.id} 
                             className={`card bg-base-100 border transition-all hover:shadow-md ${
-                                n.leido ? 'border-base-200 opacity-70' : 'border-primary shadow-sm'
+                                n.leida ? 'border-base-200 opacity-70' : 'border-primary shadow-sm'
                             }`}
                         >
                             <div className="card-body p-5 flex-row items-start justify-between gap-4">
                                 <div className="flex-1">
-                                    <h3 className={`font-bold ${n.leido ? 'text-base-content/70' : 'text-base-content'}`}>
-                                        {n.titulo}
-                                    </h3>
-                                    <p className="text-sm text-base-content/70 mt-1 whitespace-pre-wrap">
-                                        {n.contenido}
+                                    <p className="text-sm text-base-content/70 whitespace-pre-wrap">
+                                        {n.mensaje}
                                     </p>
                                     <p className="text-xs opacity-50 mt-3">
                                         {new Date(n.fecha_creacion).toLocaleString()}
                                     </p>
                                 </div>
                                 
-                                {!n.leido && (
+                                {!n.leida && (
                                     <button 
                                         onClick={() => markAsReadMutation.mutate(n.id)}
                                         className="btn btn-ghost btn-xs text-primary"

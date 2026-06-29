@@ -275,6 +275,52 @@ class EscuelaResponse(BaseModel):
     correo_director: str = ""
 
 
+class NotificacionResponse(BaseModel):
+    """DTO que refleja la salida del NotificacionSerializer.
+
+    El modelo usa 'mensaje' (no titulo/contenido) y 'leida'.
+    """
+
+    id: int
+    mensaje: str
+    leida: bool
+    fecha_creacion: str
+    url: str | None = None
+
+
+class OficioResponse(BaseModel):
+    """DTO que refleja la salida del OficioSerializer.
+
+    Incluye el ReadOnlyField subido_por_nombre.
+    """
+
+    id: int
+    titulo: str
+    descripcion: str
+    archivo: str
+    fecha_subida: str
+    subido_por: int
+    subido_por_nombre: str
+
+
+class AsistenciaResponse(BaseModel):
+    """DTO que refleja la salida del AsistenciaSerializer.
+
+    Incluye los ReadOnlyFields (profesor_nombre, escuela_nombre)
+    y formatos de hora.
+    """
+
+    id: int
+    profesor: int
+    profesor_nombre: str
+    escuela: int
+    escuela_nombre: str
+    fecha: str
+    presente: bool
+    hora_entrada: str | None = None
+    hora_salida: str | None = None
+
+
 class PromocionExecResponse(BaseModel):
     """Respuesta de una promoción ejecutada."""
 

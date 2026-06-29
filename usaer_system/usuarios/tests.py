@@ -258,15 +258,34 @@ class UserViewSetActionsTest(APITestCase):
         self.maestro.refresh_from_db()
         self.assertTrue(self.maestro.check_password("NuevaPass123!"))
 
-    def test_change_password_rechaza_old_password_incorrecta(self):
+    def test_change_password_admin_bypass_old_password(self):
+        """Admin puede cambiar password de otro usuario sin old_password."""
         self.client.force_authenticate(user=self.admin)
         url = reverse("usuarios:usuario-change-password", args=[self.maestro.pk])
         response = self.client.post(
             url,
-            {
-                "old_password": "WrongPass1!",
-                "new_password": "NuevaPass123!",
-            },
+            {"new_password": "NuevaPass123!"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            {"status": "success", "detail": "Contraseña actualizada"},
+        )
+        self.maestro.refresh_from_db()
+        self.assertTrue(self.maestro.check_password("NuevaPass123!"))
+
+    def test_change_password_self_service_requiere_old_password(self):
+        """Usuario necesita old_password para cambiar su propia contraseña."""
+        self.client.force_authenticate(user=self.maestro)
+        url = reverse("usuarios:usuario-change-password", args=[self.maestro.pk])
+        # Sin old_password → error
+        response = self.client.post(url, {"new_password": "NuevaPass123!"}, format="json")
+        self.assertEqual(response.status_code, 400)
+        # Con old_password incorrecta → error
+        response = self.client.post(
+            url,
+            {"old_password": "WrongPass1!", "new_password": "NuevaPass123!"},
             format="json",
         )
         self.assertEqual(response.status_code, 400)

@@ -760,6 +760,159 @@
     "title": "EscuelaResponse",
     "type": "object"
   },
+  "NotificacionResponse": {
+    "description": "DTO que refleja la salida del NotificacionSerializer.\n\nEl modelo usa 'mensaje' (no titulo/contenido) y 'leida'.",
+    "properties": {
+      "id": {
+        "title": "Id",
+        "type": "integer"
+      },
+      "mensaje": {
+        "title": "Mensaje",
+        "type": "string"
+      },
+      "leida": {
+        "title": "Leida",
+        "type": "boolean"
+      },
+      "fecha_creacion": {
+        "title": "Fecha Creacion",
+        "type": "string"
+      },
+      "url": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Url"
+      }
+    },
+    "required": [
+      "id",
+      "mensaje",
+      "leida",
+      "fecha_creacion"
+    ],
+    "title": "NotificacionResponse",
+    "type": "object"
+  },
+  "OficioResponse": {
+    "description": "DTO que refleja la salida del OficioSerializer.\n\nIncluye el ReadOnlyField subido_por_nombre.",
+    "properties": {
+      "id": {
+        "title": "Id",
+        "type": "integer"
+      },
+      "titulo": {
+        "title": "Titulo",
+        "type": "string"
+      },
+      "descripcion": {
+        "title": "Descripcion",
+        "type": "string"
+      },
+      "archivo": {
+        "title": "Archivo",
+        "type": "string"
+      },
+      "fecha_subida": {
+        "title": "Fecha Subida",
+        "type": "string"
+      },
+      "subido_por": {
+        "title": "Subido Por",
+        "type": "integer"
+      },
+      "subido_por_nombre": {
+        "title": "Subido Por Nombre",
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "titulo",
+      "descripcion",
+      "archivo",
+      "fecha_subida",
+      "subido_por",
+      "subido_por_nombre"
+    ],
+    "title": "OficioResponse",
+    "type": "object"
+  },
+  "AsistenciaResponse": {
+    "description": "DTO que refleja la salida del AsistenciaSerializer.\n\nIncluye los ReadOnlyFields (profesor_nombre, escuela_nombre)\ny formatos de hora.",
+    "properties": {
+      "id": {
+        "title": "Id",
+        "type": "integer"
+      },
+      "profesor": {
+        "title": "Profesor",
+        "type": "integer"
+      },
+      "profesor_nombre": {
+        "title": "Profesor Nombre",
+        "type": "string"
+      },
+      "escuela": {
+        "title": "Escuela",
+        "type": "integer"
+      },
+      "escuela_nombre": {
+        "title": "Escuela Nombre",
+        "type": "string"
+      },
+      "fecha": {
+        "title": "Fecha",
+        "type": "string"
+      },
+      "presente": {
+        "title": "Presente",
+        "type": "boolean"
+      },
+      "hora_entrada": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Hora Entrada"
+      },
+      "hora_salida": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Hora Salida"
+      }
+    },
+    "required": [
+      "id",
+      "profesor",
+      "profesor_nombre",
+      "escuela",
+      "escuela_nombre",
+      "fecha",
+      "presente"
+    ],
+    "title": "AsistenciaResponse",
+    "type": "object"
+  },
   "PromocionExecResponse": {
     "description": "Respuesta de una promoci\u00f3n ejecutada.",
     "properties": {

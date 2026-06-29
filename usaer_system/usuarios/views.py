@@ -9,7 +9,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from services.dashboard_service import build_dashboard_data
 from services.dto import FiltrosUsuario, LoginResponse, StatusDetailResponse, ToggleActiveResponse
-from services.error_handling import error_400
+from services.error_handling import error_400, error_403
 
 from usuarios.permissions import IsAdminOrSecretario, IsAdminUserOnly
 
@@ -119,7 +119,6 @@ class UserViewSet(viewsets.ModelViewSet):
             "partial_update",
             "destroy",
             "toggle_active",
-            "change_password",
         }
         if getattr(self, "action", None) in admin_only:
             return [IsAuthenticated(), IsAdminUserOnly()]
@@ -149,8 +148,14 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer = ChangePasswordSerializer(data=request.data)
 
         if serializer.is_valid():
-            if not user.check_password(serializer.data.get("old_password")):
-                return error_400("Contraseña incorrecta.")
+            is_admin = request.user.is_superuser or getattr(request.user, "role", "") == "ADMIN"
+
+            # Self-service requiere old_password
+            if request.user.pk == user.pk:
+                if not user.check_password(serializer.data.get("old_password")):
+                    return error_400("Contraseña incorrecta.")
+            elif not is_admin:
+                return error_403("No tienes permiso para cambiar la contraseña de otro usuario.")
 
             user.set_password(serializer.data.get("new_password"))
             user.save()

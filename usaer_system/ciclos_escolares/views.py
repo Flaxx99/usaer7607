@@ -1,4 +1,4 @@
-import traceback
+import logging
 
 from alumnos.models import Alumno
 from django.db import transaction
@@ -20,6 +20,8 @@ from .models import CicloEscolar
 
 # Serializers
 from .serializers import CicloEscolarSerializer
+
+logger = logging.getLogger(__name__)
 
 
 class IsAdminOrSecretario(permissions.BasePermission):
@@ -110,10 +112,9 @@ class PromocionAlumnosView(views.APIView):
                     detalles_errores=data["errores"],
                 ).model_dump()
             )
-        except Exception as e:
-            print("!!! ERROR CRITICO EN PROMOCION (GET) !!!")
-            traceback.print_exc()
-            return error_500(f"Error interno en la simulación: {e}")
+        except Exception:
+            logger.exception("Error en simulación de promoción (GET)")
+            return error_500("Error interno en la simulación.")
 
     @swagger_auto_schema(
         operation_description="Ejecución real de la promoción masiva de alumnos.",

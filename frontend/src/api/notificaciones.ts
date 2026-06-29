@@ -8,7 +8,7 @@ export const notificacionesApi = {
         return response.data;
     },
     marcarComoLeida: async (id: number) => {
-        const response = await client.patch(`/notificaciones/${id}/`, { leida: true });
+        const response = await client.post(`/notificaciones/${id}/marcar_leida/`);
         return response.data;
     },
     marcarTodasComoLeidas: async () => {
