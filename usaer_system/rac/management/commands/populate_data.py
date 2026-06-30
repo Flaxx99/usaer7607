@@ -1,5 +1,5 @@
 import random
-from datetime import date
+from datetime import date, timedelta
 
 from alumnos.models import Alumno
 from ciclos_escolares.models import CicloEscolar
@@ -14,6 +14,7 @@ from rac.models import (
     TRASTORNOS_SUB,
     RegistroRAC,
 )
+from usuarios.models import SystemConfiguration
 
 User = get_user_model()
 fake = Faker("es_MX")
@@ -121,6 +122,18 @@ class Command(BaseCommand):
         )
         self.stdout.write("   Escuelas creadas.")
 
+        self.stdout.write("\n3.4. Creando configuración del sistema...")
+        SystemConfiguration.objects.get_or_create(
+            defaults={
+                "centro_nombre": "USAER 7607",
+                "centro_cct": "08FUA0093E",
+                "sup_especial_cct": "08FUA0041G",
+                "sup_especial_zona": "22",
+                "director_responsable": "Nubia Idaly Solis Mendias",
+            }
+        )
+        self.stdout.write("   Configuración del sistema creada.")
+
         self.stdout.write("\n3.5. Creando ciclo escolar actual...")
         ciclo, created = CicloEscolar.objects.get_or_create(
             nombre="2025-2026",
@@ -152,14 +165,16 @@ class Command(BaseCommand):
             first_name = fake.first_name_male() if sexo == "H" else fake.first_name_female()
             last_name_p = fake.last_name()
             last_name_m = fake.last_name()
+            edad_alumno = random.randint(6, 12)
 
             alumno = Alumno.objects.create(
                 nombres=first_name,
                 apellido_paterno=last_name_p,
                 apellido_materno=last_name_m,
-                curp=fake.unique.lexify(text="????######??????##").upper(),
+                curp=fake.unique.bothify(text="????######??????##").upper(),
                 sexo=sexo,
-                edad=random.randint(6, 12),
+                fecha_nacimiento=date.today()
+                - timedelta(days=edad_alumno * 365 + random.randint(0, 364)),
                 grado=str(random.randint(1, 6)),
                 grupo=random.choice(["A", "B", "C"]),
                 escuela=school,

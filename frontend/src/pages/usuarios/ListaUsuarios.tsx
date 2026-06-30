@@ -192,7 +192,7 @@ const ListaUsuarios = () => {
                         </div>
                     </div>
                     <div>
-                        <p className="font-bold text-sm leading-tight">{u.nombre} {u.apellido_paterno} {u.apellido_materno}</p>
+                        <p className="font-bold text-sm leading-tight">{u.nombre_completo || 'Sin nombre'}</p>
                         <div className="flex gap-1 mt-1">
                             <span className="text-xs opacity-60 flex items-center gap-1"><Mail size={12} /> {u.email}</span>
                             {u.numero_empleado && (

@@ -253,14 +253,14 @@ const Dashboard = () => {
 
 const COLOR_PALETTE = ['#3b82f6', '#14b8a6', '#8b5cf6', '#f59e0b', '#ef4444', '#6366f1'];
 
-const StatCard = ({ title, value, icon, color, description, highlight = false, pulse = false }: StatCardProps) => {
-  const colorClasses: Record<string, string> = {
-    blue: 'bg-blue-100 text-blue-700 border-blue-200',
-    teal: 'bg-teal-100 text-teal-700 border-teal-200',
-    indigo: 'bg-indigo-100 text-indigo-700 border-indigo-200',
-    error: 'bg-error/10 text-error border-error/20',
-  };
+const COLOR_CLASSES: Record<string, string> = {
+  blue: 'bg-primary/10 text-primary border-primary/20',
+  teal: 'bg-accent/10 text-accent border-accent/20',
+  indigo: 'bg-secondary/10 text-secondary border-secondary/20',
+  error: 'bg-error/10 text-error border-error/20',
+};
 
+const StatCard = ({ title, value, icon, color, description, highlight = false, pulse = false }: StatCardProps) => {
   return (
     <div 
       className={`card bg-base-100 shadow-sm border transition-all duration-200 cursor-pointer group hover:shadow-md hover:-translate-y-1 ${
@@ -269,7 +269,7 @@ const StatCard = ({ title, value, icon, color, description, highlight = false, p
     >
       <div className="card-body p-5">
         <div className="flex items-start justify-between">
-          <div className={`p-3 rounded-xl ${colorClasses[color] || 'bg-base-200'} ${pulse ? 'animate-pulse' : ''}`}>
+          <div className={`p-3 rounded-xl ${COLOR_CLASSES[color] || 'bg-base-200'} ${pulse ? 'animate-pulse' : ''}`}>
             {icon}
           </div>
           <ArrowUpRight className="w-4 h-4 opacity-0 group-hover:opacity-40 transition-opacity" />

@@ -93,40 +93,48 @@ const RAEValidationPanel = () => {
     if (isLoading) return <ValidationSkeleton />;
 
     return (
-        <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div className="flex items-center gap-3">
-                    <button 
-                         className="btn btn-primary btn-sm gap-2"
-                        onClick={() => navigate('/rae/capture/' + id)}
-                    >
-                        <ArrowLeft size={18} />
-                        Volver a Captura
-                    </button>
-                    <h1 className="text-2xl font-black tracking-tight">Validación de Totales RAE</h1>
-                    {cerrado && (
-                        <span className="badge badge-warning gap-1">
-                            <Lock size={14} /> Cerrado
-                        </span>
-                    )}
-                </div>
-                <div className="flex gap-2">
-                    <button
-                        className={`btn gap-2 ${cerrado ? 'btn-warning' : 'btn-outline btn-warning'}`}
-                        onClick={handleCerrar}
-                        disabled={cerrarMutation.isPending}
-                    >
-                        {cerrado ? <Unlock size={16} /> : <Lock size={16} />}
-                        {cerrado ? 'Reabrir Registro' : 'Cerrar Registro'}
-                    </button>
-                    <LoadingButton
-                        className="btn btn-success px-8 gap-2 shadow-lg hover:scale-105 transition-transform"
-                        icon={Download}
-                        loading={exporting}
-                        onClick={handleExport}
-                    >
-                        Descargar Archivo Oficial
-                    </LoadingButton>
+        <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
+            {/* Page header card */}
+            <div className="card bg-base-100 border border-base-300 shadow-sm">
+                <div className="card-body p-5 md:p-6">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div className="flex items-start gap-3">
+                            <button 
+                                className="btn btn-ghost btn-sm gap-2 mt-0.5"
+                                onClick={() => navigate('/rae/capture/' + id)}
+                            >
+                                <ArrowLeft size={16} />
+                                Volver a Captura
+                            </button>
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-primary/10 text-primary rounded-xl">
+                                    <CheckCircle size={20} />
+                                </div>
+                                <div>
+                                    <h1 className="text-xl md:text-2xl font-black tracking-tight">Validación de Totales RAE</h1>
+                                    <p className="text-sm text-base-content/60 mt-0.5">Verificá los totales registrados por categoría</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="flex gap-2">
+                            <button
+                                className={`btn btn-sm gap-2 ${cerrado ? 'btn-warning' : 'btn-outline btn-warning'}`}
+                                onClick={handleCerrar}
+                                disabled={cerrarMutation.isPending}
+                            >
+                                {cerrado ? <Unlock size={16} /> : <Lock size={16} />}
+                                {cerrado ? 'Reabrir Registro' : 'Cerrar Registro'}
+                            </button>
+                            <LoadingButton
+                                className="btn btn-success btn-sm px-6 gap-2"
+                                icon={Download}
+                                loading={exporting}
+                                onClick={handleExport}
+                            >
+                                Descargar Archivo Oficial
+                            </LoadingButton>
+                        </div>
+                    </div>
                 </div>
             </div>
 

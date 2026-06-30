@@ -52,8 +52,9 @@ const RACStudentTimeline = () => {
     return (
         <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-8">
             {/* CABECERA */}
-            <div className="card bg-indigo-600 text-white shadow-lg border-l-8 border-indigo-900">
-                <div className="card-body p-8">
+            <div className="card bg-gradient-to-br from-primary to-indigo-700 text-primary-content shadow-xl overflow-hidden relative">
+                <div className="absolute -right-12 -top-12 w-48 h-48 rounded-full bg-white/10 pointer-events-none" />
+                <div className="card-body p-8 relative z-10">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <div className="flex items-center gap-4">
                             <button
@@ -62,16 +63,17 @@ const RACStudentTimeline = () => {
                             >
                                 <ArrowLeft size={18} />
                             </button>
-                            <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center">
+                            <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
                                 <User size={28} />
                             </div>
                             <div>
                                 <h1 className="text-2xl font-black tracking-tight">
-                                    {selectedAlumno?.nombres} {selectedAlumno?.apellido_paterno} {selectedAlumno?.apellido_materno}
+                                    {selectedAlumno ? `${selectedAlumno.nombres} ${selectedAlumno.apellido_paterno}${selectedAlumno.apellido_materno ? ` ${selectedAlumno.apellido_materno}` : ''}` : 'Cargando...'}
                                 </h1>
                                 <p className="text-sm opacity-90">
                                     CURP: <span className="font-mono font-bold">{selectedAlumno?.curp || 'N/A'}</span>
-                                    {' | '}Grado: {selectedAlumno?.grado}° {selectedAlumno?.grupo}
+                                    {' | '}Edad: <span className="font-bold">{selectedAlumno?.edad ?? 'N/A'}</span> años
+                                    {' | '}Grado: {selectedAlumno?.grado || '—'}° {selectedAlumno?.grupo || '—'}
                                 </p>
                             </div>
                         </div>
@@ -89,20 +91,29 @@ const RACStudentTimeline = () => {
             {/* LÍNEA DE TIEMPO RAC */}
             <div className="card bg-base-100 shadow-sm border border-base-300">
                 <div className="card-body p-6">
-                    <div className="flex items-center gap-2 border-b pb-4 border-base-200 mb-6">
-                        <div className="p-2 bg-indigo-100 text-indigo-600 rounded-lg">
+                    <div className="flex items-center gap-3 border-b pb-4 border-base-200 mb-6">
+                        <div className="p-2 bg-primary/10 text-primary rounded-xl">
                             <Clock size={20} />
                         </div>
-                        <h3 className="text-lg font-bold">Historial de Registros RAC</h3>
+                        <div>
+                            <h3 className="font-bold text-lg">Historial de Registros RAC</h3>
+                            <p className="text-xs text-base-content/50">Registros por ciclo escolar</p>
+                        </div>
                     </div>
 
                     {!racRecords || racRecords.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-16 text-base-content/40 gap-4">
-                            <AlertCircle size={48} />
-                            <p className="text-xl font-bold">Sin Registros RAC</p>
-                            <p className="text-sm">Este alumno no tiene registros RAC en ningún ciclo escolar.</p>
+                            <div className="p-4 bg-base-200 rounded-full">
+                                <AlertCircle size={48} className="text-base-content/30" />
+                            </div>
+                            <div className="text-center">
+                                <p className="text-xl font-bold">Sin Registros RAC</p>
+                                <p className="text-sm mt-1">
+                                    {selectedAlumno ? `${selectedAlumno.nombres} ${selectedAlumno.apellido_paterno}` : 'Este alumno'} no tiene registros RAC en ningún ciclo escolar.
+                                </p>
+                            </div>
                             <button
-                                className="btn btn-primary mt-4"
+                                className="btn btn-primary mt-2"
                                 onClick={() => navigate(`/rac/nuevo?alumno=${alumnoId}`)}
                             >
                                 <Plus size={18} />
@@ -119,7 +130,7 @@ const RACStudentTimeline = () => {
                                 {racRecords.map((record: RegistroRAC) => (
                                     <div key={record.id} className="relative flex items-start gap-6 pb-8 last:pb-0">
                                         {/* Círculo del timeline */}
-                                        <div className="relative z-10 flex-shrink-0 w-12 h-12 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center shadow-md border-2 border-white">
+                                        <div className="relative z-10 flex-shrink-0 w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center shadow-md border-2 border-white">
                                             <FileText size={18} />
                                         </div>
 
@@ -147,7 +158,7 @@ const RACStudentTimeline = () => {
                                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                                                     <div>
                                                         <span className="text-xs font-bold uppercase opacity-50 block">Subclasificación</span>
-                                                        <span>{record.subclasificacion}</span>
+                                                        <span>{record.subclasificacion || '—'}</span>
                                                     </div>
                                                     <div>
                                                         <span className="text-xs font-bold uppercase opacity-50 block">Maestro de Apoyo</span>

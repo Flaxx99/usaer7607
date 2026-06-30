@@ -164,11 +164,11 @@ const ListaAlumnos = () => {
                          </div>
                      </div>
                      <div>
-                         <p className="font-bold text-sm leading-tight">{item.nombres} {item.apellido_paterno} {item.apellido_materno}</p>
-                         <div className="flex gap-1 mt-1">
-                             <span className="badge badge-ghost badge-xs font-mono opacity-60">{item.curp}</span>
-                             <span className="badge badge-ghost badge-xs opacity-60">{item.sexo === 'H' ? 'Niño' : 'Niña'}</span>
-                         </div>
+                          <p className="font-bold text-sm leading-tight">{item.nombres} {item.apellido_paterno}{item.apellido_materno ? ` ${item.apellido_materno}` : ''}</p>
+                          <div className="flex gap-1 mt-1">
+                              <span className="badge badge-ghost badge-xs font-mono opacity-60">{item.curp}</span>
+                              <span className="badge badge-ghost badge-xs opacity-60">{item.sexo === 'H' ? 'Niño' : 'Niña'}</span>
+                          </div>
                      </div>
                  </div>
              );
@@ -184,7 +184,7 @@ const ListaAlumnos = () => {
                     <SchoolIcon size={16} className="text-primary" />
                     <div>
                         <p className="font-bold text-sm">{item.escuela_detalle?.nombre || `Escuela #${item.escuela}`}</p>
-                        <p className="text-xs opacity-50">{item.grado}° Grado • Grupo "{item.grupo}"</p>
+                        <p className="text-xs opacity-50">{item.grado}° Grado • Grupo "{item.grupo || '—'}"</p>
                     </div>
                 </div>
             );
