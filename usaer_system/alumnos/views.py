@@ -104,11 +104,8 @@ class AlumnoViewSet(viewsets.ModelViewSet):
             self.perform_destroy(instance)
             return Response(status=status.HTTP_204_NO_CONTENT)
         except ProtectedError:
-            return Response(
-                {
-                    "detail": "No se puede eliminar el alumno porque tiene registros asociados (ej. asistencias, expedientes)."
-                },
-                status=status.HTTP_400_BAD_REQUEST,
+            return error_400(
+                "No se puede eliminar el alumno porque tiene registros asociados (ej. asistencias, expedientes)."
             )
 
     @swagger_auto_schema(
