@@ -120,7 +120,8 @@ const ListaUsuarios = () => {
     setUsuarioEditar(user);
     reset({ 
         ...user, 
-        password: user.password || '',
+        // password es write_only en el backend, no viene en GET
+        password: '',
         // Aseguramos que los campos requeridos por Zod estén presentes
         nombre: user.nombre || '',
         apellido_paterno: user.apellido_paterno || '',

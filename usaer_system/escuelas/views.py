@@ -1,6 +1,7 @@
 from django.db.models import ProtectedError
 from rest_framework import filters, status, viewsets
 from rest_framework.response import Response
+from services.error_handling import error_400, error_500
 
 from .models import Escuela
 from .permissions import IsAdminOrSecretarioOrReadOnly
@@ -37,14 +38,8 @@ class EscuelaViewSet(viewsets.ModelViewSet):
             self.perform_destroy(instance)
             return Response(status=status.HTTP_204_NO_CONTENT)
         except ProtectedError:
-            return Response(
-                {
-                    "detail": f"No se puede eliminar la escuela '{instance.nombre}' porque tiene registros asociados (alumnos, personal, etc.)."
-                },
-                status=status.HTTP_400_BAD_REQUEST,
+            return error_400(
+                f"No se puede eliminar la escuela '{instance.nombre}' porque tiene registros asociados (alumnos, personal, etc.)."
             )
         except Exception as e:
-            return Response(
-                {"detail": f"Error inesperado al eliminar: {str(e)}"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
+            return error_500(f"Error inesperado al eliminar: {str(e)}")

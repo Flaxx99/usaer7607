@@ -1,49 +1,8 @@
-// src/interfaces/usuario
-// .ts
+// src/interfaces/usuario.ts
+//
+// Re-exportado desde api.ts (generado de pydantic UsuarioResponse).
+//
+// Coincide con UserSerializer fields: sin password (write_only),
+// sin last_login/date_joined (no incluidos en fields del serializer).
 
-export interface Usuario {
-    id: number;
-    email: string;
-    numero_empleado?: string;
-    role: string;
-    
-    // Datos Personales (Coinciden con tu Serializer)
-    nombre: string;         // Backend: nombre
-    apellido_paterno: string; 
-    apellido_materno?: string;
-    nombre_completo?: string; // ReadOnly
-    
-    // Relación Escuela
-    escuela?: number | null; // ID para enviar (escritura)
-    // Objeto detalle para leer (lectura)
-    escuela_detalle?: { 
-        id: number; 
-        nombre: string; 
-        clave_estatal: string; 
-        nivel: string; 
-    }; 
-    
-    // Contacto
-    telefono?: string;
-    celular?: string;
-    domicilio?: string;
-    
-    // Fiscal / Legal
-    rfc?: string;
-    curp?: string;
-    
-    // Laboral
-    nivel?: string;
-    grado?: string;
-    situacion?: string;
-    fecha_ingreso?: string;
-    antiguedad?: string; // ReadOnly
-    
-    activo: boolean; // Backend: activo
-    password?: string; // Opcional (solo escritura)
-    is_superuser?: boolean;
-    
-    // Campos de solo lectura del servidor (se excluyen al enviar)
-    last_login?: string;
-    date_joined?: string;
-}
+export type { UsuarioResponse as Usuario } from './api';

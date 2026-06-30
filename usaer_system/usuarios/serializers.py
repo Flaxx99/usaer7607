@@ -1,22 +1,12 @@
 # usuarios/serializers.py
 from django.contrib.auth import authenticate, get_user_model
 from django.utils.translation import gettext_lazy as _
-from escuelas.models import Escuela
+from escuelas.serializers import EscuelaSimpleSerializer
 from rest_framework import serializers
 
 from .models import CalendarEvent, SystemConfiguration
 
 User = get_user_model()
-
-
-class EscuelaSimpleSerializer(serializers.ModelSerializer):
-    """
-    Serializer ligero para mostrar info básica de la escuela en el perfil.
-    """
-
-    class Meta:
-        model = Escuela
-        fields = ["id", "nombre", "clave_estatal", "nivel", "zona"]
 
 
 class UserListSerializer(serializers.ModelSerializer):

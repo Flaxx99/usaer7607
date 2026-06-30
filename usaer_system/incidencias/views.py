@@ -2,11 +2,12 @@ from django.contrib.auth import get_user_model
 from django.db.models import Q
 from django.utils import timezone
 from pydantic import ValidationError as PydanticValidationError
-from rest_framework import filters, status, viewsets
+from rest_framework import filters, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 from services.dto import ResolverIncidenciaPayload
+from services.error_handling import error_400
 
 from .models import Incidencia
 from .permissions import IncidenciaPermission
@@ -104,19 +105,13 @@ class IncidenciaViewSet(viewsets.ModelViewSet):
         incidencia = self.get_object()
 
         if incidencia.estado == "RESUELTA":
-            return Response(
-                {"detail": "This incidence is already resolved."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            return error_400("This incidence is already resolved.")
 
         # Validar payload con pydantic
         try:
             payload = ResolverIncidenciaPayload(**request.data)
         except PydanticValidationError as e:
-            return Response(
-                {"detail": "; ".join(err["msg"] for err in e.errors())},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            return error_400("; ".join(err["msg"] for err in e.errors()))
 
         incidencia.estado = "RESUELTA"
         incidencia.respuesta_admin = payload.respuesta_admin.upper()

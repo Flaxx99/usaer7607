@@ -147,6 +147,14 @@ export interface EscuelaResponse {
     correo_director: string | undefined;
 }
 
+export interface EscuelaSimpleResponse {
+    id: number;
+    nombre: string;
+    clave_estatal: string;
+    nivel: string;
+    zona: string;
+}
+
 export interface NotificacionResponse {
     id: number;
     mensaje: string;
@@ -175,6 +183,53 @@ export interface AsistenciaResponse {
     presente: boolean;
     hora_entrada: string | undefined;
     hora_salida: string | undefined;
+}
+
+export interface AlumnoResponse {
+    id: number;
+    profesor: number | undefined;
+    profesor_nombre: string;
+    escuela: number;
+    escuela_detalle: EscuelaSimpleResponse | undefined;
+    escuela_nombre: string;
+    apellido_paterno: string;
+    apellido_materno: string | undefined;
+    nombres: string;
+    nombre_completo: string;
+    curp: string;
+    fecha_nacimiento: string | undefined;
+    sexo: string;
+    edad: number | undefined;
+    grado: string;
+    grupo: string | undefined;
+    activo: boolean | undefined;
+    clasificacion: string;
+    clasificacion_otro: string | undefined;
+}
+
+export interface UsuarioResponse {
+    id: number;
+    email: string;
+    numero_empleado: string | undefined;
+    role: string;
+    nombre: string | undefined;
+    apellido_paterno: string | undefined;
+    apellido_materno: string | undefined;
+    nombre_completo: string | undefined;
+    escuela: number | undefined;
+    escuela_detalle: EscuelaSimpleResponse | undefined;
+    telefono: string | undefined;
+    celular: string | undefined;
+    domicilio: string | undefined;
+    rfc: string | undefined;
+    curp: string | undefined;
+    nivel: string | undefined;
+    grado: string | undefined;
+    situacion: string | undefined;
+    fecha_ingreso: string | undefined;
+    antiguedad: string | undefined;
+    activo: boolean | undefined;
+    is_superuser: boolean | undefined;
 }
 
 export interface PromocionExecResponse {

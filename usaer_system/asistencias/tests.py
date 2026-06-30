@@ -88,7 +88,7 @@ class AsistenciaAPITests(APITestCase):
         response = self.client.post(url, data=payload, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data["tipo"], "ERROR")
+        self.assertEqual(response.data["code"], "validation_error")
 
     def test_checar_profesor_no_existe(self):
         url = reverse("asistencias:checar")

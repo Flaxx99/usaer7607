@@ -1,3 +1,4 @@
+from escuelas.serializers import EscuelaSimpleSerializer
 from rest_framework import serializers
 
 from .models import Alumno
@@ -7,7 +8,9 @@ class AlumnoSerializer(serializers.ModelSerializer):
     nombre_completo = serializers.ReadOnlyField(source="get_full_name")
     edad = serializers.IntegerField(read_only=True)
 
-    # Campos opcionales para desplegar nombres en lugar de IDs en las respuestas GET
+    # Nested object para la escuela (consistente con UsuarioSerializer)
+    escuela_detalle = EscuelaSimpleSerializer(source="escuela", read_only=True)
+    # Flat nominal por si alguien lo necesita (ya no es estrictamente necesario)
     escuela_nombre = serializers.ReadOnlyField(source="escuela.nombre")
     profesor_nombre = serializers.ReadOnlyField(source="profesor.get_full_name")
 
@@ -18,6 +21,7 @@ class AlumnoSerializer(serializers.ModelSerializer):
             "profesor",
             "profesor_nombre",
             "escuela",
+            "escuela_detalle",
             "escuela_nombre",
             "apellido_paterno",
             "apellido_materno",

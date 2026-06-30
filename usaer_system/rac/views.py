@@ -10,11 +10,11 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from openpyxl import load_workbook
 from pydantic import ValidationError
-from rest_framework import filters, permissions, status, views, viewsets
+from rest_framework import filters, permissions, views, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from services.dto import AlumnoIdQuery
-from services.error_handling import error_400
+from services.error_handling import error_400, error_403, error_500
 
 from .models import RegistroRAC
 from .permissions import RACPermission
@@ -193,10 +193,7 @@ class RegistroRACViewSet(viewsets.ModelViewSet):
         try:
             query = AlumnoIdQuery.model_validate(request.query_params.dict())
         except ValidationError as e:
-            return Response(
-                {"detail": "; ".join(err["msg"] for err in e.errors())},
-                status=400,
-            )
+            return error_400("; ".join(err["msg"] for err in e.errors()))
 
         get_object_or_404(Alumno, pk=query.alumno_id)
 
@@ -279,9 +276,7 @@ class BaseExportRACView(views.APIView):
         # 2. Cargar Plantilla
         template_path = settings.BASE_DIR / "rac/static/excel_templates/rac_template_v2.xlsx"
         if not os.path.exists(template_path):
-            return Response(
-                {"detail": "Plantilla no encontrada."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            return error_500("Plantilla no encontrada.")
 
         try:
             wb = load_workbook(template_path)
@@ -290,10 +285,7 @@ class BaseExportRACView(views.APIView):
             if "ESTADÍSTICA POBLACIÓN 2025" in wb.sheetnames:
                 fill_statistics_data(wb["ESTADÍSTICA POBLACIÓN 2025"], registros)
         except Exception as e:
-            return Response(
-                {"detail": f"Error procesando Excel: {str(e)}"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
+            return error_500(f"Error procesando Excel: {str(e)}")
 
         # 3. Generar Respuesta
         output = BytesIO()
@@ -355,10 +347,7 @@ class ExportAllRACView(BaseExportRACView):
 
         # Verificación de permisos estricta
         if not (user.is_superuser or getattr(user, "role", "") in roles_permitidos):
-            return Response(
-                {"detail": "No tienes permiso para exportar el reporte global."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+            return error_403("No tienes permiso para exportar el reporte global.")
 
         qs = RegistroRAC.objects.select_related(
             "alumno__escuela", "escuela_regular", "escuela_basica", "maestro_apoyo"

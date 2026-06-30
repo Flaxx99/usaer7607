@@ -760,6 +760,40 @@
     "title": "EscuelaResponse",
     "type": "object"
   },
+  "EscuelaSimpleResponse": {
+    "description": "DTO ligero para nested object escuela_detalle (EscuelaSimpleSerializer).\n\nCoincide con EscuelaSimpleSerializer: id, nombre, clave_estatal, nivel, zona.",
+    "properties": {
+      "id": {
+        "title": "Id",
+        "type": "integer"
+      },
+      "nombre": {
+        "title": "Nombre",
+        "type": "string"
+      },
+      "clave_estatal": {
+        "title": "Clave Estatal",
+        "type": "string"
+      },
+      "nivel": {
+        "title": "Nivel",
+        "type": "string"
+      },
+      "zona": {
+        "title": "Zona",
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "nombre",
+      "clave_estatal",
+      "nivel",
+      "zona"
+    ],
+    "title": "EscuelaSimpleResponse",
+    "type": "object"
+  },
   "NotificacionResponse": {
     "description": "DTO que refleja la salida del NotificacionSerializer.\n\nEl modelo usa 'mensaje' (no titulo/contenido) y 'leida'.",
     "properties": {
@@ -911,6 +945,348 @@
       "presente"
     ],
     "title": "AsistenciaResponse",
+    "type": "object"
+  },
+  "AlumnoResponse": {
+    "$defs": {
+      "EscuelaSimpleResponse": {
+        "description": "DTO ligero para nested object escuela_detalle (EscuelaSimpleSerializer).\n\nCoincide con EscuelaSimpleSerializer: id, nombre, clave_estatal, nivel, zona.",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "nombre": {
+            "title": "Nombre",
+            "type": "string"
+          },
+          "clave_estatal": {
+            "title": "Clave Estatal",
+            "type": "string"
+          },
+          "nivel": {
+            "title": "Nivel",
+            "type": "string"
+          },
+          "zona": {
+            "title": "Zona",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "nombre",
+          "clave_estatal",
+          "nivel",
+          "zona"
+        ],
+        "title": "EscuelaSimpleResponse",
+        "type": "object"
+      }
+    },
+    "description": "DTO que refleja la salida del AlumnoSerializer.\n\nIncluye nested object escuela_detalle (EscuelaSimpleSerializer).",
+    "properties": {
+      "id": {
+        "title": "Id",
+        "type": "integer"
+      },
+      "profesor": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Profesor"
+      },
+      "profesor_nombre": {
+        "title": "Profesor Nombre",
+        "type": "string"
+      },
+      "escuela": {
+        "title": "Escuela",
+        "type": "integer"
+      },
+      "escuela_detalle": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/EscuelaSimpleResponse"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      },
+      "escuela_nombre": {
+        "title": "Escuela Nombre",
+        "type": "string"
+      },
+      "apellido_paterno": {
+        "title": "Apellido Paterno",
+        "type": "string"
+      },
+      "apellido_materno": {
+        "default": "",
+        "title": "Apellido Materno",
+        "type": "string"
+      },
+      "nombres": {
+        "title": "Nombres",
+        "type": "string"
+      },
+      "nombre_completo": {
+        "title": "Nombre Completo",
+        "type": "string"
+      },
+      "curp": {
+        "title": "Curp",
+        "type": "string"
+      },
+      "fecha_nacimiento": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Fecha Nacimiento"
+      },
+      "sexo": {
+        "title": "Sexo",
+        "type": "string"
+      },
+      "edad": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Edad"
+      },
+      "grado": {
+        "title": "Grado",
+        "type": "string"
+      },
+      "grupo": {
+        "default": "",
+        "title": "Grupo",
+        "type": "string"
+      },
+      "activo": {
+        "default": true,
+        "title": "Activo",
+        "type": "boolean"
+      },
+      "clasificacion": {
+        "title": "Clasificacion",
+        "type": "string"
+      },
+      "clasificacion_otro": {
+        "default": "",
+        "title": "Clasificacion Otro",
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "profesor_nombre",
+      "escuela",
+      "escuela_nombre",
+      "apellido_paterno",
+      "nombres",
+      "nombre_completo",
+      "curp",
+      "sexo",
+      "grado",
+      "clasificacion"
+    ],
+    "title": "AlumnoResponse",
+    "type": "object"
+  },
+  "UsuarioResponse": {
+    "$defs": {
+      "EscuelaSimpleResponse": {
+        "description": "DTO ligero para nested object escuela_detalle (EscuelaSimpleSerializer).\n\nCoincide con EscuelaSimpleSerializer: id, nombre, clave_estatal, nivel, zona.",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "nombre": {
+            "title": "Nombre",
+            "type": "string"
+          },
+          "clave_estatal": {
+            "title": "Clave Estatal",
+            "type": "string"
+          },
+          "nivel": {
+            "title": "Nivel",
+            "type": "string"
+          },
+          "zona": {
+            "title": "Zona",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "nombre",
+          "clave_estatal",
+          "nivel",
+          "zona"
+        ],
+        "title": "EscuelaSimpleResponse",
+        "type": "object"
+      }
+    },
+    "description": "DTO que refleja la salida del UserSerializer (completo).\n\nIncluye nested object escuela_detalle (EscuelaSimpleSerializer).",
+    "properties": {
+      "id": {
+        "title": "Id",
+        "type": "integer"
+      },
+      "email": {
+        "title": "Email",
+        "type": "string"
+      },
+      "numero_empleado": {
+        "default": "",
+        "title": "Numero Empleado",
+        "type": "string"
+      },
+      "role": {
+        "title": "Role",
+        "type": "string"
+      },
+      "nombre": {
+        "default": "",
+        "title": "Nombre",
+        "type": "string"
+      },
+      "apellido_paterno": {
+        "default": "",
+        "title": "Apellido Paterno",
+        "type": "string"
+      },
+      "apellido_materno": {
+        "default": "",
+        "title": "Apellido Materno",
+        "type": "string"
+      },
+      "nombre_completo": {
+        "default": "",
+        "title": "Nombre Completo",
+        "type": "string"
+      },
+      "escuela": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Escuela"
+      },
+      "escuela_detalle": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/EscuelaSimpleResponse"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      },
+      "telefono": {
+        "default": "",
+        "title": "Telefono",
+        "type": "string"
+      },
+      "celular": {
+        "default": "",
+        "title": "Celular",
+        "type": "string"
+      },
+      "domicilio": {
+        "default": "",
+        "title": "Domicilio",
+        "type": "string"
+      },
+      "rfc": {
+        "default": "",
+        "title": "Rfc",
+        "type": "string"
+      },
+      "curp": {
+        "default": "",
+        "title": "Curp",
+        "type": "string"
+      },
+      "nivel": {
+        "default": "",
+        "title": "Nivel",
+        "type": "string"
+      },
+      "grado": {
+        "default": "",
+        "title": "Grado",
+        "type": "string"
+      },
+      "situacion": {
+        "default": "",
+        "title": "Situacion",
+        "type": "string"
+      },
+      "fecha_ingreso": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Fecha Ingreso"
+      },
+      "antiguedad": {
+        "default": "",
+        "title": "Antiguedad",
+        "type": "string"
+      },
+      "activo": {
+        "default": true,
+        "title": "Activo",
+        "type": "boolean"
+      },
+      "is_superuser": {
+        "default": false,
+        "title": "Is Superuser",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "id",
+      "email",
+      "role"
+    ],
+    "title": "UsuarioResponse",
     "type": "object"
   },
   "PromocionExecResponse": {

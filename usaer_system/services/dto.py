@@ -252,6 +252,19 @@ class CicloEscolarResponse(BaseModel):
 EscuelaNivel = Literal["PREESCOLAR", "PRIMARIA", "SECUNDARIA"]
 
 
+class EscuelaSimpleResponse(BaseModel):
+    """DTO ligero para nested object escuela_detalle (EscuelaSimpleSerializer).
+
+    Coincide con EscuelaSimpleSerializer: id, nombre, clave_estatal, nivel, zona.
+    """
+
+    id: int
+    nombre: str
+    clave_estatal: str
+    nivel: str
+    zona: str
+
+
 class EscuelaResponse(BaseModel):
     """DTO que refleja la salida del EscuelaSerializer (fields='__all__').
 
@@ -319,6 +332,63 @@ class AsistenciaResponse(BaseModel):
     presente: bool
     hora_entrada: str | None = None
     hora_salida: str | None = None
+
+
+class AlumnoResponse(BaseModel):
+    """DTO que refleja la salida del AlumnoSerializer.
+
+    Incluye nested object escuela_detalle (EscuelaSimpleSerializer).
+    """
+
+    id: int
+    profesor: int | None = None
+    profesor_nombre: str
+    escuela: int
+    escuela_detalle: EscuelaSimpleResponse | None = None
+    escuela_nombre: str
+    apellido_paterno: str
+    apellido_materno: str = ""
+    nombres: str
+    nombre_completo: str
+    curp: str
+    fecha_nacimiento: str | None = None
+    sexo: str
+    edad: int | None = None
+    grado: str
+    grupo: str = ""
+    activo: bool = True
+    clasificacion: str
+    clasificacion_otro: str = ""
+
+
+class UsuarioResponse(BaseModel):
+    """DTO que refleja la salida del UserSerializer (completo).
+
+    Incluye nested object escuela_detalle (EscuelaSimpleSerializer).
+    """
+
+    id: int
+    email: str
+    numero_empleado: str = ""
+    role: str
+    nombre: str = ""
+    apellido_paterno: str = ""
+    apellido_materno: str = ""
+    nombre_completo: str = ""
+    escuela: int | None = None
+    escuela_detalle: EscuelaSimpleResponse | None = None
+    telefono: str = ""
+    celular: str = ""
+    domicilio: str = ""
+    rfc: str = ""
+    curp: str = ""
+    nivel: str = ""
+    grado: str = ""
+    situacion: str = ""
+    fecha_ingreso: str | None = None
+    antiguedad: str = ""
+    activo: bool = True
+    is_superuser: bool = False
 
 
 class PromocionExecResponse(BaseModel):

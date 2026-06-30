@@ -3,6 +3,14 @@ from rest_framework import serializers
 from .models import Escuela
 
 
+class EscuelaSimpleSerializer(serializers.ModelSerializer):
+    """Serializer ligero para mostrar info básica de la escuela como nested object."""
+
+    class Meta:
+        model = Escuela
+        fields = ["id", "nombre", "clave_estatal", "nivel", "zona"]
+
+
 class EscuelaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Escuela

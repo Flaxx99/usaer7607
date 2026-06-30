@@ -4,6 +4,7 @@ from django.utils import timezone
 from rest_framework import filters, status, views, viewsets
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from services.error_handling import error_400, error_404, error_500
 
 from .models import Asistencia
 from .serializers import AsistenciaSerializer, ChecadorInputSerializer
@@ -41,24 +42,15 @@ class ChecadorView(views.APIView):
                 Q(numero_empleado=codigo) | Q(curp=codigo), is_active=True
             )
         except User.DoesNotExist:
-            return Response(
-                {"detail": "Código o CURP no encontrado o usuario inactivo."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            return error_404("Código o CURP no encontrado o usuario inactivo.")
         except User.MultipleObjectsReturned:
-            return Response(
-                {
-                    "detail": "Error de sistema: Existen múltiples coincidencias. Contacte al administrador."
-                },
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            return error_500(
+                "Error de sistema: Existen múltiples coincidencias. Contacte al administrador."
             )
 
         # 2. Validar Escuela
         if not profesor.escuela:
-            return Response(
-                {"detail": "Este usuario no tiene una escuela asignada."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            return error_400("Este usuario no tiene una escuela asignada.")
 
         # 3. Lógica de Entrada vs Salida (get_or_create)
         asistencia, created = Asistencia.objects.get_or_create(
@@ -88,10 +80,7 @@ class ChecadorView(views.APIView):
         else:
             if asistencia.hora_salida:
                 # Ya tenía salida registrada
-                return Response(
-                    {"detail": "Ya registraste entrada y salida el día de hoy.", "tipo": "ERROR"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+                return error_400("Ya registraste entrada y salida el día de hoy.")
             else:
                 # Registrar SALIDA
                 asistencia.hora_salida = ahora.time()
