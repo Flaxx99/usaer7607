@@ -12,7 +12,7 @@ from typing import Any
 from django.db import models
 from django.db.models import Count, Q
 
-from .dto import AvisoDTO, DashboardData, StatsDTO
+from .dto import ActividadRecienteDTO, AvisoDTO, DashboardData, StatsDTO
 
 logger = logging.getLogger(__name__)
 
@@ -154,6 +154,86 @@ def get_graficas() -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         return [], []
 
 
+def get_racs_pendientes(user) -> int:
+    """Cuenta alumnos activos sin RAC en el ciclo actual para el usuario."""
+    from alumnos.models import Alumno
+    from ciclos_escolares.models import CicloEscolar
+    from rac.models import RegistroRAC
+
+    try:
+        ciclo = CicloEscolar.objects.filter(activo=True).first()
+        if not ciclo:
+            return 0
+
+        qs = Alumno.objects.activos()
+        if getattr(user, "role", "") == "MAESTRO_APOYO":
+            qs = qs.filter(profesor=user)
+        elif not (user.is_superuser or getattr(user, "role", "") in ["ADMIN", "SECRETARIO"]):
+            if hasattr(user, "escuela") and user.escuela:
+                qs = qs.filter(escuela=user.escuela)
+            else:
+                return 0
+
+        ids_con_rac = RegistroRAC.objects.filter(ciclo_escolar=ciclo, alumno__in=qs).values_list(
+            "alumno_id", flat=True
+        )
+
+        return qs.exclude(id__in=ids_con_rac).count()
+    except Exception:
+        logger.exception("Error contando RACs pendientes")
+        return 0
+
+
+def get_actividad_reciente(user) -> list[ActividadRecienteDTO]:
+    """Últimas 5 actividades del usuario (RACs creados)."""
+    from rac.models import RegistroRAC
+
+    try:
+        registros = (
+            RegistroRAC.objects.filter(maestro_apoyo=user)
+            .select_related("alumno", "ciclo_escolar")
+            .order_by("-fecha_registro")[:5]
+        )
+        return [
+            ActividadRecienteDTO(
+                tipo="RAC",
+                descripcion=f"RAC de {r.alumno.nombre_completo} — {r.ciclo_escolar.nombre}",
+                fecha=r.fecha_registro,
+                url=f"/rac/editar/{r.id}",
+            )
+            for r in registros
+        ]
+    except Exception:
+        logger.exception("Error cargando actividad reciente")
+        return []
+
+
+def get_eventos_hoy(user) -> list[dict]:
+    """Eventos del calendario para hoy asignados al usuario."""
+    from datetime import date
+
+    from usuarios.models import CalendarEvent
+
+    try:
+        hoy = date.today()
+        eventos = CalendarEvent.objects.filter(
+            assigned_to=user,
+            start_time__date=hoy,
+        ).order_by("start_time")[:5]
+        return [
+            {
+                "title": e.title,
+                "hora": e.start_time.strftime("%H:%M"),
+                "color": getattr(e, "color", "#3B82F6"),
+                "event_type": e.get_event_type_display(),
+            }
+            for e in eventos
+        ]
+    except Exception:
+        logger.exception("Error cargando eventos de hoy")
+        return []
+
+
 def build_dashboard_data(user) -> DashboardData:
     """Arma el DashboardData completo. Cada sub-función es independiente."""
     data = DashboardData(
@@ -162,6 +242,9 @@ def build_dashboard_data(user) -> DashboardData:
         permisos_pendientes=get_permisos_pendientes(user),
         incidencias_pendientes=get_incidencias_pendientes(user),
         stats=get_stats(),
+        racs_pendientes=get_racs_pendientes(user),
+        actividad_reciente=get_actividad_reciente(user),
+        eventos_hoy=get_eventos_hoy(user),
     )
     data.grafica_clasificacion, data.grafica_escuelas = get_graficas()
     return data

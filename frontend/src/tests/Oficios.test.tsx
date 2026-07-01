@@ -11,6 +11,7 @@ vi.mock('../api/oficios', async (importOriginal) => {
         ...actual,
         getOficios: vi.fn(),
         uploadOficio: vi.fn(),
+        updateOficio: vi.fn(),
     };
 });
 

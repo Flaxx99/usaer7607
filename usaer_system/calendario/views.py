@@ -64,15 +64,11 @@ class EventoCalendarioViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         """
         Al crear:
-        1. Asigna el usuario actual como creador.
-        2. Si el usuario NO es admin/secretario, fuerza tipo='PERSONAL'.
+        - Admin/Secretario → tipo='INSTITUCIONAL' (el frontend no envía tipo)
+        - Maestro normal → tipo='PERSONAL' (forzado)
+        El creador se asigna automáticamente en el serializer.
         """
-        user = self.request.user
-        tipo = serializer.validated_data.get("tipo", "PERSONAL")
-
-        # Regla de negocio: Maestros normales solo crean eventos personales
-        es_admin_o_sec = user.is_staff or (getattr(user, "role", "") == "SECRETARIO")
-        if not es_admin_o_sec:
-            tipo = "PERSONAL"
-
-        serializer.save(creado_por=user, tipo=tipo)
+        if self.request.user.is_staff or getattr(self.request.user, "role", "") == "SECRETARIO":
+            serializer.save(tipo="INSTITUCIONAL")
+        else:
+            serializer.save(tipo="PERSONAL")

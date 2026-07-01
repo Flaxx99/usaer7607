@@ -13,7 +13,7 @@ from pydantic import ValidationError
 from rest_framework import filters, permissions, views, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from services.dto import AlumnoIdQuery
+from services.dto import AlumnoIdQuery, RACPendientesResponse
 from services.error_handling import error_400, error_403, error_500
 
 from .models import RegistroRAC
@@ -241,10 +241,10 @@ class RegistroRACViewSet(viewsets.ModelViewSet):
         total = pendientes.count()
 
         return Response(
-            {
-                "total_pendientes": total,
-                "ciclo": ciclo_actual.nombre,
-            }
+            RACPendientesResponse(
+                total_pendientes=total,
+                ciclo=ciclo_actual.nombre,
+            ).model_dump()
         )
 
 

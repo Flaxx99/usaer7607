@@ -48,6 +48,15 @@ class ChartEntry(BaseModel):
     total: int = 0
 
 
+class ActividadRecienteDTO(BaseModel):
+    """DTO para actividad reciente en el dashboard."""
+
+    tipo: str  # "RAC", "RAE", "ASISTENCIA"
+    descripcion: str
+    fecha: datetime
+    url: str = ""
+
+
 class DashboardData(BaseModel):
     """DTO principal del dashboard.
 
@@ -61,6 +70,9 @@ class DashboardData(BaseModel):
     stats: StatsDTO = Field(default_factory=StatsDTO)
     grafica_clasificacion: list[ChartEntry] = Field(default_factory=list)
     grafica_escuelas: list[GraficaEscuelaEntry] = Field(default_factory=list)
+    racs_pendientes: int = 0
+    actividad_reciente: list[ActividadRecienteDTO] = Field(default_factory=list)
+    eventos_hoy: list[dict] = Field(default_factory=list)
 
 
 # ─── Payload Validation Schemas ──────────────────────────────────────────────
@@ -443,3 +455,246 @@ class CerrarRegistroResponse(BaseModel):
     detail: str
     registro_id: int
     cerrado: bool
+
+
+class RACPendientesResponse(BaseModel):
+    """Respuesta del endpoint /rac/pendientes/ (conteo de alumnos sin RAC)."""
+
+    total_pendientes: int
+    ciclo: str
+
+
+class ChecadorResponse(BaseModel):
+    """Respuesta de registro de entrada/salida (kiosco/checador).
+
+    Usado por asistencias/views.py en los endpoints público y privado.
+    - ENTRADA: message, tipo='ENTRADA', profesor, hora
+    - SALIDA: message, detalle, tipo='SALIDA', profesor, hora
+    """
+
+    message: str
+    tipo: Literal["ENTRADA", "SALIDA"]
+    profesor: str
+    hora: str
+    detalle: str | None = None
+
+
+# ─── RAE DTOs ──────────────────────────────────────────────────────────────
+
+
+class RAEAlumnoResponse(BaseModel):
+    """DTO que refleja la salida del RAEAlumnoSerializer (fields='__all__')."""
+
+    id: int
+    registro: int
+    alumno: int
+    capturado_por: int | None = None
+    curp: str | None = None
+    genero: str | None = None
+    edad: int | None = None
+    grado: str | None = None
+
+    # Condición del alumno (discapacidades)
+    ceg: bool = False
+    bv: bool = False
+    so: bool = False
+    hp: bool = False
+    scg: bool = False
+    dmo: bool = False
+    di: bool = False
+    dme: bool = False
+    psicosocial: bool = False
+    dm: bool = False
+    dsc: bool = False
+    dsco: bool = False
+    dsa: bool = False
+    tda: bool = False
+    tea: bool = False
+
+    # Aptitudes sobresalientes
+    asi: bool = False
+    asc: bool = False
+    asa: bool = False
+    asp: bool = False
+    ass: bool = False
+    ot: bool = False
+
+    # Apoyo específico
+    psicologia: bool = False
+    comunicacion: bool = False
+    psicomotricidad: bool = False
+    trabajo_social: bool = False
+    aprendizaje: bool = False
+
+    # Tipo de atención
+    nuevo_ingreso: bool = False
+    subsecuente: bool = False
+
+    # Portafolio
+    diagnostico: bool = False
+    educativo: bool = False
+    deteccion: bool = False
+    psicopedagogico: bool = False
+    plan: bool = False
+    modelo: bool = False
+
+    # ReadOnly del serializer
+    alumno_nombre: str | None = None
+
+
+class RegistroRAEResponse(BaseModel):
+    """DTO que refleja la salida del RegistroRAESerializer (fields='__all__')."""
+
+    id: int
+    escuela: int
+    ciclo_escolar: int
+    creado_por: int | None = None
+    fecha_creacion: datetime
+    cerrado: bool = False
+    docente_hombres: int = 0
+    docente_mujeres: int = 0
+
+    # ReadOnly del serializer
+    escuela_nombre: str | None = None
+    ciclo_nombre: str | None = None
+    creado_por_nombre: str | None = None
+
+
+class RAEInitResponse(BaseModel):
+    """Respuesta del endpoint /rae/captura/ (inicializar captura RAE)."""
+
+    registro_id: int
+    ciclo: str
+    escuela: str
+    cerrado: bool
+    alumnos: list[RAEAlumnoResponse]
+
+
+class RAEProgressItem(BaseModel):
+    """Respuesta del endpoint /rae/progreso/ (progreso por escuela)."""
+
+    escuela_id: int
+    escuela_nombre: str
+    escuela_cct: str
+    registro_id: int
+    total_alumnos: int
+    completados: int
+    porcentaje: float
+    cerrado: bool
+
+
+# ─── RAC DTOs ───────────────────────────────────────────────────────────────
+
+
+class RegistroRACResponse(BaseModel):
+    """DTO que refleja la salida del RegistroRACSerializer (fields='__all__')."""
+
+    id: int
+    alumno: int
+    ciclo_escolar: int
+    escuela_regular: int
+    zona_regular: str | None = None
+    curp: str | None = None
+    sexo: str | None = None
+    edad: int | None = None
+    grado: str | None = None
+    service_type: str = "USAER"
+    sup_especial_cct: str | None = None
+    sup_especial_zona: str | None = None
+    centro_cct: str | None = None
+    centro_nombre: str | None = None
+    maestro_apoyo: int
+    escuela_basica: int
+    clasificacion: str
+    subclasificacion: str
+    observaciones: str = ""
+    fecha_registro: str | None = None
+
+    # ReadOnly del serializer
+    alumno_nombre: str | None = None
+    escuela_nombre: str | None = None
+    maestro_nombre: str | None = None
+    service_type_display: str | None = None
+
+
+# ─── Documentos DTOs ────────────────────────────────────────────────────────
+
+
+class OtroArchivoResponse(BaseModel):
+    """DTO que refleja la salida del OtroArchivoSerializer.
+
+    Son los archivos extra anidados dentro de ExpedienteResponse.
+    """
+
+    id: int
+    archivo: str
+    descripcion: str
+    url_archivo: str | None = None
+    nombre_archivo: str | None = None
+
+
+class ExpedienteResponse(BaseModel):
+    """DTO que refleja la salida del ExpedienteSerializer (fields='__all__').
+
+    Solo modela la respuesta GET. Los campos FileField aparecen como
+    strings (URLs del archivo). El tipo híbrido para formulario se define
+    en el frontend extendiendo esta interfaz.
+    """
+
+    id: int
+    alumno: int
+    profesor: int | None = None
+    informe_deteccion: str | None = None
+    informe_psicopedagogico: str | None = None
+    plan_intervencion: str | None = None
+    observaciones: str = ""
+    fecha_subida: str | None = None
+
+    # ReadOnly del serializer
+    alumno_nombre: str | None = None
+    profesor_nombre: str | None = None
+
+    # Nested
+    otros_archivos: list[OtroArchivoResponse] = Field(default_factory=list)
+
+
+# ─── Calendario DTOs ─────────────────────────────────────────────────────────
+
+
+CalendarEventType = Literal["EVALUACION", "REUNION", "VISITA", "TAREA", "OTRO"]
+"""Valores posibles para el campo event_type de un evento de calendario."""
+
+CalendarStatus = Literal["PENDIENTE", "COMPLETADO", "CANCELADO"]
+"""Valores posibles para el campo status de un evento de calendario."""
+
+CalendarPriority = Literal["BAJA", "MEDIA", "ALTA"]
+"""Valores posibles para el campo priority de un evento de calendario."""
+
+
+class EventoCalendarioResponse(BaseModel):
+    """DTO que refleja la salida del EventoCalendarioSerializer.
+
+    Usa nombres en inglés para coincidir con la interfaz CalendarEvent del frontend.
+    """
+
+    id: int
+    title: str
+    description: str
+    start_time: str
+    end_time: str
+    event_type: CalendarEventType = "OTRO"
+    status: CalendarStatus = "PENDIENTE"
+    priority: CalendarPriority = "MEDIA"
+    color: str = "#3B82F6"
+    created_by: int
+    created_by_nombre: str | None = None
+    assigned_to: int | None = None
+    assigned_to_nombre: str | None = None
+    alumno: int | None = None
+    alumno_nombre: str | None = None
+    escuela: int | None = None
+    escuela_nombre: str | None = None
+
+    # Legacy (backward compat)
+    start: str | None = None
+    end: str | None = None

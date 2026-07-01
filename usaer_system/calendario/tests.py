@@ -73,21 +73,25 @@ class EventoCalendarioViewsTest(APITestCase):
         data = response.json()
         results = data if isinstance(data, list) else data.get("results", [])
         self.assertTrue(
-            any(item.get("titulo") == self.evento_personal_user.titulo for item in results)
+            any(item.get("title") == self.evento_personal_user.titulo for item in results),
+            f"title={self.evento_personal_user.titulo!r} not in results: {[r.get('title') for r in results]}",
         )
         self.assertTrue(
-            any(item.get("titulo") == self.evento_institucional.titulo for item in results)
+            any(item.get("title") == self.evento_institucional.titulo for item in results),
+            f"title={self.evento_institucional.titulo!r} not in results: {[r.get('title') for r in results]}",
         )
+
+    def _crear_payload_base(self, titulo, horas=1):
+        return {
+            "title": titulo,
+            "start_time": timezone.now().isoformat(),
+            "end_time": (timezone.now() + timedelta(hours=horas)).isoformat(),
+        }
 
     def test_crear_evento_user_personal(self):
         self.client.force_authenticate(user=self.user)
         url = reverse("calendario:eventos-list")
-        payload = {
-            "titulo": "Nuevo Evento User",
-            "fecha_inicio": timezone.now().isoformat(),
-            "fecha_fin": (timezone.now() + timedelta(hours=1)).isoformat(),
-            "tipo": "PERSONAL",
-        }
+        payload = self._crear_payload_base("Nuevo Evento User")
         response = self.client.post(url, data=payload, format="json")
         self.assertIn(response.status_code, [status.HTTP_201_CREATED, status.HTTP_200_OK])
         self.assertTrue(
@@ -99,12 +103,7 @@ class EventoCalendarioViewsTest(APITestCase):
     def test_crear_evento_admin_institucional(self):
         self.client.force_authenticate(user=self.admin)
         url = reverse("calendario:eventos-list")
-        payload = {
-            "titulo": "Nuevo Evento Admin",
-            "fecha_inicio": timezone.now().isoformat(),
-            "fecha_fin": (timezone.now() + timedelta(hours=1)).isoformat(),
-            "tipo": "INSTITUCIONAL",
-        }
+        payload = self._crear_payload_base("Nuevo Evento Admin")
         response = self.client.post(url, data=payload, format="json")
         self.assertIn(response.status_code, [status.HTTP_201_CREATED, status.HTTP_200_OK])
         self.assertTrue(
@@ -116,12 +115,8 @@ class EventoCalendarioViewsTest(APITestCase):
     def test_crear_evento_maestro_fuerza_personal(self):
         self.client.force_authenticate(user=self.user)
         url = reverse("calendario:eventos-list")
-        payload = {
-            "titulo": "Evento Intento Institucional",
-            "fecha_inicio": timezone.now().isoformat(),
-            "fecha_fin": (timezone.now() + timedelta(hours=1)).isoformat(),
-            "tipo": "INSTITUCIONAL",
-        }
+        payload = self._crear_payload_base("Evento Intento Institucional")
+        # Un maestro normal NO puede pasar tipo="INSTITUCIONAL" ni event_type — el view lo forza
         response = self.client.post(url, data=payload, format="json")
         self.assertIn(response.status_code, [status.HTTP_201_CREATED, status.HTTP_200_OK])
         # Should be forced to PERSONAL
@@ -158,10 +153,9 @@ class EventoCalendarioViewsTest(APITestCase):
         self.client.force_authenticate(user=self.user)
         url = reverse("calendario:eventos-detail", args=[self.evento_personal_user.pk])
         payload = {
-            "titulo": "Evento Editado",
-            "fecha_inicio": self.evento_personal_user.fecha_inicio.isoformat(),
-            "fecha_fin": self.evento_personal_user.fecha_fin.isoformat(),
-            "tipo": "PERSONAL",
+            "title": "Evento Editado",
+            "start_time": self.evento_personal_user.fecha_inicio.isoformat(),
+            "end_time": self.evento_personal_user.fecha_fin.isoformat(),
         }
         response = self.client.patch(url, data=payload, format="json")
         self.assertIn(response.status_code, [status.HTTP_200_OK, status.HTTP_204_NO_CONTENT])

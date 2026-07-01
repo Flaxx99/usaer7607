@@ -116,4 +116,35 @@ describe('HistorialAsistencia', () => {
         const dateInput = document.querySelector('input[type="date"]');
         expect(dateInput).toBeInTheDocument();
     });
+
+    it('muestra stats cards cuando hay registros', async () => {
+        renderPage();
+
+        await waitFor(() => {
+            expect(screen.getByText('Registros')).toBeInTheDocument();
+        });
+
+        expect(screen.getByText('Completos')).toBeInTheDocument();
+        expect(screen.getByText('En curso')).toBeInTheDocument();
+        expect(screen.getByText('Promedio')).toBeInTheDocument();
+        // El total de registros del mock es 2
+        expect(screen.getByText('6.5h')).toBeInTheDocument();
+    });
+
+    it('no muestra stats cuando no hay registros', async () => {
+        server.use(
+            http.get('*/asistencias/', async () => {
+                await delay(30);
+                return HttpResponse.json([]);
+            })
+        );
+
+        renderPage();
+
+        await waitFor(() => {
+            expect(screen.getByText(/No hay registros/i)).toBeInTheDocument();
+        });
+
+        expect(screen.queryByText('Registros')).not.toBeInTheDocument();
+    });
 });

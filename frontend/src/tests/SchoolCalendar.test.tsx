@@ -9,6 +9,12 @@ import { getAlumnos } from '../api/alumnos';
 import { getEscuelas } from '../api/escuelas';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 
+// Helper para cambiar a la vista de lista
+const switchToListView = async () => {
+    const listaTab = await screen.findByText('Lista');
+    fireEvent.click(listaTab);
+};
+
 // ─── API MOCKS ───
 
 vi.mock('../api/calendar', () => ({
@@ -206,6 +212,9 @@ describe('SchoolCalendar', () => {
             expect(screen.getByText('Agenda y Tareas USAER')).toBeInTheDocument();
         });
 
+        // Switch to list view to see urgent column and cronograma table
+        await switchToListView();
+
         // Events should be rendered — the ALTA event appears in both urgent column and table
         expect(screen.getAllByText('Evaluación Juan Pérez').length).toBeGreaterThan(0);
         // MEDIA event only appears in the cronograma table (not in urgent column)
@@ -227,6 +236,9 @@ describe('SchoolCalendar', () => {
         await waitFor(() => {
             expect(screen.getByText('Agenda y Tareas USAER')).toBeInTheDocument();
         });
+
+        // Switch to list view to see urgent column
+        await switchToListView();
 
         // The urgent column should show the ALTA event (appears in both urgent + table)
         expect(screen.getAllByText('Evaluación Juan Pérez').length).toBeGreaterThan(0);
@@ -252,6 +264,9 @@ describe('SchoolCalendar', () => {
         await waitFor(() => {
             expect(screen.getByText('Agenda y Tareas USAER')).toBeInTheDocument();
         });
+
+        // Switch to list view to see urgent column
+        await switchToListView();
 
         // Should show empty urgent message
         expect(screen.getByText('No hay tareas urgentes.')).toBeInTheDocument();
@@ -302,6 +317,9 @@ describe('SchoolCalendar', () => {
         await waitFor(() => {
             expect(screen.getByText('Agenda y Tareas USAER')).toBeInTheDocument();
         });
+
+        // Switch to list view to see the cronograma table with edit buttons
+        await switchToListView();
 
         // Find the first edit button in the table and click it
         const editButtons = document.querySelectorAll('.btn-ghost.btn-xs.text-primary');
@@ -431,6 +449,9 @@ describe('SchoolCalendar', () => {
             expect(screen.getByText('Agenda y Tareas USAER')).toBeInTheDocument();
         });
 
+        // Switch to list view to see the cronograma table
+        await switchToListView();
+
         // Find delete buttons inside the cronograma table (not the urgent column's edit button)
         const cronogramaSection = screen.getByText('Cronograma de Actividades').closest('.card-body');
         const deleteButtons = cronogramaSection?.querySelectorAll('.btn-ghost.btn-xs.text-error') || [];
@@ -461,6 +482,9 @@ describe('SchoolCalendar', () => {
         await waitFor(() => {
             expect(screen.getByText('Agenda y Tareas USAER')).toBeInTheDocument();
         });
+
+        // Switch to list view to see the cronograma table
+        await switchToListView();
 
         // Scope to the cronograma table to avoid the urgent column's edit button
         const cronogramaCard = screen.getByText('Cronograma de Actividades').closest('.card-body');
@@ -513,6 +537,9 @@ describe('SchoolCalendar', () => {
             expect(screen.getByText('Agenda y Tareas USAER')).toBeInTheDocument();
         });
 
+        // Switch to list view to see search bar and cronograma
+        await switchToListView();
+
         // Type a search query that won't match anything
         const searchInput = screen.getByPlaceholderText('Buscar por evento, descripción o asignado...');
         fireEvent.change(searchInput, { target: { value: 'zzzznotfound' } });
@@ -542,6 +569,9 @@ describe('SchoolCalendar', () => {
             expect(screen.getByText('Agenda y Tareas USAER')).toBeInTheDocument();
         });
 
+        // Switch to list view to see status badges in the table
+        await switchToListView();
+
         // PENDIENTE status badges should be visible
         const statusBadges = screen.getAllByText('PENDIENTE');
         expect(statusBadges.length).toBeGreaterThanOrEqual(2);
@@ -558,6 +588,9 @@ describe('SchoolCalendar', () => {
         await waitFor(() => {
             expect(screen.getByText('Agenda y Tareas USAER')).toBeInTheDocument();
         });
+
+        // Switch to list view to see assigned names in the table
+        await switchToListView();
 
         // assigned_to_nombre should be visible
         expect(screen.getByText('María López')).toBeInTheDocument();
@@ -581,11 +614,14 @@ describe('SchoolCalendar', () => {
             expect(screen.getByText('Agenda y Tareas USAER')).toBeInTheDocument();
         });
 
+        // Switch to list view to see urgent column and cronograma
+        await switchToListView();
+
         // Urgent column should show empty
         expect(screen.getByText('No hay tareas urgentes.')).toBeInTheDocument();
 
-        // Cronograma should show 0 eventos
-        expect(screen.getByText(/0 eventos/)).toBeInTheDocument();
+        // "0 eventos" appears in both the toggle bar and the cronograma section
+        expect(screen.getAllByText(/0 eventos/).length).toBe(2);
 
         // Create button should still be visible
         expect(screen.getByText('Nueva Tarea/Evento')).toBeInTheDocument();

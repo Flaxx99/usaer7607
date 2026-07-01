@@ -27,6 +27,20 @@ export interface StatsDTO {
     total_maestros: number | undefined;
 }
 
+export interface ActividadRecienteDTO {
+    tipo: string;
+    descripcion: string;
+    fecha: string;
+    url: string;
+}
+
+export interface EventoHoyDTO {
+    title: string;
+    hora: string;
+    color: string;
+    event_type: string;
+}
+
 export interface DashboardData {
     ciclo_actual: string | undefined;
     ultimos_avisos: AvisoDTO[] | undefined;
@@ -35,6 +49,9 @@ export interface DashboardData {
     stats: StatsDTO | undefined;
     grafica_clasificacion: ChartEntry[] | undefined;
     grafica_escuelas: GraficaEscuelaEntry[] | undefined;
+    racs_pendientes: number | undefined;
+    actividad_reciente: ActividadRecienteDTO[] | undefined;
+    eventos_hoy: EventoHoyDTO[] | undefined;
 }
 
 export interface GraficaEscuelaEntry {
@@ -274,6 +291,169 @@ export interface CerrarRegistroResponse {
     detail: string;
     registro_id: number;
     cerrado: boolean;
+}
+
+export interface ChecadorResponse {
+    message: string;
+    tipo: 'ENTRADA' | 'SALIDA';
+    profesor: string;
+    hora: string;
+    detalle: string | undefined;
+}
+
+export interface EventoCalendarioResponse {
+    id: number;
+    title: string;
+    description: string;
+    start_time: string;
+    end_time: string;
+    event_type: 'EVALUACION' | 'REUNION' | 'VISITA' | 'TAREA' | 'OTRO' | undefined;
+    status: 'PENDIENTE' | 'COMPLETADO' | 'CANCELADO' | undefined;
+    priority: 'BAJA' | 'MEDIA' | 'ALTA' | undefined;
+    color: string | undefined;
+    created_by: number;
+    created_by_nombre: string | undefined;
+    assigned_to: number | undefined;
+    assigned_to_nombre: string | undefined;
+    alumno: number | undefined;
+    alumno_nombre: string | undefined;
+    escuela: number | undefined;
+    escuela_nombre: string | undefined;
+    start: string | undefined;
+    end: string | undefined;
+}
+
+export interface ExpedienteResponse {
+    id: number;
+    alumno: number;
+    profesor: number | undefined;
+    informe_deteccion: string | undefined;
+    informe_psicopedagogico: string | undefined;
+    plan_intervencion: string | undefined;
+    observaciones: string | undefined;
+    fecha_subida: string | undefined;
+    alumno_nombre: string | undefined;
+    profesor_nombre: string | undefined;
+    otros_archivos: OtroArchivoResponse[] | undefined;
+}
+
+export interface OtroArchivoResponse {
+    id: number;
+    archivo: string;
+    descripcion: string;
+    url_archivo: string | undefined;
+    nombre_archivo: string | undefined;
+}
+
+export interface RACPendientesResponse {
+    total_pendientes: number;
+    ciclo: string;
+}
+
+export interface RAEAlumnoResponse {
+    id: number;
+    registro: number;
+    alumno: number;
+    capturado_por: number | undefined;
+    curp: string | undefined;
+    genero: string | undefined;
+    edad: number | undefined;
+    grado: string | undefined;
+    ceg: boolean | undefined;
+    bv: boolean | undefined;
+    so: boolean | undefined;
+    hp: boolean | undefined;
+    scg: boolean | undefined;
+    dmo: boolean | undefined;
+    di: boolean | undefined;
+    dme: boolean | undefined;
+    psicosocial: boolean | undefined;
+    dm: boolean | undefined;
+    dsc: boolean | undefined;
+    dsco: boolean | undefined;
+    dsa: boolean | undefined;
+    tda: boolean | undefined;
+    tea: boolean | undefined;
+    asi: boolean | undefined;
+    asc: boolean | undefined;
+    asa: boolean | undefined;
+    asp: boolean | undefined;
+    ass: boolean | undefined;
+    ot: boolean | undefined;
+    psicologia: boolean | undefined;
+    comunicacion: boolean | undefined;
+    psicomotricidad: boolean | undefined;
+    trabajo_social: boolean | undefined;
+    aprendizaje: boolean | undefined;
+    nuevo_ingreso: boolean | undefined;
+    subsecuente: boolean | undefined;
+    diagnostico: boolean | undefined;
+    educativo: boolean | undefined;
+    deteccion: boolean | undefined;
+    psicopedagogico: boolean | undefined;
+    plan: boolean | undefined;
+    modelo: boolean | undefined;
+    alumno_nombre: string | undefined;
+}
+
+export interface RAEInitResponse {
+    registro_id: number;
+    ciclo: string;
+    escuela: string;
+    cerrado: boolean;
+    alumnos: RAEAlumnoResponse[];
+}
+
+export interface RAEProgressItem {
+    escuela_id: number;
+    escuela_nombre: string;
+    escuela_cct: string;
+    registro_id: number;
+    total_alumnos: number;
+    completados: number;
+    porcentaje: number;
+    cerrado: boolean;
+}
+
+export interface RegistroRACResponse {
+    id: number;
+    alumno: number;
+    ciclo_escolar: number;
+    escuela_regular: number;
+    zona_regular: string | undefined;
+    curp: string | undefined;
+    sexo: string | undefined;
+    edad: number | undefined;
+    grado: string | undefined;
+    service_type: string | undefined;
+    sup_especial_cct: string | undefined;
+    sup_especial_zona: string | undefined;
+    centro_cct: string | undefined;
+    centro_nombre: string | undefined;
+    maestro_apoyo: number;
+    escuela_basica: number;
+    clasificacion: string;
+    subclasificacion: string;
+    observaciones: string | undefined;
+    fecha_registro: string | undefined;
+    alumno_nombre: string | undefined;
+    escuela_nombre: string | undefined;
+    maestro_nombre: string | undefined;
+    service_type_display: string | undefined;
+}
+
+export interface RegistroRAEResponse {
+    id: number;
+    escuela: number;
+    ciclo_escolar: number;
+    creado_por: number | undefined;
+    fecha_creacion: string /* ISO datetime */;
+    cerrado: boolean | undefined;
+    docente_hombres: number | undefined;
+    docente_mujeres: number | undefined;
+    escuela_nombre: string | undefined;
+    ciclo_nombre: string | undefined;
+    creado_por_nombre: string | undefined;
 }
 
 export interface ErrorResponse {

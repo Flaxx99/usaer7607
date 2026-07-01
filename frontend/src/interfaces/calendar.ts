@@ -1,23 +1,8 @@
+// Re-exportado desde api.ts (generado de pydantic EventoCalendarioResponse).
+export type { EventoCalendarioResponse as CalendarEvent } from './api';
+
+// Los tipos Literal están incluidos en EventoCalendarioResponse,
+// pero se exportan por separado para uso directo en el frontend.
 export type CalendarEventType = 'EVALUACION' | 'REUNION' | 'VISITA' | 'TAREA' | 'OTRO';
 export type CalendarStatus = 'PENDIENTE' | 'COMPLETADO' | 'CANCELADO';
 export type CalendarPriority = 'BAJA' | 'MEDIA' | 'ALTA';
-
-export interface CalendarEvent {
-    id: number;
-    title: string;
-    description: string;
-    start_time: string;
-    end_time: string;
-    event_type: CalendarEventType;
-    status: CalendarStatus;
-    priority: CalendarPriority;
-    created_by: number;
-    assigned_to: number;
-    alumno?: number;
-    escuela?: number;
-    color: string;
-    created_by_nombre?: string;
-    assigned_to_nombre?: string;
-    alumno_nombre?: string;
-    escuela_nombre?: string;
-}

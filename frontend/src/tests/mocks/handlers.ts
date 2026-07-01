@@ -35,8 +35,10 @@ export const handlers = [
         total_alumnos: 150,
         total_escuelas: 12,
         total_maestros: 25,
+        total_usuarios: 40,
       },
       incidencias_pendientes: 5,
+      racs_pendientes: 8,
       ultimos_avisos: [
         { 
           id: 1, 
@@ -57,6 +59,14 @@ export const handlers = [
         { clasificacion: 'DISCAPACIDAD_MOTRIZ', total: 40 },
         { clasificacion: 'TDAH', total: 60 },
         { clasificacion: 'AUTISMO', total: 50 },
+      ],
+      actividad_reciente: [
+        { tipo: 'RAC', descripcion: 'RAC de Juan Pérez — 2025-2026', fecha: '2026-06-28T10:30:00', url: '/rac/editar/1' },
+        { tipo: 'RAC', descripcion: 'RAC de María García — 2025-2026', fecha: '2026-06-25T14:00:00', url: '/rac/editar/2' },
+      ],
+      eventos_hoy: [
+        { title: 'Reunión con padres', hora: '10:00', color: '#3B82F6', event_type: 'Reunión' },
+        { title: 'Evaluación psicopedagógica', hora: '14:30', color: '#EC4899', event_type: 'Evaluación' },
       ],
     });
   }),

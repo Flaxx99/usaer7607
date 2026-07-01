@@ -7,6 +7,67 @@
 @import "@fontsource-variable/quicksand";
 
 /* ─── TEMA USAER CHIHUAHUA — "Playful Paper" ─── */
+
+/* Transición suave entre temas */
+html {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* ─── TEMA OSCURO — "Night Ink" ─── */
+@plugin "daisyui/theme" {
+  name: "usaer-dark";
+
+  --color-primary: #6366F1;          /* Índigo más vivo para dark */
+  --color-primary-content: #ffffff;
+  --color-secondary: #FACC15;        /* Amarillo igual (contrasta en oscuro) */
+  --color-secondary-content: #1e293b;
+  --color-accent: #F472B6;           /* Magenta más claro */
+  --color-accent-content: #ffffff;
+  --color-neutral: #64748B;
+  --color-neutral-content: #0f172a;
+  --color-base-100: #1E1B2E;         /* Púrpura oscuro profundo */
+  --color-base-200: #2A2540;         /* Capa intermedia */
+  --color-base-300: #3D3660;         /* Bordes */
+  --color-base-content: #E2E8F0;     /* Texto claro */
+  --color-info: #38BDF8;
+  --color-info-content: #ffffff;
+  --color-success: #4ADE80;
+  --color-success-content: #ffffff;
+  --color-warning: #FBBF24;
+  --color-warning-content: #1e293b;
+  --color-error: #F87171;
+  --color-error-content: #ffffff;
+
+  --radius-selector: 0.75rem;
+  --radius-field: 0.75rem;
+  --radius-box: 1.25rem;
+  --size-selector: 0.28125rem;
+  --size-field: 0.28125rem;
+  --border: 2px;
+  --depth: 1;
+  --noise: 0;
+}
+
+/* Ajustes específicos para dark */
+[data-theme="usaer-dark"] body::before {
+  background-image: radial-gradient(circle, rgba(226, 232, 240, 0.06) 1px, transparent 1px);
+}
+
+[data-theme="usaer-dark"] .card-paper {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.03) inset,
+    0 8px 24px -8px rgba(0, 0, 0, 0.4),
+    0 2px 4px -2px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="usaer-dark"] .card-paper:hover {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.03) inset,
+    0 12px 32px -8px rgba(0, 0, 0, 0.5),
+    0 4px 8px -2px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── TEMA USAER CHIHUAHUA — "Playful Paper" ─── */
 @plugin "daisyui/theme" {
   name: "usaer";
   default: true;

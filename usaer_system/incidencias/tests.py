@@ -202,3 +202,41 @@ class IncidenciaViewsTest(APITestCase):
         }
         response = self.client.post(url, data=form_data, format="json")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn("message", response.data)
+        self.assertIn("permiso", response.data["message"])
+
+    def test_resolver_action_exitosa(self):
+        """POST /incidencias/{id}/resolver/ resuelve una incidencia pendiente."""
+        self.client.force_authenticate(user=self.admin)
+        url = reverse("incidencias:incidencias-resolver", args=[self.incidencia_pendiente.pk])
+        response = self.client.post(
+            url, data={"respuesta_admin": "Problema solucionado"}, format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.incidencia_pendiente.refresh_from_db()
+        self.assertEqual(self.incidencia_pendiente.estado, "RESUELTA")
+        self.assertEqual(self.incidencia_pendiente.respuesta_admin, "PROBLEMA SOLUCIONADO")
+        # Body debe incluir la incidencia serializada (respuesta exitosa)
+        self.assertIn("respuesta_admin", response.data)
+
+    def test_resolver_action_ya_resuelta(self):
+        """Resolver una incidencia ya resuelta debe retornar error_400 con code."""
+        self.client.force_authenticate(user=self.admin)
+        # Primero resolverla
+        self.incidencia_pendiente.estado = "RESUELTA"
+        self.incidencia_pendiente.respuesta_admin = "YA RESUELTA"
+        self.incidencia_pendiente.save()
+        url = reverse("incidencias:incidencias-resolver", args=[self.incidencia_pendiente.pk])
+        response = self.client.post(url, data={"respuesta_admin": "Nuevo intento"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["detail"], "This incidence is already resolved.")
+        self.assertEqual(response.data["code"], "validation_error")
+
+    def test_resolver_action_payload_invalido(self):
+        """Payload sin respuesta_admin debe retornar error_400."""
+        self.client.force_authenticate(user=self.admin)
+        url = reverse("incidencias:incidencias-resolver", args=[self.incidencia_pendiente.pk])
+        response = self.client.post(url, data={}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("detail", response.data)
+        self.assertEqual(response.data["code"], "validation_error")

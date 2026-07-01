@@ -1491,6 +1491,1407 @@
     "title": "CerrarRegistroResponse",
     "type": "object"
   },
+  "ChecadorResponse": {
+    "description": "Respuesta de registro de entrada/salida (kiosco/checador).\n\nUsado por asistencias/views.py en los endpoints p\u00fablico y privado.\n- ENTRADA: message, tipo='ENTRADA', profesor, hora\n- SALIDA: message, detalle, tipo='SALIDA', profesor, hora",
+    "properties": {
+      "message": {
+        "title": "Message",
+        "type": "string"
+      },
+      "tipo": {
+        "enum": [
+          "ENTRADA",
+          "SALIDA"
+        ],
+        "title": "Tipo",
+        "type": "string"
+      },
+      "profesor": {
+        "title": "Profesor",
+        "type": "string"
+      },
+      "hora": {
+        "title": "Hora",
+        "type": "string"
+      },
+      "detalle": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Detalle"
+      }
+    },
+    "required": [
+      "message",
+      "tipo",
+      "profesor",
+      "hora"
+    ],
+    "title": "ChecadorResponse",
+    "type": "object"
+  },
+  "EventoCalendarioResponse": {
+    "description": "DTO que refleja la salida del EventoCalendarioSerializer.\n\nUsa nombres en ingl\u00e9s para coincidir con la interfaz CalendarEvent del frontend.",
+    "properties": {
+      "id": {
+        "title": "Id",
+        "type": "integer"
+      },
+      "title": {
+        "title": "Title",
+        "type": "string"
+      },
+      "description": {
+        "title": "Description",
+        "type": "string"
+      },
+      "start_time": {
+        "title": "Start Time",
+        "type": "string"
+      },
+      "end_time": {
+        "title": "End Time",
+        "type": "string"
+      },
+      "event_type": {
+        "default": "OTRO",
+        "enum": [
+          "EVALUACION",
+          "REUNION",
+          "VISITA",
+          "TAREA",
+          "OTRO"
+        ],
+        "title": "Event Type",
+        "type": "string"
+      },
+      "status": {
+        "default": "PENDIENTE",
+        "enum": [
+          "PENDIENTE",
+          "COMPLETADO",
+          "CANCELADO"
+        ],
+        "title": "Status",
+        "type": "string"
+      },
+      "priority": {
+        "default": "MEDIA",
+        "enum": [
+          "BAJA",
+          "MEDIA",
+          "ALTA"
+        ],
+        "title": "Priority",
+        "type": "string"
+      },
+      "color": {
+        "default": "#3B82F6",
+        "title": "Color",
+        "type": "string"
+      },
+      "created_by": {
+        "title": "Created By",
+        "type": "integer"
+      },
+      "created_by_nombre": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Created By Nombre"
+      },
+      "assigned_to": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Assigned To"
+      },
+      "assigned_to_nombre": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Assigned To Nombre"
+      },
+      "alumno": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Alumno"
+      },
+      "alumno_nombre": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Alumno Nombre"
+      },
+      "escuela": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Escuela"
+      },
+      "escuela_nombre": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Escuela Nombre"
+      },
+      "start": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Start"
+      },
+      "end": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "End"
+      }
+    },
+    "required": [
+      "id",
+      "title",
+      "description",
+      "start_time",
+      "end_time",
+      "created_by"
+    ],
+    "title": "EventoCalendarioResponse",
+    "type": "object"
+  },
+  "ExpedienteResponse": {
+    "$defs": {
+      "OtroArchivoResponse": {
+        "description": "DTO que refleja la salida del OtroArchivoSerializer.\n\nSon los archivos extra anidados dentro de ExpedienteResponse.",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "archivo": {
+            "title": "Archivo",
+            "type": "string"
+          },
+          "descripcion": {
+            "title": "Descripcion",
+            "type": "string"
+          },
+          "url_archivo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Url Archivo"
+          },
+          "nombre_archivo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Nombre Archivo"
+          }
+        },
+        "required": [
+          "id",
+          "archivo",
+          "descripcion"
+        ],
+        "title": "OtroArchivoResponse",
+        "type": "object"
+      }
+    },
+    "description": "DTO que refleja la salida del ExpedienteSerializer (fields='__all__').\n\nSolo modela la respuesta GET. Los campos FileField aparecen como\nstrings (URLs del archivo). El tipo h\u00edbrido para formulario se define\nen el frontend extendiendo esta interfaz.",
+    "properties": {
+      "id": {
+        "title": "Id",
+        "type": "integer"
+      },
+      "alumno": {
+        "title": "Alumno",
+        "type": "integer"
+      },
+      "profesor": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Profesor"
+      },
+      "informe_deteccion": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Informe Deteccion"
+      },
+      "informe_psicopedagogico": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Informe Psicopedagogico"
+      },
+      "plan_intervencion": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Plan Intervencion"
+      },
+      "observaciones": {
+        "default": "",
+        "title": "Observaciones",
+        "type": "string"
+      },
+      "fecha_subida": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Fecha Subida"
+      },
+      "alumno_nombre": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Alumno Nombre"
+      },
+      "profesor_nombre": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Profesor Nombre"
+      },
+      "otros_archivos": {
+        "items": {
+          "$ref": "#/$defs/OtroArchivoResponse"
+        },
+        "title": "Otros Archivos",
+        "type": "array"
+      }
+    },
+    "required": [
+      "id",
+      "alumno"
+    ],
+    "title": "ExpedienteResponse",
+    "type": "object"
+  },
+  "OtroArchivoResponse": {
+    "description": "DTO que refleja la salida del OtroArchivoSerializer.\n\nSon los archivos extra anidados dentro de ExpedienteResponse.",
+    "properties": {
+      "id": {
+        "title": "Id",
+        "type": "integer"
+      },
+      "archivo": {
+        "title": "Archivo",
+        "type": "string"
+      },
+      "descripcion": {
+        "title": "Descripcion",
+        "type": "string"
+      },
+      "url_archivo": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Url Archivo"
+      },
+      "nombre_archivo": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Nombre Archivo"
+      }
+    },
+    "required": [
+      "id",
+      "archivo",
+      "descripcion"
+    ],
+    "title": "OtroArchivoResponse",
+    "type": "object"
+  },
+  "RACPendientesResponse": {
+    "description": "Respuesta del endpoint /rac/pendientes/ (conteo de alumnos sin RAC).",
+    "properties": {
+      "total_pendientes": {
+        "title": "Total Pendientes",
+        "type": "integer"
+      },
+      "ciclo": {
+        "title": "Ciclo",
+        "type": "string"
+      }
+    },
+    "required": [
+      "total_pendientes",
+      "ciclo"
+    ],
+    "title": "RACPendientesResponse",
+    "type": "object"
+  },
+  "RAEAlumnoResponse": {
+    "description": "DTO que refleja la salida del RAEAlumnoSerializer (fields='__all__').",
+    "properties": {
+      "id": {
+        "title": "Id",
+        "type": "integer"
+      },
+      "registro": {
+        "title": "Registro",
+        "type": "integer"
+      },
+      "alumno": {
+        "title": "Alumno",
+        "type": "integer"
+      },
+      "capturado_por": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Capturado Por"
+      },
+      "curp": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Curp"
+      },
+      "genero": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Genero"
+      },
+      "edad": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Edad"
+      },
+      "grado": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Grado"
+      },
+      "ceg": {
+        "default": false,
+        "title": "Ceg",
+        "type": "boolean"
+      },
+      "bv": {
+        "default": false,
+        "title": "Bv",
+        "type": "boolean"
+      },
+      "so": {
+        "default": false,
+        "title": "So",
+        "type": "boolean"
+      },
+      "hp": {
+        "default": false,
+        "title": "Hp",
+        "type": "boolean"
+      },
+      "scg": {
+        "default": false,
+        "title": "Scg",
+        "type": "boolean"
+      },
+      "dmo": {
+        "default": false,
+        "title": "Dmo",
+        "type": "boolean"
+      },
+      "di": {
+        "default": false,
+        "title": "Di",
+        "type": "boolean"
+      },
+      "dme": {
+        "default": false,
+        "title": "Dme",
+        "type": "boolean"
+      },
+      "psicosocial": {
+        "default": false,
+        "title": "Psicosocial",
+        "type": "boolean"
+      },
+      "dm": {
+        "default": false,
+        "title": "Dm",
+        "type": "boolean"
+      },
+      "dsc": {
+        "default": false,
+        "title": "Dsc",
+        "type": "boolean"
+      },
+      "dsco": {
+        "default": false,
+        "title": "Dsco",
+        "type": "boolean"
+      },
+      "dsa": {
+        "default": false,
+        "title": "Dsa",
+        "type": "boolean"
+      },
+      "tda": {
+        "default": false,
+        "title": "Tda",
+        "type": "boolean"
+      },
+      "tea": {
+        "default": false,
+        "title": "Tea",
+        "type": "boolean"
+      },
+      "asi": {
+        "default": false,
+        "title": "Asi",
+        "type": "boolean"
+      },
+      "asc": {
+        "default": false,
+        "title": "Asc",
+        "type": "boolean"
+      },
+      "asa": {
+        "default": false,
+        "title": "Asa",
+        "type": "boolean"
+      },
+      "asp": {
+        "default": false,
+        "title": "Asp",
+        "type": "boolean"
+      },
+      "ass": {
+        "default": false,
+        "title": "Ass",
+        "type": "boolean"
+      },
+      "ot": {
+        "default": false,
+        "title": "Ot",
+        "type": "boolean"
+      },
+      "psicologia": {
+        "default": false,
+        "title": "Psicologia",
+        "type": "boolean"
+      },
+      "comunicacion": {
+        "default": false,
+        "title": "Comunicacion",
+        "type": "boolean"
+      },
+      "psicomotricidad": {
+        "default": false,
+        "title": "Psicomotricidad",
+        "type": "boolean"
+      },
+      "trabajo_social": {
+        "default": false,
+        "title": "Trabajo Social",
+        "type": "boolean"
+      },
+      "aprendizaje": {
+        "default": false,
+        "title": "Aprendizaje",
+        "type": "boolean"
+      },
+      "nuevo_ingreso": {
+        "default": false,
+        "title": "Nuevo Ingreso",
+        "type": "boolean"
+      },
+      "subsecuente": {
+        "default": false,
+        "title": "Subsecuente",
+        "type": "boolean"
+      },
+      "diagnostico": {
+        "default": false,
+        "title": "Diagnostico",
+        "type": "boolean"
+      },
+      "educativo": {
+        "default": false,
+        "title": "Educativo",
+        "type": "boolean"
+      },
+      "deteccion": {
+        "default": false,
+        "title": "Deteccion",
+        "type": "boolean"
+      },
+      "psicopedagogico": {
+        "default": false,
+        "title": "Psicopedagogico",
+        "type": "boolean"
+      },
+      "plan": {
+        "default": false,
+        "title": "Plan",
+        "type": "boolean"
+      },
+      "modelo": {
+        "default": false,
+        "title": "Modelo",
+        "type": "boolean"
+      },
+      "alumno_nombre": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Alumno Nombre"
+      }
+    },
+    "required": [
+      "id",
+      "registro",
+      "alumno"
+    ],
+    "title": "RAEAlumnoResponse",
+    "type": "object"
+  },
+  "RAEInitResponse": {
+    "$defs": {
+      "RAEAlumnoResponse": {
+        "description": "DTO que refleja la salida del RAEAlumnoSerializer (fields='__all__').",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "registro": {
+            "title": "Registro",
+            "type": "integer"
+          },
+          "alumno": {
+            "title": "Alumno",
+            "type": "integer"
+          },
+          "capturado_por": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Capturado Por"
+          },
+          "curp": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Curp"
+          },
+          "genero": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Genero"
+          },
+          "edad": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Edad"
+          },
+          "grado": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Grado"
+          },
+          "ceg": {
+            "default": false,
+            "title": "Ceg",
+            "type": "boolean"
+          },
+          "bv": {
+            "default": false,
+            "title": "Bv",
+            "type": "boolean"
+          },
+          "so": {
+            "default": false,
+            "title": "So",
+            "type": "boolean"
+          },
+          "hp": {
+            "default": false,
+            "title": "Hp",
+            "type": "boolean"
+          },
+          "scg": {
+            "default": false,
+            "title": "Scg",
+            "type": "boolean"
+          },
+          "dmo": {
+            "default": false,
+            "title": "Dmo",
+            "type": "boolean"
+          },
+          "di": {
+            "default": false,
+            "title": "Di",
+            "type": "boolean"
+          },
+          "dme": {
+            "default": false,
+            "title": "Dme",
+            "type": "boolean"
+          },
+          "psicosocial": {
+            "default": false,
+            "title": "Psicosocial",
+            "type": "boolean"
+          },
+          "dm": {
+            "default": false,
+            "title": "Dm",
+            "type": "boolean"
+          },
+          "dsc": {
+            "default": false,
+            "title": "Dsc",
+            "type": "boolean"
+          },
+          "dsco": {
+            "default": false,
+            "title": "Dsco",
+            "type": "boolean"
+          },
+          "dsa": {
+            "default": false,
+            "title": "Dsa",
+            "type": "boolean"
+          },
+          "tda": {
+            "default": false,
+            "title": "Tda",
+            "type": "boolean"
+          },
+          "tea": {
+            "default": false,
+            "title": "Tea",
+            "type": "boolean"
+          },
+          "asi": {
+            "default": false,
+            "title": "Asi",
+            "type": "boolean"
+          },
+          "asc": {
+            "default": false,
+            "title": "Asc",
+            "type": "boolean"
+          },
+          "asa": {
+            "default": false,
+            "title": "Asa",
+            "type": "boolean"
+          },
+          "asp": {
+            "default": false,
+            "title": "Asp",
+            "type": "boolean"
+          },
+          "ass": {
+            "default": false,
+            "title": "Ass",
+            "type": "boolean"
+          },
+          "ot": {
+            "default": false,
+            "title": "Ot",
+            "type": "boolean"
+          },
+          "psicologia": {
+            "default": false,
+            "title": "Psicologia",
+            "type": "boolean"
+          },
+          "comunicacion": {
+            "default": false,
+            "title": "Comunicacion",
+            "type": "boolean"
+          },
+          "psicomotricidad": {
+            "default": false,
+            "title": "Psicomotricidad",
+            "type": "boolean"
+          },
+          "trabajo_social": {
+            "default": false,
+            "title": "Trabajo Social",
+            "type": "boolean"
+          },
+          "aprendizaje": {
+            "default": false,
+            "title": "Aprendizaje",
+            "type": "boolean"
+          },
+          "nuevo_ingreso": {
+            "default": false,
+            "title": "Nuevo Ingreso",
+            "type": "boolean"
+          },
+          "subsecuente": {
+            "default": false,
+            "title": "Subsecuente",
+            "type": "boolean"
+          },
+          "diagnostico": {
+            "default": false,
+            "title": "Diagnostico",
+            "type": "boolean"
+          },
+          "educativo": {
+            "default": false,
+            "title": "Educativo",
+            "type": "boolean"
+          },
+          "deteccion": {
+            "default": false,
+            "title": "Deteccion",
+            "type": "boolean"
+          },
+          "psicopedagogico": {
+            "default": false,
+            "title": "Psicopedagogico",
+            "type": "boolean"
+          },
+          "plan": {
+            "default": false,
+            "title": "Plan",
+            "type": "boolean"
+          },
+          "modelo": {
+            "default": false,
+            "title": "Modelo",
+            "type": "boolean"
+          },
+          "alumno_nombre": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Alumno Nombre"
+          }
+        },
+        "required": [
+          "id",
+          "registro",
+          "alumno"
+        ],
+        "title": "RAEAlumnoResponse",
+        "type": "object"
+      }
+    },
+    "description": "Respuesta del endpoint /rae/captura/ (inicializar captura RAE).",
+    "properties": {
+      "registro_id": {
+        "title": "Registro Id",
+        "type": "integer"
+      },
+      "ciclo": {
+        "title": "Ciclo",
+        "type": "string"
+      },
+      "escuela": {
+        "title": "Escuela",
+        "type": "string"
+      },
+      "cerrado": {
+        "title": "Cerrado",
+        "type": "boolean"
+      },
+      "alumnos": {
+        "items": {
+          "$ref": "#/$defs/RAEAlumnoResponse"
+        },
+        "title": "Alumnos",
+        "type": "array"
+      }
+    },
+    "required": [
+      "registro_id",
+      "ciclo",
+      "escuela",
+      "cerrado",
+      "alumnos"
+    ],
+    "title": "RAEInitResponse",
+    "type": "object"
+  },
+  "RAEProgressItem": {
+    "description": "Respuesta del endpoint /rae/progreso/ (progreso por escuela).",
+    "properties": {
+      "escuela_id": {
+        "title": "Escuela Id",
+        "type": "integer"
+      },
+      "escuela_nombre": {
+        "title": "Escuela Nombre",
+        "type": "string"
+      },
+      "escuela_cct": {
+        "title": "Escuela Cct",
+        "type": "string"
+      },
+      "registro_id": {
+        "title": "Registro Id",
+        "type": "integer"
+      },
+      "total_alumnos": {
+        "title": "Total Alumnos",
+        "type": "integer"
+      },
+      "completados": {
+        "title": "Completados",
+        "type": "integer"
+      },
+      "porcentaje": {
+        "title": "Porcentaje",
+        "type": "number"
+      },
+      "cerrado": {
+        "title": "Cerrado",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "escuela_id",
+      "escuela_nombre",
+      "escuela_cct",
+      "registro_id",
+      "total_alumnos",
+      "completados",
+      "porcentaje",
+      "cerrado"
+    ],
+    "title": "RAEProgressItem",
+    "type": "object"
+  },
+  "RegistroRACResponse": {
+    "description": "DTO que refleja la salida del RegistroRACSerializer (fields='__all__').",
+    "properties": {
+      "id": {
+        "title": "Id",
+        "type": "integer"
+      },
+      "alumno": {
+        "title": "Alumno",
+        "type": "integer"
+      },
+      "ciclo_escolar": {
+        "title": "Ciclo Escolar",
+        "type": "integer"
+      },
+      "escuela_regular": {
+        "title": "Escuela Regular",
+        "type": "integer"
+      },
+      "zona_regular": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Zona Regular"
+      },
+      "curp": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Curp"
+      },
+      "sexo": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Sexo"
+      },
+      "edad": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Edad"
+      },
+      "grado": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Grado"
+      },
+      "service_type": {
+        "default": "USAER",
+        "title": "Service Type",
+        "type": "string"
+      },
+      "sup_especial_cct": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Sup Especial Cct"
+      },
+      "sup_especial_zona": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Sup Especial Zona"
+      },
+      "centro_cct": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Centro Cct"
+      },
+      "centro_nombre": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Centro Nombre"
+      },
+      "maestro_apoyo": {
+        "title": "Maestro Apoyo",
+        "type": "integer"
+      },
+      "escuela_basica": {
+        "title": "Escuela Basica",
+        "type": "integer"
+      },
+      "clasificacion": {
+        "title": "Clasificacion",
+        "type": "string"
+      },
+      "subclasificacion": {
+        "title": "Subclasificacion",
+        "type": "string"
+      },
+      "observaciones": {
+        "default": "",
+        "title": "Observaciones",
+        "type": "string"
+      },
+      "fecha_registro": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Fecha Registro"
+      },
+      "alumno_nombre": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Alumno Nombre"
+      },
+      "escuela_nombre": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Escuela Nombre"
+      },
+      "maestro_nombre": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Maestro Nombre"
+      },
+      "service_type_display": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Service Type Display"
+      }
+    },
+    "required": [
+      "id",
+      "alumno",
+      "ciclo_escolar",
+      "escuela_regular",
+      "maestro_apoyo",
+      "escuela_basica",
+      "clasificacion",
+      "subclasificacion"
+    ],
+    "title": "RegistroRACResponse",
+    "type": "object"
+  },
+  "RegistroRAEResponse": {
+    "description": "DTO que refleja la salida del RegistroRAESerializer (fields='__all__').",
+    "properties": {
+      "id": {
+        "title": "Id",
+        "type": "integer"
+      },
+      "escuela": {
+        "title": "Escuela",
+        "type": "integer"
+      },
+      "ciclo_escolar": {
+        "title": "Ciclo Escolar",
+        "type": "integer"
+      },
+      "creado_por": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Creado Por"
+      },
+      "fecha_creacion": {
+        "format": "date-time",
+        "title": "Fecha Creacion",
+        "type": "string"
+      },
+      "cerrado": {
+        "default": false,
+        "title": "Cerrado",
+        "type": "boolean"
+      },
+      "docente_hombres": {
+        "default": 0,
+        "title": "Docente Hombres",
+        "type": "integer"
+      },
+      "docente_mujeres": {
+        "default": 0,
+        "title": "Docente Mujeres",
+        "type": "integer"
+      },
+      "escuela_nombre": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Escuela Nombre"
+      },
+      "ciclo_nombre": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Ciclo Nombre"
+      },
+      "creado_por_nombre": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Creado Por Nombre"
+      }
+    },
+    "required": [
+      "id",
+      "escuela",
+      "ciclo_escolar",
+      "fecha_creacion"
+    ],
+    "title": "RegistroRAEResponse",
+    "type": "object"
+  },
   "ErrorResponse": {
     "description": "Cuerpo de respuesta est\u00e1ndar para errores.\n\nReemplaza los dicts sueltos `{\"detail\": \"...\"}` por un modelo\ntrazable. code permite clasificar el error en el frontend.",
     "properties": {

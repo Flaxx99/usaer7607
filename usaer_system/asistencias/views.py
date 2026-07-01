@@ -4,6 +4,7 @@ from django.utils import timezone
 from rest_framework import filters, status, views, viewsets
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from services.dto import ChecadorResponse
 from services.error_handling import error_400, error_404, error_500
 
 from .models import Asistencia
@@ -63,16 +64,18 @@ class ChecadorView(views.APIView):
             },
         )
 
-        datos_respuesta = {"profesor": profesor.get_full_name(), "hora": ahora.strftime("%H:%M")}
+        profesor_nombre = profesor.get_full_name()
+        hora_str = ahora.strftime("%H:%M")
 
         # CASO A: Registro Nuevo -> ENTRADA
         if created:
             return Response(
-                {
-                    "message": f"Entrada registrada a las {asistencia.hora_entrada.strftime('%H:%M')}",
-                    "tipo": "ENTRADA",
-                    **datos_respuesta,
-                },
+                ChecadorResponse(
+                    message=f"Entrada registrada a las {asistencia.hora_entrada.strftime('%H:%M')}",
+                    tipo="ENTRADA",
+                    profesor=profesor_nombre,
+                    hora=hora_str,
+                ).model_dump(),
                 status=status.HTTP_201_CREATED,
             )
 
@@ -95,12 +98,13 @@ class ChecadorView(views.APIView):
                 mins = (delta.seconds % 3600) // 60
 
                 return Response(
-                    {
-                        "message": f"Salida registrada a las {asistencia.hora_salida.strftime('%H:%M')}",
-                        "detalle": f"Horas trabajadas: {horas}h {mins}m",
-                        "tipo": "SALIDA",
-                        **datos_respuesta,
-                    },
+                    ChecadorResponse(
+                        message=f"Salida registrada a las {asistencia.hora_salida.strftime('%H:%M')}",
+                        detalle=f"Horas trabajadas: {horas}h {mins}m",
+                        tipo="SALIDA",
+                        profesor=profesor_nombre,
+                        hora=hora_str,
+                    ).model_dump(),
                     status=status.HTTP_200_OK,
                 )
 

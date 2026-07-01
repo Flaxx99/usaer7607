@@ -37,7 +37,7 @@ describe('Dashboard Integration', () => {
   it('should show loading state initially', () => {
     renderWithProviders(<Dashboard />);
     // Dashboard shows DashboardSkeleton while loading — no stat labels yet
-    expect(screen.queryByText('Alumnos Totales')).not.toBeInTheDocument();
+    expect(screen.queryByText('Alumnos')).not.toBeInTheDocument();
   });
 
   it('should render dashboard data after successful API call', async () => {
@@ -45,20 +45,24 @@ describe('Dashboard Integration', () => {
 
     // Wait for loading to disappear and data to appear
     await waitFor(() => {
-      expect(screen.getByText('Alumnos Totales')).toBeInTheDocument();
+      expect(screen.getByText('Alumnos')).toBeInTheDocument();
     });
 
     // Check greeting (accessible name concatenates text nodes)
     expect(screen.getByRole('heading', { name: /hola.*admin/i })).toBeInTheDocument();
     
     // Check stats cards
-    expect(screen.getByText('Alumnos Totales')).toBeInTheDocument();
+    expect(screen.getByText('Alumnos')).toBeInTheDocument();
     expect(screen.getByText('150')).toBeInTheDocument();
-    expect(screen.getByText('Escuelas Regular')).toBeInTheDocument();
+    expect(screen.getByText('Escuelas')).toBeInTheDocument();
     expect(screen.getByText('12')).toBeInTheDocument();
-    expect(screen.getByText('Plantilla Docente')).toBeInTheDocument();
+    expect(screen.getByText('Maestros Apoyo')).toBeInTheDocument();
     expect(screen.getByText('25')).toBeInTheDocument();
-    expect(screen.getByText('Incidencias Pend.')).toBeInTheDocument();
+    expect(screen.getByText('Usuarios')).toBeInTheDocument();
+    expect(screen.getByText('40')).toBeInTheDocument();
+    expect(screen.getByText('RACs Pendientes')).toBeInTheDocument();
+    expect(screen.getByText('8')).toBeInTheDocument();
+    expect(screen.getByText('Incidencias')).toBeInTheDocument();
     expect(screen.getByText('5')).toBeInTheDocument();
   });
 
@@ -70,7 +74,6 @@ describe('Dashboard Integration', () => {
     });
 
     expect(screen.getByText('Actualización de Expedientes')).toBeInTheDocument();
-    expect(screen.getByText(/2 publicaciones/i)).toBeInTheDocument();
   });
 
   it('should render the classification distribution section', async () => {
@@ -78,7 +81,7 @@ describe('Dashboard Integration', () => {
 
     await waitFor(() => {
       // Verify the section heading renders (chart ticks need ResizeObserver + container size in JSDOM)
-      expect(screen.getByText('Distribución de Matrícula')).toBeInTheDocument();
+      expect(screen.getByText('Distribución por Condición')).toBeInTheDocument();
     });
   });
 

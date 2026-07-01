@@ -16,7 +16,14 @@ from openpyxl import load_workbook
 from pydantic import ValidationError
 from rest_framework import filters, permissions, views, viewsets
 from rest_framework.response import Response
-from services.dto import CerrarRegistroResponse, StatusDetailResponse, ToggleCerradoPayload
+from services.dto import (
+    CerrarRegistroResponse,
+    RAEAlumnoResponse,
+    RAEInitResponse,
+    RAEProgressItem,
+    StatusDetailResponse,
+    ToggleCerradoPayload,
+)
 from services.error_handling import error_400, error_403, error_404, error_500
 from usuarios.models import SystemConfiguration
 
@@ -135,13 +142,13 @@ class RAEInitCaptureView(views.APIView):
 
         serializer = RAEAlumnoSerializer(rae_alumnos, many=True)
         return Response(
-            {
-                "registro_id": registro.id,
-                "ciclo": ciclo.nombre,
-                "escuela": escuela.nombre,
-                "cerrado": registro.cerrado,
-                "alumnos": serializer.data,
-            }
+            RAEInitResponse(
+                registro_id=registro.id,
+                ciclo=ciclo.nombre,
+                escuela=escuela.nombre,
+                cerrado=registro.cerrado,
+                alumnos=[RAEAlumnoResponse(**a) for a in serializer.data],
+            ).model_dump()
         )
 
 
@@ -803,20 +810,20 @@ class RAEProgressView(views.APIView):
             porcentaje = round((completados / total) * 100, 1)
 
             resultados.append(
-                {
-                    "escuela_id": registro.escuela.id,
-                    "escuela_nombre": registro.escuela.nombre,
-                    "escuela_cct": registro.escuela.cct,
-                    "registro_id": registro.id,
-                    "total_alumnos": total,
-                    "completados": completados,
-                    "porcentaje": porcentaje,
-                    "cerrado": registro.cerrado,
-                }
+                RAEProgressItem(
+                    escuela_id=registro.escuela.id,
+                    escuela_nombre=registro.escuela.nombre,
+                    escuela_cct=registro.escuela.cct,
+                    registro_id=registro.id,
+                    total_alumnos=total,
+                    completados=completados,
+                    porcentaje=porcentaje,
+                    cerrado=registro.cerrado,
+                )
             )
 
-        resultados.sort(key=lambda r: r["escuela_nombre"])
-        return Response(resultados)
+        resultados.sort(key=lambda r: r.escuela_nombre)
+        return Response([r.model_dump() for r in resultados])
 
 
 # --- 7. CERRAR / REABRIR REGISTRO RAE ---

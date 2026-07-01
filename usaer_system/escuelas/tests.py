@@ -72,16 +72,20 @@ class EscuelaViewsTest(APITestCase):
         url_create = reverse("escuelas:escuelas-list")
         response = self.client.post(url_create, data={})
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn("message", response.data)
+        self.assertIn("permiso", response.data["message"])
 
         # Edition should be denied (PATCH/PUT)
         url_edit = reverse("escuelas:escuelas-detail", args=[self.escuela.pk])
         response = self.client.patch(url_edit, data={})
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn("message", response.data)
 
         # Deletion should be denied (DELETE)
         url_delete = reverse("escuelas:escuelas-detail", args=[self.escuela.pk])
         response = self.client.delete(url_delete)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn("message", response.data)
 
     def test_acceso_permitido_a_admin(self):
         self.client.force_authenticate(user=self.admin)
@@ -111,6 +115,9 @@ class EscuelaViewsTest(APITestCase):
         response = self.client.post(url, data=form_data, format="json")
         self.assertIn(response.status_code, [status.HTTP_201_CREATED, status.HTTP_200_OK])
         self.assertTrue(Escuela.objects.filter(cct="CCT456").exists())
+        # Body debe incluir los datos creados (serializer output)
+        self.assertEqual(response.data["nombre"], "NUEVA ESCUELA")
+        self.assertEqual(response.data["cct"], "CCT456")
 
     def test_editar_escuela(self):
         self.client.force_authenticate(user=self.admin)

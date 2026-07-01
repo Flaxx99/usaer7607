@@ -86,3 +86,14 @@ export const updateUsuario = async (data: Usuario): Promise<Usuario> => {
 export const deleteUsuario = async (id: number): Promise<void> => {
     await client.delete(`/usuarios/${id}/`);
 };
+
+// --- CAMBIAR CONTRASEÑA (admin) ---
+export const changePassword = async (id: number, newPassword: string): Promise<void> => {
+    await client.post(`/usuarios/${id}/change-password/`, { new_password: newPassword });
+};
+
+// --- ACTIVAR / DESACTIVAR ---
+export const toggleActive = async (id: number): Promise<{ status: string; activo: boolean }> => {
+    const response = await client.post(`/usuarios/${id}/toggle-active/`);
+    return response.data;
+};

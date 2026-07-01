@@ -30,6 +30,8 @@ const OFICIOS_MOCK = {
             descripcion: 'Evaluaciones del primer trimestre.',
             archivo: 'http://test.com/doc1.pdf',
             fecha_subida: '2026-06-01T10:00:00Z',
+            subido_por: 1,
+            subido_por_nombre: 'María García',
         },
         {
             id: 2,
@@ -37,6 +39,8 @@ const OFICIOS_MOCK = {
             descripcion: 'Circular para todos los directores.',
             archivo: 'http://test.com/doc2.pdf',
             fecha_subida: '2026-06-05T08:00:00Z',
+            subido_por: 2,
+            subido_por_nombre: 'Juan Pérez',
         },
     ],
 };
@@ -51,6 +55,10 @@ describe('OficiosList', () => {
             http.post('*/api/oficios/', async () => {
                 await delay(30);
                 return HttpResponse.json({ id: 99, titulo: 'Nuevo oficio' }, { status: 201 });
+            }),
+            http.patch('*/api/oficios/:id/', async () => {
+                await delay(30);
+                return HttpResponse.json({ id: 1, titulo: 'Editado', descripcion: 'Actualizado' });
             }),
             http.delete('*/api/oficios/:id/', async () => {
                 await delay(30);
@@ -78,6 +86,16 @@ describe('OficiosList', () => {
         expect(screen.getByText('Oficio de Supervisión')).toBeInTheDocument();
         expect(screen.getByText('Gestión de Oficios')).toBeInTheDocument();
         expect(screen.getByText('Subir Nuevo Oficio')).toBeInTheDocument();
+    });
+
+    it('muestra subido_por_nombre en tabla', async () => {
+        renderPage();
+
+        await waitFor(() => {
+            expect(screen.getByText('María García')).toBeInTheDocument();
+        });
+
+        expect(screen.getByText('Juan Pérez')).toBeInTheDocument();
     });
 
     it('muestra error state cuando falla la API', async () => {
@@ -130,6 +148,25 @@ describe('OficiosList', () => {
         });
     });
 
+    it('abre modal de editar oficio con datos precargados', async () => {
+        renderPage();
+
+        await waitFor(() => {
+            expect(screen.getByText('Reporte Trimestral')).toBeInTheDocument();
+        });
+
+        const editButtons = document.querySelectorAll('[title="Editar"]');
+        expect(editButtons.length).toBeGreaterThan(0);
+        fireEvent.click(editButtons[0]);
+
+        await waitFor(() => {
+            expect(screen.getByText('Editar Documento Oficial')).toBeInTheDocument();
+        });
+
+        const tituloInput = screen.getByLabelText('Título del Oficio') as HTMLInputElement;
+        expect(tituloInput.value).toBe('Reporte Trimestral');
+    });
+
     it('abre y confirma eliminación con confirm dialog', async () => {
         renderPage();
 
@@ -137,7 +174,6 @@ describe('OficiosList', () => {
             expect(screen.getByText('Reporte Trimestral')).toBeInTheDocument();
         });
 
-        // Clic en botón eliminar del primer oficio
         const deleteButtons = document.querySelectorAll('[title="Eliminar"]');
         expect(deleteButtons.length).toBeGreaterThan(0);
         fireEvent.click(deleteButtons[0]);
@@ -146,7 +182,6 @@ describe('OficiosList', () => {
             expect(screen.getByText('Eliminar Oficio')).toBeInTheDocument();
         });
 
-        // Confirmar
         fireEvent.click(screen.getByText('Eliminar'));
 
         await waitFor(() => {

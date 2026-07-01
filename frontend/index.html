@@ -10,6 +10,18 @@
     <meta property="og:description" content="Plataforma integral para la gestión de actividades, personal y recursos educativos de USAER 7607 en Chihuahua." />
     <meta property="og:type" content="website" />
     <title>USAER 7607 — Sistema de Gestión Escolar</title>
+
+    <!-- Anti-FOIT: aplicar tema oscuro antes de React hydrate -->
+    <script>
+      (function() {
+        try {
+          var data = JSON.parse(localStorage.getItem('theme-storage'));
+          if (data && data.state && data.state.theme === 'usaer-dark') {
+            document.documentElement.dataset.theme = 'usaer-dark';
+          }
+        } catch(e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

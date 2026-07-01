@@ -16,6 +16,13 @@ export const uploadOficio = async (formData: FormData) => {
     return response.data;
 };
 
+export const updateOficio = async (id: number, formData: FormData) => {
+    const response = await client.patch(`/oficios/${id}/`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+};
+
 export const deleteOficio = async (id: number) => {
     const response = await client.delete(`/oficios/${id}/`);
     return response.data;

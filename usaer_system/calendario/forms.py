@@ -8,7 +8,7 @@ from .models import EventoCalendario
 class EventoForm(forms.ModelForm):
     class Meta:
         model = EventoCalendario
-        fields = ["titulo", "descripcion", "fecha_inicio", "fecha_fin", "tipo", "archivo"]
+        fields = ["titulo", "descripcion", "fecha_inicio", "fecha_fin", "tipo"]
         widgets = {
             "fecha_inicio": forms.DateTimeInput(
                 attrs={
@@ -25,7 +25,6 @@ class EventoForm(forms.ModelForm):
             "tipo": forms.Select(attrs={"class": "form-select"}),
             "titulo": forms.TextInput(attrs={"class": "form-control"}),
             "descripcion": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
-            "archivo": forms.ClearableFileInput(attrs={"class": "form-control"}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -40,11 +39,7 @@ class EventoForm(forms.ModelForm):
                 Div(Field("fecha_fin"), css_class="col-md-6"),
                 css_class="row",
             ),
-            Div(
-                Div(Field("tipo"), css_class="col-md-6"),
-                Div(Field("archivo"), css_class="col-md-6"),
-                css_class="row",
-            ),
+            Div(Div(Field("tipo"), css_class="col-md-12"), css_class="row"),
             Submit("submit", "Guardar Evento", css_class="btn btn-primary mt-3"),
         )
 

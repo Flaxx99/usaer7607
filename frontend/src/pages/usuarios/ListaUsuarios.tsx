@@ -5,13 +5,14 @@ import type { SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { usuarioSchema, type UsuarioFormData, ROLES_OPTIONS, SITUACION_OPTIONS } from '../../schemas/usuario';
 import { 
-    Plus, Edit2, Trash2, Shield, Mail, Key, 
-    Briefcase, Phone, School as SchoolIcon, User as UserIcon, CheckCircle, XCircle, Save, User, Pencil
+    Plus, Edit2, Trash2, Shield, Mail, Key, KeyRound,
+    Briefcase, Phone, School as SchoolIcon, User as UserIcon, CheckCircle, XCircle, Save, User, Pencil,
+    ToggleLeft, ToggleRight
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { isAxiosError } from 'axios';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
-import { getUsuarios, createUsuario, updateUsuario, deleteUsuario } from '../../api/usuarios';
+import { getUsuarios, createUsuario, updateUsuario, deleteUsuario, changePassword, toggleActive } from '../../api/usuarios';
 import { getEscuelas } from '../../api/escuelas';
 import type { Usuario } from '../../interfaces/usuario';
 import { ErrorState } from '../../components/Skeletons';
@@ -30,6 +31,8 @@ const ListaUsuarios = () => {
   const [page, setPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [usuarioEditar, setUsuarioEditar] = useState<Usuario | null>(null);
+  const [passwordChangeUser, setPasswordChangeUser] = useState<Usuario | null>(null);
+  const [newPassword, setNewPassword] = useState('');
   const { confirm: confirmDelete, dialog: confirmDialog } = useConfirmDialog();
   
   const queryClient = useQueryClient();
@@ -94,6 +97,29 @@ const ListaUsuarios = () => {
       queryClient.invalidateQueries({ queryKey: ['usuarios'] });
       toast.success(<span className="inline-flex items-center gap-1.5"><Trash2 size={16} /> ¡Eliminado!</span>, { description: 'Usuario eliminado.' });
     }
+  });
+
+  const changePasswordMutation = useMutation({
+    mutationFn: ({ id, password }: { id: number; password: string }) => changePassword(id, password),
+    onSuccess: () => {
+      setPasswordChangeUser(null);
+      setNewPassword('');
+      toast.success(<span className="inline-flex items-center gap-1.5"><KeyRound size={16} /> Contraseña actualizada</span>, { description: 'El usuario podrá iniciar sesión con la nueva contraseña.' });
+    },
+    onError: () => toast.error(<span className="inline-flex items-center gap-1.5"><XCircle size={16} /> Error</span>, { description: 'No se pudo cambiar la contraseña.' })
+  });
+
+  const toggleActiveMutation = useMutation({
+    mutationFn: toggleActive,
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['usuarios'] });
+      toast.success(
+        <span className="inline-flex items-center gap-1.5">
+          {data.activo ? <ToggleRight size={16} /> : <ToggleLeft size={16} />} {data.status}
+        </span>
+      );
+    },
+    onError: () => toast.error(<span className="inline-flex items-center gap-1.5"><XCircle size={16} /> Error</span>, { description: 'No se pudo cambiar el estado.' })
   });
 
   const cerrarModal = () => {
@@ -162,6 +188,33 @@ const ListaUsuarios = () => {
     if (ok) {
         deleteMutation.mutate(id);
     }
+  };
+
+  const handleToggleActive = async (user: Usuario) => {
+    const accion = user.activo ? 'desactivar' : 'activar';
+    const ok = await confirmDelete({
+        title: `${user.activo ? 'Desactivar' : 'Activar'} Usuario`,
+        message: `¿${accion === 'activar' ? 'Activar' : 'Desactivar'} a ${user.nombre_completo || user.email}? ${!user.activo ? ' Podrá acceder al sistema.' : ' No podrá iniciar sesión.'}`,
+        variant: user.activo ? 'warning' : 'default',
+        confirmText: user.activo ? 'Desactivar' : 'Activar',
+    });
+    if (ok) {
+        toggleActiveMutation.mutate(user.id);
+    }
+  };
+
+  const handleOpenPasswordChange = (user: Usuario) => {
+    setPasswordChangeUser(user);
+    setNewPassword('');
+  };
+
+  const handleChangePassword = () => {
+    if (!passwordChangeUser || !newPassword.trim()) return;
+    if (newPassword.length < 5) {
+        toast.error('La contraseña debe tener al menos 5 caracteres.');
+        return;
+    }
+    changePasswordMutation.mutate({ id: passwordChangeUser.id, password: newPassword });
   };
 
   const getInitials = (u: Usuario) => {
@@ -261,9 +314,35 @@ const ListaUsuarios = () => {
         cell: ({ row }) => {
             const u = row.original;
             return (
-                <div className="flex justify-center gap-2">
-                    <button className="btn btn-ghost btn-xs text-primary" onClick={() => handleOpenEdit(u)}><Edit2 size={14} /></button>
-                    <button className="btn btn-ghost btn-xs text-error" onClick={() => handleDelete(u.id)}><Trash2 size={14} /></button>
+                <div className="flex justify-center gap-1">
+                    <button
+                        className="btn btn-ghost btn-xs text-primary"
+                        title="Editar usuario"
+                        onClick={() => handleOpenEdit(u)}
+                    >
+                        <Edit2 size={14} />
+                    </button>
+                    <button
+                        className="btn btn-ghost btn-xs text-info"
+                        title="Cambiar contraseña"
+                        onClick={() => handleOpenPasswordChange(u)}
+                    >
+                        <KeyRound size={14} />
+                    </button>
+                    <button
+                        className={`btn btn-ghost btn-xs ${u.activo ? 'text-warning' : 'text-success'}`}
+                        title={u.activo ? 'Desactivar usuario' : 'Activar usuario'}
+                        onClick={() => handleToggleActive(u)}
+                    >
+                        {u.activo ? <ToggleLeft size={14} /> : <ToggleRight size={14} />}
+                    </button>
+                    <button
+                        className="btn btn-ghost btn-xs text-error"
+                        title="Eliminar usuario"
+                        onClick={() => handleDelete(u.id)}
+                    >
+                        <Trash2 size={14} />
+                    </button>
                 </div>
             );
         }
@@ -421,6 +500,59 @@ const ListaUsuarios = () => {
                     </div>
             </form>
         </Modal>
+        {/* MODAL CAMBIAR CONTRASEÑA */}
+        <Modal
+            isOpen={!!passwordChangeUser}
+            onClose={() => { setPasswordChangeUser(null); setNewPassword(''); }}
+            title={`Cambiar Contraseña — ${passwordChangeUser?.nombre_completo || passwordChangeUser?.email || ''}`}
+            icon={<KeyRound size={24} />}
+        >
+            <div className="space-y-6">
+                <div className="p-4 bg-base-200 rounded-2xl border border-base-300">
+                    <p className="text-sm text-base-content/70 mb-4">
+                        La nueva contraseña será asignada al usuario. No necesita conocer la anterior.
+                    </p>
+                    <div className="form-control">
+                        <label className="label" htmlFor="new-password">
+                            <span className="label-text font-bold">Nueva Contraseña</span>
+                        </label>
+                        <input
+                            id="new-password"
+                            type="password"
+                            className="input input-bordered w-full"
+                            placeholder="Mínimo 5 caracteres"
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            autoFocus
+                        />
+                    </div>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4 border-t border-base-300">
+                    <button
+                        type="button"
+                        className="btn btn-ghost"
+                        onClick={() => { setPasswordChangeUser(null); setNewPassword(''); }}
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        type="button"
+                        className="btn btn-primary px-8 gap-2"
+                        onClick={handleChangePassword}
+                        disabled={!newPassword.trim() || changePasswordMutation.isPending}
+                    >
+                        {changePasswordMutation.isPending ? (
+                            <span className="loading loading-spinner loading-sm" />
+                        ) : (
+                            <KeyRound size={16} />
+                        )}
+                        {changePasswordMutation.isPending ? 'Cambiando...' : 'Cambiar Contraseña'}
+                    </button>
+                </div>
+            </div>
+        </Modal>
+
         {confirmDialog}
     </>
   );

@@ -3,10 +3,15 @@ import { Outlet, useNavigate, useLocation, Link } from 'react-router-dom';
 import { 
   LayoutDashboard, Users, School, Calendar, 
   Settings, AlertTriangle, FileCheck, Mail, Megaphone, 
-  FolderOpen, ClipboardList, BookOpen, Clock, Layers, LogOut, Menu, X, Bell
+  FolderOpen, ClipboardList, BookOpen, Clock, Layers, LogOut, Menu, X, Bell,
+  Sun, Moon
 } from 'lucide-react';
+import { useUiStore } from '../stores/ui';
 import { useQuery } from '@tanstack/react-query';
 import client from '../api/client';
+import { notificacionesApi } from '../api/notificaciones';
+import NotificacionBell from '../pages/notificaciones/NotificacionBell';
+import type { RACPendientesResponse } from '../interfaces/api';
 
 const ROLES_MAP: Record<string, string> = {
     'DIRECTOR': 'Director(a)',
@@ -72,6 +77,9 @@ const MainLayout = () => {
   const [userRoleCode] = useState(() => loadUserFromStorage().userRoleCode);
   const [isSuperUser] = useState(() => loadUserFromStorage().isSuperUser);
 
+  const theme = useUiStore((s) => s.theme);
+  const toggleTheme = useUiStore((s) => s.toggleTheme);
+
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -79,13 +87,22 @@ const MainLayout = () => {
       queryKey: ['rac_pendientes'],
       queryFn: async () => {
           const res = await client.get('/rac/pendientes/');
-          return res.data as { total_pendientes: number; ciclo: string };
+          return res.data as RACPendientesResponse;
       },
       refetchInterval: 60_000,
       enabled: !!userRoleCode && (userRoleCode === 'ADMIN' || userRoleCode === 'SECRETARIO' || userRoleCode === 'MAESTRO_APOYO'),
   });
 
   const racBadgeCount = racPendientes?.total_pendientes ?? 0;
+
+  const { data: notifConteo } = useQuery({
+      queryKey: ['notificaciones', 'conteo'],
+      queryFn: notificacionesApi.getConteo,
+      refetchInterval: 30_000,
+      enabled: !!userRoleCode,
+  });
+
+  const notifBadgeCount = notifConteo?.unread_count ?? 0;
 
   const filteredMenuItems = MENU_CONFIG.filter(item => {
     if (isSuperUser) return true;
@@ -156,11 +173,18 @@ const MainLayout = () => {
                >
                  <Icon size={20} className={isActive ? 'text-white' : 'group-hover:text-primary transition-colors'} />
                  <span className="text-sm font-semibold flex-1">{item.label}</span>
-                 {item.label === 'R.A.C.' && racBadgeCount > 0 && (
-                   <span className="badge badge-error badge-xs font-bold animate-pulse">
-                     {racBadgeCount > 99 ? '99+' : racBadgeCount}
-                   </span>
-                 )}
+                  {item.label === 'R.A.C.' && racBadgeCount > 0 && (
+                    <span className="badge badge-error badge-xs font-bold animate-pulse">
+                      {racBadgeCount > 99 ? '99+' : racBadgeCount}
+                    </span>
+                  )}
+                  {item.label === 'Notificaciones' && notifBadgeCount > 0 && (
+                    <span className="badge badge-xs font-bold text-white"
+                      style={{ backgroundColor: '#6366F1' }}
+                    >
+                      {notifBadgeCount > 99 ? '99+' : notifBadgeCount}
+                    </span>
+                  )}
                </Link>
 
             );
@@ -203,7 +227,16 @@ const MainLayout = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1">
+            <NotificacionBell />
+            <button
+              className="btn btn-ghost btn-sm btn-square tooltip"
+              onClick={toggleTheme}
+              aria-label={theme === 'usaer-dark' ? 'Tema claro' : 'Tema oscuro'}
+              title={theme === 'usaer-dark' ? 'Tema claro' : 'Tema oscuro'}
+            >
+              {theme === 'usaer-dark' ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
             <button 
               className="btn btn-ghost btn-sm gap-2 text-error hover:bg-error/10" 
               onClick={handleLogout}

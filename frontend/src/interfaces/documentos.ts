@@ -1,29 +1,18 @@
-// src/interfaces/documentos.ts
+// Re-exportado desde api.ts (generado de pydantic OtroArchivoResponse).
+export type { OtroArchivoResponse as OtroArchivo } from './api';
 
-export interface OtroArchivo {
-    id: number;
-    archivo: string; // URL
-    descripcion: string;
-    url_archivo: string | null;
-    nombre_archivo: string | null;
-}
+// ExpedienteResponse está disponible para consumo puro de GET.
+export type { ExpedienteResponse } from './api';
 
-export interface Expediente {
-    id: number;
-    alumno: number; // ID
-    alumno_nombre?: string; // ReadOnly
-    profesor?: number;
-    profesor_nombre?: string; // ReadOnly
-    
-    // Archivos (pueden ser string URL, File o FileList al subir desde formulario)
+// Expediente híbrido: extiende la respuesta GET con tipos de formulario.
+// Los campos FileField son string (URL) en la respuesta, pero
+// File/FileList al enviar desde un formulario con <input type="file">.
+export interface Expediente extends Omit<ExpedienteResponse,
+    'informe_deteccion' | 'informe_psicopedagogico' | 'plan_intervencion'
+> {
     informe_deteccion?: string | File | FileList | null;
     informe_psicopedagogico?: string | File | FileList | null;
     plan_intervencion?: string | File | FileList | null;
-    
-    observaciones: string;
-    fecha_subida?: string;
-    
-    // Extras
-    otros_archivos?: OtroArchivo[];
+    // Solo frontend — para acumular archivos extra antes de enviar
     nuevos_archivos_temp?: { file: File; descripcion: string }[];
 }
