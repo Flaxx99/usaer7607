@@ -98,24 +98,32 @@ export function DataTable<TData>({
                     <table className="table table-md table-zebra w-full">
                         <thead className="bg-base-200">
                             {table.getHeaderGroups().map(headerGroup => (
-                                <tr key={headerGroup.id} className="text-xs uppercase opacity-60">
-                                    {headerGroup.headers.map(header => (
-                                        <th key={header.id} className="text-left" scope="col">
-                                            {flexRender(header.column.columnDef.header, header.getContext())}
-                                        </th>
-                                    ))}
+                                <tr key={headerGroup.id} className="text-xs uppercase font-bold tracking-wider text-base-content/70">
+                                    {headerGroup.headers.map(header => {
+                                        const meta = (header.column.columnDef.meta as { align?: string }) || {};
+                                        const alignClass = meta.align === 'center' ? 'text-center' : meta.align === 'right' ? 'text-right' : 'text-left';
+                                        return (
+                                            <th key={header.id} className={alignClass} scope="col">
+                                                {flexRender(header.column.columnDef.header, header.getContext())}
+                                            </th>
+                                        );
+                                    })}
                                 </tr>
                             ))}
                         </thead>
                         <tbody>
                             {table.getRowModel().rows.length > 0 ? (
                                 table.getRowModel().rows.map(row => (
-                                    <tr key={row.id} className="hover">
-                                        {row.getVisibleCells().map(cell => (
-                                            <td key={cell.id} className="text-sm">
-                                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                            </td>
-                                        ))}
+                                    <tr key={row.id} className="hover transition-colors">
+                                        {row.getVisibleCells().map(cell => {
+                                            const meta = (cell.column.columnDef.meta as { align?: string }) || {};
+                                            const alignClass = meta.align === 'center' ? 'text-center' : meta.align === 'right' ? 'text-right' : 'text-left';
+                                            return (
+                                                <td key={cell.id} className={`text-sm ${alignClass}`}>
+                                                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                                </td>
+                                            );
+                                        })}
                                     </tr>
                                 ))
                             ) : (

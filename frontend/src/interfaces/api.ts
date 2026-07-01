@@ -27,20 +27,6 @@ export interface StatsDTO {
     total_maestros: number | undefined;
 }
 
-export interface ActividadRecienteDTO {
-    tipo: string;
-    descripcion: string;
-    fecha: string;
-    url: string;
-}
-
-export interface EventoHoyDTO {
-    title: string;
-    hora: string;
-    color: string;
-    event_type: string;
-}
-
 export interface DashboardData {
     ciclo_actual: string | undefined;
     ultimos_avisos: AvisoDTO[] | undefined;
@@ -51,7 +37,14 @@ export interface DashboardData {
     grafica_escuelas: GraficaEscuelaEntry[] | undefined;
     racs_pendientes: number | undefined;
     actividad_reciente: ActividadRecienteDTO[] | undefined;
-    eventos_hoy: EventoHoyDTO[] | undefined;
+    eventos_hoy: Record<string, unknown>[] | undefined;
+}
+
+export interface ActividadRecienteDTO {
+    tipo: string;
+    descripcion: string;
+    fecha: string /* ISO datetime */;
+    url: string | undefined;
 }
 
 export interface GraficaEscuelaEntry {

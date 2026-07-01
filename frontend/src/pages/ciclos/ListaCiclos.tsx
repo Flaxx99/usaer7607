@@ -204,6 +204,7 @@ const ListaCiclos = () => {
     {
         id: 'actions',
         header: 'Acciones',
+        meta: { align: 'center' },
         cell: ({ row }) => (
             <div className="flex justify-center gap-2">
                 {!row.original.activo && (
@@ -236,10 +237,13 @@ const ListaCiclos = () => {
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
         
-        <div className="card bg-primary text-primary-content shadow-lg border-l-8 border-primary-dark">
-            <div className="card-body p-8 flex-row items-center justify-between gap-4">
+        <div className="header-section header-calendario">
+            <div className="header-pattern" />
+            <div className="header-circle header-circle-lg" />
+            <div className="header-circle header-circle-sm" />
+            <div className="relative z-10 p-8 flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-6">
-                    <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shadow-inner">
+                    <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shadow-inner backdrop-blur-sm">
                         <Layers size={30} />
                     </div>
                     <div>

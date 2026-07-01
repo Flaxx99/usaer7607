@@ -52,9 +52,11 @@ const RACStudentTimeline = () => {
     return (
         <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-8">
             {/* CABECERA */}
-            <div className="card bg-gradient-to-br from-primary to-indigo-700 text-primary-content shadow-xl overflow-hidden relative">
-                <div className="absolute -right-12 -top-12 w-48 h-48 rounded-full bg-white/10 pointer-events-none" />
-                <div className="card-body p-8 relative z-10">
+            <div className="header-section header-documentos">
+                <div className="header-pattern" />
+                <div className="header-circle header-circle-lg" />
+                <div className="header-circle header-circle-sm" />
+                <div className="relative z-10 p-8">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <div className="flex items-center gap-4">
                             <button
@@ -89,8 +91,8 @@ const RACStudentTimeline = () => {
             </div>
 
             {/* LÍNEA DE TIEMPO RAC */}
-            <div className="card bg-base-100 shadow-sm border border-base-300">
-                <div className="card-body p-6">
+            <div className="card-paper">
+                <div className="p-6">
                     <div className="flex items-center gap-3 border-b pb-4 border-base-200 mb-6">
                         <div className="p-2 bg-primary/10 text-primary rounded-xl">
                             <Clock size={20} />

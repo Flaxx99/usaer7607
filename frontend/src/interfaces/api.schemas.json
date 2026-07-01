@@ -63,6 +63,36 @@
   },
   "DashboardData": {
     "$defs": {
+      "ActividadRecienteDTO": {
+        "description": "DTO para actividad reciente en el dashboard.",
+        "properties": {
+          "tipo": {
+            "title": "Tipo",
+            "type": "string"
+          },
+          "descripcion": {
+            "title": "Descripcion",
+            "type": "string"
+          },
+          "fecha": {
+            "format": "date-time",
+            "title": "Fecha",
+            "type": "string"
+          },
+          "url": {
+            "default": "",
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tipo",
+          "descripcion",
+          "fecha"
+        ],
+        "title": "ActividadRecienteDTO",
+        "type": "object"
+      },
       "AvisoDTO": {
         "description": "DTO para avisos del dashboard.",
         "properties": {
@@ -200,9 +230,59 @@
         },
         "title": "Grafica Escuelas",
         "type": "array"
+      },
+      "racs_pendientes": {
+        "default": 0,
+        "title": "Racs Pendientes",
+        "type": "integer"
+      },
+      "actividad_reciente": {
+        "items": {
+          "$ref": "#/$defs/ActividadRecienteDTO"
+        },
+        "title": "Actividad Reciente",
+        "type": "array"
+      },
+      "eventos_hoy": {
+        "items": {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        "title": "Eventos Hoy",
+        "type": "array"
       }
     },
     "title": "DashboardData",
+    "type": "object"
+  },
+  "ActividadRecienteDTO": {
+    "description": "DTO para actividad reciente en el dashboard.",
+    "properties": {
+      "tipo": {
+        "title": "Tipo",
+        "type": "string"
+      },
+      "descripcion": {
+        "title": "Descripcion",
+        "type": "string"
+      },
+      "fecha": {
+        "format": "date-time",
+        "title": "Fecha",
+        "type": "string"
+      },
+      "url": {
+        "default": "",
+        "title": "Url",
+        "type": "string"
+      }
+    },
+    "required": [
+      "tipo",
+      "descripcion",
+      "fecha"
+    ],
+    "title": "ActividadRecienteDTO",
     "type": "object"
   },
   "GraficaEscuelaEntry": {

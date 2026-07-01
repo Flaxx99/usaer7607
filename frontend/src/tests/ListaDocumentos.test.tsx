@@ -148,7 +148,7 @@ describe('ListaDocumentos', () => {
 
         // Modal title is the same "Nuevo Expediente" text — verify modal form is visible
         await waitFor(() => {
-            expect(screen.getByLabelText(/Alumno/i)).toBeInTheDocument();
+            expect(screen.getByLabelText('Alumno')).toBeInTheDocument();
         });
     });
 
@@ -189,17 +189,17 @@ describe('ListaDocumentos', () => {
         fireEvent.click(screen.getByText(/Nuevo Expediente/i));
 
         await waitFor(() => {
-            expect(screen.getByLabelText(/Alumno/i)).toBeInTheDocument();
+            expect(screen.getByLabelText('Alumno')).toBeInTheDocument();
         });
 
         // Select an alumno
-        fireEvent.change(screen.getByLabelText(/Alumno/i), { target: { value: '1' } });
+        fireEvent.change(screen.getByLabelText('Alumno'), { target: { value: '1' } });
 
         // Fill observaciones
         fireEvent.change(screen.getByLabelText(/Observaciones/i), { target: { value: 'Test observaciones' } });
 
         // Submit form
-        fireEvent.submit(screen.getByLabelText(/Alumno/i).closest('form')!);
+        fireEvent.submit(screen.getByLabelText('Alumno').closest('form')!);
 
         await waitFor(() => {
             expect(createDocumento).toHaveBeenCalledTimes(1);

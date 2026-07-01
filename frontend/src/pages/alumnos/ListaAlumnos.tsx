@@ -226,8 +226,9 @@ const ListaAlumnos = () => {
     {
         id: 'actions',
         header: 'Acciones',
+        meta: { align: 'center' },
         cell: ({ row }) => (
-            <div className="flex justify-start gap-1">
+            <div className="flex justify-center gap-1">
                 <button className="btn btn-outline btn-xs btn-primary" onClick={() => handleOpenEdit(row.original)} title="Editar alumno">
                     <Edit2 size={13} />
                 </button>
@@ -263,12 +264,12 @@ const ListaAlumnos = () => {
 
   const handleOpenEdit = (alumno: Alumno) => {
     setAlumnoEditar(alumno);
-    reset({ ...alumno, fecha_nacimiento: alumno.fecha_nacimiento || undefined });
+    reset({ ...(alumno as unknown as AlumnoFormData), fecha_nacimiento: alumno.fecha_nacimiento || undefined });
     setIsModalOpen(true);
   };
 
   const onSubmit: SubmitHandler<AlumnoFormData> = (data) => {
-    const payload: Omit<Alumno, 'id'> & Partial<Pick<Alumno, 'id'>> = {
+    const payload = {
         nombres: data.nombres.toUpperCase(),
         apellido_paterno: data.apellido_paterno.toUpperCase(),
         apellido_materno: (data.apellido_materno || '').toUpperCase(),
@@ -276,16 +277,16 @@ const ListaAlumnos = () => {
         fecha_nacimiento: data.fecha_nacimiento,
         sexo: data.sexo,
         escuela: Number(data.escuela) || 0,
-        profesor: !data.profesor || String(data.profesor) === '' ? null : Number(data.profesor),
+        profesor: !data.profesor || String(data.profesor) === '' ? undefined : Number(data.profesor),
         grado: data.grado,
         grupo: data.grupo.toUpperCase(),
         clasificacion: data.clasificacion as Alumno['clasificacion'],
         clasificacion_otro: data.clasificacion_otro,
         activo: data.activo,
-    };
+    } satisfies Partial<AlumnoFormData>;
 
     if (alumnoEditar) {
-        updateMutation.mutate({ ...payload, id: alumnoEditar.id } as Alumno);
+        updateMutation.mutate({ ...payload, id: alumnoEditar.id } as unknown as Alumno);
     } else {
         createMutation.mutate(payload as Alumno);
     }
@@ -310,34 +311,36 @@ const ListaAlumnos = () => {
   return (
       <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
         {/* CABECERA */}
-        <div className="card bg-primary text-primary-content shadow-lg border-l-8 border-primary-dark">
-          {/* ... resto del contenido de la cabecera ... */}
-        <div className="card-body p-8 flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-6">
-            <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shadow-inner">
-              <Users size={30} />
+        <div className="header-section header-alumnos">
+          <div className="header-pattern" />
+          <div className="header-circle header-circle-lg" />
+          <div className="header-circle header-circle-sm" />
+          <div className="relative z-10 p-8 flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-6">
+              <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shadow-inner backdrop-blur-sm">
+                <Users size={30} />
+              </div>
+              <div>
+                <h1 className="text-3xl font-black tracking-tight">
+                  Control de Alumnos
+                </h1>
+                <p className="text-sm opacity-90 font-medium">
+                  Lista oficial y expedientes de estudiantes atendidos por la USAER 7607
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-3xl font-black tracking-tight">
-                Control de Alumnos
-              </h1>
-              <p className="text-sm opacity-90 font-medium">
-                Lista oficial y expedientes de estudiantes atendidos por la USAER 7607
-              </p>
-            </div>
+            <button 
+              className="btn btn-white btn-lg shadow-md hover:scale-105 transition-transform"
+              onClick={handleOpenCreate}
+            >
+              <Plus size={22} />
+              Nuevo Ingreso Alumno
+            </button>
           </div>
-          <button 
-            className="btn btn-white btn-lg shadow-md hover:scale-105 transition-transform"
-            onClick={handleOpenCreate}
-          >
-            <Plus size={22} />
-            Nuevo Ingreso Alumno
-          </button>
         </div>
-      </div>
       
       {/* FILTROS AVANZADOS */}
-      <div className="card bg-base-100 shadow-sm border border-base-300 p-6 space-y-6">
+      <div className="card-paper p-6 space-y-6">
         <div className="flex items-center gap-2 text-base-content/60">
           <Filter size={16} className="text-primary" />
           <span className="text-xs font-bold uppercase tracking-widest">Filtros Avanzados</span>

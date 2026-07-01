@@ -5,14 +5,14 @@ import { avisoFormSchema, type AvisoForm } from '../../schemas/aviso';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { 
     Megaphone, Plus, Calendar, Edit2, Trash2, 
-    AlertCircle, Search, Filter, XCircle, Pencil
+    AlertCircle, Filter, XCircle, Pencil
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { isAxiosError } from 'axios';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { CardGridSkeleton, EmptyState, ErrorState } from '../../components/Skeletons';
+import { SearchBar } from '../../components/SearchBar';
 import Modal from '../../components/Modal';
 import { LoadingButton } from '../../components/LoadingButton';
 import { useConfirmDialog } from '../../components/useConfirmDialog';
@@ -22,7 +22,6 @@ import type { Anuncio } from '../../interfaces/aviso';
 const TablonAvisos = () => {
   const [verMisAvisos, setVerMisAvisos] = useState(false);
   const [busqueda, setBusqueda] = useState('');
-  const busquedaDebounced = useDebouncedValue(busqueda, 300);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [avisoEditar, setAvisoEditar] = useState<Anuncio | null>(null);
   const { confirm: confirmDelete, dialog: confirmDialog } = useConfirmDialog();
@@ -138,11 +137,11 @@ const TablonAvisos = () => {
     if (!avisos) return [];
     return avisos.filter(aviso => {
       const cumpleBusqueda = 
-        aviso.titulo.toLowerCase().includes(busquedaDebounced.toLowerCase()) ||
-        aviso.contenido.toLowerCase().includes(busquedaDebounced.toLowerCase());
+        aviso.titulo.toLowerCase().includes(busqueda.toLowerCase()) ||
+        aviso.contenido.toLowerCase().includes(busqueda.toLowerCase());
       return cumpleBusqueda;
     });
-  }, [avisos, busquedaDebounced]);
+  }, [avisos, busqueda]);
 
   if (isError) return <ErrorState error={error} message="Error al cargar los avisos. Intenta de nuevo." />;
 
@@ -158,10 +157,13 @@ const TablonAvisos = () => {
     <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
         
         {/* CABECERA */}
-        <div className="card bg-primary text-primary-content shadow-lg border-l-8 border-primary-dark">
-            <div className="card-body p-8 flex-row items-center justify-between gap-4">
+        <div className="header-section header-avisos">
+            <div className="header-pattern" />
+            <div className="header-circle header-circle-lg" />
+            <div className="header-circle header-circle-sm" />
+            <div className="relative z-10 p-8 flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-6">
-                    <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shadow-inner">
+                    <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shadow-inner backdrop-blur-sm">
                         <Megaphone size={32} />
                     </div>
                     <div>
@@ -185,7 +187,7 @@ const TablonAvisos = () => {
         </div>
 
         {/* FILTROS */}
-        <div className="card bg-base-100 shadow-sm border border-base-300 p-6 space-y-6">
+        <div className="card-paper p-6 space-y-6">
             <div className="flex items-center gap-2 text-base-content/60">
                 <Filter size={16} className="text-primary" />
                 <span className="text-xs font-bold uppercase tracking-widest">Filtrar Tablón</span>
@@ -194,17 +196,11 @@ const TablonAvisos = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
                 <div className="form-control w-full">
                     <label className="label" htmlFor="buscar_aviso"><span className="label-text font-bold">Buscar Aviso</span></label>
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40" size={18} />
-                        <input 
-                            id="buscar_aviso"
-                            type="text" 
-                            placeholder="Escribe el título o contenido..." 
-                            className="input input-bordered pl-10 w-full" 
-                            value={busqueda} 
-                            onChange={(e) => setBusqueda(e.target.value)}
-                        />
-                    </div>
+                    <SearchBar 
+                        value={busqueda}
+                        onChange={setBusqueda}
+                        placeholder="Escribe el título o contenido..."
+                    />
                 </div>
                 <div className="form-control w-full">
                     <label className="label"><span className="label-text font-bold">Vista del Tablón</span></label>
@@ -231,7 +227,7 @@ const TablonAvisos = () => {
                 return (
                     <div 
                         key={aviso.id} 
-                        className={`card bg-base-100 shadow-sm border-t-4 transition-all hover:shadow-md group ${
+                        className={`card-paper border-t-4 transition-all hover:shadow-md group ${
                             isExpired ? 'border-t-base-300 opacity-70' : 
                             isScheduled ? 'border-t-warning' : 'border-t-primary'
                         }`}

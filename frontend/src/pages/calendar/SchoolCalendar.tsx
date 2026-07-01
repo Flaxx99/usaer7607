@@ -29,7 +29,7 @@ const SchoolCalendar = () => {
     const [viewMode, setViewMode] = useState<ViewMode>('calendar');
     const [modalOpened, setModalOpened] = useState(false);
     const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
-    const [newEventDate, setNewEventDate] = useState<Date | null>(null);
+    const [, setNewEventDate] = useState<Date | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const { confirm: confirmDelete, dialog: confirmDialog } = useConfirmDialog();
 
@@ -351,7 +351,7 @@ const SchoolCalendar = () => {
                 onClose={() => { setModalOpened(false); setEditingEvent(null); }} 
                 onSave={handleSave}
                 initialData={editingEvent}
-                users={(users?.results || []).map(u => ({ id: u.id, nombre: u.nombre, first_name: u.nombre, last_name: u.apellido_paterno || '' }))}
+                users={(users?.results || []).map(u => ({ id: u.id, nombre: u.nombre ?? '', first_name: u.nombre ?? '', last_name: u.apellido_paterno || '' }))}
                 alunos={(alunos?.results || []).map(a => ({ id: a.id, nombre: a.nombres, nombres: a.nombres, apellido_paterno: a.apellido_paterno }))}
                 escuelas={escuelas || []}
                 currentUserRole={localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).role : ''}

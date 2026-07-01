@@ -172,7 +172,7 @@ const ListaUsuarios = () => {
     };
 
     if (usuarioEditar) {
-        updateMutation.mutate({ ...cleanedData, id: usuarioEditar.id });
+        updateMutation.mutate({ ...cleanedData, id: usuarioEditar.id } as Usuario);
     } else {
         createMutation.mutate(cleanedData as Usuario);
     }
@@ -195,7 +195,7 @@ const ListaUsuarios = () => {
     const ok = await confirmDelete({
         title: `${user.activo ? 'Desactivar' : 'Activar'} Usuario`,
         message: `¿${accion === 'activar' ? 'Activar' : 'Desactivar'} a ${user.nombre_completo || user.email}? ${!user.activo ? ' Podrá acceder al sistema.' : ' No podrá iniciar sesión.'}`,
-        variant: user.activo ? 'warning' : 'default',
+        variant: user.activo ? 'warning' : 'primary',
         confirmText: user.activo ? 'Desactivar' : 'Activar',
     });
     if (ok) {
@@ -311,6 +311,7 @@ const ListaUsuarios = () => {
     {
         id: 'actions',
         header: 'Acciones',
+        meta: { align: 'center' },
         cell: ({ row }) => {
             const u = row.original;
             return (
@@ -354,10 +355,13 @@ const ListaUsuarios = () => {
   return (
     <>
       <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
-          <div className="card bg-primary text-primary-content shadow-lg border-l-8 border-primary-dark">
-              <div className="card-body p-8 flex-row items-center justify-between gap-4">
+          <div className="header-section header-escuelas">
+              <div className="header-pattern" />
+              <div className="header-circle header-circle-lg" />
+              <div className="header-circle header-circle-sm" />
+              <div className="relative z-10 p-8 flex-row items-center justify-between gap-4">
                   <div className="flex items-center gap-6">
-                      <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shadow-inner">
+                      <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shadow-inner backdrop-blur-sm">
                           <Shield size={30} />
                       </div>
                       <div>

@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Bell, CheckCheck, Loader2, Inbox, CheckCircle } from 'lucide-react';
+import { Bell, CheckCheck, Loader2, Inbox, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { EmptyState, ErrorState } from '../../components/Skeletons';
-import { LoadingButton } from '../../components/LoadingButton';
 import { notificacionesApi } from '../../api/notificaciones';
 
 const ListaNotificaciones = () => {
@@ -55,25 +54,31 @@ const ListaNotificaciones = () => {
 
     return (
         <div className="max-w-4xl mx-auto p-4 md:p-6 space-y-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-black flex items-center gap-3">
-                        <Bell className="text-primary" />
-                        Notificaciones
-                    </h1>
-                    <p className="text-base-content/60">Mantente al tanto de las novedades y avisos.</p>
+            <div className="header-section header-notificaciones">
+                <div className="header-pattern" />
+                <div className="header-circle header-circle-lg" />
+                <div className="header-circle header-circle-sm" />
+                <div className="relative z-10 p-8 flex-row items-center justify-between gap-4">
+                    <div className="flex items-center gap-6">
+                        <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shadow-inner backdrop-blur-sm">
+                            <Bell size={32} />
+                        </div>
+                        <div>
+                            <h1 className="text-3xl font-black tracking-tight">Notificaciones</h1>
+                            <p className="text-sm opacity-90 font-medium">Mantente al tanto de las novedades y avisos.</p>
+                        </div>
+                    </div>
+                    
+                    {notificaciones.length > 0 && (
+                        <button
+                            onClick={() => markAllReadMutation.mutate()}
+                            className="btn btn-white btn-lg shadow-md hover:scale-105 transition-transform gap-2"
+                        >
+                            <CheckCheck size={22} />
+                            Marcar todas como leídas
+                        </button>
+                    )}
                 </div>
-                
-                {notificaciones.length > 0 && (
-                    <LoadingButton
-                        onClick={() => markAllReadMutation.mutate()}
-                        loading={markAllReadMutation.isPending}
-                        className="btn btn-ghost btn-sm gap-2"
-                        icon={CheckCheck}
-                    >
-                        Marcar todas como leídas
-                    </LoadingButton>
-                )}
             </div>
 
             {notificaciones.length === 0 ? (
@@ -83,11 +88,11 @@ const ListaNotificaciones = () => {
                     {notificaciones.map((n) => (
                         <div 
                             key={n.id} 
-                            className={`card bg-base-100 border transition-all hover:shadow-md ${
+                            className={`card-paper transition-all hover:shadow-md ${
                                 n.leida ? 'border-base-200 opacity-70' : 'border-primary shadow-sm'
                             }`}
                         >
-                            <div className="card-body p-5 flex-row items-start justify-between gap-4">
+                            <div className="p-5 flex-row items-start justify-between gap-4">
                                 <div className="flex-1">
                                     <p className="text-sm text-base-content/70 whitespace-pre-wrap">
                                         {n.mensaje}
@@ -116,18 +121,20 @@ const ListaNotificaciones = () => {
                                     className="join-item btn btn-sm" 
                                     disabled={page === 1}
                                     onClick={() => setPage(p => p - 1)}
+                                    aria-label="Página anterior"
                                 >
-                                    «
+                                    <ChevronLeft size={16} />
                                 </button>
-                                <button className="join-item btn btn-sm no-animation">
+                                <span className="join-item btn btn-sm no-animation">
                                     {page} / {totalPages}
-                                </button>
+                                </span>
                                 <button 
                                     className="join-item btn btn-sm" 
                                     disabled={page >= totalPages}
                                     onClick={() => setPage(p => p + 1)}
+                                    aria-label="Página siguiente"
                                 >
-                                    »
+                                    <ChevronRight size={16} />
                                 </button>
                             </div>
                         </div>

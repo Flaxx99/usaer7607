@@ -55,14 +55,19 @@ export const createUsuario = async (data: Usuario): Promise<Usuario> => {
 
 // --- ACTUALIZAR ---
 export const updateUsuario = async (data: Usuario): Promise<Usuario> => {
-    // Separamos los campos read-only que no se envían al backend
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { id, escuela_detalle, nombre_completo, antiguedad, fecha_ingreso, last_login, date_joined, ...datosEnvio } = data;
+    const { id, escuela_detalle, nombre_completo, antiguedad, fecha_ingreso, ...datosEnvioRaw } = data;
 
-    if (!datosEnvio.password || String(datosEnvio.password).trim() === '') {
+    const datosEnvio: Record<string, unknown> = { ...datosEnvioRaw as unknown as Record<string, unknown> };
+
+    // password: campo write-only, no está en UsuarioResponse pero sí en el form
+    const rawData = data as unknown as Record<string, unknown>;
+    const password = rawData.password as string | undefined;
+    if (!password || String(password).trim() === '') {
         delete datosEnvio.password;
     }
 
+    // escuela: null cuando está vacío
     if (!datosEnvio.escuela || String(datosEnvio.escuela) === "") {
         datosEnvio.escuela = null;
     } else {

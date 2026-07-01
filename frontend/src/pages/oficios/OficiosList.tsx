@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { 
-    Plus, Search, Trash2, FileText, Download, UploadCloud, Edit2,
-    CheckCircle, XCircle, User
+    Plus, Trash2, FileText, Download, UploadCloud, Edit2,
+    CheckCircle, XCircle, User, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { useDebouncedValue } from '../../hooks/useDebouncedValue';
+import { SearchBar } from '../../components/SearchBar';
 import { TableSkeleton, EmptyState, ErrorState } from '../../components/Skeletons';
 import Modal from '../../components/Modal';
 import { LoadingButton } from '../../components/LoadingButton';
@@ -15,7 +15,6 @@ import type { Oficio } from '../../interfaces/oficio';
 
 const OficiosList = () => {
     const [busqueda, setBusqueda] = useState('');
-    const busquedaDebounced = useDebouncedValue(busqueda, 300);
     const [page, setPage] = useState(1);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editTarget, setEditTarget] = useState<Oficio | null>(null);
@@ -24,8 +23,8 @@ const OficiosList = () => {
     const queryClient = useQueryClient();
 
     const { data: paginatedOficios, isLoading, isError, error } = useQuery({
-        queryKey: ['oficios', page, busquedaDebounced],
-        queryFn: () => getOficios(page, busquedaDebounced),
+        queryKey: ['oficios', page, busqueda],
+        queryFn: () => getOficios(page, busqueda),
     });
 
     const oficios = paginatedOficios?.results || [];
@@ -110,9 +109,11 @@ const OficiosList = () => {
         <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
             
             {/* CABECERA CON GRADIENTE */}
-            <div className="card bg-gradient-to-br from-primary to-indigo-700 text-primary-content shadow-xl overflow-hidden relative">
-                <div className="absolute -right-12 -top-12 w-48 h-48 rounded-full bg-white/10 pointer-events-none" />
-                <div className="card-body p-8 flex-row items-center justify-between gap-4 relative z-10">
+            <div className="header-section header-oficios">
+                <div className="header-pattern" />
+                <div className="header-circle header-circle-lg" />
+                <div className="header-circle header-circle-sm" />
+                <div className="relative z-10 p-8 flex-row items-center justify-between gap-4">
                     <div className="flex items-center gap-6">
                         <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shadow-inner backdrop-blur-sm">
                             <FileText size={32} />
@@ -138,23 +139,18 @@ const OficiosList = () => {
             </div>
 
             {/* TABLA */}
-            <div className="card bg-base-100 shadow-sm border border-base-300 overflow-hidden">
+            <div className="card-paper overflow-hidden">
                 <div className="p-4 border-b border-base-200">
-                    <div className="relative max-w-sm">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40" size={18} />
-                        <input 
-                            type="text" 
-                            placeholder="Buscar por título o descripción..." 
-                            className="input input-bordered pl-10 w-full" 
-                            value={busqueda} 
-                            onChange={(e) => { setBusqueda(e.target.value); setPage(1); }}
-                        />
-                    </div>
+                    <SearchBar 
+                        value={busqueda}
+                        onChange={(val) => { setBusqueda(val); setPage(1); }}
+                        placeholder="Buscar por título o descripción..."
+                    />
                 </div>
                 <div className="overflow-x-auto">
                     <table className="table table-md table-zebra w-full">
                         <thead className="bg-base-200">
-                            <tr className="text-xs uppercase opacity-60">
+                            <tr className="text-xs uppercase font-bold tracking-wider text-base-content/70">
                                 <th>Título del Documento</th>
                                 <th>Descripción</th>
                                 <th>Subido por</th>
@@ -213,9 +209,9 @@ const OficiosList = () => {
                 
                 <div className="flex justify-center p-4 border-t border-base-200">
                     <div className="join">
-                        <button className="join-item btn btn-sm" disabled={page === 1} onClick={() => setPage(p => p - 1)}>«</button>
-                        <button className="join-item btn btn-sm no-animation">{page} / {Math.ceil(totalCount / 10)}</button>
-                        <button className="join-item btn btn-sm" disabled={page >= Math.ceil(totalCount / 10)} onClick={() => setPage(p => p + 1)}>»</button>
+                        <button className="join-item btn btn-sm" disabled={page === 1} onClick={() => setPage(p => p - 1)} aria-label="Página anterior"><ChevronLeft size={16} /></button>
+                        <span className="join-item btn btn-sm no-animation">{page} / {Math.ceil(totalCount / 10)}</span>
+                        <button className="join-item btn btn-sm" disabled={page >= Math.ceil(totalCount / 10)} onClick={() => setPage(p => p + 1)} aria-label="Página siguiente"><ChevronRight size={16} /></button>
                     </div>
                 </div>
             </div>

@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { documentoFormSchema, type DocumentoForm } from '../../schemas/documento';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { 
-    Plus, Search, FolderOpen, Edit2, Trash2, 
+    Plus, FolderOpen, Edit2, Trash2, 
     Save, Paperclip, X, UploadCloud, XCircle, Pencil
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -13,12 +13,12 @@ import {
     deleteDocumento, deleteArchivoExtra 
 } from '../../api/documentos';
 import { getAlumnos } from '../../api/alumnos';
-import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import Modal from '../../components/Modal';
 import { EmptyState, ErrorState } from '../../components/Skeletons';
+import { SearchBar } from '../../components/SearchBar';
 import { LoadingButton } from '../../components/LoadingButton';
 import { useConfirmDialog } from '../../components/useConfirmDialog';
-import type { Expediente } from '../../interfaces/documentos';
+import type { Expediente, OtroArchivo } from '../../interfaces/documentos';
 
 const DocStatus = ({ label, hasFile, url }: { label: string; hasFile: boolean; url?: string }) => (
   <div className={`flex items-center gap-2 p-2 rounded-lg border text-xs font-bold transition-colors ${
@@ -45,7 +45,6 @@ const DocStatus = ({ label, hasFile, url }: { label: string; hasFile: boolean; u
 
 const ListaDocumentos = () => {
   const [busqueda, setBusqueda] = useState('');
-  const busquedaDebounced = useDebouncedValue(busqueda, 300);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [docEditar, setDocEditar] = useState<Expediente | null>(null);
   
@@ -179,8 +178,8 @@ const ListaDocumentos = () => {
   };
 
   const documentosFiltrados = documentos?.filter(e => 
-    e.alumno_nombre?.toLowerCase().includes(busquedaDebounced.toLowerCase()) || 
-    e.profesor_nombre?.toLowerCase().includes(busquedaDebounced.toLowerCase())
+    e.alumno_nombre?.toLowerCase().includes(busqueda.toLowerCase()) || 
+    e.profesor_nombre?.toLowerCase().includes(busqueda.toLowerCase())
   );
 
   const isLoading = loadingDocs || loadingAlumnos;
@@ -200,10 +199,13 @@ const ListaDocumentos = () => {
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
         
-        <div className="card bg-primary text-primary-content shadow-lg border-l-8 border-primary-dark">
-            <div className="card-body p-8 flex-row items-center justify-between gap-4">
+        <div className="header-section header-documentos">
+            <div className="header-pattern" />
+            <div className="header-circle header-circle-lg" />
+            <div className="header-circle header-circle-sm" />
+            <div className="relative z-10 p-8 flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-6">
-                    <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shadow-inner">
+                    <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shadow-inner backdrop-blur-sm">
                         <FolderOpen size={32} />
                     </div>
                     <div>
@@ -225,18 +227,13 @@ const ListaDocumentos = () => {
             </div>
         </div>
 
-        <div className="card bg-base-100 shadow-sm border border-base-300">
+        <div className="card-paper">
             <div className="p-4 border-b border-base-200">
-                <div className="relative max-w-sm">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40" size={18} />
-                    <input 
-                        type="text" 
-                        placeholder="Buscar alumno o profesor..." 
-                        className="input input-bordered pl-10 w-full" 
-                        value={busqueda} 
-                        onChange={(e) => setBusqueda(e.target.value)}
-                    />
-                </div>
+                <SearchBar 
+                    value={busqueda}
+                    onChange={setBusqueda}
+                    placeholder="Buscar alumno o profesor..."
+                />
             </div>
             <div className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -248,7 +245,7 @@ const ListaDocumentos = () => {
                 return (
                     <div 
                         key={doc.id} 
-                        className={`card bg-base-100 shadow-sm border border-base-300 p-6 transition-all hover:shadow-md ${
+                        className={`card-paper p-6 transition-all hover:shadow-md ${
                             docsCount === totalDocs ? 'border-t-4 border-t-success' : 
                             docsCount > 0 ? 'border-t-4 border-t-warning' : 'border-t-4 border-t-base-300'
                         }`}
@@ -354,7 +351,7 @@ const ListaDocumentos = () => {
                                 <div className="space-y-2">
                                     <p className="text-xs font-bold uppercase opacity-50">Archivos Guardados:</p>
                                     <div className="flex flex-col gap-2">
-                                        {docEditar.otros_archivos.map(archivo => (
+                                        {docEditar.otros_archivos.map((archivo: OtroArchivo) => (
                                             <div key={archivo.id} className="flex items-center justify-between p-2 bg-white rounded-lg border border-base-300 text-xs">
                                                 <a href={archivo.url_archivo || '#'} target="_blank" rel="noreferrer" className="text-primary font-bold hover:underline">
                                                     {archivo.nombre_archivo}

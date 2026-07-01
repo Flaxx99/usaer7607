@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState } from 'react';
 import { Calendar, dateFnsLocalizer, Views } from 'react-big-calendar';
 import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop';
 import type { View } from 'react-big-calendar';
@@ -32,6 +32,7 @@ interface CalendarViewProps {
 const VIEW_LABELS: Record<View, string> = {
     month: 'Mes',
     week: 'Semana',
+    work_week: 'Semana Laboral',
     day: 'Día',
     agenda: 'Agenda',
 };
@@ -39,22 +40,23 @@ const VIEW_LABELS: Record<View, string> = {
 const VIEW_ICONS: Record<View, React.ReactNode> = {
     month: <CalendarDays size={14} />,
     week: <LayoutGrid size={14} />,
+    work_week: <LayoutGrid size={14} />,
     day: <List size={14} />,
     agenda: <List size={14} />,
 };
 
 // Mapea el color del evento al estilo de fondo
-const eventPropGetter = (event: CalendarEvent) => ({
+const eventPropGetter = (event: Record<string, unknown>) => ({
     style: {
-        backgroundColor: event.color || '#3B82F6',
+        backgroundColor: (event.color as string) || 'hsl(var(--p) / 0.85)',
         borderRadius: '6px',
         border: 'none',
         color: '#fff',
-        fontSize: '0.75rem',
+        fontSize: '12px',
         fontWeight: 600,
-        padding: '2px 4px',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
+        padding: '2px 6px',
+        overflow: 'hidden' as const,
+        textOverflow: 'ellipsis' as const,
         whiteSpace: 'nowrap' as const,
     },
 });
@@ -503,8 +505,8 @@ const CalendarView = ({ events, onSelectEvent, onSelectSlot, onEventDrop, onEven
                 startAccessor="start"
                 endAccessor="end"
                 titleAccessor="title"
-                tooltipAccessor={(e: CalendarEvent) =>
-                    `${e.title}${e.assigned_to_nombre ? ` — ${e.assigned_to_nombre}` : ''}`
+                tooltipAccessor={(e: Record<string, unknown>) =>
+                    `${e.title as string}${e.assigned_to_nombre ? ` — ${e.assigned_to_nombre as string}` : ''}`
                 }
                 style={{ height: 580 }}
                 defaultView={Views.MONTH}
@@ -515,7 +517,7 @@ const CalendarView = ({ events, onSelectEvent, onSelectSlot, onEventDrop, onEven
                 eventPropGetter={eventPropGetter}
                 dayPropGetter={dayPropGetter}
                 onSelectEvent={(event) => onSelectEvent(event as unknown as CalendarEvent)}
-                onSelectSlot={({ start }) => onSelectSlot(start)}
+                onSelectSlot={({ start }) => onSelectSlot(start as Date)}
                 selectable
                 popup
                 resizable
@@ -536,7 +538,7 @@ const CalendarView = ({ events, onSelectEvent, onSelectSlot, onEventDrop, onEven
                     showMore: (count: number) => `+${count} más`,
                 }}
                 components={{
-                    toolbar: (props) => <CustomToolbar {...props} view={currentView} />,
+                    toolbar: (props: Record<string, unknown>) => <CustomToolbar {...props as { label: string; onNavigate: (action: string) => void; onView: (view: View) => void; view: View }} view={currentView} />,
                 }}
             />
         </div>

@@ -109,10 +109,13 @@ const GestionIncidencias = () => {
     
     return (
         <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
-            <div className="card bg-warning text-warning-content shadow-lg border-l-8 border-warning-dark">
-                <div className="card-body p-8 flex-row items-center justify-between gap-4">
+            <div className="header-section header-incidencias">
+                <div className="header-pattern" />
+                <div className="header-circle header-circle-lg" />
+                <div className="header-circle header-circle-sm" />
+                <div className="relative z-10 p-8 flex-row items-center justify-between gap-4">
                     <div className="flex items-center gap-6">
-                        <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shadow-inner">
+                        <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shadow-inner backdrop-blur-sm">
                             <AlertTriangle size={32} />
                         </div>
                         <div>
@@ -127,7 +130,7 @@ const GestionIncidencias = () => {
                 </div>
             </div>
 
-            <div className="card bg-base-100 shadow-sm border border-base-300 p-6">
+            <div className="card-paper p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="form-control w-full">
                         <label className="label"><span className="label-text font-bold">Estado del Reporte</span></label>
@@ -151,7 +154,7 @@ const GestionIncidencias = () => {
 
             <div className="flex flex-col gap-4">
                 {incidenciasFiltradas?.map((inc) => (
-                    <div key={inc.id} className="card bg-base-100 shadow-sm border border-base-300 transition-all hover:shadow-md" style={{ borderLeft: `6px solid ${inc.estado === 'PENDIENTE' ? 'var(--color-warning)' : 'var(--color-success)'}` }}>
+                    <div key={inc.id} className="card-paper transition-all hover:shadow-md" style={{ borderLeft: `6px solid ${inc.estado === 'PENDIENTE' ? 'var(--color-warning)' : 'var(--color-success)'}` }}>
                         <div className="card-body p-6">
                             <div className="flex flex-col md:flex-row justify-between items-start gap-4">
                                 <div className="flex items-start gap-4">

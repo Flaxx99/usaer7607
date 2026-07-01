@@ -265,4 +265,172 @@ html {
       0 12px 32px -8px rgba(30, 41, 59, 0.12),
       0 4px 8px -2px rgba(30, 41, 59, 0.06);
   }
+
+  /* ─── TARJETA ESTADÍSTICA CON PERSONALIDAD ─── */
+  .stat-card {
+    @apply bg-[var(--color-surface)] rounded-2xl border-2 border-[var(--color-base-300)] relative overflow-hidden;
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.6) inset,
+      0 4px 12px -6px rgba(30, 41, 59, 0.08);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.6) inset,
+      0 12px 28px -8px rgba(30, 41, 59, 0.12);
+  }
+
+  /* ─── ÍCONO DE STAT CON FONDO DE COLOR ─── */
+  .stat-icon {
+    @apply w-10 h-10 rounded-xl flex items-center justify-center shrink-0;
+    transition: transform 0.2s ease;
+  }
+  .stat-card:hover .stat-icon {
+    transform: scale(1.1) rotate(-3deg);
+  }
+
+  /* ─── VALOR ESTADÍSTICO GRANDE ─── */
+  .stat-value {
+    font-family: "Fredoka", system-ui, sans-serif;
+    @apply text-2xl font-black leading-none;
+  }
+  .stat-label {
+    @apply text-xs font-bold uppercase tracking-wider text-base-content/50;
+  }
+
+  /* ─── CABECERAS DE PÁGINA POR MÓDULO ─── */
+  .header-section {
+    @apply rounded-2xl text-primary-content overflow-hidden relative;
+    box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Gradientes por módulo */
+  .header-dashboard {
+    background: linear-gradient(135deg, var(--color-primary) 0%, #4338ca 50%, #3730a3 100%);
+  }
+  .header-alumnos {
+    background: linear-gradient(135deg, #059669 0%, var(--color-primary) 50%, #4338ca 100%);
+  }
+  .header-escuelas {
+    background: linear-gradient(135deg, #2563eb 0%, var(--color-primary) 50%, #4338ca 100%);
+  }
+  .header-incidencias {
+    background: linear-gradient(135deg, #dc2626 0%, #ea580c 50%, var(--color-primary) 100%);
+  }
+  .header-documentos {
+    background: linear-gradient(135deg, var(--color-primary) 0%, #7c3aed 50%, #6d28d9 100%);
+  }
+  .header-avisos {
+    background: linear-gradient(135deg, #d97706 0%, #f59e0b 50%, var(--color-primary) 100%);
+  }
+  .header-permisos {
+    background: linear-gradient(135deg, #0891b2 0%, #06b6d4 50%, var(--color-primary) 100%);
+  }
+  .header-oficios {
+    background: linear-gradient(135deg, var(--color-primary) 0%, #4f46e5 50%, #3730a3 100%);
+  }
+  .header-asistencias {
+    background: linear-gradient(135deg, #059669 0%, #10b981 50%, var(--color-primary) 100%);
+  }
+  .header-notificaciones {
+    background: linear-gradient(135deg, #db2777 0%, var(--color-accent) 50%, var(--color-primary) 100%);
+  }
+  .header-calendario {
+    background: linear-gradient(135deg, var(--color-primary) 0%, #6366f1 50%, #4f46e5 100%);
+  }
+
+  /* ─── PATRÓN DECORATIVO PARA HEADERS ─── */
+  .header-pattern {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.08;
+    background-image:
+      radial-gradient(circle at 20% 50%, white 1px, transparent 1px),
+      radial-gradient(circle at 80% 30%, white 1px, transparent 1px),
+      radial-gradient(circle at 50% 80%, white 1px, transparent 1px);
+    background-size: 48px 48px, 36px 36px, 56px 56px;
+  }
+
+  /* ─── CÍRCULOS DECORATIVOS PARA HEADERS ─── */
+  .header-circle {
+    @apply absolute rounded-full bg-white/10 pointer-events-none;
+  }
+  .header-circle-lg {
+    width: 200px; height: 200px; top: -60px; right: -60px;
+  }
+  .header-circle-sm {
+    width: 100px; height: 100px; bottom: -30px; left: 30%;
+  }
+  .header-circle-xs {
+    width: 40px; height: 40px; top: 20px; right: 25%;
+  }
+
+  /* ─── ACENTOS DECORATIVOS ─── */
+  .accent-strip {
+    @apply w-8 h-1 rounded-full shrink-0;
+  }
+  .accent-dot {
+    @apply w-2 h-2 rounded-full shrink-0;
+  }
+  .badge-accent {
+    @apply bg-[var(--color-accent)] text-[var(--color-accent-content)] font-bold;
+  }
+
+  /* ─── DIVISOR DECORATIVO ─── */
+  .paper-divider {
+    @apply w-full h-px relative my-4;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      var(--color-base-300) 20%,
+      var(--color-base-300) 80%,
+      transparent 100%
+    );
+  }
+
+  /* ─── TARJETA LISTA CON BORDE DE COLOR ─── */
+  .list-card {
+    @apply bg-[var(--color-base-200)] rounded-xl p-3 border-l-4 transition-all duration-200 hover:bg-[var(--color-base-300)]/50;
+  }
+
+  /* ─── HEADER DE TABLA CON FONDO SUTIL ─── */
+  .table-header-paper {
+    @apply bg-[var(--color-base-200)] rounded-t-xl border-b-2 border-[var(--color-base-300)];
+  }
+
+  /* ─── ANIMACIONES EXTRA ─── */
+  @keyframes gentle-bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+  }
+  .animate-gentle-bounce {
+    animation: gentle-bounce 2s ease-in-out infinite;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: -200% center; }
+    100% { background-position: 200% center; }
+  }
+  .shimmer-text {
+    background: linear-gradient(90deg, var(--color-base-content) 0%, var(--color-primary) 50%, var(--color-base-content) 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shimmer 4s ease-in-out infinite;
+  }
+
+  /* ─── CARDS CON SOMBRA CÁLIDA ─── */
+  .shadow-warm {
+    box-shadow:
+      0 8px 24px -8px rgba(79, 70, 229, 0.08),
+      0 2px 4px -2px rgba(79, 70, 229, 0.04);
+  }
+  .shadow-warm-lg {
+    box-shadow:
+      0 12px 32px -8px rgba(79, 70, 229, 0.10),
+      0 4px 8px -2px rgba(79, 70, 229, 0.06);
+  }
 }

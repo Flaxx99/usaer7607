@@ -154,9 +154,11 @@ const RACList = () => {
         <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
             
             {/* CABECERA */}
-            <div className="card bg-gradient-to-br from-primary to-indigo-700 text-primary-content shadow-xl overflow-hidden relative">
-                <div className="absolute -right-12 -top-12 w-48 h-48 rounded-full bg-white/10 pointer-events-none" />
-                <div className="card-body p-8 flex-row items-center justify-between gap-4 relative z-10">
+            <div className="header-section header-documentos">
+                <div className="header-pattern" />
+                <div className="header-circle header-circle-lg" />
+                <div className="header-circle header-circle-sm" />
+                <div className="relative z-10 p-8 flex-row items-center justify-between gap-4">
                     <div className="flex items-center gap-6">
                         <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shadow-inner backdrop-blur-sm">
                             <FileText size={32} />

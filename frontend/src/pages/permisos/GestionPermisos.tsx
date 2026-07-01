@@ -237,11 +237,12 @@ const GestionPermisos = () => {
         {
             id: 'actions',
             header: 'Acciones',
+            meta: { align: 'center' },
             cell: ({ row }) => {
                 const p = row.original;
                 const esPendiente = (p.estado || '').toUpperCase() === 'PENDIENTE';
                 return (
-                    <div className="flex justify-end gap-1">
+                    <div className="flex justify-center gap-1">
                         <button 
                             className="btn btn-ghost btn-xs text-primary" 
                             onClick={() => abrirDetalle(p)}
@@ -287,10 +288,13 @@ const GestionPermisos = () => {
         <>
             <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
             {/* CABECERA HERO */}
-            <div className="card bg-primary text-primary-content shadow-lg border-l-8 border-primary-dark">
-                <div className="card-body p-8 flex-row items-center justify-between gap-4">
+            <div className="header-section header-permisos">
+                <div className="header-pattern" />
+                <div className="header-circle header-circle-lg" />
+                <div className="header-circle header-circle-sm" />
+                <div className="relative z-10 p-8 flex-row items-center justify-between gap-4">
                     <div className="flex items-center gap-6">
-                        <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shadow-inner">
+                        <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shadow-inner backdrop-blur-sm">
                             <FileText size={32} />
                         </div>
                         <div>
@@ -312,8 +316,8 @@ const GestionPermisos = () => {
             {/* MÉTRICAS (solo admin) */}
             {isAdminOrDirector && metricas && (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="card bg-base-100 shadow-sm border-l-4 border-warning transition-all hover:shadow-md">
-                        <div className="card-body p-5">
+                    <div className="card-paper border-l-4 border-warning transition-all hover:shadow-md">
+                        <div className="p-5">
                             <div className="p-3 rounded-xl bg-warning/10 text-warning w-fit"><Clock size={24} /></div>
                             <div className="mt-4">
                                 <p className="text-xs font-bold text-base-content/50 uppercase tracking-wider">En Espera</p>
@@ -321,8 +325,8 @@ const GestionPermisos = () => {
                             </div>
                         </div>
                     </div>
-                    <div className="card bg-base-100 shadow-sm border-l-4 border-success transition-all hover:shadow-md">
-                        <div className="card-body p-5">
+                    <div className="card-paper border-l-4 border-success transition-all hover:shadow-md">
+                        <div className="p-5">
                             <div className="p-3 rounded-xl bg-success/10 text-success w-fit"><CheckCircle size={24} /></div>
                             <div className="mt-4">
                                 <p className="text-xs font-bold text-base-content/50 uppercase tracking-wider">Autorizados</p>
@@ -330,8 +334,8 @@ const GestionPermisos = () => {
                             </div>
                         </div>
                     </div>
-                    <div className="card bg-base-100 shadow-sm border-l-4 border-error transition-all hover:shadow-md">
-                        <div className="card-body p-5">
+                    <div className="card-paper border-l-4 border-error transition-all hover:shadow-md">
+                        <div className="p-5">
                             <div className="p-3 rounded-xl bg-error/10 text-error w-fit"><XCircle size={24} /></div>
                             <div className="mt-4">
                                 <p className="text-xs font-bold text-base-content/50 uppercase tracking-wider">No Autorizados</p>
@@ -339,8 +343,8 @@ const GestionPermisos = () => {
                             </div>
                         </div>
                     </div>
-                    <div className="card bg-base-100 shadow-sm border-l-4 border-primary transition-all hover:shadow-md">
-                        <div className="card-body p-5">
+                    <div className="card-paper border-l-4 border-primary transition-all hover:shadow-md">
+                        <div className="p-5">
                             <div className="p-3 rounded-xl bg-primary/10 text-primary w-fit"><FileText size={24} /></div>
                             <div className="mt-4">
                                 <p className="text-xs font-bold text-base-content/50 uppercase tracking-wider">Total Trámites</p>
@@ -352,7 +356,7 @@ const GestionPermisos = () => {
             )}
 
             {/* FILTROS */}
-            <div className="card bg-base-100 shadow-sm border border-base-300 p-6 space-y-6">
+            <div className="card-paper p-6 space-y-6">
                 <div className="flex items-center gap-2 text-base-content/60">
                     <Search size={16} className="text-primary" />
                     <span className="text-xs font-bold uppercase tracking-widest">Filtros Avanzados</span>
