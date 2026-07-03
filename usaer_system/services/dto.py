@@ -564,6 +564,7 @@ class RAEInitResponse(BaseModel):
     """Respuesta del endpoint /rae/captura/ (inicializar captura RAE)."""
 
     registro_id: int
+    version: int
     ciclo: str
     escuela: str
     cerrado: bool

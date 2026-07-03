@@ -123,58 +123,52 @@ const RACForm = () => {
     }
 
     return (
-        <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-6">
+        <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-8">
             
-            {/* Page header card */}
-            <div className="card bg-base-100 border border-base-300 shadow-sm">
-                <div className="card-body p-5 md:p-6">
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                        <div className="flex items-start gap-4">
-                            <button 
-                                className="btn btn-ghost btn-sm btn-circle mt-0.5" 
-                                onClick={() => navigate('/rac')}
-                                aria-label="Volver al listado"
-                            >
-                                <ArrowLeft size={18} />
-                            </button>
-                            <div>
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-primary/10 text-primary rounded-xl">
-                                        <UserCheck size={20} />
-                                    </div>
-                                    <div>
-                                        <h1 className="text-xl md:text-2xl font-black tracking-tight">
-                                            {id ? 'Editar Registro RAC' : 'Nuevo Registro RAC'}
-                                        </h1>
-                                        <p className="text-sm text-base-content/60 mt-0.5">
-                                            Capturá el Reporte de Alumnos con Condiciones Específicas
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <LoadingButton
-                            className="btn btn-primary px-8 gap-2"
-                            icon={Save}
-                            loading={saveMutation.isPending}
-                            onClick={handleSubmit(onSubmit)}
+            {/* Header Section - Playful Paper Style */}
+            <div className="header-section header-primary">
+                <div className="header-pattern" />
+                <div className="header-circle header-circle-lg" />
+                <div className="header-circle header-circle-sm" />
+                <div className="relative z-10 p-8 flex flex-col md:flex-row justify-between items-center gap-6">
+                    <div className="flex items-center gap-6">
+                        <button 
+                            className="btn btn-circle btn-white btn-sm shadow-md hover:scale-110 transition-transform" 
+                            onClick={() => navigate('/rac')}
+                            aria-label="Volver al listado"
                         >
-                            Guardar Registro
-                        </LoadingButton>
+                            <ArrowLeft size={20} />
+                        </button>
+                        <div className="text-center md:text-left">
+                            <h1 className="text-3xl md:text-4xl font-black tracking-tight text-white leading-none">
+                                {id ? 'Editar Registro RAC' : 'Nuevo Registro RAC'}
+                            </h1>
+                            <p className="text-sm md:text-base text-white/80 font-medium mt-2">
+                                Capturá el Reporte de Alumnos con Condiciones Específicas
+                            </p>
+                        </div>
                     </div>
+                    <LoadingButton
+                        className="btn btn-white btn-lg shadow-xl px-8 gap-2 hover:scale-105 transition-transform"
+                        icon={Save}
+                        loading={saveMutation.isPending}
+                        onClick={handleSubmit(onSubmit)}
+                    >
+                        Guardar Registro
+                    </LoadingButton>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* SECCIÓN 1: INFORMACIÓN DEL ALUMNO */}
-                <div className="card bg-base-100 shadow-sm border border-base-300">
+                <div className="card card-paper shadow-sm border border-base-300">
                     <div className="card-body p-6 space-y-6">
                         <div className="flex items-center gap-3 border-b pb-4 border-base-200">
                             <div className="p-2 bg-primary/10 text-primary rounded-xl">
                                 <User size={20} />
                             </div>
                             <div>
-                                <h3 className="font-bold text-lg">Información del Alumno</h3>
+                                <h3 className="font-bold text-lg text-base-content">Información del Alumno</h3>
                                 <p className="text-xs text-base-content/50">Datos generales del estudiante</p>
                             </div>
                         </div>
@@ -183,7 +177,7 @@ const RACForm = () => {
                             <label className="label" htmlFor="alumno_id"><span className="label-text font-bold">Seleccionar Alumno</span></label>
                             <select 
                                 id="alumno_id"
-                                className="select select-bordered w-full"
+                                className="select select-bordered w-full focus:border-primary transition-colors"
                                 value={selectedAlumno?.id ? String(selectedAlumno.id) : ''}
                                 onChange={(e) => {
                                     const alumno = alumnos?.results?.find(a => String(a.id) === e.target.value);
@@ -197,26 +191,26 @@ const RACForm = () => {
                         </div>
 
                         {selectedAlumno ? (
-                            <div className="grid grid-cols-2 gap-4 p-4 bg-base-200 rounded-2xl border border-base-300">
-                                <div className="flex flex-col">
-                                    <span className="text-xs font-bold uppercase opacity-50">CURP</span>
+                            <div className="grid grid-cols-2 gap-4 p-5 bg-base-200 rounded-2xl border border-base-300">
+                                <div className="flex flex-col p-2">
+                                    <span className="text-[10px] font-black uppercase opacity-50 tracking-wider">CURP</span>
                                     <span className="font-bold text-sm">{selectedAlumno.curp || 'N/A'}</span>
                                 </div>
-                                <div className="flex flex-col">
-                                    <span className="text-xs font-bold uppercase opacity-50">GÉNERO</span>
+                                <div className="flex flex-col p-2">
+                                    <span className="text-[10px] font-black uppercase opacity-50 tracking-wider">GÉNERO</span>
                                     <span className="font-bold text-sm">{selectedAlumno.sexo === 'H' ? 'Hombre' : selectedAlumno.sexo === 'M' ? 'Mujer' : 'N/A'}</span>
                                 </div>
-                                <div className="flex flex-col">
-                                    <span className="text-xs font-bold uppercase opacity-50">EDAD</span>
+                                <div className="flex flex-col p-2">
+                                    <span className="text-[10px] font-black uppercase opacity-50 tracking-wider">EDAD</span>
                                     <span className="font-bold text-sm">{selectedAlumno?.edad ?? 'N/A'} años</span>
                                 </div>
-                                <div className="flex flex-col">
-                                    <span className="text-xs font-bold uppercase opacity-50">GRADO / GRUPO</span>
+                                <div className="flex flex-col p-2">
+                                    <span className="text-[10px] font-black uppercase opacity-50 tracking-wider">GRADO / GRUPO</span>
                                     <span className="font-bold text-sm">{selectedAlumno.grado}° {selectedAlumno.grupo || '—'}</span>
                                 </div>
                             </div>
                         ) : (
-                            <div className="alert alert-warning shadow-sm py-3">
+                            <div className="alert alert-warning shadow-sm py-3 rounded-2xl">
                                 <AlertCircle size={18} />
                                 <span className="text-xs font-medium">Selecciona un alumno para ver sus datos básicos.</span>
                             </div>
@@ -225,14 +219,14 @@ const RACForm = () => {
                 </div>
 
                 {/* SECCIÓN 2: CLASIFICACIÓN TÉCNICA */}
-                <div className="card bg-base-100 shadow-sm border border-base-300">
+                <div className="card card-paper shadow-sm border border-base-300">
                     <div className="card-body p-6 space-y-6">
                         <div className="flex items-center gap-3 border-b pb-4 border-base-200">
                             <div className="p-2 bg-secondary/10 text-secondary rounded-xl">
                                 <UserCheck size={20} />
                             </div>
                             <div>
-                                <h3 className="font-bold text-lg">Clasificación Técnica</h3>
+                                <h3 className="font-bold text-lg text-base-content">Clasificación Técnica</h3>
                                 <p className="text-xs text-base-content/50">Categoría y subcategoría de la condición</p>
                             </div>
                         </div>
@@ -246,7 +240,7 @@ const RACForm = () => {
                                     <select 
                                         id="clasificacion"
                                         {...field} 
-                                        className={`select select-bordered w-full ${errors.clasificacion ? 'border-error' : ''}`}
+                                        className={`select select-bordered w-full focus:border-primary transition-colors ${errors.clasificacion ? 'border-error' : ''}`}
                                     >
                                         <option value="">Selecciona la categoría</option>
                                         {CLASIFICACIONES.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
@@ -265,7 +259,7 @@ const RACForm = () => {
                                     <select 
                                         id="subclasificacion"
                                         {...field} 
-                                        className={`select select-bordered w-full ${errors.subclasificacion ? 'border-error' : ''}`}
+                                        className={`select select-bordered w-full focus:border-primary transition-colors ${errors.subclasificacion ? 'border-error' : ''}`}
                                         disabled={!currentClasificacion}
                                     >
                                         <option value="">{currentClasificacion ? "Selecciona la sub-categoría" : "Primero elige una clasificación"}</option>
@@ -283,7 +277,7 @@ const RACForm = () => {
                             <textarea 
                                 id="observaciones"
                                 {...register('observaciones')} 
-                                className="textarea textarea-bordered h-32" 
+                                className="textarea textarea-bordered h-32 focus:border-primary transition-colors" 
                                 placeholder="Notas adicionales sobre la condición del alumno..."
                             />
                         </div>
@@ -292,6 +286,7 @@ const RACForm = () => {
             </div>
         </div>
     );
+
 };
 
 export default RACForm;

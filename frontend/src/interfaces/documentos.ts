@@ -1,3 +1,5 @@
+// src/interfaces/documentos.ts
+//
 // Re-exportado desde api.ts (generado de pydantic OtroArchivoResponse).
 export type { OtroArchivoResponse as OtroArchivo } from './api';
 

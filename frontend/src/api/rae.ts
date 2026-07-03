@@ -11,7 +11,7 @@ export const raeApi = {
         const response = await client.get('/rae/captura/');
         return response.data;
     },
-    saveBulk: async (data: { registro_id: number; alumnos: RAEAlumno[] }) => {
+    saveBulk: async (data: { registro_id: number; version: number; alumnos: RAEAlumno[] }) => {
         const response = await client.post('/rae/guardar_bulk/', data);
         return response.data;
     },

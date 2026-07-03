@@ -1,7 +1,6 @@
-
 import { useState, useMemo } from 'react';
 import { 
-  Save, ArrowLeft, CheckCircle, XCircle, Search
+  Save, ArrowLeft, CheckCircle, XCircle, Search, AlertCircle
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -84,15 +83,20 @@ const RAECaptureGrid = () => {
     });
 
     const saveMutation = useMutation({
-        mutationFn: (payload: { registro_id: number, alumnos: RAEAlumno[] }) => raeApi.saveBulk(payload),
+        mutationFn: (payload: { registro_id: number, version: number, alumnos: RAEAlumno[] }) => raeApi.saveBulk(payload),
         onMutate: () => showLoading(),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['rae_capture', id] });
             clearDrafts();
             toast.success(<span className="inline-flex items-center gap-1.5"><CheckCircle size={16} /> ¡Guardado!</span>, { description: 'La captura de RAE ha sido sincronizada con el servidor.' });
         },
-        onError: () => {
-            toast.error(<span className="inline-flex items-center gap-1.5"><XCircle size={16} /> Error</span>, { description: 'Hubo un problema al guardar los cambios.' });
+        onError: (error: { response?: { status?: number } }) => {
+            const isConflict = error?.response?.status === 409;
+            if (isConflict) {
+                toast.error(<span className="inline-flex items-center gap-1.5"><XCircle size={16} /> Conflicto</span>, { description: 'Alguien más modificó los datos. Recargá la página y volvé a intentar.' });
+            } else {
+                toast.error(<span className="inline-flex items-center gap-1.5"><XCircle size={16} /> Error</span>, { description: 'Hubo un problema al guardar los cambios.' });
+            }
         },
         onSettled: () => hideLoading(),
     });
@@ -127,6 +131,7 @@ const RAECaptureGrid = () => {
 
         saveMutation.mutate({
             registro_id: Number(id),
+            version: initData?.version ?? 0,
             alumnos: updates
         });
     };
@@ -144,36 +149,38 @@ const RAECaptureGrid = () => {
 
     return (
         <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
-            <div className="card bg-primary text-primary-content shadow-lg border-l-8 border-primary-dark">
-                <div className="card-body p-8 flex-row items-center justify-between gap-4 flex-wrap">
-                    <div className="flex items-center gap-3">
+            <div className="header-section header-primary">
+                <div className="header-pattern" />
+                <div className="header-circle header-circle-lg" />
+                <div className="header-circle header-circle-sm" />
+                <div className="relative z-10 p-8 flex flex-col md:flex-row justify-between items-center gap-6">
+                    <div className="flex items-center gap-6">
                         <button 
-                             className="btn btn-primary btn-sm gap-2"
+                            className="btn btn-circle btn-white btn-sm shadow-md hover:scale-110 transition-transform"
                             onClick={() => navigate('/rae')}
                         >
-                            <ArrowLeft size={18} />
-                            Volver
+                            <ArrowLeft size={20} />
                         </button>
-                        <div className="ml-4">
-                            <h1 className="text-2xl font-black tracking-tight">
+                        <div className="text-center md:text-left">
+                            <h1 className="text-3xl md:text-4xl font-black tracking-tight text-white leading-none">
                                 Captura RAE: {initData?.escuela}
                             </h1>
-                            <p className="text-sm opacity-90 font-medium">
-                                Ciclo: {initData?.ciclo} | {initData?.alumnos.length} Alumnos
+                            <p className="text-sm md:text-base text-white/80 font-medium mt-2">
+                                Ciclo: {initData?.ciclo} | {initData?.alumnos.length} Alumnos registrados
                             </p>
                         </div>
                     </div>
                     
-                    <div className="flex gap-3">
+                    <div className="flex flex-wrap justify-center gap-3">
                         <button 
-                            className="btn btn-ghost bg-white/10 hover:bg-white/20 border-white/20 text-white"
+                            className="btn btn-ghost bg-white/10 hover:bg-white/20 border-white/20 text-white font-bold text-sm"
                             onClick={clearDrafts}
                             disabled={dirtyRows.size === 0}
                         >
                             Limpiar Borradores
                         </button>
                         <LoadingButton
-                            className="btn btn-white btn-lg shadow-md hover:scale-105 transition-transform"
+                            className="btn btn-white btn-lg shadow-xl px-8 gap-2 hover:scale-105 transition-transform"
                             icon={Save}
                             loading={saveMutation.isPending}
                             disabled={saveMutation.isPending || dirtyRows.size === 0}
@@ -185,41 +192,46 @@ const RAECaptureGrid = () => {
                 </div>
             </div>
 
-            <div className="card bg-base-100 shadow-sm border border-base-300 p-6">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
-                    <p className="text-xs text-base-content/50 font-medium italic">
-                        Instrucciones: Marque los cuadros correspondientes. Las filas resaltadas en amarillo indican cambios pendientes de guardado.
-                    </p>
-                    <div className="flex items-center gap-2">
+            <div className="card card-paper shadow-sm border border-base-300 p-6 space-y-6">
+                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                    <div className="flex items-center gap-3 p-3 bg-base-200 rounded-2xl border border-base-300 max-w-xl">
+                        <AlertCircle size={18} className="text-primary shrink-0" />
+                        <p className="text-xs text-base-content/70 font-medium italic leading-tight">
+                            Instrucciones: Marque los cuadros correspondientes. Las filas resaltadas indican cambios pendientes de guardado.
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-3 w-full lg:w-auto">
                         <select 
-                            className="select select-bordered select-sm"
+                            className="select select-bordered select-sm font-bold"
                             value={gradeFilter}
                             onChange={(e) => setGradeFilter(e.target.value)}
                         >
                             {uniqueGrades.map(g => (
-                                <option key={g} value={g}>{g === 'TODOS' ? '🎯 Todos los Grados' : `${g}° Grado`}</option>
+                                <option key={g} value={g}>{g === 'TODOS' ? '🎯 Todos' : `${g}° Grado`}</option>
                             ))}
                         </select>
-                        <div className="w-full sm:w-56"><SearchBar value={searchQuery} onChange={setSearchQuery} placeholder="Buscar alumno..." /></div>
+                        <div className="flex-1 lg:w-64">
+                            <SearchBar value={searchQuery} onChange={setSearchQuery} placeholder="Buscar alumno..." />
+                        </div>
                     </div>
                 </div>
 
-                <div className="overflow-x-auto border rounded-xl">
+                <div className="overflow-x-auto border rounded-2xl shadow-inner bg-base-100">
                     <table className="table table-zebra w-full border-collapse">
                         <thead>
                             <tr className="bg-base-200">
-                                <th className="sticky left-0 bg-base-200 z-20 border-r w-64 text-left">Alumno</th>
+                                <th className="sticky left-0 bg-base-200 z-20 border-r w-64 text-left font-black text-base-content">Alumno</th>
                                 {Object.entries(RAE_COLUMNS).map(([catKey, cat]) => (
-                                    <th key={catKey} colSpan={cat.fields.length} className="text-center border-r bg-base-300 text-xs uppercase opacity-70">
+                                    <th key={catKey} colSpan={cat.fields.length} className="text-center border-r bg-base-300 text-xs uppercase font-black opacity-70 tracking-widest">
                                         {cat.label}
                                     </th>
                                 ))}
                             </tr>
                             <tr className="bg-base-100">
-                                <th className="sticky left-0 bg-base-100 z-20 border-r text-left text-xs font-bold">Nombre Completo</th>
+                                <th className="sticky left-0 bg-base-100 z-20 border-r text-left text-xs font-bold opacity-50">Nombre Completo</th>
                                 {Object.values(RAE_COLUMNS).flatMap(cat => 
                                     cat.fields.map(f => (
-                                        <th key={f.id} className="text-center text-xs font-bold w-12 border-r">
+                                        <th key={f.id} className="text-center text-[10px] font-black w-12 border-r opacity-50 uppercase">
                                             {f.label}
                                         </th>
                                     ))
@@ -232,8 +244,9 @@ const RAECaptureGrid = () => {
                             ) : (filteredAlumnos.map((alum: RAEAlumno) => {
                                 const isDirty = dirtyRows.has(alum.id);
                                 return (
-                                    <tr key={alum.id} className={isDirty ? 'bg-yellow-50' : ''}>
-                                        <td className={`sticky left-0 z-10 border-r font-bold text-sm ${isDirty ? 'bg-yellow-100' : 'bg-base-100'}`}>
+                                    <tr key={alum.id} className={isDirty ? 'bg-yellow-50/50' : ''}>
+                                        <td className={`sticky left-0 z-10 border-r font-bold text-sm transition-colors ${isDirty ? 'bg-yellow-100' : 'bg-base-100'} flex items-center gap-2`}>
+                                            {isDirty && <span className="w-2 h-2 rounded-full bg-yellow-600" title="Cambios pendientes" aria-hidden="true" />}
                                             {alum.alumno_nombre}
                                         </td>
                                         {Object.values(RAE_COLUMNS).flatMap(cat => 
@@ -244,8 +257,9 @@ const RAECaptureGrid = () => {
                                                     <td key={f.id} className="text-center border-r">
                                                         <input 
                                                             type="checkbox" 
-                                                            className="checkbox checkbox-primary checkbox-sm" 
+                                                            className="checkbox checkbox-primary checkbox-sm hover:scale-110 transition-transform" 
                                                             checked={!!val} 
+                                                            aria-label={`Marcar ${f.label} para ${alum.alumno_nombre}`}
                                                             onChange={(e) => updateField(alum.id, f.id, e.target.checked)}
                                                         />
                                                     </td>

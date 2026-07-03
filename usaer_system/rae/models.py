@@ -8,20 +8,20 @@ from escuelas.models import Escuela
 
 
 class RegistroRAE(models.Model):
-    escuela = models.ForeignKey(  # Cambiado a ForeignKey si puede haber múltiples registros por escuela en diferentes ciclos
+    escuela = models.ForeignKey(
         Escuela,
-        on_delete=models.CASCADE,
-        related_name="registros_rae",  # Cambiado a plural
+        on_delete=models.PROTECT,
+        related_name="registros_rae",
         verbose_name="Escuela",
     )
-    ciclo_escolar = models.ForeignKey(  # <--- CAMPO AÑADIDO
+    ciclo_escolar = models.ForeignKey(
         CicloEscolar,
         on_delete=models.PROTECT,
         related_name="registros_rae",
         verbose_name="Ciclo Escolar",
     )
     creado_por = models.ForeignKey(
-        settings.AUTH_USER_MODEL,  # Usa settings.AUTH_USER_MODEL para referenciar tu modelo de usuario personalizado
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         related_name="registros_rae_creados",
@@ -33,6 +33,7 @@ class RegistroRAE(models.Model):
         default=False,
         help_text="Una vez cerrado, no se puede modificar la captura. Solo se puede reabrir desde administración.",
     )
+    version = models.IntegerField(default=0, verbose_name="Versión de concurrencia")
     docente_hombres = models.PositiveSmallIntegerField(
         default=0, verbose_name="Número de Docentes Hombres"
     )
@@ -44,7 +45,7 @@ class RegistroRAE(models.Model):
         unique_together = (
             "escuela",
             "ciclo_escolar",
-        )  # <--- Asegura un único registro por escuela y ciclo
+        )
         verbose_name = "Registro RAE"
         verbose_name_plural = "Registros RAE"
         ordering = ["escuela__nombre", "ciclo_escolar__nombre"]
@@ -57,10 +58,10 @@ class RAEAlumno(models.Model):
     registro = models.ForeignKey(
         RegistroRAE,
         on_delete=models.CASCADE,
-        related_name="detalles_alumnos",  # Cambiado a plural
+        related_name="detalles_alumnos",
         verbose_name="Registro RAE",
     )
-    alumno = models.ForeignKey(  # CAMBIADO: De OneToOneField a ForeignKey
+    alumno = models.ForeignKey(
         Alumno,
         on_delete=models.PROTECT,
         related_name="rae_detalles",
@@ -74,21 +75,13 @@ class RAEAlumno(models.Model):
         verbose_name="Docente de apoyo",
     )
 
-    # Datos básicos (estos se rellenan automáticamente al guardar)
-    curp = models.CharField(
-        "CURP", max_length=18, blank=True, null=True
-    )  # Añadido blank=True, null=True
+    curp = models.CharField("CURP", max_length=18, blank=True, null=True)
     genero = models.CharField(
         "Género", max_length=1, choices=Alumno.SEXO_CHOICES, blank=True, null=True
-    )  # Añadido blank=True, null=True
-    edad = models.PositiveSmallIntegerField(
-        "Edad", blank=True, null=True
-    )  # Añadido blank=True, null=True
-    grado = models.CharField(
-        "Grado-Grupo", max_length=10, blank=True, null=True
-    )  # Añadido blank=True, null=True
+    )
+    edad = models.PositiveSmallIntegerField("Edad", blank=True, null=True)
+    grado = models.CharField("Grado-Grupo", max_length=10, blank=True, null=True)
 
-    # Condición del alumno
     ceg = models.BooleanField("Ceguera (CEG)", default=False)
     bv = models.BooleanField("Baja visión (BV)", default=False)
     so = models.BooleanField("Sordera (SO)", default=False)
@@ -96,12 +89,8 @@ class RAEAlumno(models.Model):
     scg = models.BooleanField("Sordoceguera (SCG)", default=False)
     dmo = models.BooleanField("Discapacidad motriz (DMO)", default=False)
     di = models.BooleanField("Discapacidad intelectual (DI)", default=False)
-    dme = models.BooleanField(
-        "Psicosocial (DME)", default=False
-    )  # Se mantiene como lo tienes en el modelo
-    psicosocial = models.BooleanField(
-        "Psicosocial", default=False
-    )  # Se mantiene como lo tienes en el modelo
+    dme = models.BooleanField("Psicosocial (DME)", default=False)
+    psicosocial = models.BooleanField("Psicosocial", default=False)
     dm = models.BooleanField("Discapacidad múltiple (DM)", default=False)
 
     dsc = models.BooleanField("DS Conducta (DSC)", default=False)
@@ -112,13 +101,11 @@ class RAEAlumno(models.Model):
 
     asi = models.BooleanField("AS Intelectual (ASI)", default=False)
     asc = models.BooleanField("AS Creativa (ASC)", default=False)
+    ass = models.BooleanField("AS Socioafectiva (ASS)", default=False)
     asa = models.BooleanField("AS Artística (ASA)", default=False)
     asp = models.BooleanField("AS Psicomotriz (ASP)", default=False)
-    ass = models.BooleanField("AS Socioafectiva (ASS)", default=False)
-
     ot = models.BooleanField("Otra condición", default=False)
 
-    # Apoyo específico
     psicologia = models.BooleanField("Psicología", default=False)
     comunicacion = models.BooleanField("Comunicación", default=False)
     psicomotricidad = models.BooleanField("Psicomotricidad", default=False)
@@ -127,7 +114,6 @@ class RAEAlumno(models.Model):
     nuevo_ingreso = models.BooleanField("Nuevo ingreso", default=False)
     subsecuente = models.BooleanField("Subsecuente", default=False)
 
-    # Portafolio
     diagnostico = models.BooleanField("Diagnóstico médico/psicológico", default=False)
     educativo = models.BooleanField("Diagnóstico educativo", default=False)
     deteccion = models.BooleanField("Informe detección inicial", default=False)
@@ -142,7 +128,10 @@ class RAEAlumno(models.Model):
         unique_together = (
             "registro",
             "alumno",
-        )  # AÑADIDO: Un alumno solo puede tener un RAE por registro
+        )
+        indexes = [
+            models.Index(fields=["alumno"], name="rae_alumno_idx"),
+        ]
 
     def __str__(self):
         return f"{self.alumno.get_full_name()} en RAE {self.registro.escuela.nombre} ({self.registro.ciclo_escolar.nombre})"

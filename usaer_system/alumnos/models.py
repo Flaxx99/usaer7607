@@ -19,7 +19,7 @@ class Alumno(models.Model):
         null=True,
         verbose_name="Profesor responsable",
     )
-    escuela = models.ForeignKey(Escuela, on_delete=models.CASCADE, verbose_name="Escuela")
+    escuela = models.ForeignKey(Escuela, on_delete=models.PROTECT, verbose_name="Escuela")
 
     # --- Datos personales ---
     apellido_paterno = models.CharField("Apellido paterno", max_length=100)

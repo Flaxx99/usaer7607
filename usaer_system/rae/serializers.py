@@ -44,4 +44,7 @@ class BulkRAESaveSerializer(serializers.Serializer):
     """
 
     registro_id = serializers.IntegerField()
+    version = serializers.IntegerField(
+        required=True, help_text="Versión actual del registro para bloqueo optimista"
+    )
     alumnos = serializers.ListField(child=serializers.DictField())

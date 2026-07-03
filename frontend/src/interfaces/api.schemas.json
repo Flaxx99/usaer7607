@@ -2573,6 +2573,10 @@
         "title": "Registro Id",
         "type": "integer"
       },
+      "version": {
+        "title": "Version",
+        "type": "integer"
+      },
       "ciclo": {
         "title": "Ciclo",
         "type": "string"
@@ -2595,6 +2599,7 @@
     },
     "required": [
       "registro_id",
+      "version",
       "ciclo",
       "escuela",
       "cerrado",

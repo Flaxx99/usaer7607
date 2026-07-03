@@ -10,6 +10,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from django.db import transaction
+
 
 def parse_grado(grado_value: str) -> int | None:
     """Extrae el valor numérico del grado como string.
@@ -171,6 +173,7 @@ def simular_promocion_por_nivel(alumnos) -> dict:
 # ─── Ejecución (POST — escribe en DB) ──────────────────────────────────────
 
 
+@transaction.atomic
 def ejecutar_promocion_simple(
     alumnos,
     ciclo,
@@ -208,6 +211,7 @@ def ejecutar_promocion_simple(
     return promovidos, graduados, errores
 
 
+@transaction.atomic
 def ejecutar_promocion_por_nivel(alumnos) -> tuple[int, int]:
     """Ejecuta promoción con detección de nivel educativo.
 

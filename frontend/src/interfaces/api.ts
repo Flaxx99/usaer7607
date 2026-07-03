@@ -391,6 +391,7 @@ export interface RAEAlumnoResponse {
 
 export interface RAEInitResponse {
     registro_id: number;
+    version: number;
     ciclo: string;
     escuela: string;
     cerrado: boolean;

@@ -7,7 +7,7 @@ class Asistencia(models.Model):
     profesor = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, verbose_name="Profesor"
     )
-    escuela = models.ForeignKey(Escuela, on_delete=models.CASCADE, verbose_name="Escuela")
+    escuela = models.ForeignKey(Escuela, on_delete=models.PROTECT, verbose_name="Escuela")
     fecha = models.DateField("Fecha")
     presente = models.BooleanField("Presente")
     hora_entrada = models.TimeField("Hora de entrada", blank=True, null=True)
@@ -17,6 +17,10 @@ class Asistencia(models.Model):
     class Meta:
         unique_together = ("profesor", "fecha")
         ordering = ["-fecha"]
+        indexes = [
+            models.Index(fields=["fecha"], name="asistencia_fecha_idx"),
+            models.Index(fields=["escuela"], name="asistencia_escuela_idx"),
+        ]
 
     def __str__(self):
         estado = "Presente" if self.presente else "Ausente"

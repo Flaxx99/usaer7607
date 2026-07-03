@@ -1,11 +1,8 @@
 // src/interfaces/alumno.ts
 //
-// Re-exportado desde api.ts (generado de pydantic AlumnoResponse).
-//
-// Sexo y Clasificacion se mantienen manuales para union types precisos;
-// el AlumnoResponse usa strings genéricos para esos campos.
+// Tipos para Alumnos. Combina la respuesta de la API con tipos estrictos para el frontend.
 
-export type { AlumnoResponse as Alumno } from './api';
+import type { AlumnoResponse } from './api';
 
 export type Sexo = 'H' | 'M';
 
@@ -16,3 +13,8 @@ export type Clasificacion =
     | 'APTITUDES_SOBRESALIENTES' 
     | 'NINGUNO' 
     | 'OTRO';
+
+export type Alumno = AlumnoResponse & {
+    sexo: Sexo;
+    clasificacion: Clasificacion;
+};

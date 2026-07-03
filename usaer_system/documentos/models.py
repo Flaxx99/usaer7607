@@ -7,7 +7,6 @@ from django.conf import settings
 from django.db import models
 
 
-# ... (Tus funciones de ruta se quedan igual) ...
 def ruta_archivo(instance, filename, tipo):
     extension = Path(filename).suffix.lower()
     return f"expedientes/alumno_{instance.alumno.id}/{tipo}{extension}"
@@ -38,8 +37,8 @@ class Expediente(models.Model):
     informe_deteccion = models.FileField(
         upload_to=ruta_informe_deteccion,
         verbose_name="Informe de Detección Inicial",
-        blank=True,  # Permite dejarlo vacío en el formulario
-        null=True,  # Permite guardarlo como NULL en la base de datos
+        blank=True,
+        null=True,
     )
     informe_psicopedagogico = models.FileField(
         upload_to=ruta_informe_psicopedagogico,
@@ -57,6 +56,11 @@ class Expediente(models.Model):
     def __str__(self):
         return f"{self.alumno} - {self.profesor or 'Sin profesor asignado'}"
 
+    class Meta:
+        verbose_name = "Expediente"
+        verbose_name_plural = "Expedientes"
+        ordering = ["-fecha_subida"]
+
 
 class OtroArchivo(models.Model):
     expediente = models.ForeignKey(
@@ -64,6 +68,16 @@ class OtroArchivo(models.Model):
     )
     archivo = models.FileField(upload_to=ruta_otros, verbose_name="Archivo adicional")
     descripcion = models.CharField(max_length=255, blank=True)
+
+    def delete(self, *args, **kwargs):
+        """Borra el archivo físico del disco antes de eliminar el registro de la DB."""
+        if self.archivo:
+            try:
+                if os.path.exists(self.archivo.path):
+                    os.remove(self.archivo.path)
+            except Exception:
+                pass  # No bloqueamos el borrado de la DB si falla el borrado del archivo
+        super().delete(*args, **kwargs)
 
     def __str__(self):
         if self.archivo:

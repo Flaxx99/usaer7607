@@ -1,6 +1,5 @@
 import logging
 
-from alumnos.models import Alumno
 from django.db import transaction
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
@@ -25,8 +24,6 @@ logger = logging.getLogger(__name__)
 
 
 class IsAdminOrSecretario(permissions.BasePermission):
-    """Administradores y Secretarios pueden gestionar ciclos (coincide con el frontend)."""
-
     def has_permission(self, request, view):
         return request.user.is_authenticated and (
             request.user.is_superuser
@@ -45,7 +42,6 @@ class CicloEscolarViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"])
     def activo(self, request):
-        """Endpoint para obtener el ciclo activo."""
         try:
             ciclo = CicloEscolar.objects.get(activo=True)
             serializer = self.get_serializer(ciclo)
@@ -55,16 +51,9 @@ class CicloEscolarViewSet(viewsets.ModelViewSet):
 
 
 class PromocionAlumnosView(views.APIView):
-    """
-    Gestiona la promoción masiva.
-    GET: Simulación (Preview)
-    POST: Ejecución Real (Commit)
-    """
-
     permission_classes = [IsAdminOrSecretario]
 
     def initial(self, request, *args, **kwargs):
-        """bulk_write solo aplica al POST (commit), no al GET (preview)."""
         if request.method == "POST":
             self.throttle_scope = "bulk_write"
         super().initial(request, *args, **kwargs)
@@ -97,8 +86,9 @@ class PromocionAlumnosView(views.APIView):
         },
     )
     def get(self, request):
-        """Simulación (Preview)"""
         try:
+            from alumnos.models import Alumno
+
             alumnos_activos = Alumno.objects.filter(activo=True).select_related("escuela")
             data = simular_promocion_por_nivel(alumnos_activos)
             return Response(
@@ -145,8 +135,6 @@ class PromocionAlumnosView(views.APIView):
         },
     )
     def post(self, request):
-        """Ejecución Real"""
-        # Validar payload con pydantic
         try:
             payload = PromoverPayload(**request.data)
         except ValidationError as e:
@@ -157,10 +145,21 @@ class PromocionAlumnosView(views.APIView):
         if not payload.confirmed:
             return error_400("Se requiere confirmar la acción.")
 
+        # --- GUARDIA DE SEGURIDAD: Validar ciclo activo ---
+        ciclo_activo = CicloEscolar.objects.filter(activo=True).first()
+        if not ciclo_activo:
+            return error_400(
+                "No hay un ciclo escolar activo configurado. Por favor, active un ciclo antes de promover alumnos."
+            )
+
         with transaction.atomic():
+            from alumnos.models import Alumno
+
             alumnos_activos = Alumno.objects.activos().select_related("escuela")
             promovidos, graduados = ejecutar_promocion_por_nivel(alumnos_activos)
-            CicloEscolar.objects.filter(activo=True).update(activo=False)
+
+            # Desactivar el ciclo actual ya que la promoción marca el fin del mismo
+            CicloEscolar.objects.filter(id=ciclo_activo.id).update(activo=False)
 
             return Response(
                 PromocionExecResponse(
