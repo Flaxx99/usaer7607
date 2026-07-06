@@ -57,6 +57,31 @@ class ActividadRecienteDTO(BaseModel):
     url: str = ""
 
 
+class RAEDashboardProgress(BaseModel):
+    """Progreso de captura RAE agregado — resumen general."""
+
+    total_escuelas: int = 0
+    completadas: int = 0
+    porcentaje_general: float = 0.0
+    detalle_escuelas: list[RAEProgressItem] = Field(default_factory=list)
+
+
+class AsistenciaTrendEntry(BaseModel):
+    """Entrada diaria de tendencia de asistencias."""
+
+    fecha: str
+    presentes: int = 0
+    total: int = 0
+    porcentaje: float = 0.0
+
+
+class EscuelaFilterOption(BaseModel):
+    """Opción de escuela para el filtro del dashboard."""
+
+    id: int
+    nombre: str
+
+
 class DashboardData(BaseModel):
     """DTO principal del dashboard.
 
@@ -73,6 +98,9 @@ class DashboardData(BaseModel):
     racs_pendientes: int = 0
     actividad_reciente: list[ActividadRecienteDTO] = Field(default_factory=list)
     eventos_hoy: list[dict] = Field(default_factory=list)
+    rae_progress: RAEDashboardProgress = Field(default_factory=RAEDashboardProgress)
+    asistencia_trend: list[AsistenciaTrendEntry] = Field(default_factory=list)
+    escuelas_filtro: list[EscuelaFilterOption] = Field(default_factory=list)
 
 
 # ─── Payload Validation Schemas ──────────────────────────────────────────────

@@ -315,5 +315,11 @@ class BuildDashboardDataTest(TestCase):
             "stats",
             "grafica_clasificacion",
             "grafica_escuelas",
+            "racs_pendientes",
+            "actividad_reciente",
+            "eventos_hoy",
+            "rae_progress",
+            "asistencia_trend",
+            "escuelas_filtro",
         }
         self.assertEqual(set(d.keys()), expected_keys)

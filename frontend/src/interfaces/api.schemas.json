@@ -93,6 +93,35 @@
         "title": "ActividadRecienteDTO",
         "type": "object"
       },
+      "AsistenciaTrendEntry": {
+        "description": "Entrada diaria de tendencia de asistencias.",
+        "properties": {
+          "fecha": {
+            "title": "Fecha",
+            "type": "string"
+          },
+          "presentes": {
+            "default": 0,
+            "title": "Presentes",
+            "type": "integer"
+          },
+          "total": {
+            "default": 0,
+            "title": "Total",
+            "type": "integer"
+          },
+          "porcentaje": {
+            "default": 0.0,
+            "title": "Porcentaje",
+            "type": "number"
+          }
+        },
+        "required": [
+          "fecha"
+        ],
+        "title": "AsistenciaTrendEntry",
+        "type": "object"
+      },
       "AvisoDTO": {
         "description": "DTO para avisos del dashboard.",
         "properties": {
@@ -145,6 +174,25 @@
         "title": "ChartEntry",
         "type": "object"
       },
+      "EscuelaFilterOption": {
+        "description": "Opci\u00f3n de escuela para el filtro del dashboard.",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "nombre": {
+            "title": "Nombre",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "nombre"
+        ],
+        "title": "EscuelaFilterOption",
+        "type": "object"
+      },
       "GraficaEscuelaEntry": {
         "description": "Entrada individual de la gr\u00e1fica de escuelas.",
         "properties": {
@@ -160,6 +208,84 @@
           }
         },
         "title": "GraficaEscuelaEntry",
+        "type": "object"
+      },
+      "RAEDashboardProgress": {
+        "description": "Progreso de captura RAE agregado \u2014 resumen general.",
+        "properties": {
+          "total_escuelas": {
+            "default": 0,
+            "title": "Total Escuelas",
+            "type": "integer"
+          },
+          "completadas": {
+            "default": 0,
+            "title": "Completadas",
+            "type": "integer"
+          },
+          "porcentaje_general": {
+            "default": 0.0,
+            "title": "Porcentaje General",
+            "type": "number"
+          },
+          "detalle_escuelas": {
+            "items": {
+              "$ref": "#/$defs/RAEProgressItem"
+            },
+            "title": "Detalle Escuelas",
+            "type": "array"
+          }
+        },
+        "title": "RAEDashboardProgress",
+        "type": "object"
+      },
+      "RAEProgressItem": {
+        "description": "Respuesta del endpoint /rae/progreso/ (progreso por escuela).",
+        "properties": {
+          "escuela_id": {
+            "title": "Escuela Id",
+            "type": "integer"
+          },
+          "escuela_nombre": {
+            "title": "Escuela Nombre",
+            "type": "string"
+          },
+          "escuela_cct": {
+            "title": "Escuela Cct",
+            "type": "string"
+          },
+          "registro_id": {
+            "title": "Registro Id",
+            "type": "integer"
+          },
+          "total_alumnos": {
+            "title": "Total Alumnos",
+            "type": "integer"
+          },
+          "completados": {
+            "title": "Completados",
+            "type": "integer"
+          },
+          "porcentaje": {
+            "title": "Porcentaje",
+            "type": "number"
+          },
+          "cerrado": {
+            "title": "Cerrado",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "escuela_id",
+          "escuela_nombre",
+          "escuela_cct",
+          "registro_id",
+          "total_alumnos",
+          "completados",
+          "porcentaje",
+          "cerrado"
+        ],
+        "title": "RAEProgressItem",
         "type": "object"
       },
       "StatsDTO": {
@@ -250,6 +376,23 @@
         },
         "title": "Eventos Hoy",
         "type": "array"
+      },
+      "rae_progress": {
+        "$ref": "#/$defs/RAEDashboardProgress"
+      },
+      "asistencia_trend": {
+        "items": {
+          "$ref": "#/$defs/AsistenciaTrendEntry"
+        },
+        "title": "Asistencia Trend",
+        "type": "array"
+      },
+      "escuelas_filtro": {
+        "items": {
+          "$ref": "#/$defs/EscuelaFilterOption"
+        },
+        "title": "Escuelas Filtro",
+        "type": "array"
       }
     },
     "title": "DashboardData",
@@ -283,6 +426,134 @@
       "fecha"
     ],
     "title": "ActividadRecienteDTO",
+    "type": "object"
+  },
+  "AsistenciaTrendEntry": {
+    "description": "Entrada diaria de tendencia de asistencias.",
+    "properties": {
+      "fecha": {
+        "title": "Fecha",
+        "type": "string"
+      },
+      "presentes": {
+        "default": 0,
+        "title": "Presentes",
+        "type": "integer"
+      },
+      "total": {
+        "default": 0,
+        "title": "Total",
+        "type": "integer"
+      },
+      "porcentaje": {
+        "default": 0.0,
+        "title": "Porcentaje",
+        "type": "number"
+      }
+    },
+    "required": [
+      "fecha"
+    ],
+    "title": "AsistenciaTrendEntry",
+    "type": "object"
+  },
+  "EscuelaFilterOption": {
+    "description": "Opci\u00f3n de escuela para el filtro del dashboard.",
+    "properties": {
+      "id": {
+        "title": "Id",
+        "type": "integer"
+      },
+      "nombre": {
+        "title": "Nombre",
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "nombre"
+    ],
+    "title": "EscuelaFilterOption",
+    "type": "object"
+  },
+  "RAEDashboardProgress": {
+    "$defs": {
+      "RAEProgressItem": {
+        "description": "Respuesta del endpoint /rae/progreso/ (progreso por escuela).",
+        "properties": {
+          "escuela_id": {
+            "title": "Escuela Id",
+            "type": "integer"
+          },
+          "escuela_nombre": {
+            "title": "Escuela Nombre",
+            "type": "string"
+          },
+          "escuela_cct": {
+            "title": "Escuela Cct",
+            "type": "string"
+          },
+          "registro_id": {
+            "title": "Registro Id",
+            "type": "integer"
+          },
+          "total_alumnos": {
+            "title": "Total Alumnos",
+            "type": "integer"
+          },
+          "completados": {
+            "title": "Completados",
+            "type": "integer"
+          },
+          "porcentaje": {
+            "title": "Porcentaje",
+            "type": "number"
+          },
+          "cerrado": {
+            "title": "Cerrado",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "escuela_id",
+          "escuela_nombre",
+          "escuela_cct",
+          "registro_id",
+          "total_alumnos",
+          "completados",
+          "porcentaje",
+          "cerrado"
+        ],
+        "title": "RAEProgressItem",
+        "type": "object"
+      }
+    },
+    "description": "Progreso de captura RAE agregado \u2014 resumen general.",
+    "properties": {
+      "total_escuelas": {
+        "default": 0,
+        "title": "Total Escuelas",
+        "type": "integer"
+      },
+      "completadas": {
+        "default": 0,
+        "title": "Completadas",
+        "type": "integer"
+      },
+      "porcentaje_general": {
+        "default": 0.0,
+        "title": "Porcentaje General",
+        "type": "number"
+      },
+      "detalle_escuelas": {
+        "items": {
+          "$ref": "#/$defs/RAEProgressItem"
+        },
+        "title": "Detalle Escuelas",
+        "type": "array"
+      }
+    },
+    "title": "RAEDashboardProgress",
     "type": "object"
   },
   "GraficaEscuelaEntry": {

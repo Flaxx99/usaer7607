@@ -1,17 +1,21 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import {
   Users, School, ClipboardCheck, AlertCircle,
   UserCheck, FileText, ArrowUpRight, Calendar,
-  ClipboardList, Activity, Clock, Sparkles
+  ClipboardList, Activity, Clock, Sparkles,
+  TrendingUp, Target, CheckCircle2,
 } from 'lucide-react';
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts';
 import { DashboardSkeleton, ErrorState } from '../components/Skeletons';
 import { getDashboardData } from '../api/dashboard';
-import type { Aviso, StatCardProps } from '../interfaces/dashboard';
+import type {
+  Aviso, AsistenciaTrendEntry, EscuelaFilterOption,
+  RAEDashboardProgress, StatCardProps,
+} from '../interfaces/dashboard';
 
 const ROLES_MAP: Record<string, string> = {
   'DIRECTOR': 'Director(a) de Escuela',
@@ -59,6 +63,7 @@ const STAT_STYLES: Record<string, { gradient: string; iconBg: string; border: st
 
 const Dashboard = () => {
   const [userData] = useState(loadUserData);
+  const [filtroEscuela, setFiltroEscuela] = useState('');
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['dashboard'],
@@ -185,6 +190,30 @@ const Dashboard = () => {
           pulse={(data?.incidencias_pendientes ?? 0) > 0}
         />
       </div>
+
+      {/* ════════════════════════════════════════ */}
+      {/* FILTROS — Escuela */}
+      {/* ════════════════════════════════════════ */}
+      {data?.escuelas_filtro && data.escuelas_filtro.length > 0 && (
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 text-sm font-semibold text-base-content/60">
+            <School size={15} />
+            <span>Filtrar por escuela:</span>
+          </div>
+          <select
+            className="select select-bordered select-sm min-w-[220px]"
+            value={filtroEscuela}
+            onChange={(e) => setFiltroEscuela(e.target.value)}
+          >
+            <option value="">Todas las escuelas</option>
+            {data.escuelas_filtro.map((esc: EscuelaFilterOption) => (
+              <option key={esc.id} value={String(esc.id)}>
+                {esc.nombre}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {/* ════════════════════════════════════════ */}
       {/* MAIN CONTENT — 2 columnas */}
@@ -395,6 +424,16 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* BOTTOM ROW — RAE Progress + Asistencia Trend */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <RAEProgressCard progreso={data?.rae_progress} filtroEscuela={filtroEscuela} />
+        </div>
+        <div>
+          <AsistenciaTrendCard trend={data?.asistencia_trend} />
+        </div>
+      </div>
     </div>
   );
 };
@@ -424,6 +463,212 @@ const StatCard = ({ title, value, icon, color, description, highlight = false, p
           <p className="stat-value">{value}</p>
           <p className="stat-label mt-0.5">{title}</p>
           <p className="text-[10px] text-base-content/40 font-medium mt-0.5">{description}</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ═══════════════════════════════════════════ */
+/* RAEProgressCard - Progreso por escuela      */
+/* ═══════════════════════════════════════════ */
+const RAEProgressCard = ({
+  progreso,
+  filtroEscuela,
+}: {
+  progreso: RAEDashboardProgress | undefined;
+  filtroEscuela: string;
+}) => {
+  const escuelas = useMemo(() => {
+    if (!progreso?.detalle_escuelas) return [];
+    return filtroEscuela
+      ? progreso.detalle_escuelas.filter((e) => String(e.escuela_id) === filtroEscuela)
+      : progreso.detalle_escuelas;
+  }, [progreso, filtroEscuela]);
+
+  if (!progreso) {
+    return (
+      <div className="card-paper p-6">
+        <div className="flex flex-col items-center justify-center h-32 text-base-content/40 italic text-sm">
+          <Target size={24} className="mb-2 opacity-30" />
+          Cargando progreso RAE...
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="card-paper">
+      <div className="p-6">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-primary/15 text-primary flex items-center justify-center">
+              <Target className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-bold text-base">Progreso RAE</h3>
+              <p className="text-[11px] text-base-content/50 font-medium">Captura por escuela</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-semibold text-base-content/50">
+              {progreso.completadas}/{progreso.total_escuelas} completadas
+            </span>
+            <div
+              className="radial-progress text-primary"
+              style={
+                { '--value': progreso.porcentaje_general } as React.CSSProperties
+              }
+              aria-valuenow={progreso.porcentaje_general}
+            >
+              {progreso.porcentaje_general}%
+            </div>
+          </div>
+        </div>
+
+        {/* Lista de escuelas */}
+        <div className="space-y-3 max-h-[360px] overflow-y-auto pr-1">
+          {escuelas.length > 0 ? (
+            escuelas.map((esc) => (
+              <div key={esc.escuela_id} className="group">
+                <div className="flex items-center justify-between mb-1.5">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-sm font-semibold truncate">{esc.escuela_nombre}</span>
+                    {esc.cerrado && (
+                      <CheckCircle2 size={14} className="text-green-500 shrink-0" />
+                    )}
+                  </div>
+                  <span className="text-xs font-bold tabular-nums shrink-0 ml-2">
+                    {esc.completados}/{esc.total_alumnos}
+                  </span>
+                </div>
+                <div className="w-full h-3 bg-base-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-700 ease-out"
+                    style={{
+                      width: `${Math.min(esc.porcentaje, 100)}%`,
+                      background: esc.porcentaje >= 100
+                        ? 'linear-gradient(90deg, #22c55e, #16a34a)'
+                        : esc.porcentaje >= 50
+                          ? 'linear-gradient(90deg, #6366f1, #8b5cf6)'
+                          : 'linear-gradient(90deg, #f59e0b, #f97316)',
+                    }}
+                  />
+                </div>
+                <div className="flex items-center justify-between mt-0.5">
+                  <span className="text-[10px] font-medium text-base-content/40">
+                    {esc.porcentaje}% completado
+                  </span>
+                  {esc.porcentaje < 100 && !esc.cerrado && (
+                    <Link
+                      to={`/rae/captura/${esc.registro_id}`}
+                      className="text-[10px] font-bold text-primary hover:underline"
+                    >
+                      Capturar
+                    </Link>
+                  )}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="flex flex-col items-center justify-center h-24 text-base-content/40 italic text-sm">
+              <Target size={20} className="mb-1 opacity-30" />
+              {filtroEscuela ? 'Sin progreso para esta escuela.' : 'No hay registros RAE activos.'}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ═══════════════════════════════════════════ */
+/* AsistenciaTrendCard - Tendencia semanal      */
+/* ═══════════════════════════════════════════ */
+const AsistenciaTrendCard = ({
+  trend,
+}: {
+  trend: AsistenciaTrendEntry[] | undefined;
+}) => {
+  const totalPresentes = useMemo(
+    () => trend?.reduce((sum, d) => sum + (d.presentes ?? 0), 0) ?? 0,
+    [trend],
+  );
+  const promPorcentaje = useMemo(
+    () => trend?.length
+      ? Math.round(trend.reduce((sum, d) => sum + (d.porcentaje ?? 0), 0) / trend.length)
+      : 0,
+    [trend],
+  );
+
+  if (!trend || trend.length === 0) {
+    return (
+      <div className="card-paper p-6">
+        <div className="flex flex-col items-center justify-center h-32 text-base-content/40 italic text-sm">
+          <TrendingUp size={24} className="mb-2 opacity-30" />
+          Sin datos de asistencia.
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="card-paper">
+      <div className="p-5">
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-9 h-9 rounded-xl bg-green-500/15 text-green-600 flex items-center justify-center">
+            <TrendingUp className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="font-bold text-sm">Asistencia Semanal</h3>
+            <p className="text-[11px] text-base-content/50 font-medium">
+              Prom. {promPorcentaje}% · {totalPresentes} registros
+            </p>
+          </div>
+        </div>
+
+        {/* Chart */}
+        <div className="h-[200px] w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={trend} margin={{ top: 5, right: 5, bottom: 0, left: -20 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-base-300)" />
+              <XAxis
+                dataKey="fecha"
+                tick={{ fontSize: 9, fontWeight: 600 }}
+                tickFormatter={(val: string) => {
+                  const d = new Date(val + 'T00:00:00');
+                  return d.toLocaleDateString('es-MX', { weekday: 'short' });
+                }}
+              />
+              <YAxis hide />
+              <Tooltip
+                contentStyle={{
+                  borderRadius: '12px',
+                  border: '2px solid var(--color-base-300)',
+                  boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                }}
+                formatter={(_value: number) => [`${_value}%`, 'Asistencia']}
+                labelFormatter={(label: string) => {
+                  const d = new Date(label + 'T00:00:00');
+                  return d.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'short' });
+                }}
+              />
+              <Bar
+                dataKey="porcentaje"
+                radius={[4, 4, 0, 0]}
+                barSize={28}
+                fill="url(#trendGradient)"
+              />
+              <defs>
+                <linearGradient id="trendGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#22c55e" />
+                  <stop offset="100%" stopColor="#16a34a" />
+                </linearGradient>
+              </defs>
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       </div>
     </div>

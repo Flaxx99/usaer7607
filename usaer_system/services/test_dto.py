@@ -21,6 +21,7 @@ from .dto import (
     MetricasPermisoResponse,
     PromocionExecResponse,
     PromoverPayload,
+    RAEDashboardProgress,
     ResolverIncidenciaPayload,
     # Payload schemas
     ResponderPermisoPayload,
@@ -75,6 +76,12 @@ class DashboardDataTest(SimpleTestCase):
         self.assertEqual(data.permisos_pendientes, 0)
         self.assertEqual(data.incidencias_pendientes, 0)
         self.assertIsInstance(data.stats, StatsDTO)
+        self.assertEqual(data.racs_pendientes, 0)
+        self.assertEqual(data.actividad_reciente, [])
+        self.assertEqual(data.eventos_hoy, [])
+        self.assertIsInstance(data.rae_progress, RAEDashboardProgress)
+        self.assertEqual(data.asistencia_trend, [])
+        self.assertEqual(data.escuelas_filtro, [])
 
     def test_model_dump_keys(self):
         data = DashboardData()
@@ -87,6 +94,12 @@ class DashboardDataTest(SimpleTestCase):
             "stats",
             "grafica_clasificacion",
             "grafica_escuelas",
+            "racs_pendientes",
+            "actividad_reciente",
+            "eventos_hoy",
+            "rae_progress",
+            "asistencia_trend",
+            "escuelas_filtro",
         }
         self.assertEqual(set(d.keys()), expected_keys)
 

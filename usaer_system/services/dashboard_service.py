@@ -12,7 +12,15 @@ from typing import Any
 from django.db import models
 from django.db.models import Count, Q
 
-from .dto import ActividadRecienteDTO, AvisoDTO, DashboardData, StatsDTO
+from .dto import (
+    ActividadRecienteDTO,
+    AsistenciaTrendEntry,
+    AvisoDTO,
+    DashboardData,
+    EscuelaFilterOption,
+    RAEDashboardProgress,
+    StatsDTO,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -234,6 +242,123 @@ def get_eventos_hoy(user) -> list[dict]:
         return []
 
 
+def get_rae_progress() -> RAEDashboardProgress:
+    """Progreso de captura RAE: resumen general y detalle por escuela."""
+    from rae.models import RegistroRAE
+
+    try:
+        registros = (
+            RegistroRAE.objects.filter(ciclo_escolar__activo=True)
+            .select_related("escuela")
+            .annotate(
+                total_alumnos=models.Count("detalles_alumnos"),
+                completados=models.Count(
+                    "detalles_alumnos",
+                    filter=models.Q(detalles_alumnos__ceg=True)
+                    | models.Q(detalles_alumnos__bv=True)
+                    | models.Q(detalles_alumnos__so=True)
+                    | models.Q(detalles_alumnos__hp=True)
+                    | models.Q(detalles_alumnos__scg=True)
+                    | models.Q(detalles_alumnos__dmo=True)
+                    | models.Q(detalles_alumnos__di=True)
+                    | models.Q(detalles_alumnos__dme=True)
+                    | models.Q(detalles_alumnos__psicosocial=True)
+                    | models.Q(detalles_alumnos__dm=True)
+                    | models.Q(detalles_alumnos__dsc=True)
+                    | models.Q(detalles_alumnos__dsco=True)
+                    | models.Q(detalles_alumnos__dsa=True)
+                    | models.Q(detalles_alumnos__tda=True)
+                    | models.Q(detalles_alumnos__tea=True)
+                    | models.Q(detalles_alumnos__asi=True)
+                    | models.Q(detalles_alumnos__asc=True)
+                    | models.Q(detalles_alumnos__asa=True)
+                    | models.Q(detalles_alumnos__asp=True)
+                    | models.Q(detalles_alumnos__ass=True)
+                    | models.Q(detalles_alumnos__ot=True),
+                ),
+            )
+        )
+
+        detalle = []
+        total_escuelas = 0
+        total_completadas = 0
+        for r in registros:
+            total = r.total_alumnos or 1  # evitar división por cero
+            completados = r.completados or 0
+            pct = round((completados / total) * 100, 1)
+            detalle.append(
+                {
+                    "escuela_id": r.escuela_id,
+                    "escuela_nombre": r.escuela.nombre,
+                    "escuela_cct": getattr(r.escuela, "cct", ""),
+                    "registro_id": r.id,
+                    "total_alumnos": total,
+                    "completados": completados,
+                    "porcentaje": pct,
+                    "cerrado": r.cerrado,
+                }
+            )
+            total_escuelas += 1
+            if pct >= 100:
+                total_completadas += 1
+
+        return RAEDashboardProgress(
+            total_escuelas=total_escuelas,
+            completadas=total_completadas,
+            porcentaje_general=round(
+                (total_completadas / total_escuelas * 100) if total_escuelas else 0, 1
+            ),
+            detalle_escuelas=detalle,
+        )
+    except Exception:
+        logger.exception("Error calculando progreso RAE")
+        return RAEDashboardProgress()
+
+
+def get_asistencia_trend(days: int = 7) -> list[AsistenciaTrendEntry]:
+    """Tendencia de asistencias de los últimos N días."""
+    from datetime import date, timedelta
+
+    from asistencias.models import Asistencia
+
+    try:
+        hoy = date.today()
+        desde = hoy - timedelta(days=days - 1)
+
+        dias = [desde + timedelta(days=i) for i in range(days) if desde + timedelta(days=i) <= hoy]
+
+        trend = []
+        for dia in dias:
+            qs = Asistencia.objects.filter(fecha=dia)
+            total = qs.count()
+            presentes = qs.filter(presente=True).count()
+            pct = round((presentes / total * 100) if total else 0, 1)
+            trend.append(
+                AsistenciaTrendEntry(
+                    fecha=dia.isoformat(),
+                    presentes=presentes,
+                    total=total,
+                    porcentaje=pct,
+                )
+            )
+        return trend
+    except Exception:
+        logger.exception("Error calculando tendencia de asistencias")
+        return []
+
+
+def get_escuelas_filtro() -> list[EscuelaFilterOption]:
+    """Lista de escuelas para el filtro del dashboard."""
+    from escuelas.models import Escuela
+
+    try:
+        qs = Escuela.objects.all().order_by("nombre")
+        return [EscuelaFilterOption(id=e.id, nombre=e.nombre) for e in qs]
+    except Exception:
+        logger.exception("Error cargando escuelas para filtro")
+        return []
+
+
 def build_dashboard_data(user) -> DashboardData:
     """Arma el DashboardData completo. Cada sub-función es independiente."""
     data = DashboardData(
@@ -245,6 +370,9 @@ def build_dashboard_data(user) -> DashboardData:
         racs_pendientes=get_racs_pendientes(user),
         actividad_reciente=get_actividad_reciente(user),
         eventos_hoy=get_eventos_hoy(user),
+        rae_progress=get_rae_progress(),
+        asistencia_trend=get_asistencia_trend(),
+        escuelas_filtro=get_escuelas_filtro(),
     )
     data.grafica_clasificacion, data.grafica_escuelas = get_graficas()
     return data

@@ -38,6 +38,9 @@ export interface DashboardData {
     racs_pendientes: number | undefined;
     actividad_reciente: ActividadRecienteDTO[] | undefined;
     eventos_hoy: Record<string, unknown>[] | undefined;
+    rae_progress: RAEDashboardProgress | undefined;
+    asistencia_trend: AsistenciaTrendEntry[] | undefined;
+    escuelas_filtro: EscuelaFilterOption[] | undefined;
 }
 
 export interface ActividadRecienteDTO {
@@ -45,6 +48,25 @@ export interface ActividadRecienteDTO {
     descripcion: string;
     fecha: string /* ISO datetime */;
     url: string | undefined;
+}
+
+export interface AsistenciaTrendEntry {
+    fecha: string;
+    presentes: number | undefined;
+    total: number | undefined;
+    porcentaje: number | undefined;
+}
+
+export interface EscuelaFilterOption {
+    id: number;
+    nombre: string;
+}
+
+export interface RAEDashboardProgress {
+    total_escuelas: number | undefined;
+    completadas: number | undefined;
+    porcentaje_general: number | undefined;
+    detalle_escuelas: RAEProgressItem[] | undefined;
 }
 
 export interface GraficaEscuelaEntry {

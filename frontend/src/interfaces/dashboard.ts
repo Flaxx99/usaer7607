@@ -4,11 +4,14 @@
 // StatCardProps es un tipo puramente de UI, sin equivalente en backend.
 
 export type {
+    AsistenciaTrendEntry,
     AvisoDTO as Aviso,
-    StatsDTO as DashboardStats,
-    GraficaEscuelaEntry as GraficaEscuela,
     ChartEntry,
     DashboardData,
+    EscuelaFilterOption,
+    GraficaEscuelaEntry as GraficaEscuela,
+    RAEDashboardProgress,
+    StatsDTO as DashboardStats,
 } from './api';
 
 export interface StatCardProps {
