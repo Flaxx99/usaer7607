@@ -7,7 +7,7 @@ from alumnos.models import Alumno
 from ciclos_escolares.utils import get_current_ciclo_escolar_instance
 from django.conf import settings
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from openpyxl import load_workbook
@@ -80,21 +80,29 @@ class RAEInitCaptureView(views.APIView):
             ciclo_escolar=ciclo,
             defaults={"creado_por": user},
         )
-        alumnos_maestra = Alumno.objects.activos_de_profesor(user)
-        rae_alumnos = []
+        alumnos_maestra = list(Alumno.objects.activos_de_profesor(user))
+        # Bulk: obtener los que ya existen y crear los faltantes de una
+        existentes = {
+            r.alumno_id: r
+            for r in RAEAlumno.objects.filter(registro=registro, alumno__in=alumnos_maestra)
+        }
+        nuevos = []
         for alumno in alumnos_maestra:
-            obj, _ = RAEAlumno.objects.get_or_create(
-                registro=registro,
-                alumno=alumno,
-                defaults={
-                    "capturado_por": user,
-                    "curp": alumno.curp,
-                    "genero": alumno.sexo,
-                    "edad": alumno.edad,
-                    "grado": f"{alumno.grado}°{alumno.grupo}",
-                },
-            )
-            rae_alumnos.append(obj)
+            if alumno.pk not in existentes:
+                nuevos.append(
+                    RAEAlumno(
+                        registro=registro,
+                        alumno=alumno,
+                        capturado_por=user,
+                        curp=alumno.curp,
+                        genero=alumno.sexo,
+                        edad=alumno.edad,
+                        grado=f"{alumno.grado}°{alumno.grupo}",
+                    )
+                )
+        if nuevos:
+            RAEAlumno.objects.bulk_create(nuevos)
+        rae_alumnos = list(existentes.values()) + nuevos
 
         serializer = RAEAlumnoSerializer(rae_alumnos, many=True)
         return Response(
@@ -402,28 +410,35 @@ class ExportAllRAEView(views.APIView):
         ws.column_dimensions["C"].width = 14
         for col_letter in ["D", "E", "F", "G", "H", "I", "J", "K"]:
             ws.column_dimensions[col_letter].width = 14
+        # ── Annotar conteos en 1 query (en vez de 4×N) ──────────────
+        # NOTA: el filter en Count resuelve campos respecto al modelo raíz (RegistroRAE),
+        # por eso usamos "detalles_alumnos__asi" y no solo "asi".
+        apt_q = Q()
+        for f in ["asi", "asc", "ass", "asa", "asp"]:
+            apt_q |= Q(**{f"detalles_alumnos__{f}": True})
+        disc_q = Q()
+        for f in ["ceg", "bv", "so", "hp", "scg", "dmo", "di", "dme", "psicosocial", "dm"]:
+            disc_q |= Q(**{f"detalles_alumnos__{f}": True})
+        otras_q = Q()
+        for f in ["ot", "dsco", "dsa", "dsc", "tea", "tda"]:
+            otras_q |= Q(**{f"detalles_alumnos__{f}": True})
+        qs = qs.annotate(
+            total_alumnos=Count("detalles_alumnos"),
+            count_apt=Count("detalles_alumnos", filter=apt_q),
+            count_disc=Count("detalles_alumnos", filter=disc_q),
+            count_otras=Count("detalles_alumnos", filter=otras_q),
+        )
         row = 2
         for reg in qs:
-            raes = RAEAlumno.objects.filter(registro=reg)
-            total = raes.count()
-            apt_q = Q()
-            for f in ["asi", "asc", "ass", "asa", "asp"]:
-                apt_q |= Q(**{f: True})
-            disc_q = Q()
-            for f in ["ceg", "bv", "so", "hp", "scg", "dmo", "di", "dme", "psicosocial", "dm"]:
-                disc_q |= Q(**{f: True})
-            otras_q = Q()
-            for f in ["ot", "dsco", "dsa", "dsc", "tea", "tda"]:
-                otras_q |= Q(**{f: True})
             ws.cell(row=row, column=1, value=reg.escuela.nombre).border = thin_border
             ws.cell(row=row, column=2, value=reg.escuela.cct).border = thin_border
             ws.cell(row=row, column=3, value=reg.ciclo_escolar.nombre).border = thin_border
             ws.cell(row=row, column=4, value=reg.docente_hombres).border = thin_border
             ws.cell(row=row, column=5, value=reg.docente_mujeres).border = thin_border
-            ws.cell(row=row, column=6, value=total).border = thin_border
-            ws.cell(row=row, column=7, value=raes.filter(apt_q).count()).border = thin_border
-            ws.cell(row=row, column=8, value=raes.filter(disc_q).count()).border = thin_border
-            ws.cell(row=row, column=9, value=raes.filter(otras_q).count()).border = thin_border
+            ws.cell(row=row, column=6, value=reg.total_alumnos).border = thin_border
+            ws.cell(row=row, column=7, value=reg.count_apt).border = thin_border
+            ws.cell(row=row, column=8, value=reg.count_disc).border = thin_border
+            ws.cell(row=row, column=9, value=reg.count_otras).border = thin_border
             ws.cell(row=row, column=10, value="Sí" if reg.cerrado else "No").border = thin_border
             row += 1
         output = BytesIO()
@@ -472,36 +487,41 @@ class RAEProgressView(views.APIView):
         qs = RegistroRAE.objects.filter(ciclo_escolar=ciclo).select_related("escuela")
         if not (request.user.is_superuser or request.user.role in ["ADMIN", "SECRETARIO"]):
             qs = qs.filter(escuela=request.user.escuela)
+        # Annotar conteos en 1 query (en vez de 2 por registro)
+        campos_rae = [
+            "ceg",
+            "bv",
+            "so",
+            "hp",
+            "scg",
+            "dmo",
+            "di",
+            "dme",
+            "psicosocial",
+            "dm",
+            "dsc",
+            "dsco",
+            "dsa",
+            "tea",
+            "tda",
+            "asi",
+            "asc",
+            "ass",
+            "asa",
+            "asp",
+            "ot",
+        ]
+        tiene_algo = Q()
+        for f in campos_rae:
+            tiene_algo |= Q(**{f"detalles_alumnos__{f}": True})
+        qs = qs.annotate(
+            total_alumnos=Count("detalles_alumnos"),
+            completados=Count("detalles_alumnos", filter=tiene_algo),
+        )
         items = []
         for reg in qs:
-            total = RAEAlumno.objects.filter(registro=reg).count()
-            completados = (
-                RAEAlumno.objects.filter(registro=reg)
-                .exclude(
-                    ceg=False,
-                    bv=False,
-                    so=False,
-                    hp=False,
-                    scg=False,
-                    dmo=False,
-                    di=False,
-                    dme=False,
-                    psicosocial=False,
-                    dm=False,
-                    dsc=False,
-                    dsco=False,
-                    dsa=False,
-                    tea=False,
-                    tda=False,
-                    asi=False,
-                    asc=False,
-                    ass=False,
-                    asa=False,
-                    asp=False,
-                    ot=False,
-                )
-                .count()
-            )
+            total = reg.total_alumnos
+            comp = reg.completados
             items.append(
                 RAEProgressItem(
                     escuela_id=reg.escuela.id,
@@ -509,8 +529,8 @@ class RAEProgressView(views.APIView):
                     escuela_cct=reg.escuela.cct,
                     registro_id=reg.id,
                     total_alumnos=total,
-                    completados=completados,
-                    porcentaje=round((completados / total * 100) if total else 0, 1),
+                    completados=comp,
+                    porcentaje=round((comp / total * 100) if total else 0, 1),
                     cerrado=reg.cerrado,
                 ).model_dump(),
             )
