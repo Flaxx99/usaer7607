@@ -3,9 +3,10 @@ import {
     Plus, Trash2, FileText, Download, UploadCloud, Edit2,
     CheckCircle, XCircle, User, ChevronLeft, ChevronRight
 } from 'lucide-react';
+import { PageHeader } from '../../components/PageHeader';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { SearchBar } from '../../components/SearchBar';
+import { FilterCard } from '../../components/FilterCard';
 import { TableSkeleton, EmptyState, ErrorState } from '../../components/Skeletons';
 import Modal from '../../components/Modal';
 import { LoadingButton } from '../../components/LoadingButton';
@@ -108,45 +109,23 @@ const OficiosList = () => {
     return (
         <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
             
-            {/* CABECERA CON GRADIENTE */}
-            <div className="header-section header-oficios">
-                <div className="header-pattern" />
-                <div className="header-circle header-circle-lg" />
-                <div className="header-circle header-circle-sm" />
-                <div className="relative z-10 p-8 flex-row items-center justify-between gap-4">
-                    <div className="flex items-center gap-6">
-                        <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shadow-inner backdrop-blur-sm">
-                            <FileText size={32} />
-                        </div>
-                        <div>
-                            <h1 className="text-3xl font-black tracking-tight">
-                                Gestión de Oficios
-                            </h1>
-                            <p className="text-sm opacity-90 font-medium">
-                                Archivo digital de documentos oficiales enviados y recibidos por la USAER 7607.
-                            </p>
-                        </div>
-                    </div>
-                    
-                    <button 
-                        className="btn btn-white btn-lg shadow-md hover:scale-105 transition-transform"
-                        onClick={handleOpenCreate}
-                    >
-                        <Plus size={22} />
-                        Subir Nuevo Oficio
-                    </button>
-                </div>
-            </div>
+            <PageHeader
+                icon={FileText}
+                title="Gestión de Oficios"
+                description="Archivo digital de documentos oficiales enviados y recibidos por la USAER 7607."
+                gradientClass="header-oficios"
+                actions={[{ label: 'Subir Nuevo Oficio', icon: Plus, onClick: handleOpenCreate }]}
+            />
 
-            {/* TABLA */}
+            <FilterCard
+                searchValue={busqueda}
+                onSearchChange={(val) => { setBusqueda(val); setPage(1); }}
+                searchPlaceholder="Buscar por título o descripción..."
+                searchLabel="Buscar Oficio"
+                showHeader={false}
+            />
+
             <div className="card-paper overflow-hidden">
-                <div className="p-4 border-b border-base-200">
-                    <SearchBar 
-                        value={busqueda}
-                        onChange={(val) => { setBusqueda(val); setPage(1); }}
-                        placeholder="Buscar por título o descripción..."
-                    />
-                </div>
                 <div className="overflow-x-auto">
                     <table className="table table-md table-zebra w-full">
                         <thead className="bg-base-200">

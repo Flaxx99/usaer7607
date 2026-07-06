@@ -6,10 +6,11 @@ import type { SubmitHandler } from 'react-hook-form';
 import { alumnoSchema, type AlumnoFormData, CLASIFICACIONES_OPCIONES } from '../../schemas/alumno';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { 
-  Plus, Users, Edit2, Trash2, 
+  Plus, Edit2, Trash2, 
   Save, School as SchoolIcon, Sparkles, Filter,
   CheckCircle, XCircle, Pencil, ClipboardList
 } from 'lucide-react';
+import { PageHeader } from '../../components/PageHeader';
 import { toast } from 'sonner';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { TableSkeleton, ErrorState } from '../../components/Skeletons';
@@ -310,34 +311,13 @@ const ListaAlumnos = () => {
 
   return (
       <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
-        {/* CABECERA */}
-        <div className="header-section header-alumnos">
-          <div className="header-pattern" />
-          <div className="header-circle header-circle-lg" />
-          <div className="header-circle header-circle-sm" />
-          <div className="relative z-10 p-8 flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-6">
-              <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shadow-inner backdrop-blur-sm">
-                <Users size={30} />
-              </div>
-              <div>
-                <h1 className="text-3xl font-black tracking-tight">
-                  Control de Alumnos
-                </h1>
-                <p className="text-sm opacity-90 font-medium">
-                  Lista oficial y expedientes de estudiantes atendidos por la USAER 7607
-                </p>
-              </div>
-            </div>
-            <button 
-              className="btn btn-white btn-lg shadow-md hover:scale-105 transition-transform"
-              onClick={handleOpenCreate}
-            >
-              <Plus size={22} />
-              Nuevo Ingreso Alumno
-            </button>
-          </div>
-        </div>
+        <PageHeader
+          icon={ClipboardList}
+          title="Control de Alumnos"
+          description="Lista oficial y expedientes de estudiantes atendidos por la USAER 7607"
+          gradientClass="header-alumnos"
+          actions={[{ label: 'Nuevo Ingreso Alumno', icon: Plus, onClick: handleOpenCreate }]}
+        />
       
       {/* FILTROS AVANZADOS */}
       <div className="card-paper p-6 space-y-6">
@@ -551,7 +531,7 @@ const ListaAlumnos = () => {
                 {clasificacionActual === 'OTRO' && (
                   <input {...register('clasificacion_otro', { required: "Obligatorio" })} className="input input-bordered" placeholder="Especifique condición..." />
                 )}
-                <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-base-300">
+                <div className="flex items-center gap-3 p-3 bg-base-100 rounded-xl border border-base-300">
                   <input type="checkbox" {...control.register('activo')} className="checkbox checkbox-primary" defaultChecked />
                   <span className="text-sm font-medium">Atención Activa (recibe apoyo actualmente)</span>
                 </div>

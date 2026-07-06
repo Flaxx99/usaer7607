@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Bell, CheckCheck, Loader2, Inbox, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Bell, CheckCheck, Inbox, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { PageHeader } from '../../components/PageHeader';
 import { toast } from 'sonner';
-import { EmptyState, ErrorState } from '../../components/Skeletons';
+import { EmptyState, ErrorState, PageSkeleton } from '../../components/Skeletons';
 import { notificacionesApi } from '../../api/notificaciones';
 
 const ListaNotificaciones = () => {
@@ -32,9 +33,8 @@ const ListaNotificaciones = () => {
 
     if (isLoading) {
         return (
-            <div className="flex flex-col items-center justify-center h-[60vh] text-base-content/50">
-                <Loader2 className="animate-spin w-12 h-12 mb-4" />
-                <p className="text-lg font-medium">Cargando notificaciones...</p>
+            <div className="max-w-7xl mx-auto p-4 md:p-6">
+                <PageSkeleton rows={5} />
             </div>
         );
     }
@@ -53,33 +53,23 @@ const ListaNotificaciones = () => {
     const totalPages = Math.ceil((data?.count || 0) / 10);
 
     return (
-        <div className="max-w-4xl mx-auto p-4 md:p-6 space-y-6">
-            <div className="header-section header-notificaciones">
-                <div className="header-pattern" />
-                <div className="header-circle header-circle-lg" />
-                <div className="header-circle header-circle-sm" />
-                <div className="relative z-10 p-8 flex-row items-center justify-between gap-4">
-                    <div className="flex items-center gap-6">
-                        <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shadow-inner backdrop-blur-sm">
-                            <Bell size={32} />
-                        </div>
-                        <div>
-                            <h1 className="text-3xl font-black tracking-tight">Notificaciones</h1>
-                            <p className="text-sm opacity-90 font-medium">Mantente al tanto de las novedades y avisos.</p>
-                        </div>
-                    </div>
-                    
-                    {notificaciones.length > 0 && (
-                        <button
-                            onClick={() => markAllReadMutation.mutate()}
-                            className="btn btn-white btn-lg shadow-md hover:scale-105 transition-transform gap-2"
-                        >
-                            <CheckCheck size={22} />
-                            Marcar todas como leídas
-                        </button>
-                    )}
-                </div>
-            </div>
+        <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
+            <PageHeader
+                icon={Bell}
+                title="Notificaciones"
+                description="Mantente al tanto de las novedades y avisos."
+                gradientClass="header-notificaciones"
+            >
+                {notificaciones.length > 0 && (
+                    <button
+                        onClick={() => markAllReadMutation.mutate()}
+                        className="btn btn-white btn-lg shadow-md hover:scale-105 transition-transform gap-2"
+                    >
+                        <CheckCheck size={22} />
+                        Marcar todas como leídas
+                    </button>
+                )}
+            </PageHeader>
 
             {notificaciones.length === 0 ? (
                 <EmptyState icon={Inbox} title="No tienes notificaciones nuevas" dashed />

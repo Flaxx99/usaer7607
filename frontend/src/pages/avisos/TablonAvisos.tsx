@@ -7,6 +7,7 @@ import {
     Megaphone, Plus, Calendar, Edit2, Trash2, 
     AlertCircle, Filter, XCircle, Pencil
 } from 'lucide-react';
+import { PageHeader } from '../../components/PageHeader';
 import { toast } from 'sonner';
 import { isAxiosError } from 'axios';
 import { format } from 'date-fns';
@@ -156,35 +157,13 @@ const TablonAvisos = () => {
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
         
-        {/* CABECERA */}
-        <div className="header-section header-avisos">
-            <div className="header-pattern" />
-            <div className="header-circle header-circle-lg" />
-            <div className="header-circle header-circle-sm" />
-            <div className="relative z-10 p-8 flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-6">
-                    <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shadow-inner backdrop-blur-sm">
-                        <Megaphone size={32} />
-                    </div>
-                    <div>
-                        <h1 className="text-3xl font-black tracking-tight">
-                            Tablón de Avisos Oficial
-                        </h1>
-                        <p className="text-sm opacity-90 font-medium">
-                            Comunicados, circulares y anuncios importantes para todo el personal de la USAER 7607.
-                        </p>
-                    </div>
-                </div>
-                
-                <button 
-                    className="btn btn-white btn-lg shadow-md hover:scale-105 transition-transform"
-                    onClick={handleOpenCreate}
-                >
-                    <Plus size={22} />
-                    Publicar Nuevo Aviso
-                </button>
-            </div>
-        </div>
+        <PageHeader
+            icon={Megaphone}
+            title="Tablón de Avisos Oficial"
+            description="Comunicados, circulares y anuncios importantes para todo el personal de la USAER 7607."
+            gradientClass="header-avisos"
+            actions={[{ label: 'Publicar Nuevo Aviso', icon: Plus, onClick: handleOpenCreate }]}
+        />
 
         {/* FILTROS */}
         <div className="card-paper p-6 space-y-6">

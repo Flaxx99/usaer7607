@@ -10,13 +10,20 @@ from unittest.mock import MagicMock, patch
 
 from django.test import TestCase
 
+from services.dto import (
+    RAEDashboardProgress,
+)
+
 from .dashboard_service import (
     DashboardData,
     build_dashboard_data,
+    get_asistencia_trend,
     get_ciclo_actual,
+    get_escuelas_filtro,
     get_graficas,
     get_incidencias_pendientes,
     get_permisos_pendientes,
+    get_rae_progress,
     get_stats,
     get_ultimos_avisos,
 )
@@ -323,3 +330,111 @@ class BuildDashboardDataTest(TestCase):
             "escuelas_filtro",
         }
         self.assertEqual(set(d.keys()), expected_keys)
+
+
+class GetRAEProgressTest(TestCase):
+    """Tests para get_rae_progress() en dashboard_service."""
+
+    @patch("rae.models.RegistroRAE")
+    def test_returns_raedashboardprogress_instance(self, mock_registro):
+        """get_rae_progress() retorna RAEDashboardProgress."""
+        mock_qs = MagicMock()
+        # Chain: filter().select_related().annotate() must return the same mock
+        mock_registro.objects.filter.return_value = mock_qs
+        mock_qs.select_related.return_value = mock_qs
+        mock_qs.annotate.return_value = mock_qs
+        mock_entry = MagicMock()
+        mock_entry.escuela_id = 1
+        mock_entry.escuela.nombre = "Escuela Test"
+        mock_entry.escuela.cct = "CCT123"
+        mock_entry.id = 99
+        mock_entry.total_alumnos = 10
+        mock_entry.completados = 5
+        mock_entry.cerrado = False
+        mock_qs.__iter__.return_value = [mock_entry]
+
+        from services.dto import RAEDashboardProgress
+
+        result = get_rae_progress()
+        self.assertIsInstance(result, RAEDashboardProgress)
+        self.assertGreater(result.total_escuelas, 0)
+        self.assertEqual(len(result.detalle_escuelas), 1)
+        item = result.detalle_escuelas[0]
+        item_dict = item if isinstance(item, dict) else item.model_dump()
+        self.assertIn("escuela_id", item_dict)
+        self.assertIn("escuela_nombre", item_dict)
+        self.assertIn("total_alumnos", item_dict)
+        self.assertIn("completados", item_dict)
+        self.assertIn("porcentaje", item_dict)
+        self.assertIn("cerrado", item_dict)
+
+    @patch("rae.models.RegistroRAE")
+    def test_returns_empty_progress_on_exception(self, mock_registro):
+        """Si hay error, retorna RAEDashboardProgress() vacío."""
+        mock_registro.objects.filter.side_effect = Exception("boom")
+        result = get_rae_progress()
+        self.assertIsInstance(result, RAEDashboardProgress)
+        self.assertEqual(result.total_escuelas, 0)
+
+
+class GetAsistenciaTrendTest(TestCase):
+    """Tests para get_asistencia_trend() en dashboard_service."""
+
+    @patch("asistencias.models.Asistencia")
+    def test_returns_list_of_entries(self, mock_asistencia):
+        """get_asistencia_trend() retorna lista de AsistenciaTrendEntry con 7 días."""
+        # mock objects.filter().count() and .filter().filter().count()
+        mock_qs = MagicMock()
+        mock_qs.count.return_value = 3  # total
+        mock_qs2 = MagicMock()
+        mock_qs2.count.return_value = 2  # presentes
+        mock_asistencia.objects.filter.side_effect = lambda **kw: (
+            mock_qs if "presente" not in kw else mock_qs2
+        )
+
+        result = get_asistencia_trend()
+        self.assertIsInstance(result, list)
+        self.assertEqual(len(result), 7)
+        entry = result[0]
+        # AsistenciaTrendEntry is a BaseModel — convert to dict or check attrs
+        entry_dict = entry if isinstance(entry, dict) else entry.model_dump()
+        self.assertIn("fecha", entry_dict)
+        self.assertIn("total", entry_dict)
+        self.assertIn("presentes", entry_dict)
+        self.assertIn("porcentaje", entry_dict)
+
+    @patch("asistencias.models.Asistencia")
+    def test_returns_empty_on_exception(self, mock_asistencia):
+        """Si hay error, retorna lista vacía."""
+        mock_asistencia.objects.filter.side_effect = Exception("boom")
+        result = get_asistencia_trend()
+        self.assertEqual(result, [])
+
+
+class GetEscuelasFiltroTest(TestCase):
+    """Tests para get_escuelas_filtro() en dashboard_service."""
+
+    @patch("escuelas.models.Escuela")
+    def test_returns_list_of_options(self, mock_escuela):
+        """get_escuelas_filtro() retorna lista de EscuelaFilterOption."""
+        mock_qs = MagicMock()
+        mock_escuela.objects.all.return_value = mock_qs
+        mock_entry = MagicMock()
+        mock_entry.id = 1
+        mock_entry.nombre = "Escuela Test"
+        mock_qs.__iter__.return_value = [mock_entry]
+
+        result = get_escuelas_filtro()
+        self.assertIsInstance(result, list)
+        if len(result) > 0:
+            item = result[0]
+            item_dict = item if isinstance(item, dict) else item.model_dump()
+            self.assertIn("id", item_dict)
+            self.assertIn("nombre", item_dict)
+
+    @patch("escuelas.models.Escuela")
+    def test_returns_empty_on_exception(self, mock_escuela):
+        """Si hay error, retorna lista vacía."""
+        mock_escuela.objects.all.side_effect = Exception("boom")
+        result = get_escuelas_filtro()
+        self.assertEqual(result, [])

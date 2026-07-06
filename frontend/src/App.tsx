@@ -13,7 +13,7 @@ const ListaAlumnos = lazy(() => import('./pages/alumnos/ListaAlumnos'));
 const ListaDocumentos = lazy(() => import('./pages/documentos/ListaDocumentos'));
 const ListaUsuarios = lazy(() => import('./pages/usuarios/ListaUsuarios'));
 const ListaCiclos = lazy(() => import('./pages/ciclos/ListaCiclos'));
-const TablonAvisos = lazy(() => import('./pages/avisos/TablaAvisos'));
+const TablonAvisos = lazy(() => import('./pages/avisos/TablonAvisos'));
 const GestionPermisos = lazy(() => import('./pages/permisos/GestionPermisos'));
 const Kiosco = lazy(() => import('./pages/asistencia/Kiosco'));
 const HistorialAsistencia = lazy(() => import('./pages/asistencia/HistorialAsistencia'));

@@ -6,8 +6,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { createPermisoSchema, type CreatePermisoFormData, TIPOS_PERMISO, STATE_COLORS } from '../../schemas/permiso';
 import { 
   FileText, Plus, CheckCircle, XCircle, Clock, 
-  Search, Settings, Eye, Trash2
+  Settings, Eye, Trash2
 } from 'lucide-react';
+import { PageHeader } from '../../components/PageHeader';
+import { FilterCard } from '../../components/FilterCard';
 import { toast } from 'sonner';
 import { isAxiosError } from 'axios';
 import { format } from 'date-fns';
@@ -17,8 +19,6 @@ import { TableSkeleton, ErrorState } from '../../components/Skeletons';
 import { DataTable } from '../../components/DataTable';
 import Modal from '../../components/Modal';
 import { LoadingButton } from '../../components/LoadingButton';
-import { SearchBar } from '../../components/SearchBar';
-import { FilterTabs } from '../../components/FilterTabs';
 import { useConfirmDialog } from '../../components/useConfirmDialog';
 import type { ColumnDef } from '@tanstack/react-table';
 import { getPermisos, getMetricasPermisos, createPermiso, responderPermiso, deletePermiso } from '../../api/permisos';
@@ -283,35 +283,21 @@ const GestionPermisos = () => {
           </div>
         );
     }
+
+    const headerDescription = isAdminOrDirector
+        ? 'Panel de control para la revisión, autorización y rechazo de licencias del personal.'
+        : 'Solicita licencias por asuntos personales, enfermedad o comisiones.';
     
     return (
         <>
             <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
-            {/* CABECERA HERO */}
-            <div className="header-section header-permisos">
-                <div className="header-pattern" />
-                <div className="header-circle header-circle-lg" />
-                <div className="header-circle header-circle-sm" />
-                <div className="relative z-10 p-8 flex-row items-center justify-between gap-4">
-                    <div className="flex items-center gap-6">
-                        <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shadow-inner backdrop-blur-sm">
-                            <FileText size={32} />
-                        </div>
-                        <div>
-                            <h1 className="text-3xl font-black tracking-tight">Trámites de Permisos del Personal</h1>
-                            <p className="text-sm opacity-90 font-medium">
-                                {isAdminOrDirector 
-                                    ? 'Panel de control para la revisión, autorización y rechazo de licencias del personal.' 
-                                    : 'Solicita licencias por asuntos personales, enfermedad o comisiones.'}
-                            </p>
-                        </div>
-                    </div>
-                    <button className="btn btn-white btn-lg shadow-md hover:scale-105 transition-transform" onClick={() => { reset(); setIsCreateModalOpen(true); }}>
-                        <Plus size={22} />
-                        Solicitar Nuevo Permiso
-                    </button>
-                </div>
-            </div>
+            <PageHeader
+                icon={FileText}
+                title="Trámites de Permisos del Personal"
+                description={headerDescription}
+                gradientClass="header-permisos"
+                actions={[{ label: 'Solicitar Nuevo Permiso', icon: Plus, onClick: () => { reset(); setIsCreateModalOpen(true); } }]}
+            />
 
             {/* MÉTRICAS (solo admin) */}
             {isAdminOrDirector && metricas && (
@@ -355,33 +341,22 @@ const GestionPermisos = () => {
                 </div>
             )}
 
-            {/* FILTROS */}
-            <div className="card-paper p-6 space-y-6">
-                <div className="flex items-center gap-2 text-base-content/60">
-                    <Search size={16} className="text-primary" />
-                    <span className="text-xs font-bold uppercase tracking-widest">Filtros Avanzados</span>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="form-control w-full">
-                        <label className="label" htmlFor="buscar_solicitud"><span className="label-text font-bold">Buscar Solicitud</span></label>
-                        <SearchBar value={busqueda} onChange={setBusqueda} placeholder="Nombre del docente o motivo..." />
-                    </div>
-                    <div className="form-control w-full">
-                        <label className="label"><span className="label-text font-bold">Estado de la Solicitud</span></label>
-                        <FilterTabs
-                            tabs={[
-                                { value: 'TODOS', label: 'Todos' },
-                                { value: 'PENDIENTE', label: 'Espera' },
-                                { value: 'APROBADO', label: 'Aprob.' },
-                                { value: 'RECHAZADO', label: 'Rechaz.' },
-                            ]}
-                            value={filtroEstado}
-                            onChange={setFiltroEstado}
-                            color="primary"
-                        />
-                    </div>
-                </div>
-            </div>
+            <FilterCard
+                searchValue={busqueda}
+                onSearchChange={setBusqueda}
+                searchPlaceholder="Nombre del docente o motivo..."
+                searchLabel="Buscar Solicitud"
+                filterValue={filtroEstado}
+                onFilterChange={setFiltroEstado}
+                filterTabs={[
+                    { value: 'TODOS', label: 'Todos' },
+                    { value: 'PENDIENTE', label: 'Espera' },
+                    { value: 'APROBADO', label: 'Aprob.' },
+                    { value: 'RECHAZADO', label: 'Rechaz.' },
+                ]}
+                filterLabel="Estado de la Solicitud"
+                filterColor="primary"
+            />
 
             {/* DATATABLE */}
             <DataTable 

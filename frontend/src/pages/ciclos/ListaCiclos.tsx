@@ -8,6 +8,7 @@ import {
     Plus, Calendar, Edit2, Trash2, CheckCircle, AlertTriangle, Layers, ArrowRightCircle,
     GraduationCap, TrendingUp, Save, XCircle, Pencil
 } from 'lucide-react';
+import { PageHeader } from '../../components/PageHeader';
 import { toast } from 'sonner';
 import { isAxiosError } from 'axios';
 import { 
@@ -237,43 +238,16 @@ const ListaCiclos = () => {
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
         
-        <div className="header-section header-calendario">
-            <div className="header-pattern" />
-            <div className="header-circle header-circle-lg" />
-            <div className="header-circle header-circle-sm" />
-            <div className="relative z-10 p-8 flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-6">
-                    <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shadow-inner backdrop-blur-sm">
-                        <Layers size={30} />
-                    </div>
-                    <div>
-                        <h1 className="text-3xl font-black tracking-tight">
-                            Ciclos Escolares
-                        </h1>
-                        <p className="text-sm opacity-90 font-medium">
-                            Define los periodos de trabajo y gestiona el ciclo vigente.
-                        </p>
-                    </div>
-                </div>
-                
-                <div className="flex gap-3">
-                    <button 
-                        className="btn btn-ghost bg-white/10 hover:bg-white/20 border-white/20 text-white"
-                        onClick={() => setIsPromocionOpen(true)}
-                    >
-                        <TrendingUp size={20} />
-                        Promoción de Grado
-                    </button>
-                    <button 
-                        className="btn btn-white btn-lg shadow-md hover:scale-105 transition-transform"
-                        onClick={handleOpenCreate}
-                    >
-                        <Plus size={22} />
-                        Nuevo Ciclo
-                    </button>
-                </div>
-            </div>
-        </div>
+        <PageHeader
+            icon={Layers}
+            title="Ciclos Escolares"
+            description="Define los periodos de trabajo y gestiona el ciclo vigente."
+            gradientClass="header-calendario"
+            actions={[
+                { label: 'Promoción de Grado', icon: TrendingUp, onClick: () => setIsPromocionOpen(true), variant: 'ghost', className: 'bg-white/10 hover:bg-white/20 border-white/20 text-white' },
+                { label: 'Nuevo Ciclo', icon: Plus, onClick: handleOpenCreate },
+            ]}
+        />
         
         <DataTable 
             data={ciclos} 
@@ -379,15 +353,15 @@ const ListaCiclos = () => {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="card bg-blue-50 p-6 text-center border border-blue-200">
-                            <div className="flex justify-center mb-2 text-blue-600"><TrendingUp size={32} /></div>
-                            <h4 className="text-3xl font-black text-blue-800">{previewData?.a_promover_count}</h4>
-                            <p className="text-xs font-bold uppercase text-blue-600">Promovidos</p>
+                        <div className="card bg-primary/10 p-6 text-center border border-primary/20">
+                            <div className="flex justify-center mb-2 text-primary"><TrendingUp size={32} /></div>
+                            <h4 className="text-3xl font-black text-primary">{previewData?.a_promover_count}</h4>
+                            <p className="text-xs font-bold uppercase text-primary">Promovidos</p>
                         </div>
-                        <div className="card bg-green-50 p-6 text-center border border-green-200">
-                            <div className="flex justify-center mb-2 text-green-600"><GraduationCap size={32} /></div>
-                            <h4 className="text-3xl font-black text-green-800">{previewData?.a_graduar_count}</h4>
-                            <p className="text-xs font-bold uppercase text-green-600">Graduados</p>
+                        <div className="card bg-success/10 p-6 text-center border border-success/20">
+                            <div className="flex justify-center mb-2 text-success"><GraduationCap size={32} /></div>
+                            <h4 className="text-3xl font-black text-success">{previewData?.a_graduar_count}</h4>
+                            <p className="text-xs font-bold uppercase text-success">Graduados</p>
                         </div>
                         <div className="card bg-base-200 p-6 text-center border border-base-300">
                             <div className="flex justify-center mb-2 text-base-content/40"><CheckCircle size={32} /></div>

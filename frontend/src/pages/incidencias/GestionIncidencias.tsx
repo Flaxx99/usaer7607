@@ -7,14 +7,14 @@ import {
     AlertTriangle, CheckCircle, Plus, Search, 
     MessageSquare, FileText, Settings, XCircle, Folder, Clock
 } from 'lucide-react';
+import { PageHeader } from '../../components/PageHeader';
+import { FilterCard } from '../../components/FilterCard';
 import { toast } from 'sonner';
 import { isAxiosError } from 'axios';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { TableSkeleton, EmptyState, ErrorState } from '../../components/Skeletons';
 import Modal from '../../components/Modal';
 import { LoadingButton } from '../../components/LoadingButton';
-import { SearchBar } from '../../components/SearchBar';
-import { FilterTabs } from '../../components/FilterTabs';
 import { getIncidencias, createIncidencia, resolverIncidencia, getMaestrosParaSelect } from '../../api/incidencias';
 import type { Incidencia } from '../../interfaces/incidencia';
 
@@ -109,48 +109,30 @@ const GestionIncidencias = () => {
     
     return (
         <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
-            <div className="header-section header-incidencias">
-                <div className="header-pattern" />
-                <div className="header-circle header-circle-lg" />
-                <div className="header-circle header-circle-sm" />
-                <div className="relative z-10 p-8 flex-row items-center justify-between gap-4">
-                    <div className="flex items-center gap-6">
-                        <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shadow-inner backdrop-blur-sm">
-                            <AlertTriangle size={32} />
-                        </div>
-                        <div>
-                            <h1 className="text-3xl font-black tracking-tight">Bitácora de Incidencias</h1>
-                            <p className="text-sm opacity-90 font-medium">Registro oficial de situaciones escolares, accidentes o faltas de conducta.</p>
-                        </div>
-                    </div>
-                    <button className="btn btn-white btn-lg shadow-md hover:scale-105 transition-transform" onClick={() => setIsCreateOpen(true)}>
-                        <Plus size={22} />
-                        Reportar Incidencia
-                    </button>
-                </div>
-            </div>
+            <PageHeader
+                icon={AlertTriangle}
+                title="Bitácora de Incidencias"
+                description="Registro oficial de situaciones escolares, accidentes o faltas de conducta."
+                gradientClass="header-incidencias"
+                actions={[{ label: 'Reportar Incidencia', icon: Plus, onClick: () => setIsCreateOpen(true) }]}
+            />
 
-            <div className="card-paper p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="form-control w-full">
-                        <label className="label"><span className="label-text font-bold">Estado del Reporte</span></label>
-                        <FilterTabs
-                            tabs={[
-                                { value: 'TODOS', label: 'Todos', icon: Folder },
-                                { value: 'PENDIENTE', label: 'Pendientes', icon: Clock },
-                                { value: 'RESUELTA', label: 'Resueltas', icon: CheckCircle },
-                            ]}
-                            value={filtroEstado}
-                            onChange={setFiltroEstado}
-                            color="warning"
-                        />
-                    </div>
-                    <div className="form-control w-full">
-                        <label className="label" htmlFor="buscar_bitacora"><span className="label-text font-bold">Buscar en la Bitácora</span></label>
-                        <SearchBar value={busqueda} onChange={setBusqueda} placeholder="Buscar por título, persona o descripción..." />
-                    </div>
-                </div>
-            </div>
+            <FilterCard
+                searchValue={busqueda}
+                onSearchChange={setBusqueda}
+                searchPlaceholder="Buscar por título, persona o descripción..."
+                searchLabel="Buscar en la Bitácora"
+                filterValue={filtroEstado}
+                onFilterChange={setFiltroEstado}
+                filterTabs={[
+                    { value: 'TODOS', label: 'Todos', icon: Folder },
+                    { value: 'PENDIENTE', label: 'Pendientes', icon: Clock },
+                    { value: 'RESUELTA', label: 'Resueltas', icon: CheckCircle },
+                ]}
+                filterLabel="Estado del Reporte"
+                filterColor="warning"
+                showHeader={false}
+            />
 
             <div className="flex flex-col gap-4">
                 {incidenciasFiltradas?.map((inc) => (

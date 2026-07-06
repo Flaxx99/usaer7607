@@ -422,3 +422,294 @@ class RAEExportTest(APITestCase):
         # Check API response for basic content
         data = response.json()
         self.assertIn("count", data)
+
+
+class RAEProgressViewTest(APITestCase):
+    """Tests for RAEProgressView — GET /api/rae/progreso/"""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.ciclo = CicloEscolar.objects.create(
+            nombre=f"{date.today().year}-{date.today().year + 1}",
+            fecha_inicio=date.today() - timedelta(days=1),
+            fecha_fin=date.today() + timedelta(days=365),
+            activo=True,
+        )
+        self.escuela = Escuela.objects.create(
+            clave_estatal="E10",
+            cct="CCT10",
+            nombre="Escuela Progreso",
+            nivel="Primaria",
+            domicilio="Dir",
+            colonia="Col",
+            zona="Z10",
+        )
+        self.maestro = User.objects.create_user(
+            email="maestro_progreso@example.com",
+            numero_empleado="EMP010",
+            password="pass",
+            escuela=self.escuela,
+            role="MAESTRO_APOYO",
+        )
+        self.admin = User.objects.create_superuser(
+            email="admin_progreso@example.com",
+            numero_empleado="ADM010",
+            password="pass",
+            escuela=self.escuela,
+        )
+        self.alumno1 = Alumno.objects.create(
+            profesor=self.maestro,
+            escuela=self.escuela,
+            apellido_paterno="Lopez",
+            apellido_materno="Martinez",
+            nombres="Carlos",
+            curp="LOPMC123456HOMBXX",
+            sexo="H",
+            edad=8,
+            grado="3",
+            clasificacion="DISCAPACIDAD",
+        )
+        self.alumno2 = Alumno.objects.create(
+            profesor=self.maestro,
+            escuela=self.escuela,
+            apellido_paterno="Garcia",
+            apellido_materno="Lopez",
+            nombres="Ana",
+            curp="GALOA123456MOMBXX",
+            sexo="M",
+            edad=7,
+            grado="2",
+            clasificacion="DISCAPACIDAD",
+        )
+        self.registro = RegistroRAE.objects.create(
+            escuela=self.escuela,
+            ciclo_escolar=self.ciclo,
+            creado_por=self.maestro,
+            docente_hombres=1,
+            docente_mujeres=1,
+        )
+        RAEAlumno.objects.create(
+            registro=self.registro,
+            alumno=self.alumno1,
+            capturado_por=self.maestro,
+            ceg=True,
+            dm=False,
+        )
+        RAEAlumno.objects.create(
+            registro=self.registro,
+            alumno=self.alumno2,
+            capturado_por=self.maestro,
+            ceg=False,
+            dm=True,
+        )
+
+    def test_progreso_returns_200_for_teacher(self):
+        """Maestro autenticado puede ver progreso."""
+        self.client.force_authenticate(self.maestro)
+        response = self.client.get(reverse("rae:rae_progreso"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_progreso_returns_correct_structure(self):
+        """La respuesta tiene escuela_id, escuela_nombre, total_alumnos, completados, porcentaje, cerrado."""
+        self.client.force_authenticate(self.maestro)
+        response = self.client.get(reverse("rae:rae_progreso"))
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIsInstance(data, list)
+        self.assertGreater(len(data), 0)
+        entry = data[0]
+        self.assertIn("escuela_id", entry)
+        self.assertIn("escuela_nombre", entry)
+        self.assertIn("total_alumnos", entry)
+        self.assertIn("completados", entry)
+        self.assertIn("porcentaje", entry)
+        self.assertIn("cerrado", entry)
+
+    def test_progreso_admin_sees_all_schools(self):
+        """Admin ve progreso de todas las escuelas."""
+        self.client.force_authenticate(self.admin)
+        response = self.client.get(reverse("rae:rae_progreso"))
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        # Al menos la escuela que creamos
+        escuelas = [e["escuela_id"] for e in data]
+        self.assertIn(self.escuela.pk, escuelas)
+
+    def test_progreso_includes_porcentaje(self):
+        """El porcentaje se calcula como completados/total_alumnos * 100."""
+        self.client.force_authenticate(self.maestro)
+        response = self.client.get(reverse("rae:rae_progreso"))
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        for entry in data:
+            if entry["total_alumnos"] > 0:
+                expected_pct = round(entry["completados"] / entry["total_alumnos"] * 100)
+                self.assertEqual(entry["porcentaje"], expected_pct)
+
+
+class RAECerrarViewTest(APITestCase):
+    """Tests for RAECerrarView — POST /api/rae/cerrar/<pk>/"""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.ciclo = CicloEscolar.objects.create(
+            nombre=f"{date.today().year}-{date.today().year + 1}",
+            fecha_inicio=date.today() - timedelta(days=1),
+            fecha_fin=date.today() + timedelta(days=365),
+            activo=True,
+        )
+        self.escuela = Escuela.objects.create(
+            clave_estatal="E11",
+            cct="CCT11",
+            nombre="Escuela Cerrar",
+            nivel="Primaria",
+            domicilio="Dir",
+            colonia="Col",
+            zona="Z11",
+        )
+        self.maestro = User.objects.create_user(
+            email="maestro_cerrar@example.com",
+            numero_empleado="EMP011",
+            password="pass",
+            escuela=self.escuela,
+            role="MAESTRO_APOYO",
+        )
+        self.admin = User.objects.create_superuser(
+            email="admin_cerrar@example.com",
+            numero_empleado="ADM011",
+            password="pass",
+            escuela=self.escuela,
+        )
+        self.registro = RegistroRAE.objects.create(
+            escuela=self.escuela,
+            ciclo_escolar=self.ciclo,
+            creado_por=self.maestro,
+            docente_hombres=1,
+            docente_mujeres=1,
+            cerrado=False,
+        )
+
+    def test_cerrar_requires_admin(self):
+        """Maestro sin permisos recibe 403."""
+        otra_escuela = Escuela.objects.create(
+            clave_estatal="E99",
+            cct="CCT99",
+            nombre="Otra Escuela",
+            nivel="Primaria",
+            domicilio="Dir",
+            colonia="Col",
+            zona="Z99",
+        )
+        otro_maestro = User.objects.create_user(
+            email="otro_maestro@example.com",
+            numero_empleado="EMP099",
+            password="pass",
+            escuela=otra_escuela,
+            role="MAESTRO_APOYO",
+        )
+        self.client.force_authenticate(otro_maestro)
+        response = self.client.post(
+            reverse("rae:rae_cerrar", args=[self.registro.pk]),
+            data={"cerrado": True},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_cerrar_toggle_cerrado_true(self):
+        """Admin marca el registro como cerrado."""
+        self.client.force_authenticate(self.admin)
+        response = self.client.post(
+            reverse("rae:rae_cerrar", args=[self.registro.pk]),
+            data={"cerrado": True},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.registro.refresh_from_db()
+        self.assertTrue(self.registro.cerrado)
+
+    def test_cerrar_toggle_cerrado_false(self):
+        """Admin reabre un registro cerrado."""
+        # Primero cerrar
+        self.registro.cerrado = True
+        self.registro.save()
+
+        self.client.force_authenticate(self.admin)
+        response = self.client.post(
+            reverse("rae:rae_cerrar", args=[self.registro.pk]),
+            data={"cerrado": False},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.registro.refresh_from_db()
+        self.assertFalse(self.registro.cerrado)
+
+    def test_cerrar_response_has_cerrado_key(self):
+        """La respuesta incluye detail, registro_id y cerrado."""
+        self.client.force_authenticate(self.admin)
+        response = self.client.post(
+            reverse("rae:rae_cerrar", args=[self.registro.pk]),
+            data={"cerrado": True},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn("detail", data)
+        self.assertIn("registro_id", data)
+        self.assertIn("cerrado", data)
+        self.assertTrue(data["cerrado"])
+
+
+class ExportAllRAEEnhancedTest(APITestCase):
+    """Tests adicionales para ExportAllRAEView."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.ciclo = CicloEscolar.objects.create(
+            nombre=f"{date.today().year}-{date.today().year + 1}",
+            fecha_inicio=date.today() - timedelta(days=1),
+            fecha_fin=date.today() + timedelta(days=365),
+            activo=True,
+        )
+        self.escuela = Escuela.objects.create(
+            clave_estatal="E12",
+            cct="CCT12",
+            nombre="Escuela Export",
+            nivel="Primaria",
+            domicilio="Dir",
+            colonia="Col",
+            zona="Z12",
+        )
+        self.admin = User.objects.create_superuser(
+            email="admin_export_all@example.com",
+            numero_empleado="ADM012",
+            password="pass",
+            escuela=self.escuela,
+        )
+        self.registro = RegistroRAE.objects.create(
+            escuela=self.escuela,
+            ciclo_escolar=self.ciclo,
+            creado_por=self.admin,
+            docente_hombres=1,
+            docente_mujeres=1,
+        )
+
+    def test_export_all_excel_content_type(self):
+        """Admin recibe content_type Excel."""
+        self.client.force_authenticate(self.admin)
+        response = self.client.get(reverse("rae:exportar_todo_rae_excel"), HTTP_IS_TEST="True")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            response.get("Content-Type", ""),
+            [
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "application/octet-stream",
+            ],
+        )
+
+    def test_export_all_excel_filename(self):
+        """Header Content-Disposition incluye nombre de archivo .xlsx."""
+        self.client.force_authenticate(self.admin)
+        response = self.client.get(reverse("rae:exportar_todo_rae_excel"), HTTP_IS_TEST="True")
+        self.assertEqual(response.status_code, 200)
+        disposition = response.get("Content-Disposition", "")
+        self.assertIn(".xlsx", disposition)

@@ -95,8 +95,8 @@ const RAEValidationPanel = () => {
     return (
         <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
             {/* Page header card */}
-            <div className="card bg-base-100 border border-base-300 shadow-sm">
-                <div className="card-body p-5 md:p-6">
+            <div className="card-paper">
+                <div className="p-5 md:p-6">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <div className="flex items-start gap-3">
                             <button 
@@ -148,8 +148,8 @@ const RAEValidationPanel = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
                 {categories.map(cat => (
-                    <div key={cat.label} className="card bg-base-100 shadow-sm border border-base-300">
-                        <div className="card-body p-5 space-y-4">
+                    <div key={cat.label} className="card-paper">
+                        <div className="p-5 space-y-4">
                             <h3 className="text-sm font-black uppercase tracking-widest text-primary border-b pb-2">
                                 {cat.label}
                             </h3>
@@ -176,7 +176,7 @@ const RAEValidationPanel = () => {
             </div>
 
             {selectedTotal && (
-                <div className="card bg-base-100 shadow-xl border-2 border-primary p-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                <div className="card-paper border-2 border-primary p-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
                     <div className="flex justify-between items-center mb-6">
                         <div className="flex items-center gap-3">
                             <div className="p-2 bg-primary text-white rounded-lg">

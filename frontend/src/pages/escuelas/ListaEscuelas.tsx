@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { escuelaSchema, type EscuelaFormData, NIVELES_OPCIONES } from '../../schemas/escuela';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Plus, School, Edit2, Trash2, Save, XCircle, Pencil } from 'lucide-react';
+import { PageHeader } from '../../components/PageHeader';
 import { toast } from 'sonner';
 import { isAxiosError } from 'axios';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
@@ -191,26 +192,13 @@ const ListaEscuelas = () => {
 
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
-        <div className="header-section header-escuelas">
-            <div className="header-pattern" />
-            <div className="header-circle header-circle-lg" />
-            <div className="header-circle header-circle-sm" />
-            <div className="relative z-10 p-8 flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-6">
-                    <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shadow-inner backdrop-blur-sm">
-                        <School size={32} />
-                    </div>
-                    <div>
-                        <h1 className="text-3xl font-black tracking-tight">Directorio de Escuelas</h1>
-                        <p className="text-sm opacity-90 font-medium">Administra los centros de trabajo vinculados a la USAER 7607.</p>
-                    </div>
-                </div>
-                <button className="btn btn-white btn-lg shadow-md hover:scale-105 transition-transform" onClick={handleOpenCreate}>
-                    <Plus size={22} />
-                    Registrar Nueva Escuela
-                </button>
-            </div>
-        </div>
+        <PageHeader
+            icon={School}
+            title="Directorio de Escuelas"
+            description="Administra los centros de trabajo vinculados a la USAER 7607."
+            gradientClass="header-escuelas"
+            actions={[{ label: 'Registrar Nueva Escuela', icon: Plus, onClick: handleOpenCreate }]}
+        />
         
         <DataTable 
             data={escuelas} 

@@ -244,9 +244,9 @@ const RAECaptureGrid = () => {
                             ) : (filteredAlumnos.map((alum: RAEAlumno) => {
                                 const isDirty = dirtyRows.has(alum.id);
                                 return (
-                                    <tr key={alum.id} className={isDirty ? 'bg-yellow-50/50' : ''}>
-                                        <td className={`sticky left-0 z-10 border-r font-bold text-sm transition-colors ${isDirty ? 'bg-yellow-100' : 'bg-base-100'} flex items-center gap-2`}>
-                                            {isDirty && <span className="w-2 h-2 rounded-full bg-yellow-600" title="Cambios pendientes" aria-hidden="true" />}
+                                    <tr key={alum.id} className={isDirty ? 'bg-warning/5' : ''}>
+                                        <td className={`sticky left-0 z-10 border-r font-bold text-sm transition-colors ${isDirty ? 'bg-warning/10' : 'bg-base-100'} flex items-center gap-2`}>
+                                            {isDirty && <span className="w-2 h-2 rounded-full bg-warning" title="Cambios pendientes" aria-hidden="true" />}
                                             {alum.alumno_nombre}
                                         </td>
                                         {Object.values(RAE_COLUMNS).flatMap(cat => 

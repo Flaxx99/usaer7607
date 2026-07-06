@@ -3,6 +3,7 @@ import {
   FileText, Edit2, Plus, Download, FileSpreadsheet,
   CheckCircle, XCircle
 } from 'lucide-react';
+import { PageHeader } from '../../components/PageHeader';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -153,55 +154,38 @@ const RACList = () => {
     return (
         <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
             
-            {/* CABECERA */}
-            <div className="header-section header-documentos">
-                <div className="header-pattern" />
-                <div className="header-circle header-circle-lg" />
-                <div className="header-circle header-circle-sm" />
-                <div className="relative z-10 p-8 flex-row items-center justify-between gap-4">
-                    <div className="flex items-center gap-6">
-                        <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shadow-inner backdrop-blur-sm">
-                            <FileText size={32} />
-                        </div>
-                        <div>
-                            <h1 className="text-3xl font-black tracking-tight">
-                                Registros RAC
-                            </h1>
-                            <p className="text-sm opacity-90 font-medium">
-                                Registro de Alumnos con Discapacidad o Aptitudes Sobresalientes.
-                            </p>
-                        </div>
-                    </div>
-                    
-                    <div className="flex gap-3">
-                        <LoadingButton
-                            className="btn btn-ghost bg-white/10 hover:bg-white/20 border-white/20 text-white"
-                            icon={FileSpreadsheet}
-                            loading={exporting === 'mine'}
-                            onClick={handleGenerateRAC}
-                        >
-                            Generar RAC
-                        </LoadingButton>
-                        {isAdmin && (
-                            <LoadingButton
-                                className="btn btn-ghost bg-white/10 hover:bg-white/20 border-white/20 text-white"
-                                icon={Download}
-                                loading={exporting === 'all'}
-                                onClick={handleExportAll}
-                            >
-                                Exportar Todo
-                            </LoadingButton>
-                        )}
-                        <button 
-                            className="btn btn-white btn-lg shadow-md hover:scale-105 transition-transform"
-                            onClick={() => navigate('/rac/nuevo')}
-                        >
-                            <Plus size={22} />
-                            Nuevo Registro
-                        </button>
-                    </div>
-                </div>
-            </div>
+            <PageHeader
+                icon={FileText}
+                title="Registros RAC"
+                description="Registro de Alumnos con Discapacidad o Aptitudes Sobresalientes."
+                gradientClass="header-documentos"
+            >
+                <LoadingButton
+                    className="btn btn-ghost bg-white/10 hover:bg-white/20 border-white/20 text-white"
+                    icon={FileSpreadsheet}
+                    loading={exporting === 'mine'}
+                    onClick={handleGenerateRAC}
+                >
+                    Generar RAC
+                </LoadingButton>
+                {isAdmin && (
+                    <LoadingButton
+                        className="btn btn-ghost bg-white/10 hover:bg-white/20 border-white/20 text-white"
+                        icon={Download}
+                        loading={exporting === 'all'}
+                        onClick={handleExportAll}
+                    >
+                        Exportar Todo
+                    </LoadingButton>
+                )}
+                <button 
+                    className="btn btn-white btn-lg shadow-md hover:scale-105 transition-transform"
+                    onClick={() => navigate('/rac/nuevo')}
+                >
+                    <Plus size={22} />
+                    Nuevo Registro
+                </button>
+            </PageHeader>
 
             <DataTable 
                 data={filteredRecords} 

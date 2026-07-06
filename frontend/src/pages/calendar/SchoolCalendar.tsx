@@ -232,7 +232,7 @@ const SchoolCalendar = () => {
             {viewMode === 'list' && (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* COLUMNA 1: URGENTES */}
-                    <div className="card bg-base-100 shadow-sm border border-base-300 border-t-4 border-t-error">
+                    <div className="card-paper border-t-4 border-t-error">
                         <div className="card-body p-6">
                             <div className="flex items-center gap-2 mb-4">
                                 <AlertCircle className="text-error" size={20} />
@@ -262,7 +262,7 @@ const SchoolCalendar = () => {
                     </div>
 
                     {/* COLUMNA 2 & 3: CRONOGRAMA */}
-                    <div className="lg:col-span-2 card bg-base-100 shadow-sm border border-base-300 border-t-4 border-t-primary">
+                    <div className="lg:col-span-2 card-paper border-t-4 border-t-primary">
                         <div className="card-body p-6">
                             <div className="flex items-center gap-2 mb-4">
                                 <Clock className="text-primary" size={20} />

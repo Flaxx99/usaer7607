@@ -202,8 +202,8 @@ const RAERecordsList = () => {
             {/* PROGRESS OVERVIEW */}
             {progressData && progressData.length > 0 && (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="card bg-base-100 shadow-sm border border-base-300">
-                        <div className="card-body p-4 flex flex-row items-center gap-3">
+                    <div className="card-paper">
+                        <div className="p-4 flex flex-row items-center gap-3">
                             <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
                                 <BarChart3 size={20} className="text-primary" />
                             </div>
@@ -213,8 +213,8 @@ const RAERecordsList = () => {
                             </div>
                         </div>
                     </div>
-                    <div className="card bg-base-100 shadow-sm border border-base-300">
-                        <div className="card-body p-4 flex flex-row items-center gap-3">
+                    <div className="card-paper">
+                        <div className="p-4 flex flex-row items-center gap-3">
                             <div className="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center">
                                 <CheckCircle size={20} className="text-success" />
                             </div>
@@ -224,8 +224,8 @@ const RAERecordsList = () => {
                             </div>
                         </div>
                     </div>
-                    <div className="card bg-base-100 shadow-sm border border-base-300">
-                        <div className="card-body p-4 flex flex-row items-center gap-3">
+                    <div className="card-paper">
+                        <div className="p-4 flex flex-row items-center gap-3">
                             <div className="w-10 h-10 rounded-xl bg-warning/10 flex items-center justify-center">
                                 <Lock size={20} className="text-warning" />
                             </div>
@@ -235,8 +235,8 @@ const RAERecordsList = () => {
                             </div>
                         </div>
                     </div>
-                    <div className="card bg-base-100 shadow-sm border border-base-300">
-                        <div className="card-body p-4 flex flex-row items-center gap-3">
+                    <div className="card-paper">
+                        <div className="p-4 flex flex-row items-center gap-3">
                             <div className="w-10 h-10 rounded-xl bg-info/10 flex items-center justify-center">
                                 <School size={20} className="text-info" />
                             </div>

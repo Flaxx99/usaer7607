@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Clock, Calendar, MapPin, BarChart3, Timer, CheckCircle, Play } from 'lucide-react';
+import { PageHeader } from '../../components/PageHeader';
 import { getHistorialAsistencia } from '../../api/asistencia';
 import { TableSkeleton, EmptyState, ErrorState } from '../../components/Skeletons';
 import type { Asistencia } from '../../interfaces/asistencia';
@@ -39,40 +40,25 @@ const HistorialAsistencia = () => {
     return (
         <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
             
-            {/* CABECERA CON GRADIENTE */}
-            <div className="header-section header-asistencias">
-                <div className="header-pattern" />
-                <div className="header-circle header-circle-lg" />
-                <div className="header-circle header-circle-sm" />
-                <div className="relative z-10 p-8 flex-row items-center justify-between gap-4 flex-wrap">
-                    <div className="flex items-center gap-6">
-                        <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shadow-inner backdrop-blur-sm">
-                            <Clock size={32} />
-                        </div>
-                        <div>
-                            <h1 className="text-3xl font-black tracking-tight">
-                                Historial de Asistencia
-                            </h1>
-                            <p className="text-sm opacity-90 font-medium">
-                                Consulta tus registros de entrada y salida.
-                            </p>
-                        </div>
-                    </div>
-                    
-                    {/* Filtro Fecha */}
-                    <div className="flex items-center gap-2">
-                        <div className="relative">
-                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-white/60" size={18} />
-                            <input 
-                                type="date" 
-                                className="input bg-white/10 text-white border-white/30 pl-10 focus:bg-white/20 focus:outline-none placeholder:text-white/40"
-                                value={fechaFiltro || ''}
-                                onChange={(e) => setFechaFiltro(e.target.value || null)}
-                            />
-                        </div>
+            <PageHeader
+                icon={Clock}
+                title="Historial de Asistencia"
+                description="Consulta tus registros de entrada y salida."
+                gradientClass="header-asistencias"
+            >
+                {/* Filtro Fecha */}
+                <div className="flex items-center gap-2">
+                    <div className="relative">
+                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-white/60" size={18} />
+                        <input 
+                            type="date" 
+                            className="input bg-white/10 text-white border-white/30 pl-10 focus:bg-white/20 focus:outline-none placeholder:text-white/40"
+                            value={fechaFiltro || ''}
+                            onChange={(e) => setFechaFiltro(e.target.value || null)}
+                        />
                     </div>
                 </div>
-            </div>
+            </PageHeader>
 
             {/* STATS CARDS */}
             {!isLoading && asistencias && asistencias.length > 0 && (

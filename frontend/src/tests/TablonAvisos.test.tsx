@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { http, HttpResponse, delay } from 'msw';
 import { server } from './mocks/server';
-import TablonAvisos from '../pages/avisos/TablaAvisos';
+import TablonAvisos from '../pages/avisos/TablonAvisos';
 
 const createTestQueryClient = () =>
     new QueryClient({

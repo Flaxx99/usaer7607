@@ -7,6 +7,7 @@ import {
     Plus, FolderOpen, Edit2, Trash2, 
     Save, Paperclip, X, UploadCloud, XCircle, Pencil
 } from 'lucide-react';
+import { PageHeader } from '../../components/PageHeader';
 import { toast } from 'sonner';
 import { 
     getDocumentos, createDocumento, updateDocumento, 
@@ -14,8 +15,8 @@ import {
 } from '../../api/documentos';
 import { getAlumnos } from '../../api/alumnos';
 import Modal from '../../components/Modal';
-import { EmptyState, ErrorState } from '../../components/Skeletons';
-import { SearchBar } from '../../components/SearchBar';
+import { EmptyState, ErrorState, CardGridSkeleton } from '../../components/Skeletons';
+import { FilterCard } from '../../components/FilterCard';
 import { LoadingButton } from '../../components/LoadingButton';
 import { useConfirmDialog } from '../../components/useConfirmDialog';
 import type { Expediente, OtroArchivo } from '../../interfaces/documentos';
@@ -189,9 +190,7 @@ const ListaDocumentos = () => {
   if (isLoading) {
       return (
         <div className="max-w-7xl mx-auto p-4 md:p-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[1,2,3,4,5,6].map(i => <div key={i} className="h-64 bg-base-200 animate-pulse rounded-xl" />)}
-          </div>
+          <CardGridSkeleton count={6} cols={3} />
         </div>
       );
   }
@@ -199,44 +198,24 @@ const ListaDocumentos = () => {
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
         
-        <div className="header-section header-documentos">
-            <div className="header-pattern" />
-            <div className="header-circle header-circle-lg" />
-            <div className="header-circle header-circle-sm" />
-            <div className="relative z-10 p-8 flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-6">
-                    <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shadow-inner backdrop-blur-sm">
-                        <FolderOpen size={32} />
-                    </div>
-                    <div>
-                        <h1 className="text-3xl font-black tracking-tight">
-                            Documentos y Expedientes
-                        </h1>
-                        <p className="text-sm opacity-90 font-medium">
-                            Gestión de archivos psicopedagógicos y planes de intervención por alumno.
-                        </p>
-                    </div>
-                </div>
-                <button 
-                    className="btn btn-white btn-lg shadow-md hover:scale-105 transition-transform"
-                    onClick={handleOpenCreate}
-                >
-                    <Plus size={22} />
-                    Nuevo Expediente
-                </button>
-            </div>
-        </div>
+        <PageHeader
+            icon={FolderOpen}
+            title="Documentos y Expedientes"
+            description="Gestión de archivos psicopedagógicos y planes de intervención por alumno."
+            gradientClass="header-documentos"
+            actions={[{ label: 'Nuevo Expediente', icon: Plus, onClick: handleOpenCreate }]}
+        />
 
-        <div className="card-paper">
-            <div className="p-4 border-b border-base-200">
-                <SearchBar 
-                    value={busqueda}
-                    onChange={setBusqueda}
-                    placeholder="Buscar alumno o profesor..."
-                />
-            </div>
-            <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <FilterCard
+            searchValue={busqueda}
+            onSearchChange={setBusqueda}
+            searchPlaceholder="Buscar alumno o profesor..."
+            searchLabel="Buscar Expediente"
+            showHeader={false}
+        />
+
+        <div className="card-paper p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {documentosFiltrados?.map((doc) => {
                 const docsCount = [doc.informe_deteccion, doc.informe_psicopedagogico, doc.plan_intervencion].filter(Boolean).length;
                 const totalDocs = 3;
@@ -296,7 +275,6 @@ const ListaDocumentos = () => {
                 <EmptyState icon={FolderOpen} title="No se encontraron expedientes con ese criterio de búsqueda." />
             )}
                 </div>
-            </div>
         </div>
 
         <Modal
@@ -352,7 +330,7 @@ const ListaDocumentos = () => {
                                     <p className="text-xs font-bold uppercase opacity-50">Archivos Guardados:</p>
                                     <div className="flex flex-col gap-2">
                                         {docEditar.otros_archivos.map((archivo: OtroArchivo) => (
-                                            <div key={archivo.id} className="flex items-center justify-between p-2 bg-white rounded-lg border border-base-300 text-xs">
+                                            <div key={archivo.id} className="flex items-center justify-between p-2 bg-base-100 rounded-lg border border-base-300 text-xs">
                                                 <a href={archivo.url_archivo || '#'} target="_blank" rel="noreferrer" className="text-primary font-bold hover:underline">
                                                     {archivo.nombre_archivo}
                                                 </a>
