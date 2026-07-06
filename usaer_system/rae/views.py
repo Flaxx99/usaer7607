@@ -224,8 +224,6 @@ class ExportRAEView(views.APIView):
 
     def get(self, request, pk):
         qs = RegistroRAE.objects.select_related("escuela", "ciclo_escolar")
-        if not (request.user.is_superuser or request.user.role in ["ADMIN", "SECRETARIO"]):
-            qs = qs.filter(escuela=request.user.escuela)
         registro = get_object_or_404(qs, pk=pk)
         config = SystemConfiguration.objects.first()
         template_path = os.path.join(
@@ -366,9 +364,10 @@ class ExportAllRAEView(views.APIView):
             ciclo = get_current_ciclo_escolar_instance()
         except Exception as e:
             return error_400(str(e))
+        user = request.user
+        if not (user.is_superuser or user.role in ["ADMIN", "SECRETARIO"]):
+            return error_403("No tienes permiso.")
         qs = RegistroRAE.objects.filter(ciclo_escolar=ciclo).select_related("escuela")
-        if not (request.user.is_superuser or request.user.role in ["ADMIN", "SECRETARIO"]):
-            qs = qs.filter(escuela=request.user.escuela)
         wb = Workbook()
         ws = wb.active
         ws.title = "RAE General"

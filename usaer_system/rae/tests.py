@@ -237,6 +237,7 @@ class RAEViewsTest(APITestCase):
 
         data = {
             "registro_id": self.registro.pk,
+            "version": 0,
             "alumnos": [
                 {
                     "id": rae_alumno.pk,
