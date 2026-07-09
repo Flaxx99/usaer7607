@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import { LoadingProvider } from '../context/LoadingContext';
 import SchoolCalendar from '../pages/calendar/SchoolCalendar';
-import { calendarApi } from '../api/calendar';
+import { getCalendarEvents, saveCalendarEvent, deleteCalendarEvent } from '../api/calendar';
 import { getUsuarios } from '../api/usuarios';
 import { getAlumnos } from '../api/alumnos';
 import { getEscuelas } from '../api/escuelas';
@@ -18,11 +18,9 @@ const switchToListView = async () => {
 // ─── API MOCKS ───
 
 vi.mock('../api/calendar', () => ({
-    calendarApi: {
-        getEvents: vi.fn(),
-        saveEvent: vi.fn(),
-        deleteEvent: vi.fn(),
-    },
+    getCalendarEvents: vi.fn(),
+    saveCalendarEvent: vi.fn(),
+    deleteCalendarEvent: vi.fn(),
 }));
 
 vi.mock('../api/usuarios', async (importOriginal) => {
@@ -175,7 +173,7 @@ describe('SchoolCalendar', () => {
     // ═══════════════════════════════════════════
 
     it('should show loading spinner while fetching events', async () => {
-        vi.mocked(calendarApi.getEvents).mockReturnValue(new Promise(() => {}));
+        vi.mocked(getCalendarEvents).mockReturnValue(new Promise(() => {}));
         vi.mocked(getUsuarios).mockResolvedValue(mockUsersResponse);
         vi.mocked(getAlumnos).mockResolvedValue(mockAlumnosResponse);
         vi.mocked(getEscuelas).mockResolvedValue(mockEscuelasResponse);
@@ -188,7 +186,7 @@ describe('SchoolCalendar', () => {
     });
 
     it('should show error state when API fails', async () => {
-        vi.mocked(calendarApi.getEvents).mockRejectedValue(new Error('API Error'));
+        vi.mocked(getCalendarEvents).mockRejectedValue(new Error('API Error'));
         vi.mocked(getUsuarios).mockResolvedValue(mockUsersResponse);
         vi.mocked(getAlumnos).mockResolvedValue(mockAlumnosResponse);
         vi.mocked(getEscuelas).mockResolvedValue(mockEscuelasResponse);
@@ -201,7 +199,7 @@ describe('SchoolCalendar', () => {
     });
 
     it('should render the calendar page with events after loading', async () => {
-        vi.mocked(calendarApi.getEvents).mockResolvedValue(mockEventsResponse);
+        vi.mocked(getCalendarEvents).mockResolvedValue(mockEventsResponse);
         vi.mocked(getUsuarios).mockResolvedValue(mockUsersResponse);
         vi.mocked(getAlumnos).mockResolvedValue(mockAlumnosResponse);
         vi.mocked(getEscuelas).mockResolvedValue(mockEscuelasResponse);
@@ -226,7 +224,7 @@ describe('SchoolCalendar', () => {
     // ═══════════════════════════════════════════
 
     it('should show ALTA priority events in the Urgentes column', async () => {
-        vi.mocked(calendarApi.getEvents).mockResolvedValue(mockEventsResponse);
+        vi.mocked(getCalendarEvents).mockResolvedValue(mockEventsResponse);
         vi.mocked(getUsuarios).mockResolvedValue(mockUsersResponse);
         vi.mocked(getAlumnos).mockResolvedValue(mockAlumnosResponse);
         vi.mocked(getEscuelas).mockResolvedValue(mockEscuelasResponse);
@@ -254,7 +252,7 @@ describe('SchoolCalendar', () => {
             results: [{ ...mockEventMedia }],
         };
 
-        vi.mocked(calendarApi.getEvents).mockResolvedValue(noUrgentResponse);
+        vi.mocked(getCalendarEvents).mockResolvedValue(noUrgentResponse);
         vi.mocked(getUsuarios).mockResolvedValue(mockUsersResponse);
         vi.mocked(getAlumnos).mockResolvedValue(mockAlumnosResponse);
         vi.mocked(getEscuelas).mockResolvedValue(mockEscuelasResponse);
@@ -277,7 +275,7 @@ describe('SchoolCalendar', () => {
     // ═══════════════════════════════════════════
 
     it('should open create event modal', async () => {
-        vi.mocked(calendarApi.getEvents).mockResolvedValue(mockEventsResponse);
+        vi.mocked(getCalendarEvents).mockResolvedValue(mockEventsResponse);
         vi.mocked(getUsuarios).mockResolvedValue(mockUsersResponse);
         vi.mocked(getAlumnos).mockResolvedValue(mockAlumnosResponse);
         vi.mocked(getEscuelas).mockResolvedValue(mockEscuelasResponse);
@@ -307,7 +305,7 @@ describe('SchoolCalendar', () => {
     });
 
     it('should open edit event modal with pre-filled data', async () => {
-        vi.mocked(calendarApi.getEvents).mockResolvedValue(mockEventsResponse);
+        vi.mocked(getCalendarEvents).mockResolvedValue(mockEventsResponse);
         vi.mocked(getUsuarios).mockResolvedValue(mockUsersResponse);
         vi.mocked(getAlumnos).mockResolvedValue(mockAlumnosResponse);
         vi.mocked(getEscuelas).mockResolvedValue(mockEscuelasResponse);
@@ -336,7 +334,7 @@ describe('SchoolCalendar', () => {
     });
 
     it('should close modal when clicking Cancelar', async () => {
-        vi.mocked(calendarApi.getEvents).mockResolvedValue(mockEventsResponse);
+        vi.mocked(getCalendarEvents).mockResolvedValue(mockEventsResponse);
         vi.mocked(getUsuarios).mockResolvedValue(mockUsersResponse);
         vi.mocked(getAlumnos).mockResolvedValue(mockAlumnosResponse);
         vi.mocked(getEscuelas).mockResolvedValue(mockEscuelasResponse);
@@ -365,8 +363,8 @@ describe('SchoolCalendar', () => {
     // ═══════════════════════════════════════════
 
     it('should create a new event via modal', async () => {
-        vi.mocked(calendarApi.getEvents).mockResolvedValue(mockEventsResponse);
-        vi.mocked(calendarApi.saveEvent).mockResolvedValue({ id: 3 });
+        vi.mocked(getCalendarEvents).mockResolvedValue(mockEventsResponse);
+        vi.mocked(saveCalendarEvent).mockResolvedValue({ id: 3 });
         vi.mocked(getUsuarios).mockResolvedValue(mockUsersResponse);
         vi.mocked(getAlumnos).mockResolvedValue(mockAlumnosResponse);
         vi.mocked(getEscuelas).mockResolvedValue(mockEscuelasResponse);
@@ -397,13 +395,13 @@ describe('SchoolCalendar', () => {
         fireEvent.click(submitButton);
 
         await waitFor(() => {
-            expect(calendarApi.saveEvent).toHaveBeenCalled();
+            expect(saveCalendarEvent).toHaveBeenCalled();
         });
     });
 
     it('should create a new event and modal closes', async () => {
-        vi.mocked(calendarApi.getEvents).mockResolvedValue(mockEventsResponse);
-        vi.mocked(calendarApi.saveEvent).mockResolvedValue({ id: 3 });
+        vi.mocked(getCalendarEvents).mockResolvedValue(mockEventsResponse);
+        vi.mocked(saveCalendarEvent).mockResolvedValue({ id: 3 });
         vi.mocked(getUsuarios).mockResolvedValue(mockUsersResponse);
         vi.mocked(getAlumnos).mockResolvedValue(mockAlumnosResponse);
         vi.mocked(getEscuelas).mockResolvedValue(mockEscuelasResponse);
@@ -437,8 +435,8 @@ describe('SchoolCalendar', () => {
     });
 
     it('should delete an event with confirm dialog', async () => {
-        vi.mocked(calendarApi.getEvents).mockResolvedValue(mockEventsResponse);
-        vi.mocked(calendarApi.deleteEvent).mockResolvedValue(null);
+        vi.mocked(getCalendarEvents).mockResolvedValue(mockEventsResponse);
+        vi.mocked(deleteCalendarEvent).mockResolvedValue(null);
         vi.mocked(getUsuarios).mockResolvedValue(mockUsersResponse);
         vi.mocked(getAlumnos).mockResolvedValue(mockAlumnosResponse);
         vi.mocked(getEscuelas).mockResolvedValue(mockEscuelasResponse);
@@ -467,12 +465,12 @@ describe('SchoolCalendar', () => {
         fireEvent.click(screen.getByText('Eliminar'));
 
         await waitFor(() => {
-            expect(calendarApi.deleteEvent).not.toHaveBeenCalled();
+            expect(deleteCalendarEvent).not.toHaveBeenCalled();
         });
     });
 
     it('should cancel event deletion when dialog is dismissed', async () => {
-        vi.mocked(calendarApi.getEvents).mockResolvedValue(mockEventsResponse);
+        vi.mocked(getCalendarEvents).mockResolvedValue(mockEventsResponse);
         vi.mocked(getUsuarios).mockResolvedValue(mockUsersResponse);
         vi.mocked(getAlumnos).mockResolvedValue(mockAlumnosResponse);
         vi.mocked(getEscuelas).mockResolvedValue(mockEscuelasResponse);
@@ -502,7 +500,7 @@ describe('SchoolCalendar', () => {
             expect(screen.queryByText('Eliminar Evento')).not.toBeInTheDocument();
         });
 
-        expect(calendarApi.deleteEvent).not.toHaveBeenCalled();
+        expect(deleteCalendarEvent).not.toHaveBeenCalled();
     });
 
     // ═══════════════════════════════════════════
@@ -510,7 +508,7 @@ describe('SchoolCalendar', () => {
     // ═══════════════════════════════════════════
 
     it('should show total event count in the cronograma', async () => {
-        vi.mocked(calendarApi.getEvents).mockResolvedValue(mockEventsResponse);
+        vi.mocked(getCalendarEvents).mockResolvedValue(mockEventsResponse);
         vi.mocked(getUsuarios).mockResolvedValue(mockUsersResponse);
         vi.mocked(getAlumnos).mockResolvedValue(mockAlumnosResponse);
         vi.mocked(getEscuelas).mockResolvedValue(mockEscuelasResponse);
@@ -526,7 +524,7 @@ describe('SchoolCalendar', () => {
     });
 
     it('should show empty results message when all events are filtered out', async () => {
-        vi.mocked(calendarApi.getEvents).mockResolvedValue(mockEventsResponse);
+        vi.mocked(getCalendarEvents).mockResolvedValue(mockEventsResponse);
         vi.mocked(getUsuarios).mockResolvedValue(mockUsersResponse);
         vi.mocked(getAlumnos).mockResolvedValue(mockAlumnosResponse);
         vi.mocked(getEscuelas).mockResolvedValue(mockEscuelasResponse);
@@ -558,7 +556,7 @@ describe('SchoolCalendar', () => {
     // ═══════════════════════════════════════════
 
     it('should show status badges for events', async () => {
-        vi.mocked(calendarApi.getEvents).mockResolvedValue(mockEventsResponse);
+        vi.mocked(getCalendarEvents).mockResolvedValue(mockEventsResponse);
         vi.mocked(getUsuarios).mockResolvedValue(mockUsersResponse);
         vi.mocked(getAlumnos).mockResolvedValue(mockAlumnosResponse);
         vi.mocked(getEscuelas).mockResolvedValue(mockEscuelasResponse);
@@ -578,7 +576,7 @@ describe('SchoolCalendar', () => {
     });
 
     it('should show assigned user names', async () => {
-        vi.mocked(calendarApi.getEvents).mockResolvedValue(mockEventsResponse);
+        vi.mocked(getCalendarEvents).mockResolvedValue(mockEventsResponse);
         vi.mocked(getUsuarios).mockResolvedValue(mockUsersResponse);
         vi.mocked(getAlumnos).mockResolvedValue(mockAlumnosResponse);
         vi.mocked(getEscuelas).mockResolvedValue(mockEscuelasResponse);
@@ -603,7 +601,7 @@ describe('SchoolCalendar', () => {
     it('should handle empty events list', async () => {
         const emptyResponse = { count: 0, next: null, previous: null, results: [] };
 
-        vi.mocked(calendarApi.getEvents).mockResolvedValue(emptyResponse);
+        vi.mocked(getCalendarEvents).mockResolvedValue(emptyResponse);
         vi.mocked(getUsuarios).mockResolvedValue(mockUsersResponse);
         vi.mocked(getAlumnos).mockResolvedValue(mockAlumnosResponse);
         vi.mocked(getEscuelas).mockResolvedValue(mockEscuelasResponse);

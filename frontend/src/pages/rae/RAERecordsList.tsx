@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { 
   FileText, Edit2, CheckCircle, FileSpreadsheet, XCircle, Lock, BarChart3, School
 } from 'lucide-react';
+import { PageHeader } from '../../components/PageHeader';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { raeApi } from '../../api/rae';
+import { getRAEMyRecords, getRAEProgress, exportAllRAE } from '../../api/rae';
 import type { RAEProgressItem, RegistroRAE } from '../../interfaces/rae';
 import { useLoading } from '../../context/LoadingContext';
 import { ErrorState } from '../../components/Skeletons';
@@ -21,12 +22,12 @@ const RAERecordsList = () => {
 
     const { data: recordsData, isLoading, isError, error } = useQuery({
         queryKey: ['rae_records', page, search],
-        queryFn: () => raeApi.getMyRecords(page),
+        queryFn: () => getRAEMyRecords(page, search),
     });
 
     const { data: progressData } = useQuery({
         queryKey: ['rae_progress'],
-        queryFn: raeApi.getProgress,
+        queryFn: getRAEProgress,
         refetchInterval: 30_000, // refresh each 30s
     });
 
@@ -34,18 +35,18 @@ const RAERecordsList = () => {
     const totalCount = recordsData?.count || 0;
 
     // Merge progress info into records
-    const progressMap = new Map<number, RAEProgressItem>();
-    (progressData || []).forEach(p => progressMap.set(p.registro_id, p));
+    const progressMap = useMemo(() => {
+        const map = new Map<number, RAEProgressItem>();
+        (progressData || []).forEach(p => map.set(p.registro_id, p));
+        return map;
+    }, [progressData]);
 
-    const recordsWithProgress = results.map(r => ({
-        ...r,
-        _progress: progressMap.get(r.id),
-    }));
-
-    // Local filter
-    const filteredRecords = recordsWithProgress.filter((r: RegistroRAE & { _progress?: RAEProgressItem }) => 
-        r.escuela_nombre?.toLowerCase().includes(search.toLowerCase()) || 
-        r.ciclo_nombre?.toLowerCase().includes(search.toLowerCase())
+    const recordsWithProgress = useMemo(() =>
+        results.map(r => ({
+            ...r,
+            _progress: progressMap.get(r.id),
+        })),
+        [results, progressMap]
     );
 
     // Overall stats
@@ -72,7 +73,7 @@ const RAERecordsList = () => {
         try {
             setExporting(true);
             showLoading();
-            const blob = await raeApi.exportAll();
+            const blob = await exportAllRAE();
             downloadBlob(blob, `RAE_Concentrado_${new Date().toISOString().split('T')[0]}.xlsx`);
             toast.success(<span className="inline-flex items-center gap-1.5"><CheckCircle size={16} /> ¡Generado!</span>, { description: 'El reporte concentrado RAE ha sido generado.' });
         } catch {
@@ -170,34 +171,21 @@ const RAERecordsList = () => {
     return (
         <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
             
-            {/* CABECERA */}
-            <div className="card bg-primary text-primary-content shadow-lg border-l-8 border-primary-dark">
-                <div className="card-body p-8 flex-row items-center justify-between gap-4">
-                    <div className="flex items-center gap-6">
-                        <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shadow-inner">
-                            <FileText size={32} />
-                        </div>
-                        <div>
-                            <h1 className="text-3xl font-black tracking-tight">
-                                Registros RAE
-                            </h1>
-                            <p className="text-sm opacity-90 font-medium">
-                                Registro de Atención Educativa y seguimiento de alumnos.
-                            </p>
-                        </div>
-                    </div>
-                    <div className="flex gap-3">
-                        <LoadingButton
-                            className="btn btn-ghost bg-white/10 hover:bg-white/20 border-white/20 text-white"
-                            icon={FileSpreadsheet}
-                            loading={exporting}
-                            onClick={handleGenerateRAE}
-                        >
-                            Generar RAE
-                        </LoadingButton>
-                    </div>
-                </div>
-            </div>
+            <PageHeader
+              icon={FileText}
+              title="Registros RAE"
+              description="Registro de Atención Educativa y seguimiento de alumnos."
+              gradientClass="header-rae"
+            >
+              <LoadingButton
+                className="btn btn-ghost bg-white/10 hover:bg-white/20 border-white/20 text-white"
+                icon={FileSpreadsheet}
+                loading={exporting}
+                onClick={handleGenerateRAE}
+              >
+                Generar RAE
+              </LoadingButton>
+            </PageHeader>
 
             {/* PROGRESS OVERVIEW */}
             {progressData && progressData.length > 0 && (
@@ -250,7 +238,7 @@ const RAERecordsList = () => {
             )}
 
             <DataTable 
-                data={filteredRecords} 
+                data={recordsWithProgress} 
                 columns={columns} 
                 isLoading={isLoading}
                 totalCount={totalCount}

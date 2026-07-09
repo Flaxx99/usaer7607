@@ -65,7 +65,7 @@ describe('ListaNotificaciones', () => {
 
     it('muestra loading mientras carga', () => {
         renderPage();
-        expect(screen.getByText('Cargando notificaciones...')).toBeInTheDocument();
+        expect(screen.getByTestId('skeleton')).toBeInTheDocument();
     });
 
     it('renderiza lista de notificaciones después de cargar', async () => {

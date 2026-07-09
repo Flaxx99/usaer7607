@@ -2,7 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import RAECaptureGrid from '../pages/rae/RAECaptureGrid';
-import { raeApi } from '../api/rae';
+import { initRAECapture, saveRAEBulk } from '../api/rae';
 import { LoadingProvider } from '../context/LoadingContext';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
@@ -18,10 +18,8 @@ vi.mock('@tabler/icons-react', () => ({
 
 // Mock de la API
 vi.mock('../api/rae', () => ({
-    raeApi: {
-        initCapture: vi.fn(),
-        saveBulk: vi.fn(),
-    }
+    initRAECapture: vi.fn(),
+    saveRAEBulk: vi.fn(),
 }));
 
 // Mock de notificaciones
@@ -71,7 +69,7 @@ describe('RAE Persistence & Auto-Save', () => {
                 { id: 1, alumno_nombre: 'Juan Perez', ceg: false, bv: false }
             ]
         };
-        vi.mocked(raeApi.initCapture).mockResolvedValue(mockInitData);
+        vi.mocked(initRAECapture).mockResolvedValue(mockInitData);
 
         render(<RAECaptureGrid />, { wrapper });
 
@@ -100,7 +98,7 @@ describe('RAE Persistence & Auto-Save', () => {
                 { id: 1, alumno_nombre: 'Juan Perez', ceg: false, bv: false }
             ]
         };
-        vi.mocked(raeApi.initCapture).mockResolvedValue(mockInitData);
+        vi.mocked(initRAECapture).mockResolvedValue(mockInitData);
 
         render(<RAECaptureGrid />, { wrapper });
 
@@ -120,8 +118,8 @@ describe('RAE Persistence & Auto-Save', () => {
             ciclo: '2024-2025',
             alumnos: [{ id: 1, alumno_nombre: 'Juan Perez', ceg: false }]
         };
-        vi.mocked(raeApi.initCapture).mockResolvedValue(mockInitData);
-        vi.mocked(raeApi.saveBulk).mockResolvedValue({ status: 'success' });
+        vi.mocked(initRAECapture).mockResolvedValue(mockInitData);
+        vi.mocked(saveRAEBulk).mockResolvedValue({ status: 'success' });
 
         render(<RAECaptureGrid />, { wrapper });
 

@@ -11,6 +11,8 @@ import {
   CheckCircle, XCircle, Pencil, ClipboardList
 } from 'lucide-react';
 import { PageHeader } from '../../components/PageHeader';
+import { FilterTabs } from '../../components/FilterTabs';
+import { SearchBar } from '../../components/SearchBar';
 import { toast } from 'sonner';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { TableSkeleton, ErrorState } from '../../components/Skeletons';
@@ -353,21 +355,21 @@ const ListaAlumnos = () => {
           
           <div className="form-control w-full">
             <label className="label"><span className="label-text font-bold">Estado</span></label>
-            <div className="join w-full">
-              <button 
-                className={`btn btn-sm join-item ${filtroEstado === 'ACTIVOS' ? 'btn-primary' : 'btn-outline'}`}
-                onClick={() => { setFiltroEstado('ACTIVOS'); setPage(1); }}
-              >Activos</button>
-              <button 
-                className={`btn btn-sm join-item ${filtroEstado === 'BAJAS' ? 'btn-primary' : 'btn-outline'}`}
-                onClick={() => { setFiltroEstado('BAJAS'); setPage(1); }}
-              >Bajas</button>
-              <button 
-                className={`btn btn-sm join-item ${filtroEstado === 'TODOS' ? 'btn-primary' : 'btn-outline'}`}
-                onClick={() => { setFiltroEstado('TODOS'); setPage(1); }}
-              >Todos</button>
-            </div>
+            <FilterTabs
+              tabs={[
+                { value: 'ACTIVOS', label: 'Activos' },
+                { value: 'BAJAS', label: 'Bajas' },
+                { value: 'TODOS', label: 'Todos' },
+              ]}
+              value={filtroEstado}
+              onChange={(v) => { setFiltroEstado(v); setPage(1); }}
+              color="primary"
+            />
           </div>
+        </div>
+
+        <div className="border-t border-base-200/50 pt-6">
+          <SearchBar value={busqueda} onChange={setBusqueda} placeholder="Apellido, Nombre o CURP..." />
         </div>
       </div>
       
@@ -381,9 +383,6 @@ const ListaAlumnos = () => {
           totalCount={totalCount}
           page={page}
           onPageChange={setPage}
-          onSearchChange={setBusqueda}
-          searchValue={busqueda}
-          placeholder="Apellido, Nombre o CURP..."
         />
       )}
       

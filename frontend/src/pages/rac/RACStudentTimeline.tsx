@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
-import { racApi } from '../../api/rac';
+import { getRACByAlumno } from '../../api/rac';
 import { getAlumnos } from '../../api/alumnos';
 import { PageSkeleton } from '../../components/Skeletons';
 import { LoadingButton } from '../../components/LoadingButton';
@@ -33,7 +33,7 @@ const RACStudentTimeline = () => {
     // Cargar historial RAC del alumno
     const { data: racRecords, isLoading: loadingRAC } = useQuery({
         queryKey: ['rac_student', alumnoId],
-        queryFn: () => racApi.getByAlumno(Number(alumnoId)),
+        queryFn: () => getRACByAlumno(Number(alumnoId)),
         enabled: !!alumnoId,
     });
 
@@ -60,10 +60,11 @@ const RACStudentTimeline = () => {
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <div className="flex items-center gap-4">
                             <button
-                                className="btn btn-ghost bg-white/10 hover:bg-white/20 text-white btn-sm"
+                                className="btn btn-circle btn-white btn-sm shadow-md hover:scale-110 transition-transform"
                                 onClick={() => navigate(-1)}
+                                aria-label="Volver"
                             >
-                                <ArrowLeft size={18} />
+                                <ArrowLeft size={20} />
                             </button>
                             <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
                                 <User size={28} />

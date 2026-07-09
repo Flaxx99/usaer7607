@@ -10,7 +10,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { racSchema, CLASIFICACION_SUB, CLASIFICACIONES, type RACFormData } from '../../schemas/rac';
 import { toast } from 'sonner';
 import { isAxiosError } from 'axios';
-import { racApi } from '../../api/rac';
+import { getRACRecords, saveRACRecord } from '../../api/rac';
 import { LoadingButton } from '../../components/LoadingButton';
 import type { RegistroRAC } from '../../interfaces/rac';
 import { useLoading } from '../../context/LoadingContext';
@@ -42,7 +42,7 @@ const RACForm = () => {
     const { data: initialData, isLoading: loadingInitial } = useQuery({
         queryKey: ['rac_record', id],
         queryFn: async () => {
-            const records = await racApi.getRecords();
+            const records = await getRACRecords();
             return records.results?.find((r: RegistroRAC) => r.id === Number(id));
         },
         enabled: !!id,
@@ -84,7 +84,7 @@ const RACForm = () => {
     }, [currentClasificacion, setValue]);
 
     const saveMutation = useMutation({
-        mutationFn: racApi.saveRecord,
+        mutationFn: saveRACRecord,
         onMutate: () => showLoading(),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['rac_records'] });
@@ -126,7 +126,7 @@ const RACForm = () => {
         <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-8">
             
             {/* Header Section - Playful Paper Style */}
-            <div className="header-section header-primary">
+            <div className="header-section header-documentos">
                 <div className="header-pattern" />
                 <div className="header-circle header-circle-lg" />
                 <div className="header-circle header-circle-sm" />

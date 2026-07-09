@@ -4,7 +4,7 @@ import { Bell, CheckCheck, Inbox, CheckCircle, ChevronLeft, ChevronRight } from 
 import { PageHeader } from '../../components/PageHeader';
 import { toast } from 'sonner';
 import { EmptyState, ErrorState, PageSkeleton } from '../../components/Skeletons';
-import { notificacionesApi } from '../../api/notificaciones';
+import { getNotificaciones, markNotificationAsRead, markAllNotificationsAsRead } from '../../api/notificaciones';
 
 const ListaNotificaciones = () => {
     const queryClient = useQueryClient();
@@ -12,11 +12,11 @@ const ListaNotificaciones = () => {
 
     const { data, isLoading, isError } = useQuery({
         queryKey: ['notificaciones', page],
-        queryFn: () => notificacionesApi.getNotificaciones(page),
+        queryFn: () => getNotificaciones(page),
     });
 
     const markAsReadMutation = useMutation({
-        mutationFn: notificacionesApi.marcarComoLeida,
+        mutationFn: markNotificationAsRead,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['notificaciones'] });
             toast.success(<span className="inline-flex items-center gap-1.5"><CheckCircle size={16} /> ¡Leída!</span>, { description: 'Notificación marcada como leída.' });
@@ -24,7 +24,7 @@ const ListaNotificaciones = () => {
     });
 
     const markAllReadMutation = useMutation({
-        mutationFn: notificacionesApi.marcarTodasComoLeidas,
+        mutationFn: markAllNotificationsAsRead,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['notificaciones'] });
             toast.success(<span className="inline-flex items-center gap-1.5"><CheckCircle size={16} /> ¡Todo leído!</span>, { description: 'Todas las notificaciones marcadas como leídas.' });

@@ -3,16 +3,14 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { LoadingProvider } from '../context/LoadingContext';
 import RAECaptureGrid from '../pages/rae/RAECaptureGrid';
-import { raeApi } from '../api/rae';
+import { initRAECapture, saveRAEBulk } from '../api/rae';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 // ── Module mocks ────────────────────────────────────
 
 vi.mock('../api/rae', () => ({
-    raeApi: {
-        initCapture: vi.fn(),
-        saveBulk: vi.fn(),
-    },
+    initRAECapture: vi.fn(),
+    saveRAEBulk: vi.fn(),
 }));
 
 vi.mock('lucide-react', async (importOriginal) => {
@@ -160,7 +158,7 @@ describe('RAECaptureGrid', () => {
     // ═══════════════════════════════════════════
 
     it('should show loading spinner while fetching data', async () => {
-        vi.mocked(raeApi.initCapture).mockReturnValue(new Promise(() => {}));
+        vi.mocked(initRAECapture).mockReturnValue(new Promise(() => {}));
 
         renderAtRoute();
 
@@ -169,7 +167,7 @@ describe('RAECaptureGrid', () => {
     });
 
     it('should show error state when API fails', async () => {
-        vi.mocked(raeApi.initCapture).mockRejectedValue(new Error('API Error'));
+        vi.mocked(initRAECapture).mockRejectedValue(new Error('API Error'));
 
         renderAtRoute();
 
@@ -179,7 +177,7 @@ describe('RAECaptureGrid', () => {
     });
 
     it('should render header with school and student count when data loads', async () => {
-        vi.mocked(raeApi.initCapture).mockResolvedValue(mockInitData);
+        vi.mocked(initRAECapture).mockResolvedValue(mockInitData);
 
         renderAtRoute();
 
@@ -196,7 +194,7 @@ describe('RAECaptureGrid', () => {
     // ═══════════════════════════════════════════
 
     it('should render all students in the table', async () => {
-        vi.mocked(raeApi.initCapture).mockResolvedValue(mockInitData);
+        vi.mocked(initRAECapture).mockResolvedValue(mockInitData);
 
         renderAtRoute();
 
@@ -208,7 +206,7 @@ describe('RAECaptureGrid', () => {
     });
 
     it('should render category headers in table', async () => {
-        vi.mocked(raeApi.initCapture).mockResolvedValue(mockInitData);
+        vi.mocked(initRAECapture).mockResolvedValue(mockInitData);
 
         renderAtRoute();
 
@@ -224,7 +222,7 @@ describe('RAECaptureGrid', () => {
     });
 
     it('should render field header labels', async () => {
-        vi.mocked(raeApi.initCapture).mockResolvedValue(mockInitData);
+        vi.mocked(initRAECapture).mockResolvedValue(mockInitData);
 
         renderAtRoute();
 
@@ -246,7 +244,7 @@ describe('RAECaptureGrid', () => {
     // ═══════════════════════════════════════════
 
     it('should filter students when typing in search', async () => {
-        vi.mocked(raeApi.initCapture).mockResolvedValue(mockInitData);
+        vi.mocked(initRAECapture).mockResolvedValue(mockInitData);
 
         renderAtRoute();
 
@@ -267,7 +265,7 @@ describe('RAECaptureGrid', () => {
     });
 
     it('should show empty state when search yields no results', async () => {
-        vi.mocked(raeApi.initCapture).mockResolvedValue(mockInitData);
+        vi.mocked(initRAECapture).mockResolvedValue(mockInitData);
 
         renderAtRoute();
 
@@ -289,7 +287,7 @@ describe('RAECaptureGrid', () => {
     // ═══════════════════════════════════════════
 
     it('should update dirty row count when checkbox is toggled', async () => {
-        vi.mocked(raeApi.initCapture).mockResolvedValue(mockInitData);
+        vi.mocked(initRAECapture).mockResolvedValue(mockInitData);
 
         renderAtRoute();
 
@@ -322,7 +320,7 @@ describe('RAECaptureGrid', () => {
     });
 
     it('should toggle checkbox state and persist in draft', async () => {
-        vi.mocked(raeApi.initCapture).mockResolvedValue(mockInitData);
+        vi.mocked(initRAECapture).mockResolvedValue(mockInitData);
 
         renderAtRoute();
 
@@ -354,8 +352,8 @@ describe('RAECaptureGrid', () => {
     // ═══════════════════════════════════════════
 
     it('should save changes when clicking Guardar Cambios with dirty rows', async () => {
-        vi.mocked(raeApi.initCapture).mockResolvedValue(mockInitData);
-        vi.mocked(raeApi.saveBulk).mockResolvedValue({ ok: true });
+        vi.mocked(initRAECapture).mockResolvedValue(mockInitData);
+        vi.mocked(saveRAEBulk).mockResolvedValue({ ok: true });
 
         renderAtRoute();
 
@@ -376,7 +374,7 @@ describe('RAECaptureGrid', () => {
         fireEvent.click(saveBtn);
 
         await waitFor(() => {
-            expect(raeApi.saveBulk).toHaveBeenCalledWith(
+            expect(saveRAEBulk).toHaveBeenCalledWith(
                 expect.objectContaining({
                     registro_id: 123,
                     alumnos: expect.arrayContaining([
@@ -390,7 +388,7 @@ describe('RAECaptureGrid', () => {
     it('should have save button disabled with no changes (UI guard)', async () => {
         // This tests the guard: handleSave exists but is unreachable from UI
         // because the button is disabled when dirtyRows.size === 0.
-        vi.mocked(raeApi.initCapture).mockResolvedValue(mockInitData);
+        vi.mocked(initRAECapture).mockResolvedValue(mockInitData);
 
         renderAtRoute();
 
@@ -407,7 +405,7 @@ describe('RAECaptureGrid', () => {
     // ═══════════════════════════════════════════
 
     it('should clear drafts when clicking Limpiar Borradores', async () => {
-        vi.mocked(raeApi.initCapture).mockResolvedValue(mockInitData);
+        vi.mocked(initRAECapture).mockResolvedValue(mockInitData);
 
         renderAtRoute();
 
@@ -441,7 +439,7 @@ describe('RAECaptureGrid', () => {
     // ═══════════════════════════════════════════
 
     it('should disable Guardar Cambios when there are no changes', async () => {
-        vi.mocked(raeApi.initCapture).mockResolvedValue(mockInitData);
+        vi.mocked(initRAECapture).mockResolvedValue(mockInitData);
 
         renderAtRoute();
 
@@ -454,7 +452,7 @@ describe('RAECaptureGrid', () => {
     });
 
     it('should disable Limpiar Borradores when there are no drafts', async () => {
-        vi.mocked(raeApi.initCapture).mockResolvedValue(mockInitData);
+        vi.mocked(initRAECapture).mockResolvedValue(mockInitData);
 
         renderAtRoute();
 
@@ -466,8 +464,8 @@ describe('RAECaptureGrid', () => {
     });
 
     it('should disable Limpiar Borradores during save', async () => {
-        vi.mocked(raeApi.initCapture).mockResolvedValue(mockInitData);
-        vi.mocked(raeApi.saveBulk).mockReturnValue(new Promise(() => {})); // never resolves
+        vi.mocked(initRAECapture).mockResolvedValue(mockInitData);
+        vi.mocked(saveRAEBulk).mockReturnValue(new Promise(() => {})); // never resolves
 
         renderAtRoute();
 
@@ -498,7 +496,7 @@ describe('RAECaptureGrid', () => {
     // ═══════════════════════════════════════════
 
     it('should render back button', async () => {
-        vi.mocked(raeApi.initCapture).mockResolvedValue(mockInitData);
+        vi.mocked(initRAECapture).mockResolvedValue(mockInitData);
 
         renderAtRoute();
 
@@ -506,7 +504,7 @@ describe('RAECaptureGrid', () => {
             expect(screen.getByText(/Captura RAE: Escuela Primaria Test/)).toBeInTheDocument();
         });
 
-        expect(screen.getByText('Volver')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Volver' })).toBeInTheDocument();
     });
 
     it('should restore drafts from localStorage on mount', async () => {
@@ -514,7 +512,7 @@ describe('RAECaptureGrid', () => {
         localStorage.setItem('rae_drafts_123', JSON.stringify({ 1: { bv: true } }));
         localStorage.setItem('rae_drafts_123_dirty', JSON.stringify([1]));
 
-        vi.mocked(raeApi.initCapture).mockResolvedValue(mockInitData);
+        vi.mocked(initRAECapture).mockResolvedValue(mockInitData);
 
         renderAtRoute();
 
@@ -528,7 +526,7 @@ describe('RAECaptureGrid', () => {
 
     it('should handle empty alumnos array gracefully', async () => {
         const emptyData = { ...mockInitData, alumnos: [] };
-        vi.mocked(raeApi.initCapture).mockResolvedValue(emptyData);
+        vi.mocked(initRAECapture).mockResolvedValue(emptyData);
 
         renderAtRoute();
 

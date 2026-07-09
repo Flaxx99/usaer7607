@@ -4,7 +4,7 @@
  */
 export function PageSkeleton({ rows = 5 }: { rows?: number }) {
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6" data-testid="skeleton">
       {/* Header skeleton */}
       <div className="card bg-base-100 shadow-sm">
         <div className="card-body p-6">

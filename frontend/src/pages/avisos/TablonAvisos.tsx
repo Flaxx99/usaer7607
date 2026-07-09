@@ -13,7 +13,7 @@ import { isAxiosError } from 'axios';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { CardGridSkeleton, EmptyState, ErrorState } from '../../components/Skeletons';
-import { SearchBar } from '../../components/SearchBar';
+import { FilterCard } from '../../components/FilterCard';
 import Modal from '../../components/Modal';
 import { LoadingButton } from '../../components/LoadingButton';
 import { useConfirmDialog } from '../../components/useConfirmDialog';
@@ -21,7 +21,7 @@ import { getAvisos, createAviso, updateAviso, deleteAviso } from '../../api/avis
 import type { Anuncio } from '../../interfaces/aviso';
 
 const TablonAvisos = () => {
-  const [verMisAvisos, setVerMisAvisos] = useState(false);
+  const [vistaAvisos, setVistaAvisos] = useState('TODOS');
   const [busqueda, setBusqueda] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [avisoEditar, setAvisoEditar] = useState<Anuncio | null>(null);
@@ -33,8 +33,8 @@ const TablonAvisos = () => {
   });
 
   const { data: avisos, isLoading, isError, error } = useQuery({
-    queryKey: ['avisos', verMisAvisos],
-    queryFn: () => getAvisos(verMisAvisos),
+    queryKey: ['avisos', vistaAvisos],
+    queryFn: () => getAvisos(vistaAvisos === 'MIS'),
   });
 
   const createMutation = useMutation({
@@ -165,37 +165,20 @@ const TablonAvisos = () => {
             actions={[{ label: 'Publicar Nuevo Aviso', icon: Plus, onClick: handleOpenCreate }]}
         />
 
-        {/* FILTROS */}
-        <div className="card-paper p-6 space-y-6">
-            <div className="flex items-center gap-2 text-base-content/60">
-                <Filter size={16} className="text-primary" />
-                <span className="text-xs font-bold uppercase tracking-widest">Filtrar Tablón</span>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
-                <div className="form-control w-full">
-                    <label className="label" htmlFor="buscar_aviso"><span className="label-text font-bold">Buscar Aviso</span></label>
-                    <SearchBar 
-                        value={busqueda}
-                        onChange={setBusqueda}
-                        placeholder="Escribe el título o contenido..."
-                    />
-                </div>
-                <div className="form-control w-full">
-                    <label className="label"><span className="label-text font-bold">Vista del Tablón</span></label>
-                    <div className="join w-full">
-                        <button 
-                            className={`btn btn-sm join-item ${!verMisAvisos ? 'btn-primary' : 'btn-outline'}`}
-                            onClick={() => setVerMisAvisos(false)}
-                        ><Megaphone size={16} /> Tablón General</button>
-                        <button 
-                            className={`btn btn-sm join-item ${verMisAvisos ? 'btn-primary' : 'btn-outline'}`}
-                            onClick={() => setVerMisAvisos(true)}
-                        ><Pencil size={16} /> Mis Publicaciones</button>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <FilterCard
+            searchValue={busqueda}
+            onSearchChange={setBusqueda}
+            searchPlaceholder="Escribe el título o contenido..."
+            searchLabel="Buscar Aviso"
+            filterValue={vistaAvisos}
+            onFilterChange={setVistaAvisos}
+            filterTabs={[
+                { value: 'TODOS', label: 'Tablón General', icon: Megaphone },
+                { value: 'MIS', label: 'Mis Publicaciones', icon: Pencil },
+            ]}
+            filterLabel="Vista del Tablón"
+            filterColor="primary"
+        />
 
         {/* REJILLA DE AVISOS */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -248,8 +231,8 @@ const TablonAvisos = () => {
                                     </div>
                                 </div>
 
-                                {verMisAvisos && (
-                                    <div className="flex gap-1">
+                                 {vistaAvisos === 'MIS' && (
+                                     <div className="flex gap-1">
                                         <button className="btn btn-ghost btn-xs text-primary" onClick={() => handleOpenEdit(aviso)}>
                                             <Edit2 size={14} />
                                         </button>

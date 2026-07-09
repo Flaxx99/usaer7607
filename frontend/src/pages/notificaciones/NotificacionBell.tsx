@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Bell, CheckCheck, CheckCircle, ExternalLink, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { notificacionesApi } from '../../api/notificaciones';
+import { getUnreadNotificationCount, getUnreadNotifications, markNotificationAsRead, markAllNotificationsAsRead } from '../../api/notificaciones';
 
 const TIME_AGO = (dateStr: string) => {
     const diff = Date.now() - new Date(dateStr).getTime();
@@ -34,25 +34,25 @@ const NotificacionBell = () => {
 
     const conteoQuery = useQuery({
         queryKey: ['notificaciones', 'conteo'],
-        queryFn: notificacionesApi.getConteo,
+        queryFn: getUnreadNotificationCount,
         refetchInterval: 30_000,
     });
 
     const noLeidasQuery = useQuery({
         queryKey: ['notificaciones', 'no-leidas'],
-        queryFn: notificacionesApi.getNoLeidas,
+        queryFn: getUnreadNotifications,
         enabled: open,
     });
 
     const markReadMutation = useMutation({
-        mutationFn: (id: number) => notificacionesApi.marcarComoLeida(id),
+        mutationFn: (id: number) => markNotificationAsRead(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['notificaciones'] });
         },
     });
 
     const markAllMutation = useMutation({
-        mutationFn: notificacionesApi.marcarTodasComoLeidas,
+        mutationFn: markAllNotificationsAsRead,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['notificaciones'] });
             toast.success(<span className="inline-flex items-center gap-1.5"><CheckCircle size={16} /> Todo leído</span>);

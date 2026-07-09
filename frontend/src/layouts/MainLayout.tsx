@@ -9,7 +9,7 @@ import {
 import { useUiStore } from '../stores/ui';
 import { useQuery } from '@tanstack/react-query';
 import client from '../api/client';
-import { notificacionesApi } from '../api/notificaciones';
+import { getUnreadNotificationCount } from '../api/notificaciones';
 import NotificacionBell from '../pages/notificaciones/NotificacionBell';
 import type { RACPendientesResponse } from '../interfaces/api';
 
@@ -97,7 +97,7 @@ const MainLayout = () => {
 
   const { data: notifConteo } = useQuery({
       queryKey: ['notificaciones', 'conteo'],
-      queryFn: notificacionesApi.getConteo,
+      queryFn: getUnreadNotificationCount,
       refetchInterval: 30_000,
       enabled: !!userRoleCode,
   });

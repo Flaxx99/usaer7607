@@ -7,7 +7,7 @@ import { PageHeader } from '../../components/PageHeader';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { racApi } from '../../api/rac';
+import { getRACRecords, exportMyRACRecords, exportGlobalRAC } from '../../api/rac';
 import type { RegistroRAC } from '../../interfaces/rac';
 import { useLoading } from '../../context/LoadingContext';
 import { ErrorState } from '../../components/Skeletons';
@@ -35,7 +35,7 @@ const RACList = () => {
 
     const { data: recordsData, isLoading, isError, error } = useQuery({
         queryKey: ['rac_records', page, search],
-        queryFn: () => racApi.getRecords(page),
+        queryFn: () => getRACRecords(page),
     });
 
     const downloadBlob = (blob: Blob, filename: string) => {
@@ -54,7 +54,7 @@ const RACList = () => {
         try {
             setExporting('mine');
             showLoading();
-            const blob = await racApi.exportMyRecords();
+            const blob = await exportMyRACRecords();
             downloadBlob(blob, `RAC_${new Date().toISOString().split('T')[0]}.xlsx`);
             toast.success(<span className="inline-flex items-center gap-1.5"><CheckCircle size={16} /> ¡Generado!</span>, { description: 'Tu registro RAC ha sido exportado exitosamente.' });
         } catch {
@@ -69,7 +69,7 @@ const RACList = () => {
         try {
             setExporting('all');
             showLoading();
-            const blob = await racApi.exportGlobal();
+            const blob = await exportGlobalRAC();
             downloadBlob(blob, `RAC_Concentrado_${new Date().toISOString().split('T')[0]}.xlsx`);
             toast.success(<span className="inline-flex items-center gap-1.5"><CheckCircle size={16} /> ¡Exportado!</span>, { description: 'El concentrado RAC ha sido generado.' });
         } catch {

@@ -5,7 +5,7 @@ import {
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { raeApi } from '../../api/rae';
+import { initRAECapture, closeRAERegistro, exportRAEExcel } from '../../api/rae';
 import type { RAEAlumno } from '../../interfaces/rae';
 import { useLoading } from '../../context/LoadingContext';
 import { ValidationSkeleton, EmptyState, ErrorState } from '../../components/Skeletons';
@@ -20,14 +20,14 @@ const RAEValidationPanel = () => {
 
     const { data: initData, isLoading, isError, error } = useQuery({
         queryKey: ['rae_capture', id],
-        queryFn: raeApi.initCapture,
+        queryFn: initRAECapture,
         enabled: !!id,
     });
 
     const cerrado = initData?.cerrado ?? false;
 
     const cerrarMutation = useMutation({
-        mutationFn: (nuevoEstado: boolean) => raeApi.cerrarRegistro(Number(id), nuevoEstado),
+        mutationFn: (nuevoEstado: boolean) => closeRAERegistro(Number(id), nuevoEstado),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['rae_capture', id] });
             queryClient.invalidateQueries({ queryKey: ['rae_records'] });
@@ -55,7 +55,7 @@ const RAEValidationPanel = () => {
         try {
             setExporting(true);
             showLoading();
-            const blob = await raeApi.exportExcel(Number(id));
+            const blob = await exportRAEExcel(Number(id));
             const url = window.URL.createObjectURL(new Blob([blob]));
             const link = document.createElement('a');
             link.href = url;
@@ -93,47 +93,47 @@ const RAEValidationPanel = () => {
     if (isLoading) return <ValidationSkeleton />;
 
     return (
-        <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
-            {/* Page header card */}
-            <div className="card-paper">
-                <div className="p-5 md:p-6">
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                        <div className="flex items-start gap-3">
-                            <button 
-                                className="btn btn-ghost btn-sm gap-2 mt-0.5"
-                                onClick={() => navigate('/rae/capture/' + id)}
-                            >
-                                <ArrowLeft size={16} />
-                                Volver a Captura
-                            </button>
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-primary/10 text-primary rounded-xl">
-                                    <CheckCircle size={20} />
-                                </div>
-                                <div>
-                                    <h1 className="text-xl md:text-2xl font-black tracking-tight">Validación de Totales RAE</h1>
-                                    <p className="text-sm text-base-content/60 mt-0.5">Verificá los totales registrados por categoría</p>
-                                </div>
-                            </div>
+        <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
+            {/* Page header — RAE Validation */}
+            <div className="header-section header-rae">
+                <div className="header-pattern" />
+                <div className="header-circle header-circle-lg" />
+                <div className="header-circle header-circle-sm" />
+                <div className="relative z-10 p-8 flex flex-col md:flex-row justify-between items-center gap-6">
+                    <div className="flex items-center gap-6">
+                        <button
+                            className="btn btn-circle btn-white btn-sm shadow-md hover:scale-110 transition-transform"
+                            onClick={() => navigate('/rae/capture/' + id)}
+                            aria-label="Volver"
+                        >
+                            <ArrowLeft size={20} />
+                        </button>
+                        <div className="text-center md:text-left">
+                            <h1 className="text-3xl md:text-4xl font-black tracking-tight text-white leading-none">
+                                Validación de Totales RAE
+                            </h1>
+                            <p className="text-sm md:text-base text-white/80 font-medium mt-2">
+                                Verificá los totales registrados por categoría
+                            </p>
                         </div>
-                        <div className="flex gap-2">
-                            <button
-                                className={`btn btn-sm gap-2 ${cerrado ? 'btn-warning' : 'btn-outline btn-warning'}`}
-                                onClick={handleCerrar}
-                                disabled={cerrarMutation.isPending}
-                            >
-                                {cerrado ? <Unlock size={16} /> : <Lock size={16} />}
-                                {cerrado ? 'Reabrir Registro' : 'Cerrar Registro'}
-                            </button>
-                            <LoadingButton
-                                className="btn btn-success btn-sm px-6 gap-2"
-                                icon={Download}
-                                loading={exporting}
-                                onClick={handleExport}
-                            >
-                                Descargar Archivo Oficial
-                            </LoadingButton>
-                        </div>
+                    </div>
+                    <div className="flex gap-2">
+                        <button
+                            className={`btn btn-sm gap-2 ${cerrado ? 'btn-warning' : 'btn-outline btn-warning'}`}
+                            onClick={handleCerrar}
+                            disabled={cerrarMutation.isPending}
+                        >
+                            {cerrado ? <Unlock size={16} /> : <Lock size={16} />}
+                            {cerrado ? 'Reabrir Registro' : 'Cerrar Registro'}
+                        </button>
+                        <LoadingButton
+                            className="btn btn-success btn-sm px-6 gap-2"
+                            icon={Download}
+                            loading={exporting}
+                            onClick={handleExport}
+                        >
+                            Descargar Archivo Oficial
+                        </LoadingButton>
                     </div>
                 </div>
             </div>

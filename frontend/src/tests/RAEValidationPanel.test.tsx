@@ -3,14 +3,12 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { LoadingProvider } from '../context/LoadingContext';
 import RAEValidationPanel from '../pages/rae/RAEValidationPanel';
-import { raeApi } from '../api/rae';
+import { initRAECapture, exportRAEExcel } from '../api/rae';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 vi.mock('../api/rae', () => ({
-    raeApi: {
-        initCapture: vi.fn(),
-        exportExcel: vi.fn(),
-    },
+    initRAECapture: vi.fn(),
+    exportRAEExcel: vi.fn(),
 }));
 
 vi.mock('lucide-react', async (importOriginal) => {
@@ -115,7 +113,7 @@ describe('RAEValidationPanel', () => {
     // ═══════════════════════════════════════════
 
     it('should show ValidationSkeleton while loading', async () => {
-        vi.mocked(raeApi.initCapture).mockReturnValue(new Promise(() => {}));
+        vi.mocked(initRAECapture).mockReturnValue(new Promise(() => {}));
 
         renderAtRoute();
 
@@ -125,7 +123,7 @@ describe('RAEValidationPanel', () => {
     });
 
     it('should show error state when API fails', async () => {
-        vi.mocked(raeApi.initCapture).mockRejectedValue(new Error('API Error'));
+        vi.mocked(initRAECapture).mockRejectedValue(new Error('API Error'));
 
         renderAtRoute();
 
@@ -135,7 +133,7 @@ describe('RAEValidationPanel', () => {
     });
 
     it('should render categories and field counts when data loads', async () => {
-        vi.mocked(raeApi.initCapture).mockResolvedValue(mockInitData);
+        vi.mocked(initRAECapture).mockResolvedValue(mockInitData);
 
         renderAtRoute();
 
@@ -175,7 +173,7 @@ describe('RAEValidationPanel', () => {
     // ═══════════════════════════════════════════
 
     it('should show detail panel when clicking a field', async () => {
-        vi.mocked(raeApi.initCapture).mockResolvedValue(mockInitData);
+        vi.mocked(initRAECapture).mockResolvedValue(mockInitData);
 
         renderAtRoute();
 
@@ -198,7 +196,7 @@ describe('RAEValidationPanel', () => {
     });
 
     it('should close detail panel when clicking Cerrar', async () => {
-        vi.mocked(raeApi.initCapture).mockResolvedValue(mockInitData);
+        vi.mocked(initRAECapture).mockResolvedValue(mockInitData);
 
         renderAtRoute();
 
@@ -223,7 +221,7 @@ describe('RAEValidationPanel', () => {
     });
 
     it('should show empty state in detail panel when field has no alumnos', async () => {
-        vi.mocked(raeApi.initCapture).mockResolvedValue(mockInitData);
+        vi.mocked(initRAECapture).mockResolvedValue(mockInitData);
 
         renderAtRoute();
 
@@ -241,7 +239,7 @@ describe('RAEValidationPanel', () => {
     });
 
     it('should show multiple alumnos when field has several matches', async () => {
-        vi.mocked(raeApi.initCapture).mockResolvedValue(mockInitData);
+        vi.mocked(initRAECapture).mockResolvedValue(mockInitData);
 
         renderAtRoute();
 
@@ -265,7 +263,7 @@ describe('RAEValidationPanel', () => {
     // ═══════════════════════════════════════════
 
     it('should show export button', async () => {
-        vi.mocked(raeApi.initCapture).mockResolvedValue(mockInitData);
+        vi.mocked(initRAECapture).mockResolvedValue(mockInitData);
 
         renderAtRoute();
 
@@ -277,8 +275,8 @@ describe('RAEValidationPanel', () => {
     });
 
     it('should handle export', async () => {
-        vi.mocked(raeApi.initCapture).mockResolvedValue(mockInitData);
-        vi.mocked(raeApi.exportExcel).mockResolvedValue(new Blob(['fake-excel']));
+        vi.mocked(initRAECapture).mockResolvedValue(mockInitData);
+        vi.mocked(exportRAEExcel).mockResolvedValue(new Blob(['fake-excel']));
 
         // Mock URL.createObjectURL
         const createObjectURL = vi.fn(() => 'blob:mock-url');
@@ -298,7 +296,7 @@ describe('RAEValidationPanel', () => {
         fireEvent.click(screen.getByText('Descargar Archivo Oficial'));
 
         await waitFor(() => {
-            expect(raeApi.exportExcel).toHaveBeenCalledWith(123);
+            expect(exportRAEExcel).toHaveBeenCalledWith(123);
         });
 
         expect(createObjectURL).toHaveBeenCalled();
@@ -309,8 +307,8 @@ describe('RAEValidationPanel', () => {
     });
 
     it('should show error toast when export fails', async () => {
-        vi.mocked(raeApi.initCapture).mockResolvedValue(mockInitData);
-        vi.mocked(raeApi.exportExcel).mockRejectedValue(new Error('Export error'));
+        vi.mocked(initRAECapture).mockResolvedValue(mockInitData);
+        vi.mocked(exportRAEExcel).mockRejectedValue(new Error('Export error'));
 
         renderAtRoute();
 
@@ -321,7 +319,7 @@ describe('RAEValidationPanel', () => {
         fireEvent.click(screen.getByText('Descargar Archivo Oficial'));
 
         await waitFor(() => {
-            expect(raeApi.exportExcel).toHaveBeenCalledWith(123);
+            expect(exportRAEExcel).toHaveBeenCalledWith(123);
         });
     });
 
@@ -330,7 +328,7 @@ describe('RAEValidationPanel', () => {
     // ═══════════════════════════════════════════
 
     it('should render back button', async () => {
-        vi.mocked(raeApi.initCapture).mockResolvedValue(mockInitData);
+        vi.mocked(initRAECapture).mockResolvedValue(mockInitData);
 
         renderAtRoute();
 
@@ -338,11 +336,11 @@ describe('RAEValidationPanel', () => {
             expect(screen.getByText('Validación de Totales RAE')).toBeInTheDocument();
         });
 
-        expect(screen.getByText('Volver a Captura')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Volver' })).toBeInTheDocument();
     });
 
     it('should render all category sections', async () => {
-        vi.mocked(raeApi.initCapture).mockResolvedValue(mockInitData);
+        vi.mocked(initRAECapture).mockResolvedValue(mockInitData);
 
         renderAtRoute();
 
@@ -364,7 +362,7 @@ describe('RAEValidationPanel', () => {
 
     it('should handle empty alumnos array', async () => {
         const emptyData = { ...mockInitData, alumnos: [] };
-        vi.mocked(raeApi.initCapture).mockResolvedValue(emptyData);
+        vi.mocked(initRAECapture).mockResolvedValue(emptyData);
 
         renderAtRoute();
 
@@ -398,7 +396,7 @@ describe('RAEValidationPanel', () => {
             ...mockInitData,
             alumnos: [allTrueAlumno],
         };
-        vi.mocked(raeApi.initCapture).mockResolvedValue(allTrueData);
+        vi.mocked(initRAECapture).mockResolvedValue(allTrueData);
 
         renderAtRoute();
 

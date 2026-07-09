@@ -340,6 +340,9 @@ html {
   .header-calendario {
     background: linear-gradient(135deg, var(--color-primary) 0%, #6366f1 50%, #4f46e5 100%);
   }
+  .header-rae {
+    background: linear-gradient(135deg, #7c3aed 0%, #6366f1 50%, var(--color-primary) 100%);
+  }
 
   /* ─── PATRÓN DECORATIVO PARA HEADERS ─── */
   .header-pattern {

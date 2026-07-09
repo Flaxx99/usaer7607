@@ -10,6 +10,7 @@ import {
 import { toast } from 'sonner';
 import { isAxiosError } from 'axios';
 import { useLoading } from '../../context/LoadingContext';
+import { PageHeader } from '../../components/PageHeader';
 import { EmptyState, ErrorState } from '../../components/Skeletons';
 import { SearchBar } from '../../components/SearchBar';
 import { useConfirmDialog } from '../../components/useConfirmDialog';
@@ -18,7 +19,7 @@ import CalendarView from './CalendarView';
 import { getUsuarios } from '../../api/usuarios';
 import { getAlumnos } from '../../api/alumnos';
 import { getEscuelas } from '../../api/escuelas';
-import { calendarApi } from '../../api/calendar';
+import { getCalendarEvents, saveCalendarEvent, deleteCalendarEvent } from '../../api/calendar';
 import type { CalendarEvent } from '../../interfaces/calendar';
 
 type ViewMode = 'calendar' | 'list';
@@ -35,7 +36,7 @@ const SchoolCalendar = () => {
 
     const { data: events, isLoading: loadingEvents, isError, error } = useQuery({
         queryKey: ['calendar_events'],
-        queryFn: () => calendarApi.getEvents(),
+        queryFn: () => getCalendarEvents(),
     });
 
     const filteredEvents = useMemo(() => {
@@ -53,7 +54,7 @@ const SchoolCalendar = () => {
     const { data: escuelas } = useQuery({ queryKey: ['escuelas'], queryFn: () => getEscuelas() });
 
     const saveMutation = useMutation({
-        mutationFn: calendarApi.saveEvent,
+        mutationFn: saveCalendarEvent,
         onMutate: () => showLoading(),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['calendar_events'] });
@@ -69,7 +70,7 @@ const SchoolCalendar = () => {
     });
 
     const deleteMutation = useMutation({
-        mutationFn: calendarApi.deleteEvent,
+        mutationFn: deleteCalendarEvent,
         onMutate: () => showLoading(),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['calendar_events'] });
@@ -171,28 +172,13 @@ const SchoolCalendar = () => {
 
     return (
         <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
-            <div className="card bg-primary text-primary-content shadow-lg border-l-8 border-primary-dark">
-                <div className="card-body p-8 flex-row items-center justify-between gap-4">
-                    <div className="flex items-center gap-6">
-                        <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shadow-inner">
-                            <CalendarIcon size={32} />
-                        </div>
-                        <div>
-                            <h1 className="text-3xl font-black tracking-tight">
-                                Agenda y Tareas USAER
-                            </h1>
-                            <p className="text-sm opacity-90 font-medium">Gestión de actividades, evaluaciones y tareas administrativas.</p>
-                        </div>
-                    </div>
-                    <button 
-                        className="btn btn-white btn-lg shadow-md hover:scale-105 transition-transform"
-                        onClick={() => handleOpenCreate()}
-                    >
-                        <Plus size={22} />
-                        Nueva Tarea/Evento
-                    </button>
-                </div>
-            </div>
+            <PageHeader
+              icon={CalendarIcon}
+              title="Agenda y Tareas USAER"
+              description="Gestión de actividades, evaluaciones y tareas administrativas."
+              gradientClass="header-calendario"
+              actions={[{ label: 'Nueva Tarea/Evento', icon: Plus, onClick: () => handleOpenCreate() }]}
+            />
 
             {/* ── Toggle Calendario / Lista ── */}
             <div className="flex items-center justify-between gap-4">

@@ -5,7 +5,7 @@ import {
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { raeApi } from '../../api/rae';
+import { initRAECapture, saveRAEBulk } from '../../api/rae';
 import type { RAEAlumno } from '../../interfaces/rae';
 import { ErrorState, EmptyState } from '../../components/Skeletons';
 import { useLoading } from '../../context/LoadingContext';
@@ -78,12 +78,12 @@ const RAECaptureGrid = () => {
 
     const { data: initData, isLoading, isError, error } = useQuery({
         queryKey: ['rae_capture', id],
-        queryFn: raeApi.initCapture,
+        queryFn: initRAECapture,
         enabled: !!id,
     });
 
     const saveMutation = useMutation({
-        mutationFn: (payload: { registro_id: number, version: number, alumnos: RAEAlumno[] }) => raeApi.saveBulk(payload),
+        mutationFn: (payload: { registro_id: number, version: number, alumnos: RAEAlumno[] }) => saveRAEBulk(payload),
         onMutate: () => showLoading(),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['rae_capture', id] });
@@ -158,6 +158,7 @@ const RAECaptureGrid = () => {
                         <button 
                             className="btn btn-circle btn-white btn-sm shadow-md hover:scale-110 transition-transform"
                             onClick={() => navigate('/rae')}
+                            aria-label="Volver"
                         >
                             <ArrowLeft size={20} />
                         </button>
