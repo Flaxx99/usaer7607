@@ -21,18 +21,23 @@
 
 ## 🟢 Baja Prioridad / Futuro
 
-### 8. Virtualización de listas
-Evaluar `@tanstack/react-virtual` para RAECaptureGrid y DataTable cuando hay 100+ alumnos.
-**Trigger**: Cuando alguien reporte lentitud con listas grandes.
+### 8. Virtualización de listas (evaluada — no requiere cambios)
+RAECaptureGrid tiene 30-60 alumnos por escuela con filtros; DataTable ya usa TanStack Table con `getPaginationRowModel` (10 por página). No hay beneficio real con virtualización hoy.
+**Trigger**: Cuando alguien reporte lentitud con 200+ alumnos.
 
-### 9. Dashboard con datos reales en staging
-Conectar dashboard a datos reales en staging. Verificar:
-- `get_rae_progress()` devuelve datos correctos
-- `get_asistencia_trend()` devuelve tendencia semanal
-- Filtro por escuela funciona
+### 9. Dashboard con datos reales en staging (backend verificado)
+- `build_dashboard_data()` con 12 sub-funciones independientes (cada una con try/except)
+- 27 tests backend OK, endpoint `/usuarios/dashboard-data/` listo
+- Frontend maneja loading, error (con retry), empty states
+- Pendiente de deploy a staging para probar con datos reales
 
-### 10. Auth: Token vs JWT
-`client.ts` usa esquema `Token` (DRF token auth), no `Bearer JWT`. Sin refresh token. Si se implementa expiración de sesión real, va a hacer falta refresh interceptor.
+### 10. ~~Auth: Token vs JWT~~ ✅ **RESUELTO**
+Migrado a `djangorestframework-simplejwt`:
+- Access token: 30 min | Refresh token: 7 días
+- `Bearer` scheme en vez de `Token`
+- Interceptor 401 → refresh automático (con queue de requests concurrentes)
+- Backend: blacklist de refresh tokens en logout
+- Frontend: logout llama al backend con refresh token
 
 ### 11. Páginas con header manual (baja, evaluada)
 RAECaptureGrid, RACForm, RACStudentTimeline, Dashboard — tienen headers complejos que no encajan en PageHeader genérico. Decisión conciente: dejarlas como están.
@@ -41,6 +46,6 @@ RAECaptureGrid, RACForm, RACStudentTimeline, Dashboard — tienen headers comple
 
 | Commit | Descripción |
 |---|---|
+| `8bb0009` | Migrar de DRF Token a JWT con auto-refresh interceptor |
+| `54681b4` | Unificar 15 APIs a axios.params + dead code + Kiosco a11y |
 | `3b24f1d` | Fix tests Kiosco + Dashboard + RACStudentTimeline test |
-| `1ad1b07` | Unificar 4 APIs a named functions + fixes visual audit |
-| `215b577` | Unificar frontend con PageHeader + FilterCard + skeletons |
