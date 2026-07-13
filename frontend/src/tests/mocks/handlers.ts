@@ -12,7 +12,8 @@ export const handlers = [
 
     if (body.username === 'admin' && body.password === 'admin123') {
       return HttpResponse.json({
-        token: 'mock-token-12345',
+        access: 'mock-access-token-12345',
+        refresh: 'mock-refresh-token-12345',
         user: {
           username: 'admin',
           first_name: 'Admin',

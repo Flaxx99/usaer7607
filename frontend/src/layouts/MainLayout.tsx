@@ -112,6 +112,15 @@ const MainLayout = () => {
 
   const handleLogout = () => {
     if (confirm('¿Cerrar sesión? Tendrás que ingresar tus credenciales nuevamente.')) {
+      const refreshToken = localStorage.getItem('refresh_token');
+      // Llamada asíncrona al backend para blacklistear el refresh token
+      if (refreshToken) {
+        fetch(`${import.meta.env.VITE_API_URL}/usuarios/auth/logout/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refresh: refreshToken }),
+        }).catch(() => { /* error silencioso — el token expirará solo */ });
+      }
       localStorage.clear();
       navigate('/login');
     }

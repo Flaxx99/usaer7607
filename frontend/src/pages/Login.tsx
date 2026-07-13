@@ -16,13 +16,14 @@ const Login = () => {
 
   const loginMutation = useMutation({
     mutationFn: (data: LoginForm) =>
-      client.post<{ token: string; user: { first_name: string; email: string } }>(
+      client.post<{ access: string; refresh: string; user: { first_name: string; email: string } }>(
         '/usuarios/auth/login/', data
       ),
     onSuccess: (response) => {
-      const { token, user } = response.data;
+      const { access, refresh, user } = response.data;
 
-      localStorage.setItem('access_token', token);
+      localStorage.setItem('access_token', access);
+      localStorage.setItem('refresh_token', refresh);
       localStorage.setItem('user', JSON.stringify(user));
 
       toast.success(<span className="inline-flex items-center gap-1.5"><CheckCircle size={16} /> ¡Bienvenido!</span>, {

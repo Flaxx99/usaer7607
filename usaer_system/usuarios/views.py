@@ -3,12 +3,12 @@ import logging
 from django.contrib.auth import get_user_model, login, logout
 from django.db.models import Q
 from rest_framework import filters, generics, status, views, viewsets
-from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
 from services.dashboard_service import build_dashboard_data
-from services.dto import FiltrosUsuario, LoginResponse, StatusDetailResponse, ToggleActiveResponse
+from services.dto import FiltrosUsuario, StatusDetailResponse, ToggleActiveResponse
 from services.error_handling import error_400, error_403
 
 from usuarios.permissions import IsAdminOrSecretario, IsAdminUserOnly
@@ -51,11 +51,15 @@ class LoginView(generics.GenericAPIView):
         user = serializer.validated_data["user"]
 
         login(request, user)
-        token, created = Token.objects.get_or_create(user=user)
+        refresh = RefreshToken.for_user(user)
         user_data = UserSerializer(user, context=self.get_serializer_context()).data
 
         return Response(
-            LoginResponse(detail="Login exitoso", token=token.key, user=user_data).model_dump()
+            {
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
+                "user": user_data,
+            }
         )
 
 
@@ -63,8 +67,14 @@ class LogoutView(views.APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        if hasattr(request.user, "auth_token"):
-            request.user.auth_token.delete()
+        try:
+            refresh_token = request.data.get("refresh")
+            if refresh_token:
+                token = RefreshToken(refresh_token)
+                token.blacklist()
+        except Exception:
+            pass
+
         logout(request)
         return Response(StatusDetailResponse(detail="Sesión cerrada correctamente.").model_dump())
 

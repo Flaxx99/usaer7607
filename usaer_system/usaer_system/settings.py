@@ -1,5 +1,6 @@
 import logging
 import sys
+from datetime import timedelta
 from pathlib import Path
 
 import dj_database_url
@@ -159,6 +160,7 @@ INSTALLED_APPS = [
     # API
     "rest_framework",
     "rest_framework.authtoken",
+    "rest_framework_simplejwt.token_blacklist",
     "axes",
     "corsheaders",
     "drf_yasg",
@@ -296,12 +298,10 @@ CSRF_TRUSTED_ORIGINS = config.csrf_trusted_origins_list
 REST_FRAMEWORK = {
     # PRIORIDAD DE AUTENTICACIÓN:
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        # 1. Primero busca Token (Para React/Axios)
-        "rest_framework.authentication.TokenAuthentication",
-        # 2. Si no hay token, busca Sesión (Para que TÚ uses el Admin/Swagger)
+        # 1. JWT (Para React/Axios) — expira cada 30 min, se refresca automáticamente
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        # 2. Sesión (Para Django Admin / Swagger)
         "rest_framework.authentication.SessionAuthentication",
-        # 3. Basic (Opcional, para pruebas rápidas en navegador)
-        "rest_framework.authentication.BasicAuthentication",
     ],
     # PERMISOS POR DEFECTO:
     "DEFAULT_PERMISSION_CLASSES": [
@@ -329,6 +329,21 @@ REST_FRAMEWORK = {
         "sensitive_action": "10/minute",  # Acciones admin sensibles
         "bulk_write": "2/minute",  # Operaciones masivas
     },
+}
+
+# ------------------- JWT (djangorestframework-simplejwt) -------------------
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "AUTH_HEADER_NAME": "HTTP_AUTHORIZATION",
+    "USER_ID_FIELD": "id",
+    "USER_ID_CLAIM": "user_id",
+    "TOKEN_OBTAIN_SERIALIZER": "rest_framework_simplejwt.serializers.TokenObtainPairSerializer",
+    "TOKEN_REFRESH_SERIALIZER": "rest_framework_simplejwt.serializers.TokenRefreshSerializer",
 }
 
 # ------------------- PERMISOS POR ROL -------------------

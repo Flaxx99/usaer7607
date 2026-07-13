@@ -48,7 +48,7 @@ describe('Login Page', () => {
 
     // Verificamos que el token se guardó en localStorage
     await waitFor(() => {
-      expect(localStorage.getItem('access_token')).toBe('mock-token-12345');
+      expect(localStorage.getItem('access_token')).toBe('mock-access-token-12345');
     });
   });
 
