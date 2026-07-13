@@ -63,7 +63,9 @@ describe('Kiosco', () => {
         expect(screen.getByText(/viernes.*12.*junio.*2026/i)).toBeInTheDocument();
         expect(screen.getByText('Ingrese su N° de Empleado')).toBeInTheDocument();
         expect(screen.getByText('Acceso Admin')).toBeInTheDocument();
-        expect(screen.getByLabelText('Checar asistencia')).toBeInTheDocument();
+        // Ahora hay dos botones (desktop + mobile) con el mismo aria-label
+        const checkButtons = screen.getAllByLabelText('Checar asistencia');
+        expect(checkButtons.length).toBe(2);
     });
 
     it('registra entrada exitosamente', async () => {
@@ -71,7 +73,8 @@ describe('Kiosco', () => {
 
         const input = screen.getByPlaceholderText('000000');
         fireEvent.change(input, { target: { value: 'EMP001' } });
-        fireEvent.click(screen.getByLabelText('Checar asistencia'));
+        // Clicks en ambos botones son equivalentes (ambos submit del mismo form)
+        fireEvent.click(screen.getAllByLabelText('Checar asistencia')[0]);
 
         // El input se resetea después del éxito
         await waitFor(() => {
@@ -84,7 +87,7 @@ describe('Kiosco', () => {
 
         const input = screen.getByPlaceholderText('000000');
         fireEvent.change(input, { target: { value: 'INVALIDO' } });
-        fireEvent.click(screen.getByLabelText('Checar asistencia'));
+        fireEvent.click(screen.getAllByLabelText('Checar asistencia')[0]);
 
         // El input se resetea incluso en error
         await waitFor(() => {
@@ -97,7 +100,7 @@ describe('Kiosco', () => {
 
         const input = screen.getByPlaceholderText('000000');
         fireEvent.change(input, { target: { value: 'OFFLINE' } });
-        fireEvent.click(screen.getByLabelText('Checar asistencia'));
+        fireEvent.click(screen.getAllByLabelText('Checar asistencia')[0]);
 
         await waitFor(() => {
             const pending = JSON.parse(localStorage.getItem('usaer_pending_attendance') || '[]');

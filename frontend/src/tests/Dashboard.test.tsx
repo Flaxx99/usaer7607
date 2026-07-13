@@ -80,8 +80,9 @@ describe('Dashboard Integration', () => {
     renderWithProviders(<Dashboard />);
 
     await waitFor(() => {
-      // Verify the section heading renders (chart ticks need ResizeObserver + container size in JSDOM)
-      expect(screen.getByText('Distribución por Condición')).toBeInTheDocument();
+      // El componente renderiza "Distribución" (h3) + "Por condición" (p) como elementos separados
+      expect(screen.getByText('Distribución')).toBeInTheDocument();
+      expect(screen.getByText('Por condición')).toBeInTheDocument();
     });
   });
 
