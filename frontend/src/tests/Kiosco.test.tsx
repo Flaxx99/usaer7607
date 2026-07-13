@@ -63,9 +63,8 @@ describe('Kiosco', () => {
         expect(screen.getByText(/viernes.*12.*junio.*2026/i)).toBeInTheDocument();
         expect(screen.getByText('Ingrese su N° de Empleado')).toBeInTheDocument();
         expect(screen.getByText('Acceso Admin')).toBeInTheDocument();
-        // Ahora hay dos botones (desktop + mobile) con el mismo aria-label
-        const checkButtons = screen.getAllByLabelText('Checar asistencia');
-        expect(checkButtons.length).toBe(2);
+        // Botón desktop con aria-label (el mobile tiene texto visible, sin aria-label)
+        expect(screen.getByLabelText('Checar asistencia')).toBeInTheDocument();
     });
 
     it('registra entrada exitosamente', async () => {

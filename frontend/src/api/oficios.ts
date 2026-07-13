@@ -3,9 +3,9 @@ import type { PaginatedResponse } from '../interfaces/common';
 import type { Oficio } from '../interfaces/oficio';
 
 export const getOficios = async (page = 1, search = ''): Promise<PaginatedResponse<Oficio>> => {
-    const params = new URLSearchParams({ page: String(page) });
-    if (search) params.append('search', search);
-    const response = await client.get(`/oficios/?${params}`);
+    const response = await client.get('/oficios/', {
+        params: { page, ...(search && { search }) },
+    });
     return response.data;
 };
 

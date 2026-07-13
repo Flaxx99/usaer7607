@@ -4,13 +4,9 @@ import type { PaginatedResponse } from '../interfaces/common';
 
 // --- LEER TODOS PAGINADOS (Para el Admin) ---
 export const getUsuarios = async (page = 1, search = '', role = '', escuela = '', activo = ''): Promise<PaginatedResponse<Usuario>> => {
-    let url = `/usuarios/?page=${page}`;
-    if (search) url += `&search=${encodeURIComponent(search)}`;
-    if (role) url += `&role=${role}`;
-    if (escuela) url += `&escuela=${escuela}`;
-    if (activo) url += `&activo=${activo}`;
-
-    const response = await client.get(url);
+    const response = await client.get('/usuarios/', {
+        params: { page, ...(search && { search }), ...(role && { role }), ...(escuela && { escuela }), ...(activo && { activo }) },
+    });
     
     // Si viene la respuesta estructurada de DRF, la retornamos tal cual.
     if (response.data && response.data.results) {

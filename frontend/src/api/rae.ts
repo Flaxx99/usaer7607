@@ -3,9 +3,9 @@ import type { PaginatedResponse } from '../interfaces/common';
 import type { RAEProgressItem, RegistroRAE, RAEAlumno, RAEInitResponse } from '../interfaces/rae';
 
 export const getRAEMyRecords = async (page = 1, search = ''): Promise<PaginatedResponse<RegistroRAE>> => {
-    let url = `/rae/mis_registros/?page=${page}`;
-    if (search) url += `&search=${encodeURIComponent(search)}`;
-    const response = await client.get(url);
+    const response = await client.get('/rae/mis_registros/', {
+        params: { page, ...(search && { search }) },
+    });
     return response.data;
 };
 

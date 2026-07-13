@@ -4,13 +4,15 @@ import type { PaginatedResponse } from '../interfaces/common';
 
 // Obtener lista paginada y filtrada
 export const getAlumnos = async (page = 1, search = '', escuela = '', condicion = '', estado = 'ACTIVOS'): Promise<PaginatedResponse<Alumno>> => {
-    let url = `/alumnos/?page=${page}`;
-    if (search) url += `&search=${encodeURIComponent(search)}`;
-    if (escuela && escuela !== 'TODAS') url += `&escuela=${escuela}`;
-    if (condicion && condicion !== 'TODAS') url += `&condicion=${condicion}`;
-    if (estado) url += `&estado=${estado}`;
-
-    const response = await client.get(url);
+    const response = await client.get('/alumnos/', {
+        params: {
+            page,
+            ...(search && { search }),
+            ...(escuela && escuela !== 'TODAS' && { escuela }),
+            ...(condicion && condicion !== 'TODAS' && { condicion }),
+            ...(estado && { estado }),
+        },
+    });
     
     // Si viene la respuesta estructurada de DRF, la retornamos tal cual.
     if (response.data && response.data.results) {

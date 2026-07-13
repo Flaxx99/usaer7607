@@ -3,7 +3,7 @@ import type { PaginatedResponse } from '../interfaces/common';
 import type { CalendarEvent } from '../interfaces/calendar';
 
 export const getCalendarEvents = async (page = 1) => {
-    const response = await client.get(`/calendario/?page=${page}`);
+    const response = await client.get('/calendario/', { params: { page } });
     return response.data as PaginatedResponse<CalendarEvent>;
 };
 

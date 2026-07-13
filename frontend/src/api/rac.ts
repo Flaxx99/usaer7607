@@ -3,12 +3,12 @@ import type { PaginatedResponse } from '../interfaces/common';
 import type { RegistroRAC } from '../interfaces/rac';
 
 export const getRACRecords = async (page = 1): Promise<PaginatedResponse<RegistroRAC>> => {
-    const response = await client.get(`/rac/?page=${page}`);
+    const response = await client.get('/rac/', { params: { page } });
     return response.data;
 };
 
 export const getRACByAlumno = async (alumnoId: number): Promise<RegistroRAC[]> => {
-    const response = await client.get(`/rac/por_alumno/?alumno_id=${alumnoId}`);
+    const response = await client.get('/rac/por_alumno/', { params: { alumno_id: alumnoId } });
     return response.data;
 };
 

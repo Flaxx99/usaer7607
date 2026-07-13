@@ -4,7 +4,7 @@ import type { UnreadCountResponse } from '../interfaces/api';
 import type { Notificacion } from '../interfaces/notificacion';
 
 export const getNotificaciones = async (page = 1): Promise<PaginatedResponse<Notificacion>> => {
-    const response = await client.get(`/notificaciones/?page=${page}`);
+    const response = await client.get('/notificaciones/', { params: { page } });
     return response.data;
 };
 

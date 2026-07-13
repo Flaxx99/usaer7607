@@ -234,7 +234,6 @@ const Kiosco = () => {
                                         type="submit"
                                         className="btn btn-primary w-full h-16 px-8 rounded-2xl shadow-lg hover:scale-105 active:scale-95 transition-all text-xl font-black"
                                         loading={mutation.isPending}
-                                        aria-label={mutation.isPending ? "Procesando registro..." : "Checar asistencia"}
                                     >
                                         {mutation.isPending ? (
                                             <Clock className="animate-spin" size={24} />
