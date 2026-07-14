@@ -48,7 +48,7 @@ describe('ListaNotificaciones', () => {
                 await delay(30);
                 return HttpResponse.json(NOTIFICACIONES_DATA);
             }),
-            http.post('*/notificaciones/:id/marcar_leida/', async ({ params }) => {
+            http.post('*/notificaciones/:id/marcar_leida/', async () => {
                 await delay(30);
                 return HttpResponse.json({ detail: 'marked as read' });
             }),

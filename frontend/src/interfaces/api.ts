@@ -148,9 +148,9 @@ export interface AnuncioResponse {
 }
 
 export interface LoginResponse {
-    detail: string | undefined;
-    token: string;
-    user: Record<string, any>;
+    access: string;
+    refresh: string;
+    user: Record<string, unknown>;
 }
 
 export interface CicloEscolarResponse {
@@ -278,9 +278,9 @@ export interface AlumnoPromoverResponse {
     a_promover: number | undefined;
     a_graduar: number | undefined;
     omitidos: number | undefined;
-    promovidos: Record<string, any>[] | undefined;
-    graduados: Record<string, any>[] | undefined;
-    omitidos_detalle: Record<string, any>[] | undefined;
+    promovidos: Record<string, unknown>[] | undefined;
+    graduados: Record<string, unknown>[] | undefined;
+    omitidos_detalle: Record<string, unknown>[] | undefined;
 }
 
 export interface AlumnoPromoverCommitResponse {

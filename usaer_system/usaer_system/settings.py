@@ -169,6 +169,24 @@ INSTALLED_APPS = [
 # Silencia deprecation warning de drf-yasg en Django 6
 SWAGGER_USE_COMPAT_RENDERERS = False
 
+# drf-yasg: Security scheme para JWT Bearer
+YASG_SETTINGS = {
+    "SECURITY_DEFINITIONS": {
+        "Bearer": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header",
+            "description": (
+                "JWT Bearer token. "
+                "1. Login via POST /api/usuarios/auth/login/ to get access + refresh tokens. "
+                "2. Set header: Authorization: Bearer <access_token>. "
+                "3. When expired, POST /api/usuarios/auth/token/refresh/ with {refresh} to get a new access token."
+            ),
+        }
+    },
+    "USE_SESSION_AUTH": False,
+}
+
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 

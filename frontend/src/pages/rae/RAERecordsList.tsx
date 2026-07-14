@@ -31,7 +31,6 @@ const RAERecordsList = () => {
         refetchInterval: 30_000, // refresh each 30s
     });
 
-    const results = recordsData?.results || [];
     const totalCount = recordsData?.count || 0;
 
     // Merge progress info into records
@@ -41,13 +40,13 @@ const RAERecordsList = () => {
         return map;
     }, [progressData]);
 
-    const recordsWithProgress = useMemo(() =>
-        results.map(r => ({
+    const recordsWithProgress = useMemo(() => {
+        const results = recordsData?.results || [];
+        return results.map(r => ({
             ...r,
             _progress: progressMap.get(r.id),
-        })),
-        [results, progressMap]
-    );
+        }));
+    }, [recordsData?.results, progressMap]);
 
     // Overall stats
     const totalEscuelas = progressData?.length || 0;

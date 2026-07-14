@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { Link } from 'react-router-dom';
@@ -27,7 +27,7 @@ const Kiosco = () => {
         setTimeout(() => setAnnouncement(message), 50);
     };
 
-    const syncAttendance = async () => {
+    const syncAttendance = useCallback(async () => {
         if (isSyncing) return; // Evitar múltiples sincronizaciones paralelas (Flapping)
         
         const pending = attendanceBuffer.getAll();
@@ -49,7 +49,7 @@ const Kiosco = () => {
             
             const results = await response.json();
 
-            results.forEach((res: any) => {
+            results.forEach((res: { success: boolean; codigo: string }) => {
                 if (res.success) {
                     const record = pending.find(p => p.numero_empleado === res.codigo);
                     if (record) attendanceBuffer.remove(record.id);
@@ -69,14 +69,14 @@ const Kiosco = () => {
         } finally {
             setIsSyncing(false);
         }
-    };
-
+    }, [isSyncing]);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- setIsSyncing is deferred by async/await
         syncAttendance();
         window.addEventListener('online', syncAttendance);
         return () => window.removeEventListener('online', syncAttendance);
-    }, []);
+    }, [syncAttendance]);
 
     const { register, handleSubmit, reset, setFocus } = useForm<{ numero_empleado: string }>({
         resolver: undefined

@@ -5,7 +5,7 @@ import { avisoFormSchema, type AvisoForm } from '../../schemas/aviso';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { 
     Megaphone, Plus, Calendar, Edit2, Trash2, 
-    AlertCircle, Filter, XCircle, Pencil
+    AlertCircle, XCircle, Pencil
 } from 'lucide-react';
 import { PageHeader } from '../../components/PageHeader';
 import { toast } from 'sonner';
